@@ -16,8 +16,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Extract Phase 16 project
-        run: tar -xzf phase16-project.tar.gz
+      - name: Reconstruct verified Phase 16 project
+        shell: bash
+        run: |
+          cat ci-bundle/minpart_*.b64 | base64 --decode > phase16-minimal.tar.gz
+          echo "6ede31306a3e275256b657e37bc88eff030932143b576b6fd0b83689616cb9be  phase16-minimal.tar.gz" | sha256sum --check --strict
+          tar -xzf phase16-minimal.tar.gz
+          test -f build.gradle
+          test -d src/main/java
 
       - name: Set up Java 21
         uses: actions/setup-java@v4
