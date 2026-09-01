@@ -28,7 +28,7 @@ jobs:
           # Compiler-discovered build corrections from the successful Phase 16 CI pass.
           sed -i 's/RepositoriesMode.PREFER_SETTINGS/RepositoriesMode.PREFER_PROJECT/' settings.gradle
           sed -i "s/id 'fabric-loom' version '1.11-SNAPSHOT'/id 'fabric-loom' version '1.13-SNAPSHOT'/" build.gradle
-          sed -i "s/version = '0.8.0-phase16'/version = '0.8.1-phase17-runtime'/" build.gradle
+          sed -i "s/version = '0.8.0-phase16-ci'/version = '0.8.1-phase17-runtime'/" build.gradle
           sed -i 's/import net.minecraft.network.chat.Component;/import net.minecraft.network.chat.Component;\nimport net.minecraft.network.chat.MutableComponent;/' src/main/java/com/cobbleraids/battle/RaidBattleType.java
           sed -i 's/@Override public Component getDisplayName()/@Override public MutableComponent getDisplayName()/' src/main/java/com/cobbleraids/battle/RaidBattleType.java
 
