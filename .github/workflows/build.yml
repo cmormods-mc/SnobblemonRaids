@@ -24,6 +24,12 @@ jobs:
           tar -xzf phase16-minimal.tar.gz
           test -f build.gradle
           test -d src/main/java
+          # Loom generates a local synthetic repository for layered/official mappings.
+          # PREFER_SETTINGS suppresses that repository, producing an unresolved
+          # loom:mappings:layered+hash.* coordinate. Prefer project repositories
+          # so Loom's generated mapping repository can participate.
+          sed -i 's/RepositoriesMode.PREFER_SETTINGS/RepositoriesMode.PREFER_PROJECT/' settings.gradle
+          grep 'PREFER_PROJECT' settings.gradle
 
       - name: Set up Java 21
         uses: actions/setup-java@v4
