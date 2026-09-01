@@ -24,13 +24,13 @@ jobs:
           tar -xzf phase16-minimal.tar.gz
           test -f build.gradle
           test -d src/main/java
-          # Loom generates a local synthetic repository for layered/official mappings.
           sed -i 's/RepositoriesMode.PREFER_SETTINGS/RepositoriesMode.PREFER_PROJECT/' settings.gradle
-          # Cobblemon 1.7.3 records Loom 1.13.328 in its mod metadata. Use the
-          # matching 1.13 snapshot line so Loom will accept/remap that dependency.
           sed -i "s/id 'fabric-loom' version '1.11-SNAPSHOT'/id 'fabric-loom' version '1.13-SNAPSHOT'/" build.gradle
+          sed -i 's/import net.minecraft.network.chat.Component;/import net.minecraft.network.chat.MutableComponent;/' src/main/java/com/cobbleraids/battle/RaidBattleType.java
+          sed -i 's/@Override public Component getDisplayName()/@Override public MutableComponent getDisplayName()/' src/main/java/com/cobbleraids/battle/RaidBattleType.java
           grep 'PREFER_PROJECT' settings.gradle
           grep "fabric-loom.*1.13-SNAPSHOT" build.gradle
+          grep 'MutableComponent getDisplayName' src/main/java/com/cobbleraids/battle/RaidBattleType.java
 
       - name: Set up Java 21
         uses: actions/setup-java@v4
