@@ -26,7 +26,7 @@ jobs:
           test -d src/main/java
           sed -i 's/RepositoriesMode.PREFER_SETTINGS/RepositoriesMode.PREFER_PROJECT/' settings.gradle
           sed -i "s/id 'fabric-loom' version '1.11-SNAPSHOT'/id 'fabric-loom' version '1.13-SNAPSHOT'/" build.gradle
-          sed -i 's/import net.minecraft.network.chat.Component;/import net.minecraft.network.chat.MutableComponent;/' src/main/java/com/cobbleraids/battle/RaidBattleType.java
+          sed -i 's/import net.minecraft.network.chat.Component;/import net.minecraft.network.chat.Component;\nimport net.minecraft.network.chat.MutableComponent;/' src/main/java/com/cobbleraids/battle/RaidBattleType.java
           sed -i 's/@Override public Component getDisplayName()/@Override public MutableComponent getDisplayName()/' src/main/java/com/cobbleraids/battle/RaidBattleType.java
           grep 'PREFER_PROJECT' settings.gradle
           grep "fabric-loom.*1.13-SNAPSHOT" build.gradle
