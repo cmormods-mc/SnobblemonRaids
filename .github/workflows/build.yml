@@ -16,7 +16,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Reconstruct verified base and apply Phase 17/18 overlays
+      - name: Reconstruct verified base and apply Phase 17/18/19 corrections
         shell: bash
         run: |
           cat ci-bundle/minpart_*.b64 | base64 --decode > phase16-minimal.tar.gz
@@ -27,7 +27,7 @@ jobs:
 
           sed -i 's/RepositoriesMode.PREFER_SETTINGS/RepositoriesMode.PREFER_PROJECT/' settings.gradle
           sed -i "s/id 'fabric-loom' version '1.11-SNAPSHOT'/id 'fabric-loom' version '1.13-SNAPSHOT'/" build.gradle
-          sed -i "s/version = '0.8.0-phase16-ci'/version = '0.8.2-phase18-admin'/" build.gradle
+          sed -i "s/version = '0.8.0-phase16-ci'/version = '0.8.3-phase19-mixinfix'/" build.gradle
 
           cp ci-overlays/phase17/RaidBattleType.java src/main/java/com/cobbleraids/battle/RaidBattleType.java
           cp ci-overlays/phase17/ShowdownResourceLoaderMixin.java src/main/java/com/cobbleraids/showdown/ShowdownResourceLoaderMixin.java
@@ -49,12 +49,30 @@ jobs:
           p.write_text(s.replace(needle, insert + needle))
           PY
 
-          grep "0.8.2-phase18-admin" build.gradle
+          # Phase 19 runtime fix: the Mixin package must not reserve the whole com.cobbleraids tree.
+          mkdir -p src/main/java/com/cobbleraids/mixin/battle src/main/java/com/cobbleraids/mixin/showdown
+          for name in RaidBattleRegistryMixin RaidBattleSelectActionsMixin RaidPlayerBattleActorMixin RaidPokemonBattleMixin; do
+            sed 's/^package com\.cobbleraids\.battle;/package com.cobbleraids.mixin.battle;/' \
+              "src/main/java/com/cobbleraids/battle/${name}.java" \
+              > "src/main/java/com/cobbleraids/mixin/battle/${name}.java"
+            rm "src/main/java/com/cobbleraids/battle/${name}.java"
+          done
+          sed 's/^package com\.cobbleraids\.showdown;/package com.cobbleraids.mixin.showdown;/' \
+            src/main/java/com/cobbleraids/showdown/ShowdownResourceLoaderMixin.java \
+            > src/main/java/com/cobbleraids/mixin/showdown/ShowdownResourceLoaderMixin.java
+          rm src/main/java/com/cobbleraids/showdown/ShowdownResourceLoaderMixin.java
+          sed -i 's/"package": "com.cobbleraids"/"package": "com.cobbleraids.mixin"/' \
+            src/main/resources/mixins/cobbleraids.mixins.json
+
+          grep "0.8.3-phase19-mixinfix" build.gradle
           grep 'RaidAdminCommand.register' src/main/java/com/cobbleraids/CobbleRaids.java
           grep 'Vec3Argument.getVec3' src/main/java/com/cobbleraids/command/RaidAdminCommand.java
           grep 'RaidLifecycleCoordinator.abort' src/main/java/com/cobbleraids/command/RaidAdminBossOps.java
           grep 'ContributionMath.percentages' src/main/java/com/cobbleraids/command/RaidAdminDebugOps.java
           grep 'cancelForBoss' src/main/java/com/cobbleraids/lobby/RaidLobbyManager.java
+          grep '"package": "com.cobbleraids.mixin"' src/main/resources/mixins/cobbleraids.mixins.json
+          grep '^package com.cobbleraids.mixin.showdown;' src/main/java/com/cobbleraids/mixin/showdown/ShowdownResourceLoaderMixin.java
+          test -z "$(find src/main/java/com/cobbleraids -path '*/mixin/*' -prune -o -name '*Mixin.java' -print)"
 
       - name: Set up Java 21
         uses: actions/setup-java@v4
@@ -74,7 +92,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: cobbleraids-phase18-build
+          name: cobbleraids-phase19-build
           path: |
             build/libs/*.jar
             build/reports/**
