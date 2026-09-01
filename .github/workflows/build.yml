@@ -16,7 +16,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Reconstruct verified base and apply Phase 17/18/19/20/21/22 corrections
+      - name: Reconstruct verified base and apply Phase 17/18/19/20/21/22/23 corrections
         shell: bash
         run: |
           cat ci-bundle/minpart_*.b64 | base64 --decode > phase16-minimal.tar.gz
@@ -27,7 +27,7 @@ jobs:
 
           sed -i 's/RepositoriesMode.PREFER_SETTINGS/RepositoriesMode.PREFER_PROJECT/' settings.gradle
           sed -i "s/id 'fabric-loom' version '1.11-SNAPSHOT'/id 'fabric-loom' version '1.13-SNAPSHOT'/" build.gradle
-          sed -i "s/version = '0.8.0-phase16-ci'/version = '0.8.6-phase22-positionfix'/" build.gradle
+          sed -i "s/version = '0.8.0-phase16-ci'/version = '0.8.7-phase23-instructionfix'/" build.gradle
 
           cp ci-overlays/phase17/RaidBattleType.java src/main/java/com/cobbleraids/battle/RaidBattleType.java
           cp ci-overlays/phase17/ShowdownResourceLoaderMixin.java src/main/java/com/cobbleraids/showdown/ShowdownResourceLoaderMixin.java
@@ -39,6 +39,7 @@ jobs:
           cp ci-overlays/phase20/RaidAdminSpawnOps.java src/main/java/com/cobbleraids/command/RaidAdminSpawnOps.java
           cp ci-overlays/phase20/RaidBossSpawner.java src/main/java/com/cobbleraids/spawn/RaidBossSpawner.java
           cp ci-overlays/phase21/raid-patch.js src/main/resources/assets/cobbleraids/showdown/raid-patch.js
+          cp ci-overlays/phase23/RaidInstructionRegistrar.java src/main/java/com/cobbleraids/showdown/RaidInstructionRegistrar.java
 
           python - <<'PY'
           from pathlib import Path
@@ -79,7 +80,7 @@ jobs:
           p.write_text(json.dumps(data, indent=2) + '\n')
           PY
 
-          grep "0.8.6-phase22-positionfix" build.gradle
+          grep "0.8.7-phase23-instructionfix" build.gradle
           grep 'Commands.argument("pokemon", StringArgumentType.word())' src/main/java/com/cobbleraids/command/RaidAdminCommand.java
           grep 'definition.species().getPath().equalsIgnoreCase(pokemonName)' src/main/java/com/cobbleraids/command/RaidAdminSpawnOps.java
           grep 'PokemonSpecies.getByName(definition.species().getPath())' src/main/java/com/cobbleraids/spawn/RaidBossSpawner.java
@@ -90,6 +91,11 @@ jobs:
           grep '@Mixin(ActiveBattlePokemon.class)' src/main/java/com/cobbleraids/mixin/battle/RaidActiveBattlePokemonMixin.java
           grep 'RaidRegistry.contains(self.getBattle())' src/main/java/com/cobbleraids/mixin/battle/RaidActiveBattlePokemonMixin.java
           grep 'battle.RaidActiveBattlePokemonMixin' src/main/resources/mixins/cobbleraids.mixins.json
+          grep 'registerUpdateInstructionParser("-raiddamage"' src/main/java/com/cobbleraids/showdown/RaidInstructionRegistrar.java
+          grep 'registerUpdateInstructionParser("-raidheal"' src/main/java/com/cobbleraids/showdown/RaidInstructionRegistrar.java
+          grep 'new RaidDamageInstruction(null, message, message)' src/main/java/com/cobbleraids/showdown/RaidInstructionRegistrar.java
+          grep 'new RaidHealInstruction(null, message, message)' src/main/java/com/cobbleraids/showdown/RaidInstructionRegistrar.java
+          grep 'registerSplitInstructionParser("-raiddamage"' src/main/java/com/cobbleraids/showdown/RaidInstructionRegistrar.java
           grep 'RaidLifecycleCoordinator.abort' src/main/java/com/cobbleraids/command/RaidAdminBossOps.java
           grep 'ContributionMath.percentages' src/main/java/com/cobbleraids/command/RaidAdminDebugOps.java
           grep 'cancelForBoss' src/main/java/com/cobbleraids/lobby/RaidLobbyManager.java
@@ -114,7 +120,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: cobbleraids-phase22-build
+          name: cobbleraids-phase23-build
           path: |
             build/libs/*.jar
             build/reports/**
