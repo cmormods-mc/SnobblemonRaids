@@ -6,6 +6,7 @@ import com.cobbleraids.raid.RaidSession;
 import com.cobblemon.mod.common.api.battles.model.PokemonBattle;
 import com.cobblemon.mod.common.api.battles.model.actor.BattleActor;
 import com.cobblemon.mod.common.battles.ActiveBattlePokemon;
+import com.cobblemon.mod.common.battles.BattleRegistry;
 import com.cobblemon.mod.common.battles.ForfeitActionResponse;
 import com.cobblemon.mod.common.battles.InBattleGimmickMove;
 import com.cobblemon.mod.common.battles.InBattleMove;
@@ -15,16 +16,15 @@ import com.cobblemon.mod.common.battles.ShowdownActionRequest;
 import com.cobblemon.mod.common.battles.ShowdownActionResponse;
 import com.cobblemon.mod.common.battles.ShowdownMoveset;
 import com.cobblemon.mod.common.battles.Targetable;
-import com.cobblemon.mod.common.battles.BattleRegistry;
 import com.cobblemon.mod.common.net.messages.client.battle.BattleMakeChoicePacket;
 import com.cobblemon.mod.common.net.messages.client.battle.BattleQueueRequestPacket;
 import com.cobblemon.mod.common.net.messages.server.battle.BattleSelectActionsPacket;
 import com.cobblemon.mod.common.net.serverhandling.battle.BattleSelectActionsHandler;
 import java.util.List;
-import net.minecraft.class_124;
-import net.minecraft.class_2561;
-import net.minecraft.class_3222;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -49,7 +49,7 @@ public abstract class RaidBattleSelectActionsMixin {
         cancellable = true
     )
     private void cobbleRaids$prepareRaidActions(BattleSelectActionsPacket packet, MinecraftServer server,
-                                                 class_3222 player, CallbackInfo ci) {
+                                                 ServerPlayer player, CallbackInfo ci) {
         PokemonBattle battle = BattleRegistry.getBattle(packet.getBattleId());
         RaidSession raid = RaidRegistry.get(battle);
         if (raid == null || raid.getStatus() != RaidSession.Status.ACTIVE) return;
@@ -61,10 +61,10 @@ public abstract class RaidBattleSelectActionsMixin {
         if (!requestedForfeit) return;
 
         ci.cancel();
-        if (!raid.isActiveParticipant(player.method_5667())) return;
+        if (!raid.isActiveParticipant(player.getUUID())) return;
 
         if (!raid.isFleeAllowed()) {
-            player.method_43496(class_2561.method_43470("Fleeing is disabled for this raid.").method_27692(class_124.field_1061));
+            player.sendSystemMessage(Component.literal("Fleeing is disabled for this raid.").withStyle(ChatFormatting.RED));
             BattleActor actor = battle.getActor(player);
             if (actor != null && actor.getRequest() != null) {
                 actor.sendUpdate(new BattleQueueRequestPacket(actor.getRequest()));
@@ -79,7 +79,7 @@ public abstract class RaidBattleSelectActionsMixin {
     private static void cobbleRaids$fillMissingBossTargets(BattleSelectActionsPacket packet,
                                                             PokemonBattle battle,
                                                             RaidSession raid,
-                                                            class_3222 player) {
+                                                            ServerPlayer player) {
         BattleActor playerActor = battle.getActor(player);
         BattleActor bossActor = battle.getActor(raid.getBossActorId());
         if (playerActor == null || bossActor == null) return;
