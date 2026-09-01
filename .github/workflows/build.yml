@@ -16,7 +16,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Reconstruct verified base and apply Phase 17/18/19/20/21/22/23 corrections
+      - name: Reconstruct verified base and apply Phase 17/18/19/20/21/22/23/24 corrections
         shell: bash
         run: |
           cat ci-bundle/minpart_*.b64 | base64 --decode > phase16-minimal.tar.gz
@@ -27,7 +27,7 @@ jobs:
 
           sed -i 's/RepositoriesMode.PREFER_SETTINGS/RepositoriesMode.PREFER_PROJECT/' settings.gradle
           sed -i "s/id 'fabric-loom' version '1.11-SNAPSHOT'/id 'fabric-loom' version '1.13-SNAPSHOT'/" build.gradle
-          sed -i "s/version = '0.8.0-phase16-ci'/version = '0.8.7-phase23-instructionfix'/" build.gradle
+          sed -i "s/version = '0.8.0-phase16-ci'/version = '0.8.8-phase24-targetfix'/" build.gradle
 
           cp ci-overlays/phase17/RaidBattleType.java src/main/java/com/cobbleraids/battle/RaidBattleType.java
           cp ci-overlays/phase17/ShowdownResourceLoaderMixin.java src/main/java/com/cobbleraids/showdown/ShowdownResourceLoaderMixin.java
@@ -80,7 +80,11 @@ jobs:
           p.write_text(json.dumps(data, indent=2) + '\n')
           PY
 
-          grep "0.8.7-phase23-instructionfix" build.gradle
+          # Phase 24: resolve omitted client move targets to the boss only when Cobblemon itself
+          # considers the boss legal for that move.
+          cp ci-overlays/phase24/RaidBattleSelectActionsMixin.java src/main/java/com/cobbleraids/mixin/battle/RaidBattleSelectActionsMixin.java
+
+          grep "0.8.8-phase24-targetfix" build.gradle
           grep 'Commands.argument("pokemon", StringArgumentType.word())' src/main/java/com/cobbleraids/command/RaidAdminCommand.java
           grep 'definition.species().getPath().equalsIgnoreCase(pokemonName)' src/main/java/com/cobbleraids/command/RaidAdminSpawnOps.java
           grep 'PokemonSpecies.getByName(definition.species().getPath())' src/main/java/com/cobbleraids/spawn/RaidBossSpawner.java
@@ -96,6 +100,9 @@ jobs:
           grep 'new RaidDamageInstruction(null, message, message)' src/main/java/com/cobbleraids/showdown/RaidInstructionRegistrar.java
           grep 'new RaidHealInstruction(null, message, message)' src/main/java/com/cobbleraids/showdown/RaidInstructionRegistrar.java
           grep 'registerSplitInstructionParser("-raiddamage"' src/main/java/com/cobbleraids/showdown/RaidInstructionRegistrar.java
+          grep 'cobbleRaids$fillMissingBossTargets' src/main/java/com/cobbleraids/mixin/battle/RaidBattleSelectActionsMixin.java
+          grep 'legalTargets.contains(boss)' src/main/java/com/cobbleraids/mixin/battle/RaidBattleSelectActionsMixin.java
+          grep 'move.setTargetPnx(boss.getPNX())' src/main/java/com/cobbleraids/mixin/battle/RaidBattleSelectActionsMixin.java
           grep 'RaidLifecycleCoordinator.abort' src/main/java/com/cobbleraids/command/RaidAdminBossOps.java
           grep 'ContributionMath.percentages' src/main/java/com/cobbleraids/command/RaidAdminDebugOps.java
           grep 'cancelForBoss' src/main/java/com/cobbleraids/lobby/RaidLobbyManager.java
@@ -120,7 +127,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: cobbleraids-phase23-build
+          name: cobbleraids-phase24-build
           path: |
             build/libs/*.jar
             build/reports/**
