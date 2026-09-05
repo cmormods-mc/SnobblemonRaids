@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.1.0-phase1'
+version = '0.2.0-phase2'
 group = 'com.cmormods.rankstacklimits'
 
 base {
@@ -23,6 +23,8 @@ dependencies {
 
     // LuckPerms is provided by the server at runtime; do not bundle it.
     compileOnly 'net.luckperms:api:5.4'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
 }
 
 java {
@@ -30,6 +32,10 @@ java {
         languageVersion = JavaLanguageVersion.of(21)
     }
     withSourcesJar()
+}
+
+test {
+    useJUnitPlatform()
 }
 
 processResources {
