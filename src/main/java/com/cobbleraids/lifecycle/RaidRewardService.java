@@ -53,13 +53,17 @@ public final class RaidRewardService {
 
     /** Called from END_SERVER_TICK so the battle-end screen packet is processed before the reward chest opens. */
     public static void tick(MinecraftServer server) {
-        for (Map.Entry<UUID, Integer> entry : new ArrayList<>(OPEN_DELAY.entrySet())) {
+        // OPEN_DELAY is empty on almost every tick (only populated for ~2 ticks after a victory), so
+        // skip the ConcurrentHashMap iteration entirely rather than paying for it 20x/second at idle.
+        if (OPEN_DELAY.isEmpty()) return;
+        for (Iterator<Map.Entry<UUID, Integer>> it = OPEN_DELAY.entrySet().iterator(); it.hasNext(); ) {
+            Map.Entry<UUID, Integer> entry = it.next();
             int remaining = entry.getValue() - 1;
             if (remaining > 0) {
-                OPEN_DELAY.put(entry.getKey(), remaining);
+                entry.setValue(remaining);
                 continue;
             }
-            OPEN_DELAY.remove(entry.getKey());
+            it.remove();
             ServerPlayer player = server.getPlayerList().getPlayer(entry.getKey());
             if (player != null) openCurrent(player);
         }
