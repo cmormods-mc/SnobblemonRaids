@@ -12,11 +12,14 @@ Conditions.raidboss = {
     if (source) this.add('-raiddamage', target, damage, source);
     else this.add('-raiddamage', target, damage);
     return 0;
-  },
-  onTryHeal(damage, target, source, effect) {
-    if (target?.side?.battle?.gameType !== 'raid') return damage;
-    if (damage) this.add('-raidheal', target, damage);
-    return 0;
   }
+  // No onTryHeal here. It used to report -raidheal and return 0, which made
+  // Battle#heal answer "healed nothing" to its callers: moves that test the result
+  // (Synthesis, Morning Sun, Moonlight, Shore Up) then logged `-fail <boss> heal`
+  // even though the pool had just been topped up, and moves carrying a `heal:`
+  // property never reached the event at all because BattleActions#runMoveEffects
+  // calls Pokemon#heal directly. Boss healing is now owned by raid-patch.js, which
+  // overrides Battle#heal and Pokemon#heal, so the TryHeal event stays vanilla and
+  // effects that legitimately cancel healing (Heal Block, Liquid Ooze) keep working.
 };
 module.exports = {Conditions};

@@ -1,6 +1,7 @@
 'use strict';
 
 const {Battle} = require('./sim/battle');
+const {BattleActions} = require('./sim/battle-actions');
 const {Side} = require('./sim/side');
 const {Pokemon} = require('./sim/pokemon');
 
@@ -32,16 +33,119 @@ const isActivePlayerSide = side => isPlayerSide(side) && !side.raidWithdrawn && 
 const oldAdd = Battle.prototype.add;
 Battle.prototype.add = function(...parts) {
   const target = parts[1];
-  if (
-    isRaid(this) &&
-    parts[0] === '-damage' &&
-    isBossSide(target?.side) &&
-    target.__cobbleRaidsSuppressVanillaDamageLog
-  ) {
-    delete target.__cobbleRaidsSuppressVanillaDamageLog;
-    return;
+  if (isRaid(this) && isBossSide(target?.side)) {
+    if (parts[0] === '-damage' && target.__cobbleRaidsSuppressVanillaDamageLog) {
+      delete target.__cobbleRaidsSuppressVanillaDamageLog;
+      return;
+    }
+    // Every vanilla -heal line about the boss carries the pinned simulator health
+    // string (100/100 while the raid pool may be nearly empty) and would overwrite
+    // the shared raid bar on every client. -raidheal below is the authoritative one.
+    if (parts[0] === '-heal') return;
   }
   return oldAdd.apply(this, parts);
+};
+
+/**
+ * Raid boss healing.
+ *
+ * Damage against the boss is reported through -raiddamage and then swallowed, so
+ * the simulator keeps the boss pinned at full HP while the authoritative pool
+ * lives in Java (RaidSession). Healing has to travel the same road, and it did
+ * not: Showdown decides whether a heal is allowed by reading simulator HP, which
+ * for the boss always says "already at full". Three vanilla checks refuse the
+ * heal outright — BattleActions#runMoveEffects for moves with a `heal:` property
+ * (Recover, Roost, Slack Off, Milk Drink, Soft-Boiled, Heal Order, Life Dew),
+ * Battle#heal for everything routed through it (drain, Leftovers, Aqua Ring,
+ * terrain, Rest), and per-move `hp === maxhp` guards (Rest, Swallow, Synthesis,
+ * Morning Sun, Moonlight, Shore Up). Each logs `-fail <boss> heal`, which
+ * Cobblemon renders as "<boss>'s HP is full!", and the boss wastes the turn.
+ *
+ * Worse, when the boss does enter a battle below full simulator HP — a wild boss
+ * whose entity health was written down by an earlier raid — the `heal:` path
+ * silently succeeded and emitted a vanilla -heal, pushing every client's raid bar
+ * to 100% without the Java pool ever hearing about it.
+ *
+ * The three hooks below convert boss healing into -raidheal, which the Java
+ * RaidHealInstruction applies to the pool (clamped to the pool maximum) before
+ * pushing the true percentage back to clients:
+ *   - Battle#heal    handles residual and effect-driven healing.
+ *   - Pokemon#heal   handles the direct call runMoveEffects makes for `heal:` moves.
+ *   - runMove        lends the boss one point of simulated headroom for the
+ *                    duration of a move so the `hp === maxhp` guards stop firing.
+ * Healing is applied in the same currency as damage: one simulated HP restores one
+ * point of the raid pool, so a Recover undoes roughly one attack rather than half
+ * of a multi-player health bar.
+ */
+const reportRaidHeal = (battle, target, amount) => {
+  const healed = battle.trunc(amount);
+  if (!healed || isNaN(healed) || healed <= 0) return 0;
+  battle.add('-raidheal', target, healed);
+  return healed;
+};
+
+const oldBattleHeal = Battle.prototype.heal;
+Battle.prototype.heal = function(damage, target = null, source = null, effect = null) {
+  if (this.event) {
+    if (!target) target = this.event.target;
+    if (!source) source = this.event.source;
+    if (!effect) effect = this.effect;
+  }
+  if (!isRaid(this) || !isBossSide(target?.side)) {
+    return oldBattleHeal.call(this, damage, target, source, effect);
+  }
+  if (effect === 'drain') effect = this.dex.conditions.getByID(effect);
+  if (damage && damage <= 1) damage = 1;
+  damage = this.trunc(damage);
+  damage = this.runEvent('TryHeal', target, source, effect, damage);
+  if (!damage) return damage;
+  if (!target.hp) return false;
+  if (!target.isActive) return false;
+  // Deliberately no `target.hp >= target.maxhp` guard: simulated boss HP is pinned,
+  // so RaidSession#heal is the only thing that can decide there is nothing to heal.
+  return reportRaidHeal(this, target, damage);
+};
+
+const oldPokemonHeal = Pokemon.prototype.heal;
+Pokemon.prototype.heal = function(d, source = null, effect = null) {
+  if (!isRaid(this.side) || !isBossSide(this.side)) {
+    return oldPokemonHeal.call(this, d, source, effect);
+  }
+  if (!this.hp) return false;
+  d = this.battle.trunc(d);
+  if (isNaN(d) || d <= 0) return false;
+  // Simulator HP stays pinned; the pool is the real health, so report and move on.
+  return reportRaidHeal(this.battle, this, d);
+};
+
+const RAID_BOSS_HEAL_HEADROOM = 1;
+const lendRaidBossHealHeadroom = battle => {
+  const boss = bossSide(battle);
+  const lent = [];
+  if (!boss) return lent;
+  for (const pokemon of boss.active) {
+    if (!pokemon || pokemon.fainted || pokemon.hp <= 0 || pokemon.hp < pokemon.maxhp) continue;
+    if (pokemon.maxhp <= RAID_BOSS_HEAL_HEADROOM) continue;
+    pokemon.hp = pokemon.maxhp - RAID_BOSS_HEAL_HEADROOM;
+    lent.push(pokemon);
+  }
+  return lent;
+};
+const repinRaidBoss = lent => {
+  for (const pokemon of lent) if (!pokemon.fainted) pokemon.hp = pokemon.maxhp;
+};
+
+const oldRunMove = BattleActions.prototype.runMove;
+BattleActions.prototype.runMove = function(...args) {
+  if (!isRaid(this.battle)) return oldRunMove.apply(this, args);
+  const lent = lendRaidBossHealHeadroom(this.battle);
+  try {
+    return oldRunMove.apply(this, args);
+  } finally {
+    // Also re-pins after any effect that writes boss HP directly and bypasses the
+    // Damage event entirely (Curse, Belly Drum, Substitute, Pain Split).
+    repinRaidBoss(lent);
+  }
 };
 
 function refreshOpponentAnchors(battle) {

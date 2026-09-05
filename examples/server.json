@@ -10,7 +10,7 @@
     "max_distance_from_player": 64.0,
     "min_distance_between_raids": 128.0,
     "location_attempts": 16,
-    "despawn_player_radius": 64.0,
+    "despawn_player_radius": 32.0,
     "default_despawn_seconds": 600,
     "default_definition_cooldown_seconds": 1800,
     "tier_weights": {
