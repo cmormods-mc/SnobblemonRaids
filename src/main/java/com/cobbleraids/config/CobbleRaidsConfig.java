@@ -9,6 +9,7 @@ public record CobbleRaidsConfig(
         RecruitmentDefaults recruitmentDefaults,
         CombatDefaults combatDefaults,
         TierScaling tierScaling,
+        BossGlow bossGlow,
         boolean debugLogging
 ) {
     public static final int VALIDATED_MAX_HUMAN_PLAYERS = 4;
@@ -139,6 +140,18 @@ public record CobbleRaidsConfig(
         }
     }
 
+    /** Lets players spot a raid boss through terrain from a distance, tinted per rarity tier. */
+    public record BossGlow(boolean enabled, double radiusBlocks) {
+        public BossGlow {
+            if (radiusBlocks < 1.0 || radiusBlocks > 512.0)
+                throw new IllegalArgumentException("boss_glow.radius_blocks must be 1..512");
+        }
+
+        public static BossGlow defaults() {
+            return new BossGlow(true, 48.0);
+        }
+    }
+
     public record TierMultipliers(double health, double timeLimit, double reward) {
         public TierMultipliers {
             if (health < 0.1 || health > 10.0)
@@ -172,6 +185,7 @@ public record CobbleRaidsConfig(
                 new RecruitmentDefaults(45, 10.0, VALIDATED_MAX_HUMAN_PLAYERS),
                 new CombatDefaults(900, false),
                 TierScaling.defaults(),
+                BossGlow.defaults(),
                 false
         );
     }
@@ -234,7 +248,14 @@ public record CobbleRaidsConfig(
                 readTierMultipliers(tierScalingObject, "mythical", ts.mythical())
         );
 
-        return new CobbleRaidsConfig(naturalSpawning, recruitmentDefaults, combatDefaults, tierScaling,
+        JsonObject bossGlowObject = object(root, "boss_glow");
+        BossGlow bg = defaults.bossGlow();
+        BossGlow bossGlow = new BossGlow(
+                bool(bossGlowObject, "enabled", bg.enabled()),
+                decimal(bossGlowObject, "radius_blocks", bg.radiusBlocks())
+        );
+
+        return new CobbleRaidsConfig(naturalSpawning, recruitmentDefaults, combatDefaults, tierScaling, bossGlow,
                 bool(root, "debug_logging", defaults.debugLogging()));
     }
 
@@ -290,6 +311,11 @@ public record CobbleRaidsConfig(
         tierScalingObject.add("legendary", tierMultipliersJson(tierScaling.legendary()));
         tierScalingObject.add("mythical", tierMultipliersJson(tierScaling.mythical()));
         root.add("tier_scaling", tierScalingObject);
+
+        JsonObject bossGlowObject = new JsonObject();
+        bossGlowObject.addProperty("enabled", bossGlow.enabled());
+        bossGlowObject.addProperty("radius_blocks", bossGlow.radiusBlocks());
+        root.add("boss_glow", bossGlowObject);
 
         root.addProperty("debug_logging", debugLogging);
         return root;

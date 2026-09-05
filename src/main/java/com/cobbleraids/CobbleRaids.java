@@ -8,6 +8,7 @@ import com.cobbleraids.lifecycle.RaidBattleEventCoordinator;
 import com.cobbleraids.lifecycle.RaidCombatRuleService;
 import com.cobbleraids.lifecycle.RaidRewardService;
 import com.cobbleraids.lobby.RaidLobbyManager;
+import com.cobbleraids.presentation.RaidBossGlowService;
 import com.cobbleraids.reward.RaidRewardCommand;
 import com.cobbleraids.reward.RaidRewardGuiInstaller;
 import com.cobbleraids.showdown.RaidInstructionRegistrar;
@@ -40,6 +41,7 @@ public final class CobbleRaids implements ModInitializer {
             RaidSpawnScheduler.tick(server);
             RaidRewardService.tick(server);
             RaidCombatRuleService.tick(server);
+            RaidBossGlowService.tick(server);
         });
         ServerLifecycleEvents.START_DATA_PACK_RELOAD.register((server, resources) -> CobbleRaidsConfigManager.reload());
         ServerLifecycleEvents.SERVER_STARTING.register(server -> RaidRewardGuiInstaller.ensureInstalledAndLoaded());
