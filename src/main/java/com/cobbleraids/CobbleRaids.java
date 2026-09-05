@@ -13,7 +13,7 @@ import com.cobbleraids.reward.RaidRewardGuiInstaller;
 import com.cobbleraids.showdown.RaidInstructionRegistrar;
 import com.cobbleraids.spawn.RaidSpawnScheduler;
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.entity.event.v1.ServerEntityEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
