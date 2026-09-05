@@ -102,12 +102,27 @@ public final class RaidSpawnScheduler {
     private static void attemptForPlayer(ServerPlayer player, CobbleRaidsConfig.NaturalSpawning config) {
         ServerLevel level = (ServerLevel) player.level();
         ResourceLocation dimensionId = level.dimension().location();
-        if (activeInDimension(dimensionId) >= config.maxActiveRaidsPerDimension()) return;
+        String playerName = player.getGameProfile().getName();
+
+        if (activeInDimension(dimensionId) >= config.maxActiveRaidsPerDimension()) {
+            RaidSpawnHistory.record(schedulerTick, playerName, dimensionId, RaidSpawnHistory.Outcome.PER_DIMENSION_CAP,
+                    activeInDimension(dimensionId) + "/" + config.maxActiveRaidsPerDimension() + " active in dimension");
+            return;
+        }
 
         Optional<BlockPos> position = RaidSpawnPositionFinder.findLand(level, player, config);
-        if (position.isEmpty()) return;
+        if (position.isEmpty()) {
+            RaidSpawnHistory.record(schedulerTick, playerName, dimensionId, RaidSpawnHistory.Outcome.NO_VALID_TERRAIN,
+                    "no valid surface position found in " + config.locationAttempts() + " attempts");
+            return;
+        }
         BlockPos pos = position.get();
-        if (isTooCloseToAnotherRaid(level, pos, config.minDistanceBetweenRaids())) return;
+        if (isTooCloseToAnotherRaid(level, pos, config.minDistanceBetweenRaids())) {
+            RaidSpawnHistory.record(schedulerTick, playerName, dimensionId, RaidSpawnHistory.Outcome.TOO_CLOSE_TO_EXISTING,
+                    "candidate " + pos.toShortString() + " within " + config.minDistanceBetweenRaids()
+                            + " blocks of an active raid");
+            return;
+        }
 
         Holder<Biome> biomeHolder = level.getBiome(pos);
         ResourceLocation biomeId = biomeHolder.unwrapKey().map(key -> key.location()).orElse(null);
@@ -118,7 +133,11 @@ public final class RaidSpawnScheduler {
                 .filter(RaidSpawnScheduler::offCooldown)
                 .filter(RaidSpawnScheduler::belowDefinitionCap)
                 .toList();
-        if (eligible.isEmpty()) return;
+        if (eligible.isEmpty()) {
+            RaidSpawnHistory.record(schedulerTick, playerName, dimensionId, RaidSpawnHistory.Outcome.NO_ELIGIBLE_DEFINITIONS,
+                    "no definition matched biome=" + biomeId + " and was off cooldown/below its concurrent cap");
+            return;
+        }
 
         RaidDefinition selected = RaidTierSelector.select(
                 eligible,
@@ -127,7 +146,15 @@ public final class RaidSpawnScheduler {
                 config.tierWeights(),
                 ThreadLocalRandom.current()
         );
-        if (selected != null) spawnTracked(level, pos, biomeId, dimensionId, selected);
+        if (selected == null) {
+            RaidSpawnHistory.record(schedulerTick, playerName, dimensionId, RaidSpawnHistory.Outcome.TIER_SELECTION_FAILED,
+                    eligible.size() + " eligible definition(s) but tier selection returned none");
+            return;
+        }
+
+        spawnTracked(level, pos, biomeId, dimensionId, selected);
+        RaidSpawnHistory.record(schedulerTick, playerName, dimensionId, RaidSpawnHistory.Outcome.SUCCESS,
+                selected.id() + " (" + selected.rarityTier().serializedName() + ")");
     }
 
     private static PokemonEntity spawnTracked(
@@ -545,5 +572,10 @@ public final class RaidSpawnScheduler {
      */
     public static void forget(UUID bossId) {
         ACTIVE.remove(bossId);
+    }
+
+    /** Clears one definition's natural-spawn cooldown early. Returns false if it wasn't on cooldown. */
+    public static boolean resetCooldown(ResourceLocation definitionId) {
+        return NEXT_ALLOWED_TICK.remove(definitionId) != null;
     }
 }

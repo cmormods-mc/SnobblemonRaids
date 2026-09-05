@@ -1,5 +1,7 @@
 package com.cobbleraids.command;
 
+import com.cobbleraids.config.CobbleRaidsConfig;
+import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.config.RaidDefinitionRegistry;
 import com.cobbleraids.lobby.RaidLobby;
 import com.cobbleraids.lobby.RaidLobbyManager;
@@ -7,6 +9,7 @@ import com.cobbleraids.raid.RaidRegistry;
 import com.cobbleraids.raid.RaidSession;
 import com.cobbleraids.reward.ContributionMath;
 import com.cobbleraids.spawn.RaidBossEntityMarker;
+import com.cobbleraids.spawn.RaidSpawnHistory;
 import com.cobbleraids.spawn.RaidSpawnScheduler;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import java.util.Comparator;
@@ -84,5 +87,53 @@ final class RaidAdminDebugOps {
 
     private static String pos(PokemonEntity boss) {
         return String.format(Locale.ROOT, "%.1f %.1f %.1f", boss.getX(), boss.getY(), boss.getZ());
+    }
+
+    static int history(CommandSourceStack source) {
+        List<RaidSpawnHistory.Entry> entries = RaidSpawnHistory.recent();
+        if (entries.isEmpty()) {
+            source.sendSuccess(() -> Component.literal("No recorded natural-spawn attempts yet.")
+                    .withStyle(ChatFormatting.YELLOW), false);
+            return 0;
+        }
+        source.sendSuccess(() -> Component.literal("Recent natural-spawn attempts (" + entries.size() + ", oldest first):")
+                .withStyle(ChatFormatting.GOLD), false);
+        for (RaidSpawnHistory.Entry entry : entries) {
+            ChatFormatting color = entry.outcome() == RaidSpawnHistory.Outcome.SUCCESS
+                    ? ChatFormatting.GREEN : ChatFormatting.RED;
+            source.sendSuccess(() -> Component.literal(String.format(Locale.ROOT, " - [%.1fs] %s @ %s -> %s: %s",
+                    entry.tick() / 20.0, entry.player(), entry.dimension(), entry.outcome(), entry.detail()))
+                    .withStyle(color), false);
+        }
+        return entries.size();
+    }
+
+    static int config(CommandSourceStack source) {
+        CobbleRaidsConfig config = CobbleRaidsConfigManager.get();
+        CobbleRaidsConfig.NaturalSpawning ns = config.naturalSpawning();
+        source.sendSuccess(() -> Component.literal("CobbleRaids config (" + CobbleRaidsConfigManager.path() + "):")
+                .withStyle(ChatFormatting.GOLD), false);
+        source.sendSuccess(() -> Component.literal(" natural_spawning: enabled=" + ns.enabled()
+                + " checkIntervalTicks=" + ns.checkIntervalTicks()
+                + " spawnAttemptChance=" + ns.spawnAttemptChance()
+                + " attemptsPerCheck=" + ns.attemptsPerCheck()), false);
+        source.sendSuccess(() -> Component.literal("   maxActiveRaids=" + ns.maxActiveRaids()
+                + " maxActiveRaidsPerDimension=" + ns.maxActiveRaidsPerDimension()
+                + " minDistanceBetweenRaids=" + ns.minDistanceBetweenRaids()), false);
+        source.sendSuccess(() -> Component.literal("   playerDistance=" + ns.minDistanceFromPlayer() + ".."
+                + ns.maxDistanceFromPlayer()
+                + " locationAttempts=" + ns.locationAttempts()
+                + " despawnPlayerRadius=" + ns.despawnPlayerRadius()), false);
+        source.sendSuccess(() -> Component.literal("   defaultDespawnSeconds=" + ns.defaultDespawnSeconds()
+                + " defaultDefinitionCooldownSeconds=" + ns.defaultDefinitionCooldownSeconds()
+                + " announcementPrecision=" + ns.announcementPrecision().serializedName()), false);
+        source.sendSuccess(() -> Component.literal(" recruitment_defaults: duration="
+                + config.recruitmentDefaults().durationSeconds() + "s radius=" + config.recruitmentDefaults().radius()
+                + " maxPlayers=" + config.recruitmentDefaults().maxPlayers()), false);
+        source.sendSuccess(() -> Component.literal(" combat_defaults: timeLimit="
+                + config.combatDefaults().timeLimitSeconds() + "s allowFlee=" + config.combatDefaults().allowFlee()), false);
+        source.sendSuccess(() -> Component.literal(" tier_scaling: enabled=" + config.tierScaling().enabled()), false);
+        source.sendSuccess(() -> Component.literal(" debug_logging=" + config.debugLogging()), false);
+        return 1;
     }
 }

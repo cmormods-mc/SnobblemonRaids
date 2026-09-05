@@ -4,6 +4,8 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.cobbleraids.spawn.RaidSpawnScheduler;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.commands.arguments.ResourceLocationArgument;
 import net.minecraft.commands.arguments.coordinates.Vec3Argument;
 
 /** Operator-facing command tree. Implementation is split into small testable command services. */
@@ -41,12 +43,34 @@ public final class RaidAdminCommand {
                                 .executes(ctx -> RaidAdminBossOps.despawnNearest(ctx.getSource()))
                                 .then(Commands.literal("all")
                                         .executes(ctx -> RaidAdminBossOps.despawnAll(ctx.getSource()))))
+                        .then(Commands.literal("reload")
+                                .requires(source -> source.hasPermission(ADMIN_PERMISSION_LEVEL))
+                                .executes(ctx -> RaidAdminConfigOps.reload(ctx.getSource())))
+                        .then(Commands.literal("cooldown")
+                                .requires(source -> source.hasPermission(ADMIN_PERMISSION_LEVEL))
+                                .then(Commands.literal("reset")
+                                        .then(Commands.argument("definition", ResourceLocationArgument.id())
+                                                .executes(ctx -> RaidAdminSpawnOps.resetCooldown(
+                                                        ctx.getSource(), ResourceLocationArgument.getId(ctx, "definition"))))))
+                        .then(Commands.literal("reward")
+                                .requires(source -> source.hasPermission(ADMIN_PERMISSION_LEVEL))
+                                .then(Commands.literal("grant")
+                                        .then(Commands.argument("target", EntityArgument.player())
+                                                .then(Commands.argument("definition", ResourceLocationArgument.id())
+                                                        .executes(ctx -> RaidAdminRewardOps.grant(
+                                                                ctx.getSource(),
+                                                                EntityArgument.getPlayer(ctx, "target"),
+                                                                ResourceLocationArgument.getId(ctx, "definition")))))))
                         .then(Commands.literal("debug")
                                 .requires(source -> source.hasPermission(ADMIN_PERMISSION_LEVEL))
                                 .then(Commands.literal("status")
                                         .executes(ctx -> RaidAdminDebugOps.status(ctx.getSource())))
                                 .then(Commands.literal("raids")
-                                        .executes(ctx -> RaidAdminDebugOps.raids(ctx.getSource()))))
+                                        .executes(ctx -> RaidAdminDebugOps.raids(ctx.getSource())))
+                                .then(Commands.literal("history")
+                                        .executes(ctx -> RaidAdminDebugOps.history(ctx.getSource())))
+                                .then(Commands.literal("config")
+                                        .executes(ctx -> RaidAdminDebugOps.config(ctx.getSource()))))
         ));
     }
 }
