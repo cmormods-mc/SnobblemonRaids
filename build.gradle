@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.17-phase32-raid-integrity'
+version = '0.8.18-phase33-raid-integration'
 group = 'com.cobbleraids'
 
 base {
