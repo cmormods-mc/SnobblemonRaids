@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "package": "com.cobbleraids.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "showdown.ShowdownResourceLoaderMixin",
+    "battle.RaidBattleRegistryMixin",
+    "battle.RaidBattleSelectActionsMixin",
+    "battle.RaidMoveActionResponseMixin",
+    "battle.RaidPokemonBattleMixin",
+    "battle.RaidPlayerBattleActorMixin",
+    "battle.RaidActiveBattlePokemonMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

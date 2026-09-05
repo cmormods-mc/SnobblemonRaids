@@ -1,0 +1,103 @@
+{
+  "species": "cobblemon:manaphy",
+  "level": 100,
+  "base_health": 3500,
+  "spawn": {
+    "enabled": true,
+    "weight": 1,
+    "dimensions": [
+      "minecraft:overworld"
+    ],
+    "biome_tags": [
+      "cobbleraids:raid_types/water"
+    ],
+    "times": [
+      "all_day"
+    ],
+    "cooldown_seconds": 1800,
+    "despawn_seconds": 600,
+    "max_concurrent": 1
+  },
+  "recruitment": {
+    "duration_seconds": 45,
+    "radius": 10.0,
+    "max_players": 4
+  },
+  "scaling": {
+    "health_per_extra_player": 0.65
+  },
+  "time_limit_seconds": 900,
+  "allow_flee": false,
+  "rewards": {
+    "gui_id": "cobbleraids_reward",
+    "choices": {
+      "candy": {
+        "items": [
+          {
+            "item": "cobblemon:rare_candy",
+            "amount": 5
+          }
+        ]
+      },
+      "balls": {
+        "items": [
+          {
+            "item": "cobblemon:ultra_ball",
+            "amount": 8
+          }
+        ]
+      },
+      "gamble": {
+        "items": [
+          {
+            "item": "cobblemon:great_ball",
+            "amount": 5
+          }
+        ],
+        "chance_items": [
+          {
+            "item": "cobblemon:master_ball",
+            "amount": 1,
+            "chance": 0.05
+          }
+        ]
+      }
+    },
+    "contribution_bonus": {
+      "enabled": true,
+      "tiers": [
+        {
+          "min_percentage": 20.0,
+          "bonus_rolls": 1
+        },
+        {
+          "min_percentage": 35.0,
+          "bonus_rolls": 2
+        },
+        {
+          "min_percentage": 50.0,
+          "bonus_rolls": 3
+        }
+      ],
+      "pool": [
+        {
+          "item": "cobblemon:rare_candy",
+          "amount": 1,
+          "weight": 50
+        },
+        {
+          "item": "cobblemon:ultra_ball",
+          "amount": 3,
+          "weight": 35
+        },
+        {
+          "item": "cobblemon:exp_candy_l",
+          "amount": 1,
+          "weight": 15
+        }
+      ]
+    },
+    "loot_tables": []
+  },
+  "rarity_tier": "mythical"
+}
