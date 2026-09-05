@@ -67,6 +67,9 @@ public final class RaidLobbyManager {
     }
 
     public static void tick(MinecraftServer server) {
+        // Empty on almost every tick outside an active recruitment window; skip the defensive
+        // copy entirely rather than allocating one 20x/second at idle.
+        if (BY_BOSS.isEmpty()) return;
         for (RaidLobby lobby : List.copyOf(BY_BOSS.values())) {
             if (lobby.status() != RaidLobby.Status.RECRUITING) continue;
             PokemonEntity boss = lobby.boss();

@@ -16,6 +16,9 @@ public final class RaidCombatRuleService {
     private RaidCombatRuleService() {}
 
     public static void tick(MinecraftServer server) {
+        // Empty whenever no raid battle is currently active; skip the defensive copy in all()
+        // entirely rather than allocating one 20x/second at idle.
+        if (RaidRegistry.isEmpty()) return;
         for (RaidSession raid : RaidRegistry.all()) {
             if (raid.getStatus() != RaidSession.Status.ACTIVE || !raid.isTimed()) continue;
             boolean expired = raid.tickCombatTimer();
