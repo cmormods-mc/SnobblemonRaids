@@ -16,7 +16,7 @@ permissions:
   contents: read
 
 jobs:
-  phase1:
+  build:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     defaults:
@@ -40,7 +40,10 @@ jobs:
       - name: Validate Phase 1 structure
         run: python3 validation/validate_phase1.py
 
-      - name: Compile and remap
+      - name: Validate Phase 2 config and LuckPerms resolution
+        run: python3 validation/validate_phase2.py
+
+      - name: Compile, test, and remap
         run: gradle --no-daemon clean build --stacktrace --warning-mode all
 
       - name: Validate runtime JAR exists
@@ -49,6 +52,7 @@ jobs:
           jar="build/libs/RankStackLimits-${version}.jar"
           test -f "$jar" || { echo "missing $jar"; ls -la build/libs; exit 1; }
           jar tf "$jar" | grep -q 'com/cmormods/rankstacklimits/RankStackLimits.class'
+          jar tf "$jar" | grep -q 'com/cmormods/rankstacklimits/policy/LuckPermsStackLimitResolver.class'
           if jar tf "$jar" | grep -Eiq 'item.?components|owo'; then
             echo 'Unexpected Item Components/owo content found in runtime JAR'
             exit 1
@@ -58,7 +62,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: rank-stack-limits-phase1
+          name: rank-stack-limits-build
           path: |
             rank-stack-limits/build/libs/*.jar
             rank-stack-limits/build/reports/**
