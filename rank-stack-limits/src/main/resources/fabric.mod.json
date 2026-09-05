@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "rankstacklimits",
+  "version": "${version}",
+  "name": "Rank Stack Limits",
+  "description": "LuckPerms-driven per-player stack limits for Fabric 1.21.1.",
+  "authors": ["CMorMods"],
+  "environment": "server",
+  "entrypoints": {
+    "main": [
+      "com.cmormods.rankstacklimits.RankStackLimits"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.17.2",
+    "minecraft": "1.21.1",
+    "java": ">=21",
+    "fabric-api": "*",
+    "luckperms": ">=5.4"
+  }
+}
