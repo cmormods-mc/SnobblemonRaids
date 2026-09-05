@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "cobbleraids",
+  "version": "${version}",
+  "name": "CobbleRaids",
+  "description": "Wild cooperative multi-member raid bosses for Cobblemon.",
+  "authors": ["CobbleRaids"],
+  "environment": "*",
+  "entrypoints": {"main": ["com.cobbleraids.CobbleRaids"]},
+  "mixins": ["mixins/cobbleraids.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.17.2",
+    "fabric-api": ">=0.116.6+1.21.1",
+    "minecraft": "1.21.1",
+    "java": ">=21",
+    "cobblemon": "1.7.3",
+    "skiesguis": "1.8.1"
+  }
+}
