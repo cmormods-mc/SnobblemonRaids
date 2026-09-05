@@ -1,0 +1,65 @@
+name: Rank Stack Limits Build
+
+on:
+  push:
+    branches: [rank-stack-limits-v1]
+    paths:
+      - 'rank-stack-limits/**'
+      - '.github/workflows/rank-stack-limits.yml'
+  pull_request:
+    paths:
+      - 'rank-stack-limits/**'
+      - '.github/workflows/rank-stack-limits.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  phase1:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: rank-stack-limits
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14.3'
+
+      - name: Validate Phase 1 structure
+        run: python3 validation/validate_phase1.py
+
+      - name: Compile and remap
+        run: gradle --no-daemon clean build --stacktrace --warning-mode all
+
+      - name: Validate runtime JAR exists
+        run: |
+          version=$(sed -n "s/^version = '\(.*\)'$/\1/p" build.gradle)
+          jar="build/libs/RankStackLimits-${version}.jar"
+          test -f "$jar" || { echo "missing $jar"; ls -la build/libs; exit 1; }
+          jar tf "$jar" | grep -q 'com/cmormods/rankstacklimits/RankStackLimits.class'
+          if jar tf "$jar" | grep -Eiq 'item.?components|owo'; then
+            echo 'Unexpected Item Components/owo content found in runtime JAR'
+            exit 1
+          fi
+
+      - name: Upload build outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rank-stack-limits-phase1
+          path: |
+            rank-stack-limits/build/libs/*.jar
+            rank-stack-limits/build/reports/**
+          if-no-files-found: warn
