@@ -133,6 +133,8 @@ final class RaidAdminDebugOps {
         source.sendSuccess(() -> Component.literal(" combat_defaults: timeLimit="
                 + config.combatDefaults().timeLimitSeconds() + "s allowFlee=" + config.combatDefaults().allowFlee()), false);
         source.sendSuccess(() -> Component.literal(" tier_scaling: enabled=" + config.tierScaling().enabled()), false);
+        source.sendSuccess(() -> Component.literal(" boss_glow: enabled=" + config.bossGlow().enabled()
+                + " radiusBlocks=" + config.bossGlow().radiusBlocks()), false);
         source.sendSuccess(() -> Component.literal(" debug_logging=" + config.debugLogging()), false);
         return 1;
     }
