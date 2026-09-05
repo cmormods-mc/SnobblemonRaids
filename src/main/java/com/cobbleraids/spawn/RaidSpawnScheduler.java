@@ -534,4 +534,16 @@ public final class RaidSpawnScheduler {
         purgeRemoved(server);
         return ACTIVE.size();
     }
+
+    /**
+     * Drops a boss from tracking immediately. Admin despawns discard the entity directly rather
+     * than going through maintainTrackedBosses, so without this the entry would otherwise sit in
+     * ACTIVE for up to its full despawn_seconds: still counted against max_active_raids and
+     * max_concurrent, and still blocking nearby spawns via min_distance_between_raids, since both
+     * checks read ACTIVE regardless of whether the tracked boss still resolves. A no-op for a UUID
+     * that was never natural (e.g. an admin-spawned boss), since Map.remove on a missing key is safe.
+     */
+    public static void forget(UUID bossId) {
+        ACTIVE.remove(bossId);
+    }
 }
