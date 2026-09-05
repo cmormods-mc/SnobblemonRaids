@@ -1,0 +1,72 @@
+plugins {
+    id 'fabric-loom' version '1.13.6'
+}
+
+version = '0.8.15-phase31-spawn-director'
+group = 'com.cobbleraids'
+
+base {
+    archivesName = 'CobbleRaids'
+}
+
+repositories {
+    maven { url = 'https://maven.fabricmc.net/' }
+    mavenCentral()
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = 'Modrinth'
+                url = 'https://api.modrinth.com/maven'
+            }
+        }
+        filter { includeGroup 'maven.modrinth' }
+    }
+}
+
+dependencies {
+    minecraft 'com.mojang:minecraft:1.21.1'
+    mappings loom.officialMojangMappings()
+
+    modImplementation 'net.fabricmc:fabric-loader:0.17.2'
+    modImplementation 'net.fabricmc.fabric-api:fabric-api:0.116.6+1.21.1'
+
+    // Exact public releases used by the live-tested runtime builds.
+    modImplementation 'maven.modrinth:MdwFAVRL:kF7CvxTo' // Cobblemon 1.7.3
+    modImplementation 'maven.modrinth:eTmjDQ2A:azTJ3S8C' // SkiesGUIs 1.8.1
+
+    compileOnly 'org.jetbrains.kotlin:kotlin-stdlib:2.2.20'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+    withSourcesJar()
+}
+
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('fabric.mod.json') {
+        expand version: project.version
+    }
+}
+
+sourceSets {
+    bwgCompat {
+        resources.srcDir 'compat/bwg/src/main/resources'
+    }
+}
+
+tasks.register('bwgCompatJar', Jar) {
+    group = 'build'
+    description = 'Builds the optional Oh The Biomes We\'ve Gone compatibility data mod.'
+    dependsOn tasks.named('processBwgCompatResources')
+    archiveBaseName = 'CobbleRaids-BWG-Compat'
+    archiveVersion = '1.0.0'
+    archiveClassifier = ''
+    from sourceSets.bwgCompat.output
+}
+
+tasks.named('build') {
+    dependsOn tasks.named('bwgCompatJar')
+}
