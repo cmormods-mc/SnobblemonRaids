@@ -1,6 +1,7 @@
 package com.cobbleraids.spawn;
 
 import com.cobbleraids.config.RaidDefinition;
+import com.cobbleraids.presentation.RaidTierPresentation;
 import com.cobblemon.mod.common.api.pokemon.PokemonSpecies;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import com.cobblemon.mod.common.pokemon.Pokemon;
@@ -32,9 +33,12 @@ public final class RaidBossSpawner {
 
         PokemonEntity entity = pokemon.sendOut(level, position, null, spawned -> {
             RaidBossEntityMarker.mark(spawned, definition.id());
+            RaidBossEntityMarker.markSpawnTime(spawned, level.getGameTime());
             spawned.setPersistenceRequired();
             spawned.setCountsTowardsSpawnCap(false);
             spawned.setInvulnerable(true);
+            spawned.setCustomName(RaidTierPresentation.styledName(definition.rarityTier(), spawned.getPokemon().getSpecies().getTranslatedName()));
+            spawned.setCustomNameVisible(true);
             return Unit.INSTANCE;
         });
         if (entity == null) throw new IllegalStateException("Cobblemon did not create a PokemonEntity for " + definition.id());
