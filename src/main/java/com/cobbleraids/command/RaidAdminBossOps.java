@@ -5,6 +5,7 @@ import com.cobbleraids.lobby.RaidLobbyManager;
 import com.cobbleraids.raid.RaidRegistry;
 import com.cobbleraids.raid.RaidSession;
 import com.cobbleraids.spawn.RaidBossEntityMarker;
+import com.cobbleraids.spawn.RaidSpawnScheduler;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import java.util.ArrayList;
 import java.util.List;
@@ -54,6 +55,10 @@ final class RaidAdminBossOps {
         if (session != null) { RaidLifecycleCoordinator.abort(session); return; }
         RaidLobbyManager.cancelForBoss(boss);
         if (!boss.isRemoved()) boss.discard();
+        // Drop it from the scheduler's tracking now rather than leaving a stale entry that would
+        // otherwise sit there -- still counted against max_active_raids/max_concurrent and still
+        // blocking nearby spawns via min_distance_between_raids -- until its full despawn timer runs out.
+        RaidSpawnScheduler.forget(boss.getUUID());
     }
 
     static RaidSession sessionForBoss(PokemonEntity boss) {
