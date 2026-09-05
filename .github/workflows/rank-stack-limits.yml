@@ -43,6 +43,9 @@ jobs:
       - name: Validate Phase 2 config and LuckPerms resolution
         run: python3 validation/validate_phase2.py
 
+      - name: Validate Phase 3 downgrade and eligibility safety
+        run: python3 validation/validate_phase3.py
+
       - name: Compile, test, and remap
         run: gradle --no-daemon clean build --stacktrace --warning-mode all
 
@@ -53,6 +56,8 @@ jobs:
           test -f "$jar" || { echo "missing $jar"; ls -la build/libs; exit 1; }
           jar tf "$jar" | grep -q 'com/cmormods/rankstacklimits/RankStackLimits.class'
           jar tf "$jar" | grep -q 'com/cmormods/rankstacklimits/policy/LuckPermsStackLimitResolver.class'
+          jar tf "$jar" | grep -q 'com/cmormods/rankstacklimits/policy/StackRedistributionPlanner.class'
+          jar tf "$jar" | grep -q 'com/cmormods/rankstacklimits/policy/StackEligibilityPolicy.class'
           if jar tf "$jar" | grep -Eiq 'item.?components|owo'; then
             echo 'Unexpected Item Components/owo content found in runtime JAR'
             exit 1
