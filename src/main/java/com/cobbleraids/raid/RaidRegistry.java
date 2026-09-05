@@ -22,6 +22,11 @@ public final class RaidRegistry {
         return List.copyOf(BY_BATTLE.values());
     }
 
+    /** Cheap pre-check so a tick-driven caller can skip the defensive copy in all() when idle. */
+    public static boolean isEmpty() {
+        return BY_BATTLE.isEmpty();
+    }
+
     public static void remove(PokemonBattle battle) {
         if (battle != null) BY_BATTLE.remove(battle.getBattleId());
     }
