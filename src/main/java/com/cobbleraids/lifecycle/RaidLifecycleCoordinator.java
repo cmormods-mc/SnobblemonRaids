@@ -143,6 +143,7 @@ public final class RaidLifecycleCoordinator {
         RaidRewardService.grant(eligibility, ((net.minecraft.server.level.ServerLevel) raid.getBossEntity().level()).getServer());
         RaidRegistry.remove(raid.getBattle());
         cleanupBossEntity(raid);
+        forgetFinalizationState(raid.getId());
     }
 
     /** Used when Cobblemon/Showdown already ended the battle and then emitted BATTLE_VICTORY. */
@@ -151,6 +152,7 @@ public final class RaidLifecycleCoordinator {
         RaidCombatRuleService.forget(raid.getId());
         RaidRegistry.remove(raid.getBattle());
         cleanupBossEntity(raid);
+        forgetFinalizationState(raid.getId());
     }
 
     /** Used for timeout/flee/abort paths where no normal Showdown win packet is guaranteed. */
@@ -165,10 +167,23 @@ public final class RaidLifecycleCoordinator {
         }
         RaidRegistry.remove(battle);
         cleanupBossEntity(raid);
+        forgetFinalizationState(raid.getId());
     }
 
     private static void cleanupBossEntity(RaidSession raid) {
         var boss = raid.getBossEntity();
         if (boss != null && !boss.isRemoved()) boss.discard();
+    }
+
+    /**
+     * FINALIZED/VICTORY_REQUESTED exist only to make re-entrant finalize- and requestVictory calls
+     * idempotent while a raid is still reachable through RaidRegistry. RaidRegistry.remove(battle)
+     * has already run by the time this is called, so the battle can no longer resolve back to this
+     * raid and these guards can never be consulted for its id again -- keeping the entries forever
+     * would just grow both sets by one UUID per raid for the life of the server.
+     */
+    private static void forgetFinalizationState(UUID raidId) {
+        FINALIZED.remove(raidId);
+        VICTORY_REQUESTED.remove(raidId);
     }
 }
