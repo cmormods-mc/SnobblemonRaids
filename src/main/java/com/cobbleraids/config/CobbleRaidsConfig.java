@@ -46,6 +46,15 @@ public record CobbleRaidsConfig(
                 throw new IllegalArgumentException("natural_spawning.location_attempts must be 1..128");
             if (despawnPlayerRadius < 1.0 || despawnPlayerRadius > 512.0)
                 throw new IllegalArgumentException("natural_spawning.despawn_player_radius must be 1..512");
+            // Not fatal, because existing server.json files ship the old equal values and an
+            // upgrade must not refuse to boot. Wild raids are placed between min_distance_from_player
+            // and max_distance_from_player, so a despawn radius at or above that ceiling means every
+            // boss is born inside its own keep-alive bubble and the unattended timer never starts.
+            if (despawnPlayerRadius >= maxDistanceFromPlayer)
+                System.out.println("[CobbleRaids] WARNING: natural_spawning.despawn_player_radius ("
+                        + despawnPlayerRadius + ") is not smaller than natural_spawning.max_distance_from_player ("
+                        + maxDistanceFromPlayer + "), so wild raid bosses spawn already inside the radius that"
+                        + " keeps them alive. Unattended bosses will not despawn until a player leaves that radius.");
             if (defaultDespawnSeconds < 1 || defaultDespawnSeconds > 86_400)
                 throw new IllegalArgumentException("natural_spawning.default_despawn_seconds must be 1..86400");
             if (defaultDefinitionCooldownSeconds < 0 || defaultDefinitionCooldownSeconds > 604_800)
@@ -88,7 +97,7 @@ public record CobbleRaidsConfig(
                         64.0,
                         128.0,
                         16,
-                        64.0,
+                        32.0,
                         600,
                         1800,
                         RaidTierWeights.defaults()

@@ -31,19 +31,26 @@ jobs:
       - name: Validate Phase 31 source and resources
         run: validation/validate_phase31.sh
 
+      - name: Validate Phase 32 raid integrity
+        run: python3 validation/validate_phase32.py
+
       - name: Compile and remap
         run: gradle --no-daemon clean build --stacktrace --warning-mode all
 
       - name: Validate runtime JAR
-        run: >-
-          python3 validation/validate_phase31.py
-          build/libs/CobbleRaids-0.8.15-phase31-spawn-director.jar
+        # Derived from build.gradle so a version bump cannot silently skip JAR validation.
+        run: |
+          version=$(sed -n "s/^version = '\(.*\)'$/\1/p" build.gradle)
+          jar="build/libs/CobbleRaids-${version}.jar"
+          test -f "$jar" || { echo "missing $jar"; ls -la build/libs; exit 1; }
+          python3 validation/validate_phase31.py "$jar"
+          python3 validation/validate_phase32.py "$jar"
 
       - name: Upload build outputs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: cobbleraids-phase31-build
+          name: cobbleraids-phase32-build
           path: |
             build/libs/*.jar
             build/reports/**

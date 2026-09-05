@@ -28,7 +28,7 @@ final class RaidAdminDebugOps {
         int definitions = RaidDefinitionRegistry.all().size();
         int lobbies = RaidLobbyManager.all().size();
         int battles = RaidRegistry.all().size();
-        int natural = RaidSpawnScheduler.activeCount();
+        int natural = RaidSpawnScheduler.activeCount(source.getServer());
         source.sendSuccess(() -> Component.literal("CobbleRaids status: definitions=" + definitions
                 + ", bosses=" + bosses.size() + ", lobbies=" + lobbies + ", battles=" + battles
                 + ", naturalTracked=" + natural).withStyle(ChatFormatting.AQUA), false);

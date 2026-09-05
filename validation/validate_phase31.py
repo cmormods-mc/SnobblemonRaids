@@ -76,11 +76,19 @@ def validate_tree() -> None:
     assert "BattleHealthChangePacket(pnx, ratio, null)" in damage
 
 
+def project_version() -> str:
+    """Read the version from build.gradle so a version bump cannot drift from validation."""
+    for line in (ROOT / "build.gradle").read_text(encoding="utf-8").splitlines():
+        if line.startswith("version = "):
+            return line.split("=", 1)[1].strip().strip("'\"")
+    raise AssertionError("build.gradle has no version assignment")
+
+
 def validate_jar(path: Path) -> None:
     with zipfile.ZipFile(path) as archive:
         names = set(archive.namelist())
         manifest = json.loads(archive.read("fabric.mod.json"))
-        assert manifest["version"] == "0.8.15-phase31-spawn-director"
+        assert manifest["version"] == project_version(), (manifest["version"], project_version())
         assert "biomeswevegone" not in manifest["depends"]
         assert "com/cobbleraids/config/RaidRarityTier.class" in names
         assert "com/cobbleraids/config/RaidTierWeights.class" in names

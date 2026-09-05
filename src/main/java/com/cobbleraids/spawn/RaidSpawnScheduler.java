@@ -24,12 +24,15 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.phys.Vec3;
 
@@ -41,19 +44,31 @@ public final class RaidSpawnScheduler {
     private static final Map<UUID, ActiveSpawn> ACTIVE = new LinkedHashMap<>();
     private static final Map<ResourceLocation, Long> NEXT_ALLOWED_TICK = new HashMap<>();
     private static long schedulerTick;
+    private static boolean spawningTrackedBoss;
 
     private RaidSpawnScheduler() {}
 
+    /**
+     * Phase 32: tracked by UUID and spawn position rather than by a PokemonEntity reference.
+     *
+     * Minecraft marks an entity removed with RemovalReason.UNLOADED_TO_CHUNK when its chunk
+     * unloads, so a cached reference starts answering isRemoved() == true while the boss is still
+     * very much in the world. Holding one made the scheduler drop unattended bosses from tracking
+     * the moment a player walked far enough away for the chunk to unload - which is exactly when
+     * the despawn timer was supposed to start running. The boss then stayed forever, because
+     * RaidBossSpawner marks it setPersistenceRequired(), and its slot against max_active_raids
+     * was quietly released.
+     */
     private record ActiveSpawn(
-            PokemonEntity entity,
             ResourceLocation definitionId,
             ResourceLocation dimension,
+            BlockPos position,
             long spawnedAtTick,
             long lastNearbyPlayerTick,
             int despawnSeconds
     ) {
         ActiveSpawn withLastNearbyPlayerTick(long tick) {
-            return new ActiveSpawn(entity, definitionId, dimension, spawnedAtTick, tick, despawnSeconds);
+            return new ActiveSpawn(definitionId, dimension, position, spawnedAtTick, tick, despawnSeconds);
         }
     }
 
@@ -66,7 +81,7 @@ public final class RaidSpawnScheduler {
         if ((schedulerTick % config.checkIntervalTicks()) != 0L) return;
         if (ThreadLocalRandom.current().nextDouble() > config.spawnAttemptChance()) return;
 
-        purgeRemoved();
+        purgeRemoved(server);
         if (ACTIVE.size() >= config.maxActiveRaids()) return;
 
         List<ServerPlayer> candidates = new ArrayList<>(server.getPlayerList().getPlayers());
@@ -122,12 +137,20 @@ public final class RaidSpawnScheduler {
             ResourceLocation dimensionId,
             RaidDefinition selected
     ) {
-        PokemonEntity entity = RaidBossSpawner.spawnAt(level, Vec3.atBottomCenterOf(pos), selected);
+        PokemonEntity entity;
+        // onNaturalBossLoaded fires while the entity joins the level, before it can be marked and
+        // tracked here. Suppress the orphan sweep for the duration of our own spawn.
+        spawningTrackedBoss = true;
+        try {
+            entity = RaidBossSpawner.spawnAt(level, Vec3.atBottomCenterOf(pos), selected);
+        } finally {
+            spawningTrackedBoss = false;
+        }
         RaidBossEntityMarker.markNatural(entity);
         ActiveSpawn tracked = new ActiveSpawn(
-                entity,
                 selected.id(),
                 dimensionId,
+                pos,
                 schedulerTick,
                 schedulerTick,
                 selected.spawn().despawnSeconds()
@@ -208,7 +231,7 @@ public final class RaidSpawnScheduler {
             return 0;
         }
 
-        purgeRemoved();
+        purgeRemoved(source.getServer());
         ServerLevel level = source.getLevel();
         BlockPos pos = player.blockPosition();
         Holder<Biome> biomeHolder = level.getBiome(pos);
@@ -282,7 +305,7 @@ public final class RaidSpawnScheduler {
             return 0;
         }
 
-        purgeRemoved();
+        purgeRemoved(source.getServer());
         ServerLevel level = source.getLevel();
         ResourceLocation dimensionId = level.dimension().location();
         if (ACTIVE.size() >= config.maxActiveRaids()
@@ -371,11 +394,13 @@ public final class RaidSpawnScheduler {
 
     private static boolean isTooCloseToAnotherRaid(ServerLevel level, BlockPos pos, double minimumDistance) {
         if (minimumDistance <= 0.0) return false;
+        ResourceLocation dimensionId = level.dimension().location();
         double maxDistanceSqr = minimumDistance * minimumDistance;
         for (ActiveSpawn spawn : ACTIVE.values()) {
-            PokemonEntity entity = spawn.entity();
-            if (entity.isRemoved() || entity.level() != level) continue;
-            if (entity.distanceToSqr(Vec3.atCenterOf(pos)) < maxDistanceSqr) return true;
+            // Recorded spawn positions keep this check working for bosses whose chunk is unloaded,
+            // which a live entity lookup cannot do.
+            if (!spawn.dimension().equals(dimensionId)) continue;
+            if (spawn.position().distSqr(pos) < maxDistanceSqr) return true;
         }
         return false;
     }
@@ -386,31 +411,68 @@ public final class RaidSpawnScheduler {
         while (iterator.hasNext()) {
             Map.Entry<UUID, ActiveSpawn> entry = iterator.next();
             ActiveSpawn active = entry.getValue();
-            PokemonEntity boss = active.entity();
-            if (boss.isRemoved()) {
+            PokemonEntity boss = resolveBoss(server, entry.getKey(), active);
+
+            // A boss that resolves and still reports removed is genuinely gone: killed, discarded
+            // or captured. An unloaded boss does not resolve at all and is handled below.
+            if (boss != null && boss.isRemoved()) {
                 iterator.remove();
                 continue;
             }
 
-            if (boss.isBattling() || RaidLobbyManager.hasActiveLobby(boss)) {
-                entry.setValue(active.withLastNearbyPlayerTick(schedulerTick));
-                continue;
+            if (boss != null) {
+                // Recruitment and combat own the boss lifecycle while either is active.
+                if (boss.isBattling() || RaidLobbyManager.hasActiveLobby(boss)) {
+                    entry.setValue(active.withLastNearbyPlayerTick(schedulerTick));
+                    continue;
+                }
+                if (hasNearbyPlayer(server, boss, config.despawnPlayerRadius())) {
+                    entry.setValue(active.withLastNearbyPlayerTick(schedulerTick));
+                    continue;
+                }
             }
-
-            if (hasNearbyPlayer(server, boss, config.despawnPlayerRadius())) {
-                entry.setValue(active.withLastNearbyPlayerTick(schedulerTick));
-                continue;
-            }
+            // boss == null means the chunk holding it is not loaded, which is itself proof that no
+            // player is near it. Idle time keeps accruing rather than the entry being dropped.
 
             long idleTicks = schedulerTick - active.lastNearbyPlayerTick();
-            if (idleTicks >= active.despawnSeconds() * 20L) {
-                if (CobbleRaidsConfigManager.get().debugLogging()) {
-                    System.out.println("[CobbleRaids] Despawning unattended wild raid " + active.definitionId());
-                }
-                boss.discard();
-                iterator.remove();
+            if (idleTicks < active.despawnSeconds() * 20L) continue;
+
+            if (CobbleRaidsConfigManager.get().debugLogging()) {
+                System.out.println("[CobbleRaids] Despawning unattended wild raid " + active.definitionId()
+                        + (boss == null ? " (deferred: chunk not loaded)" : ""));
             }
+            if (boss != null) boss.discard();
+            // An unloaded boss cannot be discarded from here. Dropping it from ACTIVE hands it to
+            // onNaturalBossLoaded, which removes any untracked natural boss the moment it loads.
+            iterator.remove();
         }
+    }
+
+    private static PokemonEntity resolveBoss(MinecraftServer server, UUID bossId, ActiveSpawn active) {
+        ServerLevel level = server.getLevel(ResourceKey.create(Registries.DIMENSION, active.dimension()));
+        if (level == null) return null;
+        return level.getEntity(bossId) instanceof PokemonEntity pokemon ? pokemon : null;
+    }
+
+    /**
+     * Enforces the Phase 32 invariant: a natural raid boss that is not tracked in ACTIVE should not
+     * exist. Bound to ServerEntityEvents.ENTITY_LOAD, this is what actually removes bosses whose
+     * despawn timer expired while their chunk was unloaded, bosses orphaned by an earlier session,
+     * and anything the SERVER_STARTED sweep could not see because its chunk was not loaded yet.
+     * Administrator-placed bosses are untagged as natural and are deliberately left alone.
+     */
+    public static void onNaturalBossLoaded(Entity entity, ServerLevel level) {
+        if (spawningTrackedBoss) return;
+        if (!(entity instanceof PokemonEntity pokemon)) return;
+        if (!RaidBossEntityMarker.isNatural(pokemon) || !RaidBossEntityMarker.isRaidBoss(pokemon)) return;
+        if (ACTIVE.containsKey(pokemon.getUUID())) return;
+        if (pokemon.isBattling() || RaidLobbyManager.hasActiveLobby(pokemon)) return;
+
+        if (CobbleRaidsConfigManager.get().debugLogging()) {
+            System.out.println("[CobbleRaids] Removed untracked natural raid boss " + pokemon.getUUID()
+                    + " on load in " + level.dimension().location());
+        }
+        pokemon.discard();
     }
 
     private static boolean hasNearbyPlayer(MinecraftServer server, PokemonEntity boss, double radius) {
@@ -422,8 +484,16 @@ public final class RaidSpawnScheduler {
         return false;
     }
 
-    private static void purgeRemoved() {
-        ACTIVE.entrySet().removeIf(entry -> entry.getValue().entity().isRemoved());
+    /**
+     * Drops only bosses that are provably gone. An entry whose boss does not resolve is kept,
+     * because "not loaded" and "no longer exists" are indistinguishable from a lookup alone and
+     * treating the first as the second is what leaked untracked bosses before Phase 32.
+     */
+    private static void purgeRemoved(MinecraftServer server) {
+        ACTIVE.entrySet().removeIf(entry -> {
+            PokemonEntity boss = resolveBoss(server, entry.getKey(), entry.getValue());
+            return boss != null && boss.isRemoved();
+        });
     }
 
     /** Removes stale natural raid entities after a crash/restart. */
@@ -450,17 +520,18 @@ public final class RaidSpawnScheduler {
 
     /** Prevents persistent natural bosses from becoming orphaned on clean shutdown. */
     public static void onServerStopping(MinecraftServer server) {
-        for (ActiveSpawn active : List.copyOf(ACTIVE.values())) {
-            PokemonEntity entity = active.entity();
-            if (!entity.isRemoved()) entity.discard();
+        for (Map.Entry<UUID, ActiveSpawn> entry : List.copyOf(ACTIVE.entrySet())) {
+            PokemonEntity boss = resolveBoss(server, entry.getKey(), entry.getValue());
+            // Bosses in unloaded chunks are left to onNaturalBossLoaded on the next session.
+            if (boss != null && !boss.isRemoved()) boss.discard();
         }
         ACTIVE.clear();
         NEXT_ALLOWED_TICK.clear();
         schedulerTick = 0L;
     }
 
-    public static int activeCount() {
-        purgeRemoved();
+    public static int activeCount(MinecraftServer server) {
+        purgeRemoved(server);
         return ACTIVE.size();
     }
 }
