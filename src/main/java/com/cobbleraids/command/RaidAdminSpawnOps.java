@@ -3,6 +3,7 @@ package com.cobbleraids.command;
 import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.config.RaidDefinitionRegistry;
 import com.cobbleraids.spawn.RaidBossSpawner;
+import com.cobbleraids.spawn.RaidSpawnScheduler;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import java.util.Comparator;
 import java.util.List;
@@ -10,6 +11,7 @@ import java.util.Locale;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
 
@@ -86,5 +88,17 @@ final class RaidAdminSpawnOps {
 
     private static String format(Vec3 position) {
         return String.format(Locale.ROOT, "%.1f %.1f %.1f", position.x, position.y, position.z);
+    }
+
+    static int resetCooldown(CommandSourceStack source, ResourceLocation definitionId) {
+        if (RaidDefinitionRegistry.get(definitionId) == null) {
+            source.sendFailure(Component.literal("No loaded raid definition '" + definitionId + "'. Use /cobbleraids list."));
+            return 0;
+        }
+        boolean wasOnCooldown = RaidSpawnScheduler.resetCooldown(definitionId);
+        source.sendSuccess(() -> Component.literal(wasOnCooldown
+                ? "Cleared natural-spawn cooldown for " + definitionId + "."
+                : definitionId + " was not on cooldown.").withStyle(ChatFormatting.GREEN), true);
+        return 1;
     }
 }
