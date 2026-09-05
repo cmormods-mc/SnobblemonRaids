@@ -11,6 +11,7 @@ import com.cobbleraids.lobby.RaidLobbyManager;
 import com.cobbleraids.reward.RaidRewardCommand;
 import com.cobbleraids.reward.RaidRewardGuiInstaller;
 import com.cobbleraids.showdown.RaidInstructionRegistrar;
+import com.cobbleraids.showdown.ShowdownIntegrationInstaller;
 import com.cobbleraids.spawn.RaidSpawnScheduler;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
@@ -43,6 +44,10 @@ public final class CobbleRaids implements ModInitializer {
         ServerLifecycleEvents.START_DATA_PACK_RELOAD.register((server, resources) -> CobbleRaidsConfigManager.reload());
         ServerLifecycleEvents.SERVER_STARTING.register(server -> RaidRewardGuiInstaller.ensureInstalledAndLoaded());
         ServerLifecycleEvents.SERVER_STARTED.register(RaidSpawnScheduler::onServerStarted);
+        // Repairs the Showdown integration (ShowdownResourceLoaderMixin) if another mod's own
+        // unbundle-time file writes clobbered it after ours -- confirmed live against a real pack
+        // (mega_showdown) that patches the same Cobblemon Showdown files at the same injection point.
+        ServerLifecycleEvents.SERVER_STARTED.register(server -> ShowdownIntegrationInstaller.ensureInstalled());
         ServerLifecycleEvents.SERVER_STOPPING.register(RaidSpawnScheduler::onServerStopping);
         // A natural raid boss is persistence-required, so nothing else will ever remove one that
         // the scheduler has stopped tracking. Checking on load is the only point where an orphan
