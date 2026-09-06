@@ -22,7 +22,7 @@ public final class RaidBossSpawner {
         Objects.requireNonNull(position, "position");
         Objects.requireNonNull(definition, "definition");
 
-        Species species = PokemonSpecies.getByName(definition.species().getPath());
+        Species species = PokemonSpecies.getByIdentifier(definition.species());
         if (species == null) throw new IllegalArgumentException("Unknown Cobblemon species: " + definition.species());
 
         Pokemon pokemon = new Pokemon();
