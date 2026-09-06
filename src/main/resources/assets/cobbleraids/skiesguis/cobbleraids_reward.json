@@ -3,9 +3,9 @@
   "size": 3,
   "open_actions": {
     "welcome_msg": {
-      "type": "MESSAGE",
+      "type": "COMMAND_PLAYER",
       "click": "ANY",
-      "message": ["<green>Pick one reward below, %player%! Your contribution bonus is added automatically."]
+      "commands": ["tellraw @s [{\"text\": \"Pick one reward below, \", \"color\": \"green\"}, {\"selector\": \"@s\", \"color\": \"green\"}, {\"text\": \"! Your contribution bonus is added automatically.\", \"color\": \"green\"}]"]
     },
     "welcome_sound": {
       "type": "PLAYSOUND",
@@ -17,9 +17,9 @@
   },
   "close_actions": {
     "bye_msg": {
-      "type": "MESSAGE",
+      "type": "COMMAND_PLAYER",
       "click": "ANY",
-      "message": ["<gray>You can reopen an unclaimed reward with /cobbleraids reward."]
+      "commands": ["tellraw @s [{\"text\": \"You can reopen an unclaimed reward with /cobbleraids reward.\", \"color\": \"gray\"}]"]
     }
   },
   "items": {
