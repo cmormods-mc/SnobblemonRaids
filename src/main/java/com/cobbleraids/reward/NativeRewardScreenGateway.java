@@ -45,7 +45,7 @@ public final class NativeRewardScreenGateway {
     }
 
     private static String speciesDisplayName(RaidDefinition definition) {
-        Species species = PokemonSpecies.getByName(definition.species().getPath());
+        Species species = PokemonSpecies.getByIdentifier(definition.species());
         return species != null ? species.getTranslatedName().getString() : definition.species().getPath();
     }
 }
