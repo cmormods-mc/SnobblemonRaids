@@ -523,6 +523,21 @@ public final class RaidSpawnScheduler {
         });
     }
 
+    /**
+     * A dimension-managing mod (e.g. Multiworld) can close a ServerLevel outright, not just unload
+     * its chunks. When that happens any tracked boss there can never resolve again, and without this
+     * it would otherwise sit in ACTIVE for its full despawn_seconds -- occupying a max_active_raids
+     * slot for a raid nobody can ever reach. Server shutdown also fires this for every level, which
+     * is harmless: onServerStopping already clears ACTIVE around the same time.
+     */
+    public static void onLevelUnloaded(MinecraftServer server, ServerLevel level) {
+        ResourceLocation dimensionId = level.dimension().location();
+        boolean removedAny = ACTIVE.entrySet().removeIf(entry -> entry.getValue().dimension().equals(dimensionId));
+        if (removedAny && CobbleRaidsConfigManager.get().debugLogging()) {
+            System.out.println("[CobbleRaids] Forgot natural raid boss(es) tracked in closed dimension " + dimensionId);
+        }
+    }
+
     /** Removes stale natural raid entities after a crash/restart. */
     public static void onServerStarted(MinecraftServer server) {
         ACTIVE.clear();
