@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    "#c:is_plains",
+    "#c:is_temperate/overworld"
+  ]
+}

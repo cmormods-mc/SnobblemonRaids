@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "#c:is_magical",
+    "#c:is_floral",
+    "#c:is_rare"
+  ]
+}

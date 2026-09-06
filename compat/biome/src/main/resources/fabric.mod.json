@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "cobbleraids_biome_compat",
+  "version": "1.0.0",
+  "name": "CobbleRaids Biome Compatibility",
+  "description": "Tag-based optional biome compatibility for CobbleRaids, including Terralith and Oh The Biomes We've Gone.",
+  "authors": ["CobbleRaids"],
+  "environment": "*",
+  "depends": {
+    "fabricloader": ">=0.17.2",
+    "fabric-api": ">=0.116.6+1.21.1",
+    "minecraft": "1.21.1",
+    "cobbleraids": "*"
+  }
+}

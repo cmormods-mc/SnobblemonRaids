@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "#c:is_icy",
+    "#c:is_snowy",
+    "#c:is_cold/overworld"
+  ]
+}
