@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "#c:is_desert",
+    "#c:is_sandy",
+    "#minecraft:is_badlands",
+    "#c:is_dry/overworld"
+  ]
+}

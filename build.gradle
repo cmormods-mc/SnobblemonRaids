@@ -52,21 +52,21 @@ processResources {
 }
 
 sourceSets {
-    bwgCompat {
-        resources.srcDir 'compat/bwg/src/main/resources'
+    biomeCompat {
+        resources.srcDir 'compat/biome/src/main/resources'
     }
 }
 
-tasks.register('bwgCompatJar', Jar) {
+tasks.register('biomeCompatJar', Jar) {
     group = 'build'
-    description = 'Builds the optional Oh The Biomes We\'ve Gone compatibility data mod.'
-    dependsOn tasks.named('processBwgCompatResources')
-    archiveBaseName = 'CobbleRaids-BWG-Compat'
+    description = 'Builds the optional tag-based biome compatibility data mod.'
+    dependsOn tasks.named('processBiomeCompatResources')
+    archiveBaseName = 'CobbleRaids-BiomeCompat'
     archiveVersion = '1.0.0'
     archiveClassifier = ''
-    from sourceSets.bwgCompat.output
+    from sourceSets.biomeCompat.output
 }
 
 tasks.named('build') {
-    dependsOn tasks.named('bwgCompatJar')
+    dependsOn tasks.named('biomeCompatJar')
 }
