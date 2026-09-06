@@ -2,6 +2,7 @@ package com.cobbleraids.raid;
 
 import com.cobbleraids.battle.RaidBattleType;
 import com.cobbleraids.battle.RaidBossBattleActor;
+import com.cobbleraids.battle.RaidBossBattleAI;
 import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.spawn.RaidBossEntityMarker;
 import com.cobblemon.mod.common.Cobblemon;
@@ -13,7 +14,6 @@ import com.cobblemon.mod.common.battles.BattleSide;
 import com.cobblemon.mod.common.battles.BattleStartResult;
 import com.cobblemon.mod.common.battles.SuccessfulBattleStart;
 import com.cobblemon.mod.common.battles.actor.PlayerBattleActor;
-import com.cobblemon.mod.common.battles.ai.RandomBattleAI;
 import com.cobblemon.mod.common.battles.pokemon.BattlePokemon;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import java.util.ArrayList;
@@ -50,7 +50,7 @@ public final class RaidFactory {
         BattlePokemon bossPokemon = new BattlePokemon(
                 bossEntity.getPokemon(), bossEntity.getPokemon(), Collections.emptyList(), Collections.emptyList());
         RaidBossBattleActor bossActor = new RaidBossBattleActor(
-                bossEntity.getPokemon().getUuid(), bossPokemon, new RandomBattleAI());
+                bossEntity.getPokemon().getUuid(), bossPokemon, new RaidBossBattleAI());
 
         BattleFormat format = new BattleFormat("cobblemon", RaidBattleType.INSTANCE, Collections.emptySet(), 9, 0);
         BattleStartResult result = BattleRegistry.startBattle(
