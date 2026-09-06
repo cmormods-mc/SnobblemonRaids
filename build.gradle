@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.19-phase34-banned-moves'
+version = '0.8.20-phase35-biome-compat'
 group = 'com.cobbleraids'
 
 base {
