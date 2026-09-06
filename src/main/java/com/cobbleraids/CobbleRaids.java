@@ -21,6 +21,7 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.minecraft.server.packs.PackType;
@@ -63,6 +64,10 @@ public final class CobbleRaids implements ModInitializer {
         // the scheduler has stopped tracking. Checking on load is the only point where an orphan
         // in a previously unloaded chunk becomes reachable.
         ServerEntityEvents.ENTITY_LOAD.register(RaidSpawnScheduler::onNaturalBossLoaded);
+        // A dimension-managing mod can close a ServerLevel outright (not just unload its chunks),
+        // which would otherwise leave a tracked boss there occupying a raid slot until its despawn
+        // timer expires, since it can never resolve again.
+        ServerWorldEvents.UNLOAD.register(RaidSpawnScheduler::onLevelUnloaded);
         ResourceManagerHelper.get(PackType.SERVER_DATA).registerReloadListener(new RaidDefinitionRegistry());
     }
 }
