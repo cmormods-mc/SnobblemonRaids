@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.20-phase35-biome-compat'
+version = '0.8.21-phase36-reward-visibility'
 group = 'com.cobbleraids'
 
 base {
