@@ -9,7 +9,8 @@
     "battle.RaidMoveActionResponseMixin",
     "battle.RaidPokemonBattleMixin",
     "battle.RaidPlayerBattleActorMixin",
-    "battle.RaidActiveBattlePokemonMixin"
+    "battle.RaidActiveBattlePokemonMixin",
+    "battle.RaidBattleMessagePnxMixin"
   ],
   "injectors": {
     "defaultRequire": 1
