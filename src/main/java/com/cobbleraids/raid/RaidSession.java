@@ -112,6 +112,20 @@ public final class RaidSession {
         return true;
     }
 
+    /**
+     * The boss's real Pokemon fainted through a mechanism outside the -raiddamage pool (Perish
+     * Song, Destiny Bond, the Perish Body ability, ...), so the pool never reached zero on its own.
+     * Cobblemon's own winner determination is authoritative for a genuine faint, so this closes out
+     * the raid as a victory using whatever contribution has actually accumulated.
+     */
+    public synchronized boolean completeViaRealFaint() {
+        if (status != Status.ACTIVE) return false;
+        currentHealth = 0;
+        status = Status.COMPLETED;
+        outcome = RaidOutcome.VICTORY;
+        return true;
+    }
+
     public synchronized boolean abort() {
         if (status == Status.COMPLETED || status == Status.FAILED || status == Status.ABORTED) return false;
         status = Status.ABORTED;
