@@ -28,10 +28,10 @@ jobs:
         with:
           gradle-version: '8.14.3'
 
-      - name: Validate Phase 31 source and resources
+      - name: Validate core source and resources
         run: validation/validate_phase31.sh
 
-      - name: Validate Phase 32 raid integrity
+      - name: Validate raid boss lifecycle and healing integrity
         run: python3 validation/validate_phase32.py
 
       - name: Compile and remap
@@ -50,7 +50,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: cobbleraids-phase32-build
+          name: cobbleraids-build
           path: |
             build/libs/*.jar
             build/reports/**

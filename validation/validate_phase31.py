@@ -8,7 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CORE_RESOURCES = ROOT / "src/main/resources"
-COMPAT_RESOURCES = ROOT / "compat/bwg/src/main/resources"
+COMPAT_RESOURCES = ROOT / "compat/biome/src/main/resources"
 TIERS = {"starter", "powerhouse", "legendary", "mythical"}
 EXPECTED_COUNTS = Counter({"starter": 27, "powerhouse": 10, "legendary": 71, "mythical": 22})
 
@@ -53,14 +53,14 @@ def validate_tree() -> None:
         assert core_data["replace"] is False and compat_data["replace"] is False
         assert core_data["values"] and compat_data["values"]
         assert all(value.startswith("minecraft:") for value in core_data["values"])
-        assert all(value.startswith("biomeswevegone:") for value in compat_data["values"])
+        assert all(value.startswith("#") for value in compat_data["values"])
 
     core_text = "\n".join(path.read_text(encoding="utf-8") for path in CORE_RESOURCES.rglob("*.json"))
     assert "biomeswevegone:" not in core_text
 
     compat_manifest = load(COMPAT_RESOURCES / "fabric.mod.json")
-    assert compat_manifest["id"] == "cobbleraids_bwg_compat"
-    assert compat_manifest["depends"]["biomeswevegone"] == ">=2.6.0"
+    assert compat_manifest["id"] == "cobbleraids_biome_compat"
+    assert "biomeswevegone" not in compat_manifest["depends"]
     assert "biomeswevegone" not in load(CORE_RESOURCES / "fabric.mod.json")["depends"]
 
     mixins = load(CORE_RESOURCES / "mixins/cobbleraids.mixins.json")["mixins"]
