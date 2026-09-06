@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.22-phase37-reward-reveal-screen'
+version = '0.8.23-phase38-cinematic-reveal'
 group = 'com.cobbleraids'
 
 base {
