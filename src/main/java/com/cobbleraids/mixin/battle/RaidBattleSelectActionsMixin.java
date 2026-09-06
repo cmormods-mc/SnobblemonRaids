@@ -1,5 +1,6 @@
 package com.cobbleraids.mixin.battle;
 
+import com.cobbleraids.battle.RaidBannedMoves;
 import com.cobbleraids.lifecycle.RaidLifecycleCoordinator;
 import com.cobbleraids.raid.RaidRegistry;
 import com.cobbleraids.raid.RaidSession;
@@ -40,6 +41,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  *
  * 2) Explicit forfeits never reach stock PokemonBattle.checkForfeit(); raid withdrawal semantics
  *    are handled by RaidLifecycleCoordinator instead.
+ *
+ * 3) A RaidBannedMoves entry is rejected before it reaches Showdown, since a faint caused outside
+ *    the raid's -raiddamage/-raidheal pipeline (e.g. Perish Song fainting every active Pokemon at
+ *    once) satisfies no RaidLifecycleCoordinator victory/defeat path and hangs the battle UI. The
+ *    boss's own move choice is guarded separately by RaidBossBattleAI, since it never goes through
+ *    this packet.
  */
 @Mixin(BattleSelectActionsHandler.class)
 public abstract class RaidBattleSelectActionsMixin {
@@ -53,6 +60,24 @@ public abstract class RaidBattleSelectActionsMixin {
         PokemonBattle battle = BattleRegistry.getBattle(packet.getBattleId());
         RaidSession raid = RaidRegistry.get(battle);
         if (raid == null || raid.getStatus() != RaidSession.Status.ACTIVE) return;
+
+        String bannedMove = packet.getShowdownActionResponses().stream()
+                .filter(response -> response instanceof MoveActionResponse)
+                .map(response -> ((MoveActionResponse) response).getMoveName())
+                .filter(RaidBannedMoves::isBanned)
+                .findFirst()
+                .orElse(null);
+        if (bannedMove != null) {
+            ci.cancel();
+            player.sendSystemMessage(Component.literal(RaidBannedMoves.displayName(bannedMove)
+                    + " is banned in raid battles and cannot be used.").withStyle(ChatFormatting.RED));
+            BattleActor actor = battle.getActor(player);
+            if (actor != null && actor.getRequest() != null) {
+                actor.sendUpdate(new BattleQueueRequestPacket(actor.getRequest()));
+                actor.sendUpdate(new BattleMakeChoicePacket());
+            }
+            return;
+        }
 
         cobbleRaids$fillMissingBossTargets(packet, battle, raid, player);
 
