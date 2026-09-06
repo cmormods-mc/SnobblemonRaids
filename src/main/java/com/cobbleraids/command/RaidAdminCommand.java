@@ -17,11 +17,10 @@ public final class RaidAdminCommand {
     public static void register() {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(
                 Commands.literal("cobbleraids")
+                        .requires(source -> source.hasPermission(ADMIN_PERMISSION_LEVEL))
                         .then(Commands.literal("list")
-                                .requires(source -> source.hasPermission(ADMIN_PERMISSION_LEVEL))
                                 .executes(ctx -> RaidAdminSpawnOps.list(ctx.getSource())))
                         .then(Commands.literal("spawn")
-                                .requires(source -> source.hasPermission(ADMIN_PERMISSION_LEVEL))
                                 .then(Commands.argument("pokemon", StringArgumentType.word())
                                         .executes(ctx -> RaidAdminSpawnOps.spawnNearPlayer(
                                                 ctx.getSource(), StringArgumentType.getString(ctx, "pokemon")))
@@ -31,29 +30,23 @@ public final class RaidAdminCommand {
                                                         StringArgumentType.getString(ctx, "pokemon"),
                                                         Vec3Argument.getVec3(ctx, "pos"))))))
                         .then(Commands.literal("spawninfo")
-                                .requires(source -> source.hasPermission(ADMIN_PERMISSION_LEVEL))
                                 .executes(ctx -> RaidSpawnScheduler.sendSpawnInfo(ctx.getSource())))
                         .then(Commands.literal("testwild")
-                                .requires(source -> source.hasPermission(ADMIN_PERMISSION_LEVEL))
                                 .then(Commands.argument("pokemon", StringArgumentType.word())
                                         .executes(ctx -> RaidSpawnScheduler.testWild(
                                                 ctx.getSource(), StringArgumentType.getString(ctx, "pokemon")))))
                         .then(Commands.literal("despawn")
-                                .requires(source -> source.hasPermission(ADMIN_PERMISSION_LEVEL))
                                 .executes(ctx -> RaidAdminBossOps.despawnNearest(ctx.getSource()))
                                 .then(Commands.literal("all")
                                         .executes(ctx -> RaidAdminBossOps.despawnAll(ctx.getSource()))))
                         .then(Commands.literal("reload")
-                                .requires(source -> source.hasPermission(ADMIN_PERMISSION_LEVEL))
                                 .executes(ctx -> RaidAdminConfigOps.reload(ctx.getSource())))
                         .then(Commands.literal("cooldown")
-                                .requires(source -> source.hasPermission(ADMIN_PERMISSION_LEVEL))
                                 .then(Commands.literal("reset")
                                         .then(Commands.argument("definition", ResourceLocationArgument.id())
                                                 .executes(ctx -> RaidAdminSpawnOps.resetCooldown(
                                                         ctx.getSource(), ResourceLocationArgument.getId(ctx, "definition"))))))
                         .then(Commands.literal("reward")
-                                .requires(source -> source.hasPermission(ADMIN_PERMISSION_LEVEL))
                                 .then(Commands.literal("grant")
                                         .then(Commands.argument("target", EntityArgument.player())
                                                 .then(Commands.argument("definition", ResourceLocationArgument.id())
@@ -62,7 +55,6 @@ public final class RaidAdminCommand {
                                                                 EntityArgument.getPlayer(ctx, "target"),
                                                                 ResourceLocationArgument.getId(ctx, "definition")))))))
                         .then(Commands.literal("debug")
-                                .requires(source -> source.hasPermission(ADMIN_PERMISSION_LEVEL))
                                 .then(Commands.literal("status")
                                         .executes(ctx -> RaidAdminDebugOps.status(ctx.getSource())))
                                 .then(Commands.literal("raids")

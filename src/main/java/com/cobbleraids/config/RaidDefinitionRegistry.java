@@ -11,8 +11,9 @@ import net.minecraft.util.profiling.ProfilerFiller;
 
 import java.io.Reader;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /** Server-authoritative raid definitions loaded from data/cobbleraids/raids/*.json. */
@@ -22,7 +23,18 @@ public final class RaidDefinitionRegistry extends SimplePreparableReloadListener
     private static volatile Map<ResourceLocation, RaidDefinition> DEFINITIONS = Map.of();
 
     public static RaidDefinition get(ResourceLocation id) { return DEFINITIONS.get(id); }
-    public static Collection<RaidDefinition> all() { return Collections.unmodifiableCollection(DEFINITIONS.values()); }
+    // Map.of()/Map.copyOf(...) both produce an already-unmodifiable values() view, so DEFINITIONS
+    // never needs an extra defensive wrapper here.
+    public static Collection<RaidDefinition> all() { return DEFINITIONS.values(); }
+
+    /** Every loaded cobblemon:* definition whose species path matches, case-insensitive, sorted by id. */
+    public static List<RaidDefinition> findBySpeciesName(String pokemonName) {
+        return all().stream()
+                .filter(definition -> definition.species().getNamespace().equals("cobblemon"))
+                .filter(definition -> definition.species().getPath().equalsIgnoreCase(pokemonName))
+                .sorted(Comparator.comparing(definition -> definition.id().toString()))
+                .toList();
+    }
 
     @Override public ResourceLocation getFabricId() { return ID; }
 

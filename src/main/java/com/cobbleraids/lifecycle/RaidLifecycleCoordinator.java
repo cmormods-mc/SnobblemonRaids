@@ -5,8 +5,10 @@ import com.cobbleraids.raid.RaidSession;
 import com.cobblemon.mod.common.api.battles.model.PokemonBattle;
 import com.cobblemon.mod.common.api.battles.model.actor.BattleActor;
 import com.cobblemon.mod.common.net.messages.client.battle.BattleEndPacket;
-import java.util.*;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
@@ -25,7 +27,7 @@ public final class RaidLifecycleCoordinator {
         PokemonBattle battle = raid.getBattle();
         String winners = raid.getActiveParticipants().stream()
                 .map(UUID::toString)
-                .reduce((a, b) -> a + "&" + b).orElse("");
+                .collect(Collectors.joining("&"));
         if (!winners.isEmpty() && !battle.getEnded()) {
             // >raidwin is raid-only Showdown INPUT. Our patch converts it to ordinary
             // |win|UUID&UUID... OUTPUT, which Cobblemon's stock WinInstruction handles.
