@@ -40,14 +40,11 @@ public final class RaidHealInstruction implements InterpreterInstruction {
 
         raid.heal(amount);
         BattleActor bossActor = battle.getActor(raid.getBossActorId());
-        ActiveBattlePokemon bossActive = bossActor == null ? null : bossActor.getActivePokemon().stream()
-                .filter(pokemon -> pokemon != null && !pokemon.isGone())
-                .findFirst()
-                .orElse(null);
+        ActiveBattlePokemon bossActive = RaidBattleTargets.bossActive(bossActor);
         BattlePokemon target = bossActive == null
                 ? publicMessage.battlePokemon(0, battle)
                 : bossActive.getBattlePokemon();
-        String pnx = bossActive == null ? pnx(publicMessage.argumentAt(0)) : bossActive.getPNX();
+        String pnx = bossActive == null ? RaidBattleTargets.pnx(publicMessage.argumentAt(0)) : bossActive.getPNX();
         if (target == null || target.getEffectedPokemon() == null || bossActor == null || pnx == null) return;
 
         float ratio = Math.max(0.0f, Math.min(1.0f, raid.getCurrentHealth() / raid.getMaxHealth()));
@@ -60,11 +57,5 @@ public final class RaidHealInstruction implements InterpreterInstruction {
                 new BattleHealthChangePacket(pnx, ratio, null),
                 false
         );
-    }
-
-    private static String pnx(String argument) {
-        if (argument == null) return null;
-        int colon = argument.indexOf(':');
-        return colon <= 0 ? null : argument.substring(0, colon);
     }
 }

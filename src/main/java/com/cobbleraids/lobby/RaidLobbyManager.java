@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
 /** Server-thread coordinator for wild-boss recruitment windows. */
@@ -47,7 +48,7 @@ public final class RaidLobbyManager {
             created = true;
         }
 
-        if (lobby.optedIn().contains(player.getUUID())) {
+        if (lobby.isOptedIn(player.getUUID())) {
             long seconds = Math.max(0L, (lobby.closesAtTick() - now + 19L) / 20L);
             player.sendSystemMessage(Component.literal("You are already in this raid. Starts in " + seconds + "s."));
             return JoinResult.ALREADY_JOINED;
@@ -143,7 +144,7 @@ public final class RaidLobbyManager {
     private static void broadcastNearby(RaidLobby lobby, Component message) {
         PokemonEntity boss = lobby.boss();
         double radius = Math.max(16.0, lobby.definition().recruitment().radius() * 2.0);
-        for (ServerPlayer player : boss.level().players().stream().filter(ServerPlayer.class::isInstance).map(ServerPlayer.class::cast).toList()) {
+        for (ServerPlayer player : ((ServerLevel) boss.level()).players()) {
             if (player.distanceToSqr(boss) <= radius * radius) player.sendSystemMessage(message);
         }
     }

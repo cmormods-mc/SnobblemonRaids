@@ -33,6 +33,7 @@ public final class RaidLobby {
     public long closesAtTick() { return closesAtTick; }
     public synchronized Status status() { return status; }
     public synchronized Set<UUID> optedIn() { return Collections.unmodifiableSet(new LinkedHashSet<>(optedIn)); }
+    public synchronized boolean isOptedIn(UUID playerId) { return optedIn.contains(playerId); }
 
     public synchronized boolean join(UUID playerId) {
         if (status != Status.RECRUITING || optedIn.contains(playerId)) return false;

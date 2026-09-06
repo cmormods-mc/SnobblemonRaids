@@ -383,10 +383,7 @@ public final class RaidSpawnScheduler {
             return null;
         }
 
-        List<RaidDefinition> matches = RaidDefinitionRegistry.all().stream()
-                .filter(definition -> definition.species().getNamespace().equals("cobblemon"))
-                .filter(definition -> definition.species().getPath().equalsIgnoreCase(pokemonName))
-                .toList();
+        List<RaidDefinition> matches = RaidDefinitionRegistry.findBySpeciesName(pokemonName);
         if (matches.size() != 1) {
             source.sendFailure(Component.literal(matches.isEmpty()
                     ? "No raid definition uses species '" + pokemonName + "'."

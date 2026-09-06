@@ -8,6 +8,7 @@ import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
@@ -55,11 +56,7 @@ final class RaidAdminSpawnOps {
             return 0;
         }
 
-        List<RaidDefinition> matches = RaidDefinitionRegistry.all().stream()
-                .filter(definition -> definition.species().getNamespace().equals("cobblemon"))
-                .filter(definition -> definition.species().getPath().equalsIgnoreCase(pokemonName))
-                .sorted(Comparator.comparing(definition -> definition.id().toString()))
-                .toList();
+        List<RaidDefinition> matches = RaidDefinitionRegistry.findBySpeciesName(pokemonName);
         if (matches.isEmpty()) {
             source.sendFailure(Component.literal("No loaded CobbleRaids definition uses Cobblemon species '"
                     + pokemonName + "'. Use /cobbleraids list."));
@@ -67,7 +64,7 @@ final class RaidAdminSpawnOps {
         }
         if (matches.size() > 1) {
             String ids = matches.stream().map(definition -> definition.id().toString())
-                    .reduce((a, b) -> a + ", " + b).orElse("");
+                    .collect(Collectors.joining(", "));
             source.sendFailure(Component.literal("Multiple raid definitions use '" + pokemonName
                     + "': " + ids + ". Keep one definition per species for the simple spawn command."));
             return 0;

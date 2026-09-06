@@ -1,5 +1,6 @@
 package com.cobbleraids.showdown;
 
+import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.raid.RaidRegistry;
 import com.cobbleraids.raid.RaidSession;
 import com.cobblemon.mod.common.api.battles.interpreter.BattleMessage;
@@ -53,17 +54,16 @@ public final class RaidDamageInstruction implements InterpreterInstruction {
 
         float applied = raid.damage(contributor, amount);
         BattleActor bossActor = battle.getActor(raid.getBossActorId());
-        ActiveBattlePokemon bossActive = bossActor == null ? null : bossActor.getActivePokemon().stream()
-                .filter(pokemon -> pokemon != null && !pokemon.isGone())
-                .findFirst()
-                .orElse(null);
+        ActiveBattlePokemon bossActive = RaidBattleTargets.bossActive(bossActor);
         BattlePokemon target = bossActive == null
                 ? publicMessage.battlePokemon(0, battle)
                 : bossActive.getBattlePokemon();
-        String pnx = bossActive == null ? pnx(publicMessage.argumentAt(0)) : bossActive.getPNX();
+        String pnx = bossActive == null ? RaidBattleTargets.pnx(publicMessage.argumentAt(0)) : bossActive.getPNX();
 
-        LOGGER.info("Applied raid damage: battle={}, requested={}, applied={}, hp={}/{}, contributor={}",
-                battle.getBattleId(), amount, applied, raid.getCurrentHealth(), raid.getMaxHealth(), contributor);
+        if (CobbleRaidsConfigManager.get().debugLogging()) {
+            LOGGER.info("Applied raid damage: battle={}, requested={}, applied={}, hp={}/{}, contributor={}",
+                    battle.getBattleId(), amount, applied, raid.getCurrentHealth(), raid.getMaxHealth(), contributor);
+        }
 
         if (target != null && target.getEffectedPokemon() != null && bossActor != null && pnx != null) {
             float ratio = Math.max(0.0f, Math.min(1.0f, raid.getCurrentHealth() / raid.getMaxHealth()));
@@ -81,11 +81,5 @@ public final class RaidDamageInstruction implements InterpreterInstruction {
         if (raid.getStatus() == RaidSession.Status.COMPLETED) {
             RaidCompletion.complete(battle);
         }
-    }
-
-    private static String pnx(String argument) {
-        if (argument == null) return null;
-        int colon = argument.indexOf(':');
-        return colon <= 0 ? null : argument.substring(0, colon);
     }
 }
