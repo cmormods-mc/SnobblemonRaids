@@ -8,6 +8,7 @@ import com.cobbleraids.lobby.RaidLobbyManager;
 import com.cobbleraids.raid.RaidRegistry;
 import com.cobbleraids.raid.RaidSession;
 import com.cobbleraids.reward.ContributionMath;
+import com.cobbleraids.reward.RewardGuiBackends;
 import com.cobbleraids.spawn.RaidBossEntityMarker;
 import com.cobbleraids.spawn.RaidSpawnHistory;
 import com.cobbleraids.spawn.RaidSpawnScheduler;
@@ -32,9 +33,10 @@ final class RaidAdminDebugOps {
         int lobbies = RaidLobbyManager.all().size();
         int battles = RaidRegistry.all().size();
         int natural = RaidSpawnScheduler.activeCount(source.getServer());
+        String rewardGui = RewardGuiBackends.active().name();
         source.sendSuccess(() -> Component.literal("CobbleRaids status: definitions=" + definitions
                 + ", bosses=" + bosses.size() + ", lobbies=" + lobbies + ", battles=" + battles
-                + ", naturalTracked=" + natural).withStyle(ChatFormatting.AQUA), false);
+                + ", naturalTracked=" + natural + ", rewardGui=" + rewardGui).withStyle(ChatFormatting.AQUA), false);
         return bosses.size() + battles + lobbies;
     }
 

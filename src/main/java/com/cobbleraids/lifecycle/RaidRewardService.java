@@ -1,16 +1,21 @@
 package com.cobbleraids.lifecycle;
 
+import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.config.RaidDefinitionRegistry;
 import com.cobbleraids.reward.ContributionMath;
 import com.cobbleraids.reward.PendingRaidReward;
 import com.cobbleraids.reward.RaidRewardGrantEngine;
-import com.pokeskies.skiesguis.api.SkiesGUIsAPI;
+import com.cobbleraids.reward.RewardGuiBackends;
+import com.cobbleraids.reward.RewardGrantResult;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 
 /**
  * Server-authoritative reward queue. SkiesGUIs is presentation only: all claims are validated here,
@@ -83,8 +88,16 @@ public final class RaidRewardService {
         player.sendSystemMessage(Component.literal(String.format(Locale.ROOT,
                 "Raid contribution: %.1f%% | Contribution bonus rolls: %d",
                 pending.contributionPercentage(), pending.contributionBonusRolls())));
-        SkiesGUIsAPI.INSTANCE.attemptGUIOpen(player, pending.rewards().guiId());
+        boolean opened = RewardGuiBackends.active().open(player, pending.rewards().guiId());
+        if (!opened) sendChatFallbackChoices(player, pending);
         return true;
+    }
+
+    private static void sendChatFallbackChoices(ServerPlayer player, PendingRaidReward pending) {
+        player.sendSystemMessage(Component.literal("Reward GUI unavailable; choose with /cobbleraids reward claim <id>:"));
+        for (String choiceId : pending.rewards().choices().keySet()) {
+            player.sendSystemMessage(Component.literal(" - " + choiceId));
+        }
     }
 
     public static synchronized boolean claim(ServerPlayer player, String choiceId) {
@@ -104,11 +117,17 @@ public final class RaidRewardService {
         queue.removeFirst();
         if (queue.isEmpty()) PENDING.remove(player.getUUID());
         try {
-            RaidRewardGrantEngine.grantChoice(player, pending, choice);
+            RewardGrantResult result = RaidRewardGrantEngine.grantChoice(player, pending, choice);
+            if (CobbleRaidsConfigManager.get().debugLogging()) {
+                System.out.println("[CobbleRaids] " + player.getGameProfile().getName() + " claimed '" + choiceId
+                        + "' for raid " + pending.definitionId() + ": base=" + summarize(result.baseItems())
+                        + " chance=" + summarize(result.chanceItemsGranted())
+                        + " bonus=" + summarize(result.contributionBonusItems()));
+            }
             player.sendSystemMessage(Component.literal(String.format(Locale.ROOT,
-                    "Raid reward claimed. Contribution %.1f%% awarded %d bonus roll%s.",
+                    "Raid reward claimed. Contribution %.1f%% awarded %d bonus roll%s. Granted: %s",
                     pending.contributionPercentage(), pending.contributionBonusRolls(),
-                    pending.contributionBonusRolls() == 1 ? "" : "s")));
+                    pending.contributionBonusRolls() == 1 ? "" : "s", describeAll(result))));
             if (hasPending(player.getUUID())) OPEN_DELAY.put(player.getUUID(), GUI_OPEN_DELAY_TICKS);
             return true;
         } catch (RuntimeException ex) {
@@ -122,5 +141,27 @@ public final class RaidRewardService {
     private static PendingRaidReward peek(UUID playerId) {
         ArrayDeque<PendingRaidReward> queue = PENDING.get(playerId);
         return queue == null ? null : queue.peekFirst();
+    }
+
+    private static String summarize(List<RaidDefinition.RewardItem> items) {
+        if (items.isEmpty()) return "none";
+        StringBuilder builder = new StringBuilder();
+        for (RaidDefinition.RewardItem item : items) {
+            if (builder.length() > 0) builder.append(", ");
+            builder.append(item.item()).append(" x").append(item.amount());
+        }
+        return builder.toString();
+    }
+
+    private static String describeAll(RewardGrantResult result) {
+        List<RaidDefinition.RewardItem> all = result.allGranted();
+        if (all.isEmpty()) return "nothing";
+        StringBuilder builder = new StringBuilder();
+        for (RaidDefinition.RewardItem item : all) {
+            if (builder.length() > 0) builder.append(", ");
+            Item resolved = BuiltInRegistries.ITEM.get(item.item());
+            builder.append(new ItemStack(resolved).getHoverName().getString()).append(" x").append(item.amount());
+        }
+        return builder.toString();
     }
 }

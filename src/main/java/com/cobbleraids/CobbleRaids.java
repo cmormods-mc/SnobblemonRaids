@@ -10,7 +10,7 @@ import com.cobbleraids.lifecycle.RaidRewardService;
 import com.cobbleraids.lobby.RaidLobbyManager;
 import com.cobbleraids.presentation.RaidBossGlowService;
 import com.cobbleraids.reward.RaidRewardCommand;
-import com.cobbleraids.reward.RaidRewardGuiInstaller;
+import com.cobbleraids.reward.RewardGuiBackends;
 import com.cobbleraids.showdown.RaidInstructionRegistrar;
 import com.cobbleraids.showdown.ShowdownIntegrationInstaller;
 import com.cobbleraids.spawn.RaidSpawnScheduler;
@@ -44,7 +44,7 @@ public final class CobbleRaids implements ModInitializer {
             RaidBossGlowService.tick(server);
         });
         ServerLifecycleEvents.START_DATA_PACK_RELOAD.register((server, resources) -> CobbleRaidsConfigManager.reload());
-        ServerLifecycleEvents.SERVER_STARTING.register(server -> RaidRewardGuiInstaller.ensureInstalledAndLoaded());
+        ServerLifecycleEvents.SERVER_STARTING.register(server -> RewardGuiBackends.ensureReady());
         ServerLifecycleEvents.SERVER_STARTED.register(RaidSpawnScheduler::onServerStarted);
         // Repairs the Showdown integration (ShowdownResourceLoaderMixin) if another mod's own
         // unbundle-time file writes clobbered it after ours -- confirmed live against a real pack
