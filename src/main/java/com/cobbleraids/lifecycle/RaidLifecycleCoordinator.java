@@ -42,12 +42,28 @@ public final class RaidLifecycleCoordinator {
             finalizeVictory(raid);
             return;
         }
+        if (raid.getStatus() != RaidSession.Status.ACTIVE) return;
 
         // Raid Showdown considers all player sides one cooperative team. The boss may win only
         // after every non-withdrawn player side is exhausted.
         boolean bossWon = event.getWinners().stream().anyMatch(actor -> raid.getBossActorId().equals(actor.getUuid()));
-        if (bossWon && raid.getStatus() == RaidSession.Status.ACTIVE && raid.fail()) {
-            finalizeAfterBattleEnded(raid);
+        if (bossWon) {
+            if (raid.fail()) finalizeAfterBattleEnded(raid);
+            return;
+        }
+
+        if (!event.getWinners().isEmpty()) {
+            // The boss's real Pokemon fainted through a mechanism outside the -raiddamage pool
+            // (Perish Song, Destiny Bond, the Perish Body ability, ...) before the pool reached
+            // zero. Cobblemon already declared the players the winners, so honor it as a genuine
+            // victory -- otherwise the raid never finalizes, RaidRewardService never grants a
+            // reward, and any other mod's own "wild Pokemon fainted" hook fires in its place.
+            if (raid.completeViaRealFaint()) finalizeVictory(raid);
+        } else {
+            // Empty winners is a mutual whiteout -- e.g. Perish Song/Perish Body fainting everyone
+            // on the same turn. Nobody defeated the boss, but the battle has genuinely ended, so
+            // finalize as a loss rather than leaving the session (and the battle UI) hanging.
+            if (raid.fail()) finalizeAfterBattleEnded(raid);
         }
     }
 
