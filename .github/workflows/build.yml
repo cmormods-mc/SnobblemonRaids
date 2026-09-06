@@ -37,6 +37,9 @@ jobs:
       - name: Validate reward visibility and SkiesGUIs optionality
         run: python3 validation/validate_phase36.py
 
+      - name: Validate native reward reveal screen
+        run: python3 validation/validate_phase37.py
+
       - name: Compile and remap
         run: gradle --no-daemon clean build --stacktrace --warning-mode all
 
@@ -49,6 +52,7 @@ jobs:
           python3 validation/validate_phase31.py "$jar"
           python3 validation/validate_phase32.py "$jar"
           python3 validation/validate_phase36.py "$jar"
+          python3 validation/validate_phase37.py "$jar"
 
       - name: Upload build outputs
         if: always()

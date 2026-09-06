@@ -6,7 +6,10 @@
   "description": "Wild cooperative multi-member raid bosses for Cobblemon.",
   "authors": ["CobbleRaids"],
   "environment": "*",
-  "entrypoints": {"main": ["com.cobbleraids.CobbleRaids"]},
+  "entrypoints": {
+    "main": ["com.cobbleraids.CobbleRaids"],
+    "client": ["com.cobbleraids.client.CobbleRaidsClient"]
+  },
   "mixins": ["mixins/cobbleraids.mixins.json"],
   "depends": {
     "fabricloader": ">=0.17.2",

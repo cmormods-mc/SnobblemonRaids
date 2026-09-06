@@ -5,6 +5,7 @@ import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.config.RaidDefinitionRegistry;
 import com.cobbleraids.reward.ContributionMath;
 import com.cobbleraids.reward.PendingRaidReward;
+import com.cobbleraids.reward.NativeRewardScreenGateway;
 import com.cobbleraids.reward.RaidRewardGrantEngine;
 import com.cobbleraids.reward.RewardGuiBackends;
 import com.cobbleraids.reward.RewardGrantResult;
@@ -50,7 +51,7 @@ public final class RaidRewardService {
             int bonusRolls = rewards.contributionBonus().enabled()
                     ? ContributionMath.bonusRolls(percentage, thresholds) : 0;
             PendingRaidReward pending = new PendingRaidReward(
-                    eligibility.raidId(), eligibility.definitionId(), rewards, percentage, bonusRolls);
+                    eligibility.raidId(), eligibility.definitionId(), definition.rarityTier(), rewards, percentage, bonusRolls);
             PENDING.computeIfAbsent(playerId, ignored -> new ArrayDeque<>()).addLast(pending);
             if (server.getPlayerList().getPlayer(playerId) != null) OPEN_DELAY.putIfAbsent(playerId, GUI_OPEN_DELAY_TICKS);
         }
@@ -88,7 +89,8 @@ public final class RaidRewardService {
         player.sendSystemMessage(Component.literal(String.format(Locale.ROOT,
                 "Raid contribution: %.1f%% | Contribution bonus rolls: %d",
                 pending.contributionPercentage(), pending.contributionBonusRolls())));
-        boolean opened = RewardGuiBackends.active().open(player, pending.rewards().guiId());
+        boolean opened = NativeRewardScreenGateway.tryOpen(player, pending)
+                || RewardGuiBackends.active().open(player, pending.rewards().guiId());
         if (!opened) sendChatFallbackChoices(player, pending);
         return true;
     }
@@ -101,16 +103,26 @@ public final class RaidRewardService {
     }
 
     public static synchronized boolean claim(ServerPlayer player, String choiceId) {
+        return claimInternal(player, choiceId) != null;
+    }
+
+    /**
+     * Same as {@link #claim} but returns what was actually granted instead of a bare boolean, so the
+     * native reward screen's network handler can report the real result back to the client. Any
+     * RuntimeException from a failed grant is already messaged to the player here; callers that don't
+     * want the exception to propagate should use {@link #claimNative} instead.
+     */
+    static synchronized RewardGrantResult claimInternal(ServerPlayer player, String choiceId) {
         ArrayDeque<PendingRaidReward> queue = PENDING.get(player.getUUID());
         PendingRaidReward pending = queue == null ? null : queue.peekFirst();
         if (pending == null) {
             player.sendSystemMessage(Component.literal("You do not have an unclaimed raid reward."));
-            return false;
+            return null;
         }
         RaidDefinition.RewardChoice choice = pending.rewards().choices().get(choiceId);
         if (choice == null) {
             player.sendSystemMessage(Component.literal("That reward choice is not valid for this raid."));
-            return false;
+            return null;
         }
 
         // Consume before granting so duplicate GUI/command clicks cannot double-spend the claim token.
@@ -129,12 +141,21 @@ public final class RaidRewardService {
                     pending.contributionPercentage(), pending.contributionBonusRolls(),
                     pending.contributionBonusRolls() == 1 ? "" : "s", describeAll(result))));
             if (hasPending(player.getUUID())) OPEN_DELAY.put(player.getUUID(), GUI_OPEN_DELAY_TICKS);
-            return true;
+            return result;
         } catch (RuntimeException ex) {
             // Restore the exact claim at the front if granting fails before completion.
             PENDING.computeIfAbsent(player.getUUID(), ignored -> new ArrayDeque<>()).addFirst(pending);
             player.sendSystemMessage(Component.literal("Raid reward grant failed; your claim was preserved. Contact an administrator."));
             throw ex;
+        }
+    }
+
+    /** Used by the native reward screen's network handler: never throws, since the player is already messaged. */
+    public static synchronized RewardGrantResult claimNative(ServerPlayer player, String choiceId) {
+        try {
+            return claimInternal(player, choiceId);
+        } catch (RuntimeException ex) {
+            return null;
         }
     }
 

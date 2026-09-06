@@ -1,6 +1,7 @@
 package com.cobbleraids.reward;
 
 import com.cobbleraids.config.RaidDefinition;
+import com.cobbleraids.config.RaidRarityTier;
 import java.util.UUID;
 import net.minecraft.resources.ResourceLocation;
 
@@ -8,6 +9,7 @@ import net.minecraft.resources.ResourceLocation;
 public record PendingRaidReward(
         UUID raidId,
         ResourceLocation definitionId,
+        RaidRarityTier rarityTier,
         RaidDefinition.Rewards rewards,
         double contributionPercentage,
         int contributionBonusRolls
