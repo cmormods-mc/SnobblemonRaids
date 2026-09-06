@@ -34,6 +34,9 @@ jobs:
       - name: Validate raid boss lifecycle and healing integrity
         run: python3 validation/validate_phase32.py
 
+      - name: Validate reward visibility and SkiesGUIs optionality
+        run: python3 validation/validate_phase36.py
+
       - name: Compile and remap
         run: gradle --no-daemon clean build --stacktrace --warning-mode all
 
@@ -45,6 +48,7 @@ jobs:
           test -f "$jar" || { echo "missing $jar"; ls -la build/libs; exit 1; }
           python3 validation/validate_phase31.py "$jar"
           python3 validation/validate_phase32.py "$jar"
+          python3 validation/validate_phase36.py "$jar"
 
       - name: Upload build outputs
         if: always()

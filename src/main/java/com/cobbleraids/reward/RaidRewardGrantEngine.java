@@ -1,6 +1,7 @@
 package com.cobbleraids.reward;
 
 import com.cobbleraids.config.RaidDefinition;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -12,15 +13,29 @@ import net.minecraft.world.item.ItemStack;
 public final class RaidRewardGrantEngine {
     private RaidRewardGrantEngine() {}
 
-    public static void grantChoice(ServerPlayer player, PendingRaidReward pending, RaidDefinition.RewardChoice choice) {
-        for (RaidDefinition.RewardItem item : choice.items()) give(player, item);
-        for (RaidDefinition.RewardItem item : choice.chanceItems()) {
-            if (ThreadLocalRandom.current().nextDouble() < item.chance()) give(player, item);
+    public static RewardGrantResult grantChoice(ServerPlayer player, PendingRaidReward pending, RaidDefinition.RewardChoice choice) {
+        List<RaidDefinition.RewardItem> base = new ArrayList<>();
+        for (RaidDefinition.RewardItem item : choice.items()) {
+            give(player, item);
+            base.add(item);
         }
+        List<RaidDefinition.RewardItem> chanceGranted = new ArrayList<>();
+        for (RaidDefinition.RewardItem item : choice.chanceItems()) {
+            if (ThreadLocalRandom.current().nextDouble() < item.chance()) {
+                give(player, item);
+                chanceGranted.add(item);
+            }
+        }
+        List<RaidDefinition.RewardItem> bonusGranted = new ArrayList<>();
         RaidDefinition.ContributionBonus bonus = pending.rewards().contributionBonus();
         if (bonus.enabled() && pending.contributionBonusRolls() > 0 && !bonus.pool().isEmpty()) {
-            for (int i = 0; i < pending.contributionBonusRolls(); i++) give(player, weighted(bonus.pool()));
+            for (int i = 0; i < pending.contributionBonusRolls(); i++) {
+                RaidDefinition.RewardItem rolled = weighted(bonus.pool());
+                give(player, rolled);
+                bonusGranted.add(rolled);
+            }
         }
+        return new RewardGrantResult(base, chanceGranted, bonusGranted);
     }
 
     static RaidDefinition.RewardItem weighted(List<RaidDefinition.RewardItem> pool) {

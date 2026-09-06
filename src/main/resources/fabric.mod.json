@@ -13,7 +13,9 @@
     "fabric-api": ">=0.116.6+1.21.1",
     "minecraft": "1.21.1",
     "java": ">=21",
-    "cobblemon": "1.7.3",
+    "cobblemon": "1.7.3"
+  },
+  "recommends": {
     "skiesguis": "1.8.1"
   }
 }
