@@ -62,6 +62,27 @@ public record RaidDefinition(
         public static SpawnTime parse(String value) { return valueOf(value.trim().toUpperCase(Locale.ROOT)); }
     }
 
+    /**
+     * TEMPORARY: a raid with four players never advances past its first turn, so recruitment is
+     * capped below the configured maximum until that is fixed.
+     *
+     * A raid uses one Pokemon Showdown side per player plus one for the boss, and Showdown's core
+     * only models four sides -- sim/battle.js treats sides[3] as the last one throughout. Four
+     * players therefore needs a fifth side that Showdown cannot drive: every choice is accepted and
+     * the turn commits, but no move, damage or turn output is ever emitted and the raid hangs at
+     * full boss health. One, two and three players are verified working end to end.
+     *
+     * This clamps rather than lowering CobbleRaidsConfig.VALIDATED_MAX_HUMAN_PLAYERS on purpose.
+     * Existing server.json and raid definitions in the wild contain max_players: 4, and tightening
+     * the validation range would make all of them fail to load instead of quietly running at a
+     * workable size.
+     *
+     * To lift this once the Showdown side supports five sides: delete SUPPORTED_MAX_PLAYERS and the
+     * clamp below. Nothing else needs changing -- every join check, the battle-start capacity check
+     * and the player-facing text all read maxPlayers() from here.
+     */
+    public static final int SUPPORTED_MAX_PLAYERS = 3;
+
     /** Recruitment is separate from combat. maxPlayers is a validated transport safety cap. */
     public record Recruitment(int durationSeconds, double radius, int maxPlayers) {
         public Recruitment {
@@ -69,6 +90,7 @@ public record RaidDefinition(
             if (!(radius > 0.0) || radius > 128.0) throw new IllegalArgumentException("recruitment.radius must be > 0 and <= 128");
             if (maxPlayers < 1 || maxPlayers > CobbleRaidsConfig.VALIDATED_MAX_HUMAN_PLAYERS)
                 throw new IllegalArgumentException("recruitment.max_players must be 1.." + CobbleRaidsConfig.VALIDATED_MAX_HUMAN_PLAYERS);
+            maxPlayers = Math.min(maxPlayers, SUPPORTED_MAX_PLAYERS);
         }
     }
 
