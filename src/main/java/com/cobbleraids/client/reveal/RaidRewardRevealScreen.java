@@ -68,8 +68,7 @@ public final class RaidRewardRevealScreen extends Screen {
     private static final int VALUE_Y_TIER = 189;
     private static final int VALUE_Y_TIME = 271;
     private static final int VALUE_Y_DAMAGE = 404;
-    private static final int VALUE_Y_BONUS_ROLLS = 478;
-    private static final int VALUE_Y_PARTICIPANTS = 550;
+    private static final int VALUE_Y_PARTICIPANTS = 478;
     private static final float SIDEBAR_TEXT_SCALE = 3.0f;
 
     private record NativeRect(int x, int y, int width, int height) {}
@@ -268,10 +267,10 @@ public final class RaidRewardRevealScreen extends Screen {
 
         drawScaledText(graphics, sidebar, textScale, SIDEBAR_ICON_LABEL_X, VALUE_Y_DAMAGE,
                 Component.literal(String.format(Locale.ROOT, "%.1f%%", pending.contributionPercentage())));
-        drawScaledText(graphics, sidebar, textScale, SIDEBAR_ICON_LABEL_X, VALUE_Y_BONUS_ROLLS,
-                Component.literal(Integer.toString(pending.contributionBonusRolls())));
         drawScaledText(graphics, sidebar, textScale, SIDEBAR_ICON_LABEL_X, VALUE_Y_PARTICIPANTS,
                 Component.literal(Integer.toString(pending.participantCount())));
+        // Contribution bonus rolls have no row in this layout (the art's "Support Actions" slot was
+        // removed rather than repurposed) -- still shown in the existing claim chat message/debug log.
     }
 
     /** Draws text at a position local to the sidebar's own origin, scaled to match the baked label art. */
