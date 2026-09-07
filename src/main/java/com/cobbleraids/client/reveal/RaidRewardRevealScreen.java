@@ -219,7 +219,7 @@ public final class RaidRewardRevealScreen extends Screen {
             init();
         }
 
-        this.renderBackground(graphics, mouseX, mouseY, partialTick);
+        this.renderTransparentBackground(graphics);
 
         Layout layout = computeLayout();
         drawFrame(graphics, layout);
