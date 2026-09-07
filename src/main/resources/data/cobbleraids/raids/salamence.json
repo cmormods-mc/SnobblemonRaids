@@ -20,7 +20,7 @@
     "max_concurrent": 1
   },
   "recruitment": {
-    "duration_seconds": 45,
+    "duration_seconds": 20,
     "radius": 10.0,
     "max_players": 4
   },

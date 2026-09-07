@@ -32,8 +32,21 @@ public final class RaidBossInteractionListener {
             if (!(entity instanceof PokemonEntity pokemonEntity) || !RaidBossEntityMarker.isRaidBoss(pokemonEntity)) return InteractionResult.PASS;
             if (serverPlayer.isSpectator()) return InteractionResult.FAIL;
 
-            RaidLobbyManager.interact(serverPlayer, pokemonEntity);
-            // Any non-PASS result on the logical server cancels downstream interaction processing.
+            // One right-click on an entity makes a vanilla client send two packets, INTERACT_AT
+            // and then INTERACT, and Fabric fires this event from a separate injection point for
+            // each (see its ServerPlayNetworkHandlerMixin). Both arrive in the same tick with
+            // MAIN_HAND, so the hand check above does not separate them; the only thing that does
+            // is the hit result, which only the INTERACT_AT variant carries. Acting on both ran
+            // the join twice and sent the player two messages ("Joined raid" immediately followed
+            // by "You are already in this raid", or that line twice when re-clicking).
+            //
+            // INTERACT_AT is the one to act on: a vanilla client always sends it for an entity,
+            // whereas INTERACT follows only when the client-side interactAt did not consume.
+            if (hitResult != null) RaidLobbyManager.interact(serverPlayer, pokemonEntity);
+
+            // Both variants still return a non-PASS result, which cancels downstream interaction
+            // processing. The ignored one must NOT return PASS: that would hand its packet to
+            // Cobblemon's own handler, which starts an ordinary solo wild battle against the boss.
             return InteractionResult.SUCCESS;
         });
     }

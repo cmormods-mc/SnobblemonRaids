@@ -182,7 +182,7 @@ public record CobbleRaidsConfig(
                         RaidTierWeights.defaults(),
                         AnnouncementPrecision.NEAREST_HUNDRED
                 ),
-                new RecruitmentDefaults(45, 10.0, VALIDATED_MAX_HUMAN_PLAYERS),
+                new RecruitmentDefaults(20, 10.0, VALIDATED_MAX_HUMAN_PLAYERS),
                 new CombatDefaults(900, false),
                 TierScaling.defaults(),
                 BossGlow.defaults(),
