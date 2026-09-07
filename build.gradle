@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.24-phase39-textured-panel-structure'
+version = '0.8.25-phase40-real-art-integration'
 group = 'com.cobbleraids'
 
 base {
