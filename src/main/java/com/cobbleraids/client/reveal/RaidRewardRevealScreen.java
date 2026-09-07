@@ -209,6 +209,13 @@ public final class RaidRewardRevealScreen extends Screen {
     }
 
     @Override
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        // Screen.render() (invoked below via super.render()) unconditionally calls this method again
+        // after our own renderTransparentBackground() call -- overriding it to a no-op stops that
+        // second, vanilla-dispatched call from re-triggering the blurring renderBackground behavior.
+    }
+
+    @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         long now = System.currentTimeMillis();
         if (state == State.OPENING && now - stateEnteredAtMillis >= OPENING_DURATION_MILLIS) {
