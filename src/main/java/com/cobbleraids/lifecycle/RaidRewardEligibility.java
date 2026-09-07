@@ -12,10 +12,11 @@ public record RaidRewardEligibility(
         ResourceLocation definitionId,
         RaidOutcome outcome,
         Map<UUID, Float> contribution,
-        Set<UUID> participants) {
+        Set<UUID> participants,
+        int elapsedCombatTicks) {
     public static RaidRewardEligibility victory(RaidSession raid) {
         return new RaidRewardEligibility(
                 raid.getId(), raid.getDefinitionId(), RaidOutcome.VICTORY,
-                raid.getContributionSnapshot(), raid.getActiveParticipants());
+                raid.getContributionSnapshot(), raid.getActiveParticipants(), raid.getElapsedCombatTicks());
     }
 }

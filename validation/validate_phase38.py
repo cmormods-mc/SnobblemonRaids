@@ -23,7 +23,9 @@ def read(path: Path) -> str:
 
 
 def validate_new_files_exist() -> None:
-    for name in ("PokeBallMesh.java", "RevealSounds.java", "RevealParticles.java", "RaidRewardRevealScreen.java"):
+    # PokeBallMesh.java was Phase 38's own centerpiece but was deliberately retired in Phase 39
+    # (superseded by a textured-panel layout) -- see validate_phase39.py, which asserts it's gone.
+    for name in ("RevealSounds.java", "RevealParticles.java", "RaidRewardRevealScreen.java"):
         assert (REVEAL / name).is_file(), f"missing {name}"
 
 
@@ -70,17 +72,9 @@ def validate_state_machine() -> None:
 
 def validate_tier_reuse() -> None:
     screen = read(REVEAL / "RaidRewardRevealScreen.java")
-    mesh = read(REVEAL / "PokeBallMesh.java")
     # RaidTierPresentation stays the single source of truth for tier color -- no duplicate mapping
-    # invented in the new reveal-screen files.
+    # invented in the reveal-screen files.
     assert "RaidTierPresentation.color(" in screen
-    assert "RaidTierPresentation" not in mesh, "PokeBallMesh should stay tier-agnostic; theming lives in the screen"
-
-
-def validate_mesh_generated_once() -> None:
-    mesh = read(REVEAL / "PokeBallMesh.java")
-    assert "private static final GeneratedMesh MESH = generate();" in mesh, \
-        "mesh geometry must be generated once, not regenerated per frame"
 
 
 def validate_no_new_gradle_dependency() -> None:
@@ -98,7 +92,6 @@ def validate_no_new_assets() -> None:
 def validate_jar(path: Path) -> None:
     with zipfile.ZipFile(path) as archive:
         names = set(archive.namelist())
-        assert "com/cobbleraids/client/reveal/PokeBallMesh.class" in names
         assert "com/cobbleraids/client/reveal/RevealSounds.class" in names
         assert "com/cobbleraids/client/reveal/RevealParticles.class" in names
         manifest = json.loads(archive.read("fabric.mod.json"))
@@ -111,7 +104,6 @@ def main() -> None:
     validate_server_side_untouched()
     validate_state_machine()
     validate_tier_reuse()
-    validate_mesh_generated_once()
     validate_no_new_gradle_dependency()
     validate_no_new_assets()
     for argument in sys.argv[1:]:

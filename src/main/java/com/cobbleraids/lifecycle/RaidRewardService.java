@@ -51,7 +51,8 @@ public final class RaidRewardService {
             int bonusRolls = rewards.contributionBonus().enabled()
                     ? ContributionMath.bonusRolls(percentage, thresholds) : 0;
             PendingRaidReward pending = new PendingRaidReward(
-                    eligibility.raidId(), eligibility.definitionId(), definition.rarityTier(), rewards, percentage, bonusRolls);
+                    eligibility.raidId(), eligibility.definitionId(), definition.rarityTier(), rewards, percentage, bonusRolls,
+                    eligibility.elapsedCombatTicks(), eligibility.participants().size());
             PENDING.computeIfAbsent(playerId, ignored -> new ArrayDeque<>()).addLast(pending);
             if (server.getPlayerList().getPlayer(playerId) != null) OPEN_DELAY.putIfAbsent(playerId, GUI_OPEN_DELAY_TICKS);
         }

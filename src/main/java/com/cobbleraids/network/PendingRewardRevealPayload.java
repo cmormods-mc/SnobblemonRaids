@@ -17,7 +17,9 @@ public record PendingRewardRevealPayload(
         String speciesDisplayName,
         List<String> choiceIds,
         double contributionPercentage,
-        int contributionBonusRolls
+        int contributionBonusRolls,
+        int elapsedCombatTicks,
+        int participantCount
 ) implements CustomPacketPayload {
     public static final Type<PendingRewardRevealPayload> TYPE =
             new Type<>(ResourceLocation.fromNamespaceAndPath("cobbleraids", "pending_reward_reveal"));
@@ -31,6 +33,8 @@ public record PendingRewardRevealPayload(
                 ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()).encode(buf, payload.choiceIds());
                 ByteBufCodecs.DOUBLE.encode(buf, payload.contributionPercentage());
                 ByteBufCodecs.VAR_INT.encode(buf, payload.contributionBonusRolls());
+                ByteBufCodecs.VAR_INT.encode(buf, payload.elapsedCombatTicks());
+                ByteBufCodecs.VAR_INT.encode(buf, payload.participantCount());
             },
             buf -> new PendingRewardRevealPayload(
                     UUIDUtil.STREAM_CODEC.decode(buf),
@@ -39,6 +43,8 @@ public record PendingRewardRevealPayload(
                     ByteBufCodecs.STRING_UTF8.decode(buf),
                     ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()).decode(buf),
                     ByteBufCodecs.DOUBLE.decode(buf),
+                    ByteBufCodecs.VAR_INT.decode(buf),
+                    ByteBufCodecs.VAR_INT.decode(buf),
                     ByteBufCodecs.VAR_INT.decode(buf)));
 
     @Override

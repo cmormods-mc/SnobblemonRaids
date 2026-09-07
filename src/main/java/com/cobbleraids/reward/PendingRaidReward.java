@@ -12,5 +12,7 @@ public record PendingRaidReward(
         RaidRarityTier rarityTier,
         RaidDefinition.Rewards rewards,
         double contributionPercentage,
-        int contributionBonusRolls
+        int contributionBonusRolls,
+        int elapsedCombatTicks,
+        int participantCount
 ) {}

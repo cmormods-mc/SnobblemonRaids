@@ -29,7 +29,9 @@ public final class NativeRewardScreenGateway {
                 speciesDisplayName(definition),
                 List.copyOf(pending.rewards().choices().keySet()),
                 pending.contributionPercentage(),
-                pending.contributionBonusRolls()));
+                pending.contributionBonusRolls(),
+                pending.elapsedCombatTicks(),
+                pending.participantCount()));
         return true;
     }
 
