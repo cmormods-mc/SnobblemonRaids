@@ -8,6 +8,7 @@ import com.cobbleraids.config.RaidRarityTier;
 import com.cobbleraids.lobby.RaidLobbyManager;
 import com.cobbleraids.presentation.CommandFormat;
 import com.cobbleraids.presentation.RaidTierPresentation;
+import com.cobbleraids.showdown.ShowdownIntegrationInstaller;
 import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import java.util.ArrayList;
@@ -125,6 +126,13 @@ public final class RaidSpawnScheduler {
         ServerLevel level = (ServerLevel) player.level();
         ResourceLocation dimensionId = level.dimension().location();
         String playerName = player.getGameProfile().getName();
+
+        if (!ShowdownIntegrationInstaller.isReady()) {
+            RaidSpawnHistory.record(schedulerTick, playerName, dimensionId,
+                    RaidSpawnHistory.Outcome.SHOWDOWN_INTEGRATION_FAILED,
+                    "CobbleRaids' Showdown edits are not installed; see the server log at startup");
+            return;
+        }
 
         int activeHere = activeInDimension(dimensionId);
         if (activeHere >= config.maxActiveRaidsPerDimension()) {

@@ -3,6 +3,7 @@ package com.cobbleraids.spawn;
 import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.presentation.RaidBossGlowService;
 import com.cobbleraids.presentation.RaidTierPresentation;
+import com.cobbleraids.showdown.ShowdownIntegrationInstaller;
 import com.cobblemon.mod.common.api.pokemon.PokemonSpecies;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import com.cobblemon.mod.common.pokemon.Pokemon;
@@ -21,6 +22,12 @@ public final class RaidBossSpawner {
         Objects.requireNonNull(level, "level");
         Objects.requireNonNull(position, "position");
         Objects.requireNonNull(definition, "definition");
+        // A boss whose Showdown edits never installed would recruit players and then break at the
+        // first turn. Refuse at the single choke point both the scheduler and /cobbleraids spawn use.
+        if (!ShowdownIntegrationInstaller.isReady()) {
+            throw new IllegalStateException("CobbleRaids' Showdown integration is not installed, so raid battles"
+                    + " cannot run. See '[CobbleRaids] Showdown integration FAILED' in the server log.");
+        }
 
         Species species = PokemonSpecies.getByIdentifier(definition.species());
         if (species == null) throw new IllegalArgumentException("Unknown Cobblemon species: " + definition.species());

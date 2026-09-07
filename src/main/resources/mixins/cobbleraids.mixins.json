@@ -4,6 +4,7 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "showdown.ShowdownResourceLoaderMixin",
+    "showdown.ShowdownContextBootMixin",
     "battle.RaidBattleRegistryMixin",
     "battle.RaidBattleSelectActionsMixin",
     "battle.RaidMoveActionResponseMixin",

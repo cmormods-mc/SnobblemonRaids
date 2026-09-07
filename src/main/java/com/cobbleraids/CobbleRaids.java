@@ -61,7 +61,7 @@ public final class CobbleRaids implements ModInitializer {
         // Repairs the Showdown integration (ShowdownResourceLoaderMixin) if another mod's own
         // unbundle-time file writes clobbered it after ours -- confirmed live against a real pack
         // (mega_showdown) that patches the same Cobblemon Showdown files at the same injection point.
-        ServerLifecycleEvents.SERVER_STARTED.register(server -> ShowdownIntegrationInstaller.ensureInstalled());
+        ServerLifecycleEvents.SERVER_STARTED.register(server -> ShowdownIntegrationInstaller.installSafely("at server start"));
         ServerLifecycleEvents.SERVER_STOPPING.register(RaidSpawnScheduler::onServerStopping);
         ServerLifecycleEvents.SERVER_STOPPING.register(RaidBossGlowService::onServerStopping);
         // A natural raid boss is persistence-required, so nothing else will ever remove one that

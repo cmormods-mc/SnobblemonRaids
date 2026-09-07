@@ -17,7 +17,8 @@ public final class RaidSpawnHistory {
         NO_VALID_TERRAIN,
         TOO_CLOSE_TO_EXISTING,
         NO_ELIGIBLE_DEFINITIONS,
-        TIER_SELECTION_FAILED
+        TIER_SELECTION_FAILED,
+        SHOWDOWN_INTEGRATION_FAILED
     }
 
     public record Entry(long tick, String player, ResourceLocation dimension, Outcome outcome, String detail) {}
