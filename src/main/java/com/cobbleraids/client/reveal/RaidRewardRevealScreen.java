@@ -42,28 +42,24 @@ public final class RaidRewardRevealScreen extends Screen {
     private static final float NATIVE_WIDTH = 1672f;
     private static final float NATIVE_HEIGHT = 941f;
 
-    private static final ResourceLocation FRAME_TOP = texture("outer_frame_top");
-    private static final ResourceLocation FRAME_BOTTOM = texture("outer_frame_bottom");
-    private static final ResourceLocation FRAME_LEFT = texture("outer_frame_left");
-    private static final ResourceLocation FRAME_RIGHT = texture("outer_frame_right");
+    // A single opaque full-canvas texture: the frame chrome (title bar, borders, corner brackets) plus
+    // a solid backing fill everywhere else, so no part of the panel lets the world show through gaps.
+    private static final ResourceLocation POKEDEX_BACKING = texture("pokedex_backing");
     private static final ResourceLocation SUMMARY_PANEL = texture("summary_panel");
     private static final ResourceLocation CHAMBER_BACKGROUND = texture("chamber_background");
     private static final ResourceLocation CLAIM_BUTTON = texture("claim_button");
     private static final ResourceLocation CLAIM_BUTTON_BLANK = texture("claim_button_blank");
 
-    private static final NativeRect FRAME_TOP_RECT = new NativeRect(0, 0, 1672, 120);
-    private static final NativeRect FRAME_BOTTOM_RECT = new NativeRect(0, 875, 1672, 66);
-    private static final NativeRect FRAME_LEFT_RECT = new NativeRect(0, 0, 96, 941);
-    private static final NativeRect FRAME_RIGHT_RECT = new NativeRect(1576, 0, 96, 941);
+    private static final NativeRect BACKING_RECT = new NativeRect(0, 0, 1672, 941);
     private static final NativeRect SUMMARY_PANEL_RECT = new NativeRect(94, 122, 313, 731);
-    private static final NativeRect CHAMBER_RECT = new NativeRect(448, 120, 1112, 657);
+    private static final NativeRect CHAMBER_RECT = new NativeRect(420, 112, 1172, 678);
     private static final NativeRect BUTTON_RECT = new NativeRect(699, 787, 488, 83);
     private static final NativeRect FOOTER_RECT = new NativeRect(430, 787, 1150, 83);
 
     // Blanked-value row positions, local to SUMMARY_PANEL_RECT's own origin (see summary_panel.png's
     // edit history: masked from the original baked reference at these exact bands).
     private static final int SIDEBAR_LABEL_X = 8;
-    private static final int SIDEBAR_ICON_LABEL_X = 85;
+    private static final int SIDEBAR_ICON_LABEL_X = 100;
     private static final int VALUE_Y_BOSS = 106;
     private static final int VALUE_Y_TIER = 189;
     private static final int VALUE_Y_TIME = 271;
@@ -247,10 +243,7 @@ public final class RaidRewardRevealScreen extends Screen {
     }
 
     private void drawFrame(GuiGraphics graphics, Layout layout) {
-        blitNative(graphics, FRAME_TOP, layout.toScreen(FRAME_TOP_RECT), FRAME_TOP_RECT);
-        blitNative(graphics, FRAME_BOTTOM, layout.toScreen(FRAME_BOTTOM_RECT), FRAME_BOTTOM_RECT);
-        blitNative(graphics, FRAME_LEFT, layout.toScreen(FRAME_LEFT_RECT), FRAME_LEFT_RECT);
-        blitNative(graphics, FRAME_RIGHT, layout.toScreen(FRAME_RIGHT_RECT), FRAME_RIGHT_RECT);
+        blitNative(graphics, POKEDEX_BACKING, layout.toScreen(BACKING_RECT), BACKING_RECT);
         blitNative(graphics, SUMMARY_PANEL, layout.sidebar(), SUMMARY_PANEL_RECT);
     }
 
@@ -293,17 +286,12 @@ public final class RaidRewardRevealScreen extends Screen {
     private void drawChamber(GuiGraphics graphics, Layout layout, long now) {
         Rect chamber = layout.chamber();
 
-        float sinceOpenedSeconds = (now - openedAtMillis) / 1000f;
         long stateElapsed = now - stateEnteredAtMillis;
-        float t = stateElapsed / 1000f;
-
-        float offsetX = 0f;
-        float offsetY = 0f;
         float flashStrength = 0f;
 
+        // Chamber coordinates are fixed in every state -- the backing behind it is a static full-canvas
+        // image, so any positional offset here would open a visible seam between the two layers.
         switch (state) {
-            case CHOOSING -> offsetY = (float) Math.sin(sinceOpenedSeconds * 2.0) * 2f;
-            case WAITING -> offsetX = (float) Math.sin(t * 18.0) * 2f;
             case OPENING -> {
                 if (stateElapsed < 150L) {
                     flashStrength = stateElapsed / 150f;
@@ -317,9 +305,7 @@ public final class RaidRewardRevealScreen extends Screen {
             default -> { }
         }
 
-        int chamberX = chamber.x() + Math.round(offsetX);
-        int chamberY = chamber.y() + Math.round(offsetY);
-        graphics.blit(CHAMBER_BACKGROUND, chamberX, chamberY, chamber.width(), chamber.height(),
+        graphics.blit(CHAMBER_BACKGROUND, chamber.x(), chamber.y(), chamber.width(), chamber.height(),
                 0f, 0f, CHAMBER_RECT.width(), CHAMBER_RECT.height(), CHAMBER_RECT.width(), CHAMBER_RECT.height());
 
         if (state == State.RESULT) {

@@ -18,8 +18,7 @@ REVEAL = CLIENT / "reveal"
 GUI_TEXTURES = ROOT / "src/main/resources/assets/cobbleraids/textures/gui/raid_rewards"
 
 EXPECTED_TEXTURES = (
-    "outer_frame_top", "outer_frame_bottom", "outer_frame_left", "outer_frame_right",
-    "summary_panel", "chamber_background", "claim_button", "claim_button_blank", "icons",
+    "pokedex_backing", "summary_panel", "chamber_background", "claim_button", "claim_button_blank", "icons",
 )
 
 
