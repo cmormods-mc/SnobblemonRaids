@@ -69,8 +69,10 @@ final class RaidInfoOps {
                 + definition.recruitment().maxPlayers() + " players"), false);
         source.sendSuccess(() -> CommandFormat.row(CommandFormat.pad("spawn", 10)
                 + (spawn.enabled() ? "enabled" : "DISABLED") + " · weight " + spawn.weight()
-                + " · cooldown " + spawn.cooldownSeconds() + "s · despawn " + spawn.despawnSeconds() + "s"
-                + " · max " + spawn.maxConcurrent()), false);
+                + " · cooldown " + spawn.cooldownSeconds() + "s · max " + spawn.maxConcurrent()), false);
+        source.sendSuccess(() -> CommandFormat.row(CommandFormat.pad("timers", 10)
+                + "despawn " + spawn.despawnSeconds() + "s unattended · lifetime "
+                + spawn.maxLifetimeSeconds() + "s total"), false);
         source.sendSuccess(() -> CommandFormat.row(CommandFormat.pad("where", 10) + habitats(definition)), false);
         source.sendSuccess(() -> CommandFormat.row(CommandFormat.pad("when", 10) + times(definition)
                 + " · " + dimensions(definition)), false);

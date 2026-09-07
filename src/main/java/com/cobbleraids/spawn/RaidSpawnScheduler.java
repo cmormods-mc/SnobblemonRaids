@@ -61,16 +61,36 @@ public final class RaidSpawnScheduler {
      * RaidBossSpawner marks it setPersistenceRequired(), and its slot against max_active_raids
      * was quietly released.
      */
-    private record ActiveSpawn(
-            ResourceLocation definitionId,
-            ResourceLocation dimension,
-            BlockPos position,
-            long spawnedAtTick,
-            long lastNearbyPlayerTick,
-            int despawnSeconds
-    ) {
-        ActiveSpawn withLastNearbyPlayerTick(long tick) {
-            return new ActiveSpawn(definitionId, dimension, position, spawnedAtTick, tick, despawnSeconds);
+    private static final class ActiveSpawn {
+        final ResourceLocation definitionId;
+        final ResourceLocation dimension;
+        final BlockPos position;
+        final long spawnedAtTick;
+        final int despawnSeconds;
+        final int maxLifetimeSeconds;
+        // Mutated once per second by the maintenance pass on the server thread, which is the only
+        // thing that touches ACTIVE. A record here meant allocating a replacement every second for
+        // every tracked boss just to advance a timer, and a wither method per mutable field.
+        long lastNearbyPlayerTick;
+        int expiryWarningsSent;
+
+        ActiveSpawn(ResourceLocation definitionId, ResourceLocation dimension, BlockPos position,
+                    long spawnedAtTick, int despawnSeconds, int maxLifetimeSeconds) {
+            this.definitionId = definitionId;
+            this.dimension = dimension;
+            this.position = position;
+            this.spawnedAtTick = spawnedAtTick;
+            this.lastNearbyPlayerTick = spawnedAtTick;
+            this.despawnSeconds = despawnSeconds;
+            this.maxLifetimeSeconds = maxLifetimeSeconds;
+        }
+
+        ResourceLocation definitionId() { return definitionId; }
+        ResourceLocation dimension() { return dimension; }
+        BlockPos position() { return position; }
+
+        long secondsLeft(long now) {
+            return maxLifetimeSeconds - (now - spawnedAtTick) / 20L;
         }
     }
 
@@ -182,8 +202,8 @@ public final class RaidSpawnScheduler {
                 dimensionId,
                 pos,
                 schedulerTick,
-                schedulerTick,
-                selected.spawn().despawnSeconds()
+                selected.spawn().despawnSeconds(),
+                selected.spawn().maxLifetimeSeconds()
         );
         ACTIVE.put(entity.getUUID(), tracked);
         NEXT_ALLOWED_TICK.put(selected.id(), schedulerTick + selected.spawn().cooldownSeconds() * 20L);
@@ -436,22 +456,50 @@ public final class RaidSpawnScheduler {
                 continue;
             }
 
+            // A raid that is actually being fought always finishes. Everything below is about bosses
+            // nobody is fighting, and finalization discards the entity itself when the battle ends.
+            boolean inBattle = boss != null && boss.isBattling();
+
+            // Total lifetime cap, checked before the idle timer because it is the only rule a player
+            // cannot reset. despawn_seconds measures unattended time and restarts every second
+            // somebody stands in range, so on its own a camped boss lives forever, holding a
+            // max_active_raids slot and blocking min_distance_between_raids for everyone else.
+            // A recruiting lobby deliberately does NOT extend this, or re-opening one would be an
+            // unlimited refresh; RaidLobbyManager refuses to open one near expiry instead.
+            if (!inBattle && active.secondsLeft(schedulerTick) <= 0L) {
+                if (boss != null) {
+                    RaidLobbyManager.cancelForBoss(boss);
+                    announceExpiry(server, boss, config.despawnPlayerRadius());
+                    boss.discard();
+                }
+                if (CobbleRaidsConfigManager.get().debugLogging()) {
+                    System.out.println("[CobbleRaids] Wild raid " + active.definitionId()
+                            + " hit its " + active.maxLifetimeSeconds + "s lifetime cap"
+                            + (boss == null ? " (deferred: chunk not loaded)" : ""));
+                }
+                iterator.remove();
+                continue;
+            }
+
             if (boss != null) {
                 // Recruitment and combat own the boss lifecycle while either is active.
-                if (boss.isBattling() || RaidLobbyManager.hasActiveLobby(boss)) {
-                    entry.setValue(active.withLastNearbyPlayerTick(schedulerTick));
+                if (inBattle || RaidLobbyManager.hasActiveLobby(boss)) {
+                    active.lastNearbyPlayerTick = schedulerTick;
                     continue;
                 }
                 if (hasNearbyPlayer(server, boss, config.despawnPlayerRadius())) {
-                    entry.setValue(active.withLastNearbyPlayerTick(schedulerTick));
+                    active.lastNearbyPlayerTick = schedulerTick;
+                    // Only somebody standing here can see the boss, so this is the only case where a
+                    // fading warning has an audience worth sending it to.
+                    warnBeforeExpiry(server, boss, active, config.despawnPlayerRadius());
                     continue;
                 }
             }
             // boss == null means the chunk holding it is not loaded, which is itself proof that no
             // player is near it. Idle time keeps accruing rather than the entry being dropped.
 
-            long idleTicks = schedulerTick - active.lastNearbyPlayerTick();
-            if (idleTicks < active.despawnSeconds() * 20L) continue;
+            long idleTicks = schedulerTick - active.lastNearbyPlayerTick;
+            if (idleTicks < active.despawnSeconds * 20L) continue;
 
             if (CobbleRaidsConfigManager.get().debugLogging()) {
                 System.out.println("[CobbleRaids] Despawning unattended wild raid " + active.definitionId()
@@ -461,6 +509,43 @@ public final class RaidSpawnScheduler {
             // An unloaded boss cannot be discarded from here. Dropping it from ACTIVE hands it to
             // onNaturalBossLoaded, which removes any untracked natural boss the moment it loads.
             iterator.remove();
+        }
+    }
+
+    /** Seconds of lifetime remaining, or -1 for a boss this scheduler does not track (admin-spawned). */
+    public static long secondsUntilExpiry(UUID bossId) {
+        ActiveSpawn active = ACTIVE.get(bossId);
+        return active == null ? -1L : Math.max(0L, active.secondsLeft(schedulerTick));
+    }
+
+    /**
+     * One warning at each threshold, tracked on the entry so a player standing there for the whole
+     * countdown is told twice rather than once a second.
+     */
+    private static void warnBeforeExpiry(MinecraftServer server, PokemonEntity boss, ActiveSpawn active, double radius) {
+        long secondsLeft = active.secondsLeft(schedulerTick);
+        int stage = secondsLeft <= 10L ? 2 : secondsLeft <= 60L ? 1 : 0;
+        if (stage == 0 || stage <= active.expiryWarningsSent) return;
+        active.expiryWarningsSent = stage;
+        broadcastNear(boss, radius, Component.literal("This raid boss will leave in ~"
+                        + Math.max(1L, secondsLeft) + "s.")
+                .withStyle(ChatFormatting.YELLOW));
+    }
+
+    private static void announceExpiry(MinecraftServer server, PokemonEntity boss, double radius) {
+        broadcastNear(boss, radius, Component.literal("The raid boss lost interest and left.")
+                .withStyle(ChatFormatting.GRAY));
+    }
+
+    /**
+     * Level-local player list rather than the whole server's: only players in this dimension can
+     * possibly be in range, and on a busy server that is a much shorter list to walk.
+     */
+    private static void broadcastNear(PokemonEntity boss, double radius, Component message) {
+        if (!(boss.level() instanceof ServerLevel level)) return;
+        double radiusSqr = radius * radius;
+        for (ServerPlayer player : level.players()) {
+            if (player.distanceToSqr(boss) <= radiusSqr) player.sendSystemMessage(message);
         }
     }
 

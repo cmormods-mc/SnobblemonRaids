@@ -5,6 +5,7 @@ import com.cobbleraids.config.RaidDefinitionRegistry;
 import com.cobbleraids.raid.RaidFactory;
 import com.cobbleraids.raid.RaidScalingPolicy;
 import com.cobbleraids.spawn.RaidBossEntityMarker;
+import com.cobbleraids.spawn.RaidSpawnScheduler;
 import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import java.util.ArrayList;
@@ -21,6 +22,8 @@ import net.minecraft.server.level.ServerPlayer;
 /** Server-thread coordinator for wild-boss recruitment windows. */
 public final class RaidLobbyManager {
     private static final Map<UUID, RaidLobby> BY_BOSS = new ConcurrentHashMap<>();
+    /** Headroom past the recruitment window so a raid that just locked still has time to be fought. */
+    private static final int LOBBY_EXPIRY_MARGIN_SECONDS = 30;
     private RaidLobbyManager() {}
 
     public enum JoinResult { STARTED_RECRUITMENT, JOINED, ALREADY_JOINED, FULL, TOO_FAR, UNAVAILABLE, NOT_A_RAID_BOSS }
@@ -43,6 +46,16 @@ public final class RaidLobbyManager {
         RaidLobby lobby = BY_BOSS.get(boss.getUUID());
         boolean created = false;
         if (lobby == null || lobby.status() == RaidLobby.Status.CANCELLED || lobby.status() == RaidLobby.Status.STARTED) {
+            // A wild boss has a total lifetime cap that recruitment does not extend, so refuse to
+            // open a lobby that could not finish recruiting before the boss is due to leave. Without
+            // this, players would join, wait out the countdown, and watch the boss vanish at lock.
+            // -1 means the scheduler does not track it (admin-spawned), which has no cap.
+            long secondsLeft = RaidSpawnScheduler.secondsUntilExpiry(boss.getUUID());
+            if (secondsLeft >= 0L && secondsLeft < definition.recruitment().durationSeconds() + LOBBY_EXPIRY_MARGIN_SECONDS) {
+                player.sendSystemMessage(Component.literal("This raid boss is about to leave; it cannot start a new raid.")
+                        .withStyle(ChatFormatting.RED));
+                return JoinResult.UNAVAILABLE;
+            }
             lobby = new RaidLobby(boss, definition, now);
             BY_BOSS.put(boss.getUUID(), lobby);
             created = true;

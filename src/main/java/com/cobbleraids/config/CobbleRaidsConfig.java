@@ -38,6 +38,7 @@ public record CobbleRaidsConfig(
             int locationAttempts,
             double despawnPlayerRadius,
             int defaultDespawnSeconds,
+            int defaultMaxLifetimeSeconds,
             int defaultDefinitionCooldownSeconds,
             RaidTierWeights tierWeights,
             AnnouncementPrecision announcementPrecision
@@ -72,6 +73,16 @@ public record CobbleRaidsConfig(
                         + " keeps them alive. Unattended bosses will not despawn until a player leaves that radius.");
             if (defaultDespawnSeconds < 1 || defaultDespawnSeconds > 86_400)
                 throw new IllegalArgumentException("natural_spawning.default_despawn_seconds must be 1..86400");
+            // Deliberately has no "unlimited" value. despawn_seconds only measures time with nobody
+            // nearby, so a player standing next to a boss resets it forever -- this cap is the only
+            // thing bounding a held boss, and an off switch would silently restore that. Set it to
+            // 86400 if a 24h ceiling is genuinely wanted.
+            if (defaultMaxLifetimeSeconds < 60 || defaultMaxLifetimeSeconds > 86_400)
+                throw new IllegalArgumentException("natural_spawning.default_max_lifetime_seconds must be 60..86400");
+            if (defaultMaxLifetimeSeconds < defaultDespawnSeconds)
+                System.out.println("[CobbleRaids] WARNING: natural_spawning.default_max_lifetime_seconds ("
+                        + defaultMaxLifetimeSeconds + ") is below default_despawn_seconds (" + defaultDespawnSeconds
+                        + "), so the total lifetime cap will usually fire before the unattended timer ever can.");
             if (defaultDefinitionCooldownSeconds < 0 || defaultDefinitionCooldownSeconds > 604_800)
                 throw new IllegalArgumentException("natural_spawning.default_definition_cooldown_seconds must be 0..604800");
             if (tierWeights == null)
@@ -166,19 +177,25 @@ public record CobbleRaidsConfig(
     public static CobbleRaidsConfig defaults() {
         return new CobbleRaidsConfig(
                 new NaturalSpawning(
-                        true,
-                        1200,
-                        0.25,
-                        1,
-                        3,
-                        2,
-                        24.0,
-                        64.0,
-                        128.0,
-                        16,
-                        32.0,
-                        600,
-                        1800,
+                        true,           // enabled
+                        1200,           // check_interval_ticks
+                        0.25,           // spawn_attempt_chance
+                        1,              // attempts_per_check
+                        // Raised from 3/2. At three global slots a handful of players sitting on
+                        // bosses could stop wild raids for everyone, and each held boss also blocks
+                        // a 128-block radius via min_distance_between_raids. Enough supply that
+                        // holding one is not worth doing is half of the fix; max_lifetime_seconds
+                        // below is the other half.
+                        10,             // max_active_raids
+                        4,              // max_active_raids_per_dimension
+                        24.0,           // min_distance_from_player
+                        64.0,           // max_distance_from_player
+                        128.0,          // min_distance_between_raids
+                        16,             // location_attempts
+                        32.0,           // despawn_player_radius
+                        600,            // default_despawn_seconds (unattended only)
+                        1800,           // default_max_lifetime_seconds (total, camped or not)
+                        1800,           // default_definition_cooldown_seconds
                         RaidTierWeights.defaults(),
                         AnnouncementPrecision.NEAREST_HUNDRED
                 ),
@@ -216,6 +233,7 @@ public record CobbleRaidsConfig(
                 integer(natural, "location_attempts", nd.locationAttempts()),
                 decimal(natural, "despawn_player_radius", nd.despawnPlayerRadius()),
                 integer(natural, "default_despawn_seconds", nd.defaultDespawnSeconds()),
+                integer(natural, "default_max_lifetime_seconds", nd.defaultMaxLifetimeSeconds()),
                 integer(natural, "default_definition_cooldown_seconds", nd.defaultDefinitionCooldownSeconds()),
                 tierWeights,
                 natural.has("announcement_precision")
@@ -283,6 +301,7 @@ public record CobbleRaidsConfig(
         natural.addProperty("location_attempts", naturalSpawning.locationAttempts());
         natural.addProperty("despawn_player_radius", naturalSpawning.despawnPlayerRadius());
         natural.addProperty("default_despawn_seconds", naturalSpawning.defaultDespawnSeconds());
+        natural.addProperty("default_max_lifetime_seconds", naturalSpawning.defaultMaxLifetimeSeconds());
         natural.addProperty("default_definition_cooldown_seconds", naturalSpawning.defaultDefinitionCooldownSeconds());
         JsonObject tierWeights = new JsonObject();
         tierWeights.addProperty("starter", naturalSpawning.tierWeights().starter());

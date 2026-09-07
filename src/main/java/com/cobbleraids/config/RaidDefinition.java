@@ -24,7 +24,8 @@ public record RaidDefinition(
     /** Natural spawning is opt-in. Empty biome lists mean any biome in an allowed dimension. */
     public record Spawn(boolean enabled, int weight, List<ResourceLocation> dimensions,
                         List<ResourceLocation> biomes, List<ResourceLocation> biomeTags,
-                        List<SpawnTime> times, int cooldownSeconds, int despawnSeconds, int maxConcurrent) {
+                        List<SpawnTime> times, int cooldownSeconds, int despawnSeconds, int maxLifetimeSeconds,
+                        int maxConcurrent) {
         public Spawn {
             if (weight < 1 || weight > 1_000_000) throw new IllegalArgumentException("spawn.weight must be 1..1000000");
             dimensions = List.copyOf(dimensions);
@@ -33,6 +34,10 @@ public record RaidDefinition(
             times = times.isEmpty() ? List.of(SpawnTime.ALL_DAY) : List.copyOf(times);
             if (cooldownSeconds < 0 || cooldownSeconds > 604_800) throw new IllegalArgumentException("spawn.cooldown_seconds must be 0..604800");
             if (despawnSeconds < 1 || despawnSeconds > 86_400) throw new IllegalArgumentException("spawn.despawn_seconds must be 1..86400");
+            // Total lifetime from spawn, whether or not anyone is standing next to it. despawn_seconds
+            // measures only unattended time and resets whenever a player is in range, so this is what
+            // actually bounds a boss somebody is camping.
+            if (maxLifetimeSeconds < 60 || maxLifetimeSeconds > 86_400) throw new IllegalArgumentException("spawn.max_lifetime_seconds must be 60..86400");
             if (maxConcurrent < 1 || maxConcurrent > 256) throw new IllegalArgumentException("spawn.max_concurrent must be 1..256");
         }
         public boolean allowsDimension(ResourceLocation dimension) { return dimensions.isEmpty() || dimensions.contains(dimension); }
@@ -157,8 +162,10 @@ public record RaidDefinition(
         List<SpawnTime> times = readSpawnTimes(spawnObject, "times");
         int cooldown = integer(spawnObject, "cooldown_seconds", global.naturalSpawning().defaultDefinitionCooldownSeconds());
         int despawn = integer(spawnObject, "despawn_seconds", global.naturalSpawning().defaultDespawnSeconds());
+        int maxLifetime = integer(spawnObject, "max_lifetime_seconds", global.naturalSpawning().defaultMaxLifetimeSeconds());
         int maxConcurrent = integer(spawnObject, "max_concurrent", 1);
-        Spawn spawn = new Spawn(spawnEnabled, spawnWeight, dimensions, biomes, biomeTags, times, cooldown, despawn, maxConcurrent);
+        Spawn spawn = new Spawn(spawnEnabled, spawnWeight, dimensions, biomes, biomeTags, times, cooldown, despawn,
+                maxLifetime, maxConcurrent);
         RaidRarityTier rarityTier = root.has("rarity_tier")
                 ? RaidRarityTier.parse(root.get("rarity_tier").getAsString())
                 : legacyTier(spawnWeight);

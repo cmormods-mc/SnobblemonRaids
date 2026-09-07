@@ -65,7 +65,12 @@ final class RaidAdminDebugOps {
         RaidLobby lobby = RaidLobbyManager.get(boss);
         String state = session != null ? "battle" : lobby != null ? "lobby" : "idle";
         // "wild" only when it is true -- natural=false on every admin-spawned row was pure noise.
-        String origin = RaidBossEntityMarker.isNatural(boss) ? "  wild" : "";
+        // Tracked wild bosses also show what is left of their lifetime cap, which is the only way to
+        // see the cap working; admin-spawned bosses are untracked and have none, hence the -1 check.
+        long secondsLeft = RaidSpawnScheduler.secondsUntilExpiry(boss.getUUID());
+        String origin = !RaidBossEntityMarker.isNatural(boss) ? ""
+                : secondsLeft < 0L ? "  wild"
+                : "  wild " + CommandFormat.duration(secondsLeft) + " left";
 
         source.sendSuccess(() -> CommandFormat.row(CommandFormat.pad(definition, 14)
                         + CommandFormat.pad(state, 7)
@@ -175,6 +180,7 @@ final class RaidAdminDebugOps {
         setting(source, "location_attempts", ns.locationAttempts());
         setting(source, "despawn_player_radius", ns.despawnPlayerRadius());
         setting(source, "default_despawn_seconds", ns.defaultDespawnSeconds());
+        setting(source, "default_max_lifetime_seconds", ns.defaultMaxLifetimeSeconds());
         setting(source, "default_definition_cooldown_seconds", ns.defaultDefinitionCooldownSeconds());
         setting(source, "announcement_precision", ns.announcementPrecision().serializedName());
 
