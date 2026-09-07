@@ -34,7 +34,7 @@ final class RaidAdminRewardOps {
 
         UUID playerId = target.getUUID();
         RaidRewardEligibility eligibility = new RaidRewardEligibility(
-                UUID.randomUUID(), definitionId, RaidOutcome.VICTORY, Map.of(playerId, 1.0f), Set.of(playerId));
+                UUID.randomUUID(), definitionId, RaidOutcome.VICTORY, Map.of(playerId, 1.0f), Set.of(playerId), 0);
         RaidRewardService.grant(eligibility, source.getServer());
 
         source.sendSuccess(() -> Component.literal("Queued " + definitionId + " reward choices for "
