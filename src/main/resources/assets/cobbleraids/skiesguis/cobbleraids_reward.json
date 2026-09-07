@@ -5,7 +5,7 @@
     "welcome_msg": {
       "type": "COMMAND_PLAYER",
       "click": "ANY",
-      "commands": ["tellraw @s [{\"text\": \"Pick one reward below, \", \"color\": \"green\"}, {\"selector\": \"@s\", \"color\": \"green\"}, {\"text\": \"! Your contribution bonus is added automatically.\", \"color\": \"green\"}]"]
+      "commands": ["tellraw @s [{\"text\": \"Claim your raid reward below, \", \"color\": \"green\"}, {\"selector\": \"@s\", \"color\": \"green\"}, {\"text\": \"! Your contribution bonus is added automatically.\", \"color\": \"green\"}]"]
     },
     "welcome_sound": {
       "type": "PLAYSOUND",
@@ -25,39 +25,17 @@
   "items": {
     "filler": {
       "item": "minecraft:gray_stained_glass_pane",
-      "slots": [0,1,2,3,4,5,6,7,8,9,17,18,19,20,21,22,23,24,25,26],
+      "slots": [0,1,2,3,4,5,6,7,8,9,10,12,14,16,17,18,19,20,21,22,23,24,25,26],
       "name": " "
     },
-    "reward_candy": {
-      "item": "cobblemon:rare_candy",
-      "amount": 5,
-      "slots": [11],
-      "name": "<yellow><b>5x Rare Candy",
-      "lore": ["<gray>Instantly level up a Pokémon.", "", "<green>Click to claim!"],
-      "click_actions": {
-        "claim": {"type": "COMMAND_PLAYER", "click": "ANY", "commands": ["cobbleraids reward claim candy"]},
-        "close": {"type": "CLOSE_GUI", "click": "ANY"}
-      }
-    },
-    "reward_balls": {
-      "item": "cobblemon:ultra_ball",
-      "amount": 8,
-      "slots": [13],
-      "name": "<aqua><b>8x Ultra Ball",
-      "lore": ["<gray>A stack of premium Poke Balls.", "", "<green>Click to claim!"],
-      "click_actions": {
-        "claim": {"type": "COMMAND_PLAYER", "click": "ANY", "commands": ["cobbleraids reward claim balls"]},
-        "close": {"type": "CLOSE_GUI", "click": "ANY"}
-      }
-    },
-    "reward_gamble": {
-      "item": "cobblemon:master_ball",
+    "reward_claim": {
+      "item": "cobblemon:poke_ball",
       "amount": 1,
-      "slots": [15],
-      "name": "<light_purple><b>Mystery Roll (5% Master Ball)",
-      "lore": ["<gray>5 Great Balls guaranteed.", "<gray>5% chance at a bonus Master Ball.", "", "<green>Click to gamble!"],
+      "slots": [13],
+      "name": "<yellow><b>Claim Reward",
+      "lore": ["<gray>Claim your raid reward.", "", "<green>Click to claim!"],
       "click_actions": {
-        "claim": {"type": "COMMAND_PLAYER", "click": "ANY", "commands": ["cobbleraids reward claim gamble"]},
+        "claim": {"type": "COMMAND_PLAYER", "click": "ANY", "commands": ["cobbleraids reward claim all"]},
         "close": {"type": "CLOSE_GUI", "click": "ANY"}
       }
     }

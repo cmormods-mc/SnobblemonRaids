@@ -31,24 +31,16 @@
   "rewards": {
     "gui_id": "cobbleraids_reward",
     "choices": {
-      "candy": {
+      "all": {
         "items": [
           {
             "item": "cobblemon:rare_candy",
             "amount": 5
-          }
-        ]
-      },
-      "balls": {
-        "items": [
+          },
           {
             "item": "cobblemon:ultra_ball",
             "amount": 8
-          }
-        ]
-      },
-      "gamble": {
-        "items": [
+          },
           {
             "item": "cobblemon:great_ball",
             "amount": 5
