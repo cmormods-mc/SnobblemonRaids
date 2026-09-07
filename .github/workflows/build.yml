@@ -46,6 +46,9 @@ jobs:
       - name: Validate textured reward panel
         run: python3 validation/validate_phase39.py
 
+      - name: Validate real texture art
+        run: python3 validation/validate_phase40.py
+
       - name: Compile and remap
         run: gradle --no-daemon clean build --stacktrace --warning-mode all
 
@@ -61,6 +64,7 @@ jobs:
           python3 validation/validate_phase37.py "$jar"
           python3 validation/validate_phase38.py "$jar"
           python3 validation/validate_phase39.py "$jar"
+          python3 validation/validate_phase40.py "$jar"
 
       - name: Upload build outputs
         if: always()

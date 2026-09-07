@@ -95,11 +95,6 @@ def validate_no_new_gradle_dependency() -> None:
     assert len(mod_implementations) == 4, mod_implementations
 
 
-def validate_no_phase38_assets_yet() -> None:
-    assert not (RESOURCES / "assets/cobbleraids/textures").exists()
-    assert not (RESOURCES / "assets/cobbleraids/models").exists()
-
-
 def validate_jar(path: Path) -> None:
     with zipfile.ZipFile(path) as archive:
         names = set(archive.namelist())
@@ -115,7 +110,6 @@ def main() -> None:
     validate_server_authority_preserved()
     validate_reveal_pipe_wiring()
     validate_no_new_gradle_dependency()
-    validate_no_phase38_assets_yet()
     for argument in sys.argv[1:]:
         validate_jar(Path(argument))
     print("Phase 37 native reveal screen validation: PASS")
