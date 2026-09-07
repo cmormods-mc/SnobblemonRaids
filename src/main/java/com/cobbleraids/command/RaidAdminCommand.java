@@ -53,6 +53,13 @@ public final class RaidAdminCommand {
                                                         Vec3Argument.getVec3(ctx, "pos"))))))
                         .then(admin("spawninfo")
                                 .executes(ctx -> RaidSpawnScheduler.sendSpawnInfo(ctx.getSource())))
+                        // Unrestricted on purpose: this is the player-facing "where does X appear?"
+                        // lookup. The tuning numbers live in debug definition, which is operator-only.
+                        .then(Commands.literal("info")
+                                .then(Commands.argument("pokemon", StringArgumentType.word())
+                                        .suggests(RaidSuggestions.SPECIES)
+                                        .executes(ctx -> RaidInfoOps.info(
+                                                ctx.getSource(), StringArgumentType.getString(ctx, "pokemon")))))
                         .then(admin("testwild")
                                 .then(Commands.argument("pokemon", StringArgumentType.word())
                                         .suggests(RaidSuggestions.SPECIES)
@@ -65,6 +72,8 @@ public final class RaidAdminCommand {
                         .then(admin("reload")
                                 .executes(ctx -> RaidAdminConfigOps.reload(ctx.getSource())))
                         .then(admin("cooldown")
+                                .then(Commands.literal("list")
+                                        .executes(ctx -> RaidAdminSpawnOps.listCooldowns(ctx.getSource())))
                                 .then(Commands.literal("reset")
                                         .then(Commands.argument("definition", ResourceLocationArgument.id())
                                                 .suggests(RaidSuggestions.DEFINITIONS)
@@ -80,7 +89,16 @@ public final class RaidAdminCommand {
                                                         .executes(ctx -> RaidAdminRewardOps.grant(
                                                                 ctx.getSource(),
                                                                 EntityArgument.getPlayer(ctx, "target"),
-                                                                ResourceLocationArgument.getId(ctx, "definition")))))))
+                                                                ResourceLocationArgument.getId(ctx, "definition"))))))
+                                .then(admin("list")
+                                        .executes(ctx -> RaidAdminRewardOps.list(ctx.getSource(), null))
+                                        .then(Commands.argument("target", EntityArgument.player())
+                                                .executes(ctx -> RaidAdminRewardOps.list(
+                                                        ctx.getSource(), EntityArgument.getPlayer(ctx, "target")))))
+                                .then(admin("clear")
+                                        .then(Commands.argument("target", EntityArgument.player())
+                                                .executes(ctx -> RaidAdminRewardOps.clear(
+                                                        ctx.getSource(), EntityArgument.getPlayer(ctx, "target"))))))
                         .then(admin("debug")
                                 .then(Commands.literal("status")
                                         .executes(ctx -> RaidAdminDebugOps.status(ctx.getSource())))
@@ -89,7 +107,12 @@ public final class RaidAdminCommand {
                                 .then(Commands.literal("history")
                                         .executes(ctx -> RaidAdminDebugOps.history(ctx.getSource())))
                                 .then(Commands.literal("config")
-                                        .executes(ctx -> RaidAdminDebugOps.config(ctx.getSource()))))
+                                        .executes(ctx -> RaidAdminDebugOps.config(ctx.getSource())))
+                                .then(Commands.literal("definition")
+                                        .then(Commands.argument("pokemon", StringArgumentType.word())
+                                                .suggests(RaidSuggestions.SPECIES)
+                                                .executes(ctx -> RaidInfoOps.definition(
+                                                        ctx.getSource(), StringArgumentType.getString(ctx, "pokemon"))))))
         ));
     }
 }

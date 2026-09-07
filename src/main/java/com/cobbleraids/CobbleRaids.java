@@ -55,6 +55,9 @@ public final class CobbleRaids implements ModInitializer {
         ServerLifecycleEvents.START_DATA_PACK_RELOAD.register((server, resources) -> CobbleRaidsConfigManager.reload());
         ServerLifecycleEvents.SERVER_STARTING.register(server -> RewardGuiBackends.ensureReady());
         ServerLifecycleEvents.SERVER_STARTED.register(RaidSpawnScheduler::onServerStarted);
+        // After SERVER_STARTED specifically: restoring a saved claim resolves its rewards from the
+        // datapack registry, which is only populated once the initial resource load has finished.
+        ServerLifecycleEvents.SERVER_STARTED.register(RaidRewardService::onServerStarted);
         // Repairs the Showdown integration (ShowdownResourceLoaderMixin) if another mod's own
         // unbundle-time file writes clobbered it after ours -- confirmed live against a real pack
         // (mega_showdown) that patches the same Cobblemon Showdown files at the same injection point.

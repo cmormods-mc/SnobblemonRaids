@@ -3,7 +3,9 @@ package com.cobbleraids.presentation;
 import java.util.List;
 import java.util.Locale;
 import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 
@@ -56,6 +58,39 @@ public final class CommandFormat {
 
     public static String percent(double value) {
         return String.format(Locale.ROOT, "%.1f%%", value);
+    }
+
+    /**
+     * Human-scale duration: 45s, 12m 30s, 2h 5m. Spawn cooldowns run to hours, where a raw second
+     * count stops being something you can read at a glance.
+     */
+    public static String duration(long totalSeconds) {
+        if (totalSeconds < 60L) return totalSeconds + "s";
+        long minutes = totalSeconds / 60L;
+        long seconds = totalSeconds % 60L;
+        if (minutes < 60L) return seconds == 0L ? minutes + "m" : minutes + "m " + seconds + "s";
+        long hours = minutes / 60L;
+        long remainingMinutes = minutes % 60L;
+        return remainingMinutes == 0L ? hours + "h" : hours + "h " + remainingMinutes + "m";
+    }
+
+    /**
+     * Coordinates that teleport the clicker, with the exact position on hover.
+     *
+     * Only ever used inside operator-only output: the click runs /tp, which is itself permission
+     * gated, so a non-operator could not act on this even if it reached them. The rounded text stays
+     * as the label because that is the readable part; the hover carries the precision that rounding
+     * drops, which is what you want when a boss is wedged inside terrain.
+     */
+    public static MutableComponent teleport(String dimension, double x, double y, double z) {
+        String exact = String.format(Locale.ROOT, "%.2f %.2f %.2f", x, y, z);
+        String command = String.format(Locale.ROOT, "/execute in %s run tp @s %.2f %.2f %.2f",
+                dimension, x, y, z);
+        return Component.literal(coords(x, y, z)).withStyle(style -> style
+                .withColor(ChatFormatting.AQUA)
+                .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, command))
+                .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
+                        Component.literal("Teleport to " + exact))));
     }
 
     /** Right-pads to a column width, leaving longer values intact rather than truncating a name. */

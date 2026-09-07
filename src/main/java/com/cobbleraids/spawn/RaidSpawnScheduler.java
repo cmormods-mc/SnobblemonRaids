@@ -582,4 +582,19 @@ public final class RaidSpawnScheduler {
     public static boolean resetCooldown(ResourceLocation definitionId) {
         return NEXT_ALLOWED_TICK.remove(definitionId) != null;
     }
+
+    /**
+     * Definitions still on natural-spawn cooldown and the seconds left on each, soonest first.
+     * Entries whose cooldown has already elapsed are skipped rather than reported as zero -- the map
+     * keeps expired keys (it is bounded by the definition count), and they are not on cooldown.
+     */
+    public static List<Map.Entry<ResourceLocation, Long>> activeCooldowns() {
+        List<Map.Entry<ResourceLocation, Long>> remaining = new ArrayList<>();
+        for (Map.Entry<ResourceLocation, Long> entry : NEXT_ALLOWED_TICK.entrySet()) {
+            long ticksLeft = entry.getValue() - schedulerTick;
+            if (ticksLeft > 0L) remaining.add(Map.entry(entry.getKey(), ticksLeft / 20L));
+        }
+        remaining.sort(Map.Entry.comparingByValue());
+        return remaining;
+    }
 }

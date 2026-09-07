@@ -22,10 +22,31 @@ public final class RaidDefinitionRegistry extends SimplePreparableReloadListener
     private static final Gson GSON = new Gson();
     private static volatile Map<ResourceLocation, RaidDefinition> DEFINITIONS = Map.of();
 
+    // Command tab completion runs per keystroke, per player. Deriving and sorting these from
+    // DEFINITIONS on every one of those was ~130 entries of stream + sort each time, on the server
+    // thread, multiplied by however many people are typing. They only ever change when a datapack
+    // reload swaps DEFINITIONS, so they are built once there instead and handed out as-is.
+    private static volatile List<String> SPECIES_NAMES = List.of();
+    private static volatile List<ResourceLocation> SORTED_IDS = List.of();
+
     public static RaidDefinition get(ResourceLocation id) { return DEFINITIONS.get(id); }
     // Map.of()/Map.copyOf(...) both produce an already-unmodifiable values() view, so DEFINITIONS
     // never needs an extra defensive wrapper here.
     public static Collection<RaidDefinition> all() { return DEFINITIONS.values(); }
+
+    /** Distinct species paths, sorted. Precomputed for tab completion; already immutable. */
+    public static List<String> speciesNames() { return SPECIES_NAMES; }
+
+    /** Every definition id, sorted. Precomputed for tab completion; already immutable. */
+    public static List<ResourceLocation> sortedIds() { return SORTED_IDS; }
+
+    /** First definition using this species path, or null. Case-insensitive. */
+    public static RaidDefinition findSpecies(String pokemonName) {
+        for (RaidDefinition definition : DEFINITIONS.values()) {
+            if (definition.species().getPath().equalsIgnoreCase(pokemonName)) return definition;
+        }
+        return null;
+    }
 
     /** Every loaded cobblemon:* definition whose species path matches, case-insensitive, sorted by id. */
     public static List<RaidDefinition> findBySpeciesName(String pokemonName) {
@@ -60,5 +81,13 @@ public final class RaidDefinitionRegistry extends SimplePreparableReloadListener
     @Override
     protected void apply(Map<ResourceLocation, RaidDefinition> prepared, ResourceManager manager, ProfilerFiller profiler) {
         DEFINITIONS = prepared;
+        SPECIES_NAMES = prepared.values().stream()
+                .map(definition -> definition.species().getPath())
+                .distinct()
+                .sorted()
+                .toList();
+        SORTED_IDS = prepared.keySet().stream()
+                .sorted(Comparator.comparing(ResourceLocation::toString))
+                .toList();
     }
 }

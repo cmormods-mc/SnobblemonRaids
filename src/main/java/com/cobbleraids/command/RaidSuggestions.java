@@ -1,11 +1,9 @@
 package com.cobbleraids.command;
 
-import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.config.RaidDefinitionRegistry;
 import com.cobbleraids.config.RaidRarityTier;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Locale;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.SharedSuggestionProvider;
@@ -22,14 +20,9 @@ import net.minecraft.resources.ResourceLocation;
 final class RaidSuggestions {
     private RaidSuggestions() {}
 
-    /** Species names, for the commands that take a bare Cobblemon species (spawn, testwild). */
+    /** Species names, for the commands that take a bare Cobblemon species (spawn, testwild, info). */
     static final SuggestionProvider<CommandSourceStack> SPECIES = (context, builder) ->
-            SharedSuggestionProvider.suggest(
-                    RaidDefinitionRegistry.all().stream()
-                            .map(definition -> definition.species().getPath())
-                            .distinct()
-                            .sorted(),
-                    builder);
+            SharedSuggestionProvider.suggest(RaidDefinitionRegistry.speciesNames(), builder);
 
     /**
      * Full definition ids, for the commands keyed by definition rather than species.
@@ -41,11 +34,9 @@ final class RaidSuggestions {
      */
     static final SuggestionProvider<CommandSourceStack> DEFINITIONS = (context, builder) -> {
         String typed = builder.getRemaining().toLowerCase(Locale.ROOT);
-        RaidDefinitionRegistry.all().stream()
-                .map(RaidDefinition::id)
-                .sorted(Comparator.comparing(ResourceLocation::toString))
-                .filter(id -> id.toString().startsWith(typed) || id.getPath().startsWith(typed))
-                .forEach(id -> builder.suggest(id.toString()));
+        for (ResourceLocation id : RaidDefinitionRegistry.sortedIds()) {
+            if (id.toString().startsWith(typed) || id.getPath().startsWith(typed)) builder.suggest(id.toString());
+        }
         return builder.buildFuture();
     };
 

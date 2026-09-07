@@ -68,10 +68,11 @@ final class RaidAdminDebugOps {
         String origin = RaidBossEntityMarker.isNatural(boss) ? "  wild" : "";
 
         source.sendSuccess(() -> CommandFormat.row(CommandFormat.pad(definition, 14)
-                + CommandFormat.pad(state, 7)
-                + CommandFormat.shortId(boss.level().dimension().location()) + " "
-                + CommandFormat.coords(boss.getX(), boss.getY(), boss.getZ())
-                + origin), false);
+                        + CommandFormat.pad(state, 7)
+                        + CommandFormat.shortId(boss.level().dimension().location()) + " ")
+                .append(CommandFormat.teleport(boss.level().dimension().location().toString(),
+                        boss.getX(), boss.getY(), boss.getZ()))
+                .append(Component.literal(origin)), false);
 
         if (lobby != null) {
             long remaining = Math.max(0L, lobby.closesAtTick() - boss.level().getGameTime());

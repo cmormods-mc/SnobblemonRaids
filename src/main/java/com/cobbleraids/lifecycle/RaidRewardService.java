@@ -5,6 +5,7 @@ import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.config.RaidDefinitionRegistry;
 import com.cobbleraids.reward.ContributionMath;
 import com.cobbleraids.reward.PendingRaidReward;
+import com.cobbleraids.reward.PendingRewardStore;
 import com.cobbleraids.reward.NativeRewardScreenGateway;
 import com.cobbleraids.reward.RaidRewardGrantEngine;
 import com.cobbleraids.reward.RewardGuiBackends;
@@ -27,6 +28,50 @@ public final class RaidRewardService {
     private static final Map<UUID, Integer> OPEN_DELAY = new ConcurrentHashMap<>();
     private static final int GUI_OPEN_DELAY_TICKS = 2;
     private RaidRewardService() {}
+
+    /**
+     * Restores unclaimed rewards saved by the previous session. Before this existed the queue was
+     * memory-only, so a restart silently discarded every reward nobody had claimed yet.
+     */
+    public static void onServerStarted(MinecraftServer server) {
+        PENDING.clear();
+        OPEN_DELAY.clear();
+        PENDING.putAll(PendingRewardStore.get(server).take());
+        int claims = PENDING.values().stream().mapToInt(ArrayDeque::size).sum();
+        if (claims > 0) {
+            System.out.println("[CobbleRaids] Restored " + claims + " unclaimed raid reward(s) for "
+                    + PENDING.size() + " player(s).");
+        }
+    }
+
+    /**
+     * Writes the queue back to disk. Called after every mutation rather than on a timer: claims are
+     * rare (once per player per raid), so this is far cheaper than it looks, and it means a crash
+     * cannot lose a reward that the player has already been told they have.
+     */
+    private static void persist(MinecraftServer server) {
+        if (server != null) PendingRewardStore.get(server).update(PENDING);
+    }
+
+    /** Admin view of one player's queue, front of queue first. */
+    public static List<PendingRaidReward> pendingFor(UUID playerId) {
+        ArrayDeque<PendingRaidReward> queue = PENDING.get(playerId);
+        return queue == null ? List.of() : List.copyOf(queue);
+    }
+
+    /** Drops every queued reward for one player. Returns how many were removed. */
+    public static int clearPending(UUID playerId, MinecraftServer server) {
+        ArrayDeque<PendingRaidReward> queue = PENDING.remove(playerId);
+        OPEN_DELAY.remove(playerId);
+        int removed = queue == null ? 0 : queue.size();
+        if (removed > 0) persist(server);
+        return removed;
+    }
+
+    /** Player ids that currently hold at least one unclaimed reward. */
+    public static Set<UUID> playersWithPending() {
+        return Set.copyOf(PENDING.keySet());
+    }
 
     public static void grant(RaidRewardEligibility eligibility, MinecraftServer server) {
         if (eligibility == null || eligibility.outcome() != RaidOutcome.VICTORY || server == null) return;
@@ -56,6 +101,7 @@ public final class RaidRewardService {
             PENDING.computeIfAbsent(playerId, ignored -> new ArrayDeque<>()).addLast(pending);
             if (server.getPlayerList().getPlayer(playerId) != null) OPEN_DELAY.putIfAbsent(playerId, GUI_OPEN_DELAY_TICKS);
         }
+        persist(server);
     }
 
     /** Called from END_SERVER_TICK so the battle-end screen packet is processed before the reward chest opens. */
@@ -138,6 +184,7 @@ public final class RaidRewardService {
         // Consume before granting so duplicate GUI/command clicks cannot double-spend the claim token.
         queue.removeFirst();
         if (queue.isEmpty()) PENDING.remove(player.getUUID());
+        persist(player.getServer());
         try {
             RewardGrantResult result = RaidRewardGrantEngine.grantChoice(player, pending, choice);
             if (CobbleRaidsConfigManager.get().debugLogging()) {
@@ -155,6 +202,7 @@ public final class RaidRewardService {
         } catch (RuntimeException ex) {
             // Restore the exact claim at the front if granting fails before completion.
             PENDING.computeIfAbsent(player.getUUID(), ignored -> new ArrayDeque<>()).addFirst(pending);
+            persist(player.getServer());
             player.sendSystemMessage(Component.literal("Raid reward grant failed; your claim was preserved. Contact an administrator."));
             throw ex;
         }

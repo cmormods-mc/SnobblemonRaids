@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.stream.Collectors;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
@@ -150,6 +151,22 @@ final class RaidAdminSpawnOps {
 
     private static String format(Vec3 position) {
         return String.format(Locale.ROOT, "%.1f %.1f %.1f", position.x, position.y, position.z);
+    }
+
+    static int listCooldowns(CommandSourceStack source) {
+        List<Map.Entry<ResourceLocation, Long>> cooldowns = RaidSpawnScheduler.activeCooldowns();
+        if (cooldowns.isEmpty()) {
+            source.sendSuccess(() -> Component.literal("No definitions are on natural-spawn cooldown.")
+                    .withStyle(ChatFormatting.YELLOW), false);
+            return 0;
+        }
+        source.sendSuccess(() -> CommandFormat.header("On spawn cooldown (" + cooldowns.size() + ")"), false);
+        for (Map.Entry<ResourceLocation, Long> entry : cooldowns) {
+            source.sendSuccess(() -> CommandFormat.row(
+                    CommandFormat.pad(CommandFormat.shortId(entry.getKey()), 16)
+                            + CommandFormat.duration(entry.getValue()) + " left"), false);
+        }
+        return cooldowns.size();
     }
 
     static int resetCooldown(CommandSourceStack source, ResourceLocation definitionId) {
