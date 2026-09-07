@@ -10,9 +10,10 @@ import java.nio.file.StandardCopyOption;
 
 /**
  * Installs CobbleRaids' integration into Cobblemon's unbundled Showdown copy: the raid-only
- * conditions file, the raid-patch.js hook (owns all boss healing), and the exact-text playerCount
- * patch in dex-formats.js. Both methods below are idempotent -- each patch step already no-ops if
- * its change is already present -- so calling install() again is always safe.
+ * conditions file, the raid-patch.js hook (owns all boss healing), the exact-text playerCount
+ * patch in dex-formats.js, and the resilient output pump in index.js. Both public methods are
+ * idempotent -- each patch step already no-ops if its change is already present -- so calling
+ * install() again is always safe.
  */
 public final class ShowdownIntegrationInstaller {
     private static final String PLAYER_COUNT_173 =
@@ -23,6 +24,34 @@ public final class ShowdownIntegrationInstaller {
     private static final String INDEX_START_BATTLE = "function startBattle(";
     private static final String INDEX_SEND_BATTLE_MESSAGE = "function sendBattleMessage(";
     private static final String INDEX_RAID_HOOK = "require('./raid-patch');";
+
+    /** Cobblemon's stock JS->Java output pump, verbatim from the 1.7.3 bundle (tabs, LF). */
+    private static final String OUTPUT_PUMP_173 =
+            "\t(async () => {\n"
+            + "\t\tfor await (const output of battleStream) {\n"
+            + "\t\t\tgraalShowdown.sendFromShowdown(battleId, output);\n"
+            + "\t\t}\n"
+            + "\t})();";
+    private static final String OUTPUT_PUMP_MARKER = "cobbleRaidsPumpErrors";
+    private static final String OUTPUT_PUMP_RAID =
+            "\t// CobbleRaids: resilient output pump -- see ShowdownIntegrationInstaller#patchOutputPump.\n"
+            + "\t(async () => {\n"
+            + "\t\tlet cobbleRaidsPumpErrors = 0;\n"
+            + "\t\tfor (;;) {\n"
+            + "\t\t\ttry {\n"
+            + "\t\t\t\tfor await (const output of battleStream) {\n"
+            + "\t\t\t\t\tcobbleRaidsPumpErrors = 0;\n"
+            + "\t\t\t\t\tgraalShowdown.sendFromShowdown(battleId, output);\n"
+            + "\t\t\t\t}\n"
+            + "\t\t\t\treturn;\n"
+            + "\t\t\t} catch (err) {\n"
+            + "\t\t\t\tcobbleRaidsPumpErrors++;\n"
+            + "\t\t\t\tgraalShowdown.log('[CobbleRaids] Showdown output error #' + cobbleRaidsPumpErrors"
+            + " + ' in battle ' + battleId + ': ' + ((err && err.stack) || err));\n"
+            + "\t\t\t\tif (battleStream.atEOF || cobbleRaidsPumpErrors >= 20) return;\n"
+            + "\t\t\t}\n"
+            + "\t\t}\n"
+            + "\t})();";
 
     private ShowdownIntegrationInstaller() {}
 
@@ -37,6 +66,7 @@ public final class ShowdownIntegrationInstaller {
         copy("/assets/cobbleraids/showdown/mods/conditions.js", Path.of("showdown/data/mods/cobblemon/conditions.js"));
         patchPlayerCount(Path.of("showdown/sim/dex-formats.js"));
         patchIndexBootstrap(Path.of("showdown/index.js"));
+        patchOutputPump(Path.of("showdown/index.js"));
     }
 
     /**
@@ -88,6 +118,50 @@ public final class ShowdownIntegrationInstaller {
             Files.writeString(path, source.replace(PLAYER_COUNT_173, PLAYER_COUNT_RAID), StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new IllegalStateException("Failed to patch Cobblemon Showdown playerCount handling", e);
+        }
+    }
+
+    /**
+     * Makes the single JS->Java output pump survive a recoverable simulator error.
+     *
+     * Cobblemon's startBattle() consumes the battle stream with a bare `for await` inside an
+     * async IIFE that has no catch. That loop is the ONLY consumer of the stream: everything
+     * Showdown emits reaches Java through it. Showdown, meanwhile, reports a simulator error
+     * during a write as *recoverable* -- BattleStream#_write catches it and calls
+     * pushError(err, true), which parks the error in the stream's errorBuf and deliberately
+     * does NOT set atEOF, the contract being "the caller may keep reading". The next read
+     * rethrows that error out of ObjectReadStream#loadIntoBuffer, out of next(), out of the
+     * `for await`, and the IIFE rejects. Nothing awaits or catches that rejection, so the
+     * consumer is gone permanently and silently. Every later push() then just accumulates in
+     * an unread buffer: the simulator keeps running turns correctly and Java never hears
+     * another word from the battle. Externally that looks exactly like a deadlock, with
+     * nothing logged anywhere and no way to restart it from the Java side -- writes still
+     * work, but the reader is what died.
+     *
+     * The replacement logs the error (previously invisible) and resumes the pump, which is
+     * what `recoverable` was always meant to mean. Cost in the happy path is one assignment
+     * per message: the try/catch spans the whole loop, not each message.
+     *
+     * Applied to Cobblemon's shared index.js, so it covers every battle, not just raids. That
+     * is intended -- the only behaviour it changes is the case where the battle would
+     * otherwise be irrecoverably dead.
+     */
+    private static void patchOutputPump(Path path) {
+        try {
+            String source = Files.readString(path, StandardCharsets.UTF_8);
+            if (source.contains(OUTPUT_PUMP_MARKER)) return;
+
+            int first = source.indexOf(OUTPUT_PUMP_173);
+            if (first < 0) {
+                throw new IllegalStateException(
+                        "Cobblemon Showdown output pump signature changed; refusing to patch blindly");
+            }
+            if (source.indexOf(OUTPUT_PUMP_173, first + 1) >= 0) {
+                throw new IllegalStateException("Unexpected duplicate Showdown output pump signature");
+            }
+            Files.writeString(path, source.replace(OUTPUT_PUMP_173, OUTPUT_PUMP_RAID), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to patch Cobblemon Showdown output pump", e);
         }
     }
 

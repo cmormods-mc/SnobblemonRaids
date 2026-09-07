@@ -177,6 +177,47 @@ function raidNormalizeSide(side) {
   return side;
 }
 
+/**
+ * Forced switches answered with "default" deadlock the raid.
+ *
+ * Cobblemon turns a DEFAULT action into ">pN default", which Showdown's Side#choose routes to
+ * autoChoose() -> chooseSwitch() with no argument. chooseSwitch then computes an implicit slot and
+ * falls into `if (isNaN(slot) || slot < 0 || slotText.length > 2)` (side.js:611) -- and slotText is
+ * undefined on that path, so it throws TypeError instead of switching. The side's choice is left
+ * incomplete, allChoicesDone() never becomes true, and the turn never commits: the raid hangs on the
+ * first player Pokemon to faint, which in a raid is a matter of seconds.
+ *
+ * Rather than reimplement the 60-line chooser, resolve only the implicit slot -- exactly as stock
+ * does directly above the throwing line -- and hand that concrete slot straight back to stock, so
+ * every validation, error message and side effect after it stays upstream's. Scoped to raids, so
+ * ordinary Cobblemon battles keep stock behaviour untouched.
+ */
+const oldChooseSwitch = Side.prototype.chooseSwitch;
+Side.prototype.chooseSwitch = function(slotText) {
+  if (slotText !== undefined || !isRaid(this) || this.requestState !== 'switch') {
+    return oldChooseSwitch.call(this, slotText);
+  }
+  const index = this.getChoiceIndex();
+  // Out of range is stock's own "more switches than Pokemon that need to switch" error, and it
+  // returns before the throwing line, so let stock report it.
+  if (index >= this.active.length) return oldChooseSwitch.call(this, slotText);
+
+  const pokemon = this.active[index];
+  let slot;
+  if (this.slotConditions[pokemon.position]['revivalblessing']) {
+    slot = 0;
+    while (slot < this.pokemon.length && !this.pokemon[slot].fainted) slot++;
+  } else {
+    if (!this.choice.forcedSwitchesLeft) return this.choosePass();
+    slot = this.active.length;
+    while (slot < this.pokemon.length && (this.choice.switchIns.has(slot) || this.pokemon[slot].fainted)) slot++;
+  }
+  // Nothing left to send in. Stock walks off the end of the array here; passing is the same
+  // resolution it already uses when there is no forced switch to make, and it keeps the turn moving.
+  if (slot >= this.pokemon.length) return this.choosePass();
+  return oldChooseSwitch.call(this, String(slot + 1));
+};
+
 const oldAllies = Side.prototype.allies;
 Side.prototype.allies = function(all) {
   if (!isRaid(this)) return oldAllies.call(this, all);
@@ -440,6 +481,37 @@ BattleStream.prototype._writeLine = function(type, message) {
     battle.requestState = '';
     for (const side of battle.sides) if (side) side.activeRequest = null;
     battle.sendUpdates();
+    return true;
+  }
+
+  // Showdown's own BattleStream command dispatcher hardcodes the side commands as four literal
+  // switch cases, `case "p1": case "p2": case "p3": case "p4":`, and everything else falls through
+  // to `default: throw new Error('Unrecognized command ...')`. A raid needs one side per player
+  // plus one for the boss, so a four-player raid addresses p5 -- and every ">p5 team 1" / ">p5 move
+  // n" Cobblemon wrote therefore threw instead of being applied.
+  //
+  // That throw was invisible and fatal. BattleStream#_write catches it and calls
+  // pushError(err, true): "recoverable", so the stream stays open. But the sole consumer of the
+  // stream is the `for await` in Cobblemon's index.js, and the next read rethrows the parked error
+  // straight through it. With no catch there, that consumer died and every later simulator output
+  // piled up unread -- the battle kept running perfectly and Java never heard another word from it.
+  // See ShowdownIntegrationInstaller#patchOutputPump, which makes that consumer survive; this is
+  // the underlying cause it was hiding.
+  //
+  // p1..p4 are deliberately left to stock Showdown untouched; only the sides it cannot address at
+  // all are handled here. Of those, the boss side is dropped rather than applied: the boss is
+  // AI-controlled, makeRequest above has already answered its request with chooseMove(), and
+  // replaying Cobblemon's own late boss choice on top only clears that completed choice and
+  // replaces it with an invalid one ("Can't move: Your Kommo-o doesn't have a move 2"), which
+  // leaves the side with no choice at all and hangs the turn. Dropping it is also exactly what
+  // used to happen before this branch existed -- minus the throw that was the actual bug.
+  const sideNumber = /^p(\d+)$/.exec(type);
+  if (sideNumber && Number(sideNumber[1]) > 4) {
+    const side = this.battle.getSide(type);
+    if (!side) return false;
+    if (isBossSide(side)) return true;
+    if (message === 'undo') this.battle.undoChoice(type);
+    else this.battle.choose(type, message);
     return true;
   }
 
