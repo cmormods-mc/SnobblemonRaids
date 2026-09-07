@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.23-phase38-cinematic-reveal'
+version = '0.8.24-phase39-textured-panel-structure'
 group = 'com.cobbleraids'
 
 base {
