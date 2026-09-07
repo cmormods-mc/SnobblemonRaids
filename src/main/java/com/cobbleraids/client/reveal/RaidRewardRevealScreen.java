@@ -273,13 +273,20 @@ public final class RaidRewardRevealScreen extends Screen {
         // removed rather than repurposed) -- still shown in the existing claim chat message/debug log.
     }
 
-    /** Draws text at a position local to the sidebar's own origin, scaled to match the baked label art. */
+    /**
+     * Draws text at a position local to the sidebar's own origin, scaled to match the baked label art.
+     * The translate is snapped to whole pixels before the (generally non-integer) scale is applied, and
+     * the built-in drop shadow is disabled -- otherwise the shadow's internal 1px offset lands on a
+     * fractional post-scale pixel that doesn't line up with the main glyph, producing a doubled/ghosted
+     * look under nearest-neighbor sampling.
+     */
     private void drawScaledText(GuiGraphics graphics, Rect sidebar, float textScale, int localX, int localY, Component text) {
+        int x = Math.round(sidebar.x() + localX * (sidebar.width() / (float) SUMMARY_PANEL_RECT.width()));
+        int y = Math.round(sidebar.y() + localY * (sidebar.height() / (float) SUMMARY_PANEL_RECT.height()));
         graphics.pose().pushPose();
-        graphics.pose().translate(sidebar.x() + localX * (sidebar.width() / (float) SUMMARY_PANEL_RECT.width()),
-                sidebar.y() + localY * (sidebar.height() / (float) SUMMARY_PANEL_RECT.height()), 0);
+        graphics.pose().translate(x, y, 0);
         graphics.pose().scale(textScale, textScale, 1f);
-        graphics.drawString(this.font, text, 0, 0, 0xFFFFFFFF);
+        graphics.drawString(this.font, text, 0, 0, 0xFFFFFFFF, false);
         graphics.pose().popPose();
     }
 
