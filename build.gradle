@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.25-phase40-real-art-integration'
+version = '0.8.26-mega-showdown-compat'
 group = 'com.cobbleraids'
 
 base {
