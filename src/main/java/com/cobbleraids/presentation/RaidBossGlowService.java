@@ -7,11 +7,11 @@ import com.cobbleraids.config.RaidDefinitionRegistry;
 import com.cobbleraids.config.RaidRarityTier;
 import com.cobbleraids.spawn.RaidBossEntityMarker;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
-import java.util.EnumMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -34,7 +34,6 @@ public final class RaidBossGlowService {
     private static final String TEAM_PREFIX = "cobbleraids_glow_";
     private static final int GLOW_DURATION_TICKS = 30;
     private static final Map<UUID, ResourceLocation> TRACKED = new ConcurrentHashMap<>();
-    private static final Map<RaidRarityTier, PlayerTeam> TEAMS = new EnumMap<>(RaidRarityTier.class);
     private static long tickCounter;
 
     private RaidBossGlowService() {}
@@ -42,6 +41,16 @@ public final class RaidBossGlowService {
     /** Called once, right after a boss is created, regardless of how it was spawned. */
     public static void register(PokemonEntity boss, ServerLevel level) {
         TRACKED.put(boss.getUUID(), level.dimension().location());
+    }
+
+    /**
+     * Drops all cross-server state on shutdown. Tracked ids are only meaningful for the server that
+     * produced them, and an integrated (single-player) client reuses this JVM for every world it
+     * opens, so anything left here would be read back against the next world's entities.
+     */
+    public static void onServerStopping(MinecraftServer server) {
+        TRACKED.clear();
+        tickCounter = 0L;
     }
 
     public static void tick(MinecraftServer server) {
@@ -84,14 +93,22 @@ public final class RaidBossGlowService {
         boss.addEffect(new MobEffectInstance(MobEffects.GLOWING, GLOW_DURATION_TICKS, 0, false, false));
     }
 
+    /**
+     * Resolved from the live scoreboard on every use rather than cached in a static map. A PlayerTeam
+     * holds a final reference to its Scoreboard, and ServerScoreboard holds one to its MinecraftServer,
+     * so a static cache here pinned an entire dead server (player list, every ServerLevel, their loaded
+     * entities) for the life of the JVM once a world was closed -- and handed back a team belonging to
+     * that dead scoreboard on the next world, where it is not registered, silently dropping the tier
+     * tint. The lookup it replaces is a plain map get on an at-most-once-per-second path.
+     */
     private static PlayerTeam teamFor(Scoreboard scoreboard, RaidRarityTier tier) {
-        return TEAMS.computeIfAbsent(tier, t -> {
-            String name = TEAM_PREFIX + t.serializedName();
-            PlayerTeam existing = scoreboard.getPlayerTeam(name);
-            PlayerTeam team = existing != null ? existing : scoreboard.addPlayerTeam(name);
-            team.setColor(RaidTierPresentation.color(t));
-            return team;
-        });
+        String name = TEAM_PREFIX + tier.serializedName();
+        PlayerTeam team = scoreboard.getPlayerTeam(name);
+        if (team == null) team = scoreboard.addPlayerTeam(name);
+        ChatFormatting color = RaidTierPresentation.color(tier);
+        // Only written when it actually differs; setColor broadcasts a team-update packet to everyone.
+        if (team.getColor() != color) team.setColor(color);
+        return team;
     }
 
     private static PokemonEntity resolveBoss(MinecraftServer server, UUID bossId, ResourceLocation dimension) {

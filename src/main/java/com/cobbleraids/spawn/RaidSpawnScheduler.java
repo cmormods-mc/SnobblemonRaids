@@ -104,9 +104,10 @@ public final class RaidSpawnScheduler {
         ResourceLocation dimensionId = level.dimension().location();
         String playerName = player.getGameProfile().getName();
 
-        if (activeInDimension(dimensionId) >= config.maxActiveRaidsPerDimension()) {
+        int activeHere = activeInDimension(dimensionId);
+        if (activeHere >= config.maxActiveRaidsPerDimension()) {
             RaidSpawnHistory.record(schedulerTick, playerName, dimensionId, RaidSpawnHistory.Outcome.PER_DIMENSION_CAP,
-                    activeInDimension(dimensionId) + "/" + config.maxActiveRaidsPerDimension() + " active in dimension");
+                    activeHere + "/" + config.maxActiveRaidsPerDimension() + " active in dimension");
             return;
         }
 
@@ -401,11 +402,15 @@ public final class RaidSpawnScheduler {
         return schedulerTick >= NEXT_ALLOWED_TICK.getOrDefault(definition.id(), 0L);
     }
 
+    // Used as a filter over every loaded definition (~130 of them) on each spawn attempt, so this
+    // counts with a plain loop rather than building a stream pipeline per definition.
     private static boolean belowDefinitionCap(RaidDefinition definition) {
-        long active = ACTIVE.values().stream()
-                .filter(spawn -> spawn.definitionId().equals(definition.id()))
-                .count();
-        return active < definition.spawn().maxConcurrent();
+        int max = definition.spawn().maxConcurrent();
+        int active = 0;
+        for (ActiveSpawn spawn : ACTIVE.values()) {
+            if (spawn.definitionId().equals(definition.id()) && ++active >= max) return false;
+        }
+        return true;
     }
 
     private static int activeInDimension(ResourceLocation dimension) {

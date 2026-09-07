@@ -3,7 +3,6 @@ package com.cobbleraids.client.reveal;
 import com.cobbleraids.config.RaidRarityTier;
 import com.cobbleraids.network.PendingRewardRevealPayload;
 import com.cobbleraids.network.RewardChoicePayload;
-import com.cobbleraids.network.RewardItemPayload;
 import com.cobbleraids.network.RewardResultPayload;
 import com.cobbleraids.presentation.RaidTierPresentation;
 import java.util.List;
@@ -17,7 +16,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 /**
@@ -125,10 +123,36 @@ public final class RaidRewardRevealScreen extends Screen {
     private RewardResultPayload pendingResult;
     private RewardResultPayload result;
 
+    // Everything below is fixed for the screen's lifetime, so it is built once here rather than
+    // rebuilt inside render(). This screen does not pause the game (isPauseScreen() == false), so
+    // render() runs at the client's full frame rate -- formatting strings, resolving registry items
+    // and allocating ItemStacks per frame was pure churn for values that never change.
+    private final Component sidebarSpecies;
+    private final Component sidebarTier;
+    private final Component sidebarTime;
+    private final Component sidebarDamage;
+    private final Component sidebarParticipants;
+
+    // Rebuilt in init(), which vanilla also calls on window resize -- the only thing that moves it.
+    private Layout layout;
+    // Built once when the result arrives, not per frame.
+    private ItemStack resultIcon;
+    private List<Component> resultLines = List.of();
+
     private RaidRewardRevealScreen(PendingRewardRevealPayload pending) {
         super(Component.literal(pending.speciesDisplayName()));
         this.pending = pending;
         this.tier = RaidRarityTier.parse(pending.rarityTier());
+
+        ChatFormatting tierColor = RaidTierPresentation.color(tier);
+        long elapsedSeconds = pending.elapsedCombatTicks() / 20L;
+        this.sidebarSpecies = Component.literal(pending.speciesDisplayName()).withStyle(tierColor);
+        this.sidebarTier = Component.literal(tier.displayName()).withStyle(tierColor);
+        this.sidebarTime = Component.literal(String.format(Locale.ROOT, "%02d:%02d",
+                elapsedSeconds / 60, elapsedSeconds % 60));
+        this.sidebarDamage = Component.literal(String.format(Locale.ROOT, "%.1f%%",
+                pending.contributionPercentage()));
+        this.sidebarParticipants = Component.literal(Integer.toString(pending.participantCount()));
     }
 
     public static void openFor(PendingRewardRevealPayload payload) {
@@ -145,9 +169,26 @@ public final class RaidRewardRevealScreen extends Screen {
             screen.clearWidgets();
             screen.init();
             RevealSounds.playOpen(screen.tier);
-            Layout layout = screen.computeLayout();
-            RevealParticles.spawnBurst(layout.chamber().centerX(), layout.chamber().centerY());
+            RevealParticles.spawnBurst(screen.layout.chamber().centerX(), screen.layout.chamber().centerY());
         }
+    }
+
+    /** Resolves the granted items into display form once, on arrival, instead of once per frame. */
+    private void showResult(RewardResultPayload payload) {
+        this.result = payload;
+        if (payload == null || !payload.success() || payload.granted().isEmpty()) {
+            this.resultIcon = new ItemStack(BuiltInRegistries.ITEM.get(BALL_ITEM));
+            this.resultLines = payload != null && !payload.success()
+                    ? List.of(Component.literal("Something went wrong. Check chat for details."))
+                    : List.of();
+            return;
+        }
+        this.resultIcon = new ItemStack(BuiltInRegistries.ITEM.get(payload.granted().get(0).item()));
+        this.resultLines = payload.granted().stream()
+                .map(item -> (Component) Component.literal(
+                        new ItemStack(BuiltInRegistries.ITEM.get(item.item())).getHoverName().getString()
+                                + " x" + item.amount()))
+                .toList();
     }
 
     private Layout computeLayout() {
@@ -172,7 +213,7 @@ public final class RaidRewardRevealScreen extends Screen {
 
     @Override
     protected void init() {
-        Layout layout = computeLayout();
+        this.layout = computeLayout();
         if (state == State.CHOOSING) {
             List<String> choices = pending.choiceIds();
             int gap = Math.round(12 * layout.scale());
@@ -218,7 +259,7 @@ public final class RaidRewardRevealScreen extends Screen {
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         long now = System.currentTimeMillis();
         if (state == State.OPENING && now - stateEnteredAtMillis >= OPENING_DURATION_MILLIS) {
-            result = pendingResult;
+            showResult(pendingResult);
             state = State.RESULT;
             stateEnteredAtMillis = now;
             clearWidgets();
@@ -227,7 +268,7 @@ public final class RaidRewardRevealScreen extends Screen {
 
         this.renderTransparentBackground(graphics);
 
-        Layout layout = computeLayout();
+        Layout layout = this.layout;
         drawFrame(graphics, layout);
         drawSidebar(graphics, layout);
         drawChamber(graphics, layout, now);
@@ -259,19 +300,11 @@ public final class RaidRewardRevealScreen extends Screen {
         Rect sidebar = layout.sidebar();
         float textScale = layout.scale() * SIDEBAR_TEXT_SCALE;
 
-        drawScaledText(graphics, sidebar, textScale, SIDEBAR_LABEL_X, VALUE_Y_BOSS,
-                Component.literal(pending.speciesDisplayName()).withStyle(RaidTierPresentation.color(tier)));
-        drawScaledText(graphics, sidebar, textScale, SIDEBAR_LABEL_X, VALUE_Y_TIER,
-                Component.literal(tier.displayName()).withStyle(RaidTierPresentation.color(tier)));
-
-        long elapsedSeconds = pending.elapsedCombatTicks() / 20L;
-        drawScaledText(graphics, sidebar, textScale, SIDEBAR_LABEL_X, VALUE_Y_TIME,
-                Component.literal(String.format(Locale.ROOT, "%02d:%02d", elapsedSeconds / 60, elapsedSeconds % 60)));
-
-        drawScaledText(graphics, sidebar, textScale, SIDEBAR_ICON_LABEL_X, VALUE_Y_DAMAGE,
-                Component.literal(String.format(Locale.ROOT, "%.1f%%", pending.contributionPercentage())));
-        drawScaledText(graphics, sidebar, textScale, SIDEBAR_ICON_LABEL_X, VALUE_Y_PARTICIPANTS,
-                Component.literal(Integer.toString(pending.participantCount())));
+        drawScaledText(graphics, sidebar, textScale, SIDEBAR_LABEL_X, VALUE_Y_BOSS, sidebarSpecies);
+        drawScaledText(graphics, sidebar, textScale, SIDEBAR_LABEL_X, VALUE_Y_TIER, sidebarTier);
+        drawScaledText(graphics, sidebar, textScale, SIDEBAR_LABEL_X, VALUE_Y_TIME, sidebarTime);
+        drawScaledText(graphics, sidebar, textScale, SIDEBAR_ICON_LABEL_X, VALUE_Y_DAMAGE, sidebarDamage);
+        drawScaledText(graphics, sidebar, textScale, SIDEBAR_ICON_LABEL_X, VALUE_Y_PARTICIPANTS, sidebarParticipants);
         // Contribution bonus rolls have no row in this layout (the art's "Support Actions" slot was
         // removed rather than repurposed) -- still shown in the existing claim chat message/debug log.
     }
@@ -318,13 +351,12 @@ public final class RaidRewardRevealScreen extends Screen {
         graphics.blit(CHAMBER_BACKGROUND, chamber.x(), chamber.y(), chamber.width(), chamber.height(),
                 0f, 0f, CHAMBER_RECT.width(), CHAMBER_RECT.height(), CHAMBER_RECT.width(), CHAMBER_RECT.height());
 
-        if (state == State.RESULT) {
+        if (state == State.RESULT && resultIcon != null) {
             int iconSize = Math.round(chamber.width() * 0.16f);
-            ItemStack displayed = resultIcon();
             graphics.pose().pushPose();
             graphics.pose().translate(chamber.centerX(), chamber.centerY(), 0);
             graphics.pose().scale(iconSize / 16f, iconSize / 16f, 1f);
-            graphics.renderItem(displayed, -8, -8);
+            graphics.renderItem(resultIcon, -8, -8);
             graphics.pose().popPose();
         }
 
@@ -342,30 +374,20 @@ public final class RaidRewardRevealScreen extends Screen {
         if (state == State.RESULT) renderResult(graphics, chamber);
     }
 
-    private ItemStack resultIcon() {
-        if (result == null || !result.success() || result.granted().isEmpty()) return new ItemStack(ballItem());
-        Item resolved = BuiltInRegistries.ITEM.get(result.granted().get(0).item());
-        return new ItemStack(resolved);
-    }
-
     private void renderResult(GuiGraphics graphics, Rect chamber) {
         if (result == null) return;
+        int color = result.success() ? 0xFFFFFFFF : 0xFFFF5555;
         int y = chamber.centerY() + Math.round(chamber.width() * 0.1f);
-        if (!result.success()) {
-            graphics.drawCenteredString(this.font,
-                    Component.literal("Something went wrong. Check chat for details."), chamber.centerX(), y, 0xFFFF5555);
-            return;
-        }
-        for (RewardItemPayload item : result.granted()) {
-            Item resolved = BuiltInRegistries.ITEM.get(item.item());
-            Component line = Component.literal(new ItemStack(resolved).getHoverName().getString() + " x" + item.amount());
-            graphics.drawCenteredString(this.font, line, chamber.centerX(), y, 0xFFFFFFFF);
+        for (Component line : resultLines) {
+            graphics.drawCenteredString(this.font, line, chamber.centerX(), y, color);
             y += 12;
         }
     }
 
-    private static Item ballItem() {
-        return BuiltInRegistries.ITEM.get(BALL_ITEM);
+    @Override
+    public void removed() {
+        RevealParticles.clear();
+        super.removed();
     }
 
     @Override

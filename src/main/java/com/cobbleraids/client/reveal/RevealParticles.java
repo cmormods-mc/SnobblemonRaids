@@ -21,7 +21,21 @@ final class RevealParticles {
 
     private static final List<Spark> ACTIVE = new ArrayList<>();
 
+    // Built once rather than per spark per frame: the old form concatenated a path string and parsed
+    // it into a ResourceLocation 16 times every frame for the whole burst.
+    private static final ResourceLocation[] SPRITES = new ResourceLocation[FRAME_COUNT];
+    static {
+        for (int frame = 0; frame < FRAME_COUNT; frame++) {
+            SPRITES[frame] = ResourceLocation.withDefaultNamespace("textures/particle/spark_" + frame + ".png");
+        }
+    }
+
     private RevealParticles() {}
+
+    /** Drops any sparks still alive when the screen closes, so they can't bleed into the next reveal. */
+    static void clear() {
+        ACTIVE.clear();
+    }
 
     static void spawnBurst(float centerX, float centerY) {
         long now = System.currentTimeMillis();
@@ -43,8 +57,7 @@ final class RevealParticles {
             int x = Math.round(spark.x() + spark.vx() * age);
             int y = Math.round(spark.y() + spark.vy() * age);
             int frame = Math.min(FRAME_COUNT - 1, (int) (age * FRAME_COUNT));
-            ResourceLocation sprite = ResourceLocation.withDefaultNamespace("textures/particle/spark_" + frame + ".png");
-            graphics.blit(sprite, x - FRAME_SIZE / 2, y - FRAME_SIZE / 2, 0f, 0f, FRAME_SIZE, FRAME_SIZE, FRAME_SIZE, FRAME_SIZE);
+            graphics.blit(SPRITES[frame], x - FRAME_SIZE / 2, y - FRAME_SIZE / 2, 0f, 0f, FRAME_SIZE, FRAME_SIZE, FRAME_SIZE, FRAME_SIZE);
         }
     }
 }

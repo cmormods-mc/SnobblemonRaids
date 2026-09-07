@@ -60,6 +60,7 @@ public final class CobbleRaids implements ModInitializer {
         // (mega_showdown) that patches the same Cobblemon Showdown files at the same injection point.
         ServerLifecycleEvents.SERVER_STARTED.register(server -> ShowdownIntegrationInstaller.ensureInstalled());
         ServerLifecycleEvents.SERVER_STOPPING.register(RaidSpawnScheduler::onServerStopping);
+        ServerLifecycleEvents.SERVER_STOPPING.register(RaidBossGlowService::onServerStopping);
         // A natural raid boss is persistence-required, so nothing else will ever remove one that
         // the scheduler has stopped tracking. Checking on load is the only point where an orphan
         // in a previously unloaded chunk becomes reachable.
