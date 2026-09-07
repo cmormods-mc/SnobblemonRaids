@@ -42,8 +42,9 @@ public final class RaidRewardRevealScreen extends Screen {
     private static final float NATIVE_WIDTH = 1672f;
     private static final float NATIVE_HEIGHT = 941f;
 
-    // A single opaque full-canvas texture: the frame chrome (title bar, borders, corner brackets) plus
-    // a solid backing fill everywhere else, so no part of the panel lets the world show through gaps.
+    // A single full-canvas texture: the frame chrome (title bar, borders, corner brackets) plus a solid
+    // backing fill for the interior, so no part of the panel lets the world show through gaps. The
+    // exterior corners outside the frame's angular silhouette are transparent, not a rectangular block.
     private static final ResourceLocation POKEDEX_BACKING = texture("pokedex_backing");
     private static final ResourceLocation SUMMARY_PANEL = texture("summary_panel");
     private static final ResourceLocation CHAMBER_BACKGROUND = texture("chamber_background");
@@ -52,8 +53,8 @@ public final class RaidRewardRevealScreen extends Screen {
 
     private static final NativeRect BACKING_RECT = new NativeRect(0, 0, 1672, 941);
     private static final NativeRect SUMMARY_PANEL_RECT = new NativeRect(94, 122, 313, 731);
-    private static final NativeRect CHAMBER_RECT = new NativeRect(420, 112, 1172, 678);
-    private static final NativeRect BUTTON_RECT = new NativeRect(699, 787, 488, 83);
+    private static final NativeRect CHAMBER_RECT = new NativeRect(420, 112, 1172, 675);
+    private static final NativeRect BUTTON_RECT = new NativeRect(762, 787, 488, 83);
     private static final NativeRect FOOTER_RECT = new NativeRect(430, 787, 1150, 83);
 
     // Blanked-value row positions, local to SUMMARY_PANEL_RECT's own origin (see summary_panel.png's
@@ -188,10 +189,12 @@ public final class RaidRewardRevealScreen extends Screen {
                         CLAIM_BUTTON_BLANK, 488, 83));
             }
         } else if (state == State.RESULT) {
-            int buttonWidth = Math.round(BUTTON_RECT.width() * layout.scale());
-            int buttonHeight = Math.round(BUTTON_RECT.height() * layout.scale());
-            this.addRenderableWidget(new TexturedButton(layout.footer().centerX() - buttonWidth / 2, layout.footer().y,
-                    buttonWidth, buttonHeight, Component.empty(), button -> this.onClose(),
+            // Centered beneath the chamber specifically (not stretched/centered across the whole footer)
+            // -- BUTTON_RECT's native x already bakes in that centering, so the widget bounds below are
+            // exactly the rectangle the art was designed against, not re-derived footer-relative math.
+            Rect buttonRect = layout.toScreen(BUTTON_RECT);
+            this.addRenderableWidget(new TexturedButton(buttonRect.x(), buttonRect.y(),
+                    buttonRect.width(), buttonRect.height(), Component.empty(), widget -> this.onClose(),
                     CLAIM_BUTTON, 488, 83));
         }
     }
