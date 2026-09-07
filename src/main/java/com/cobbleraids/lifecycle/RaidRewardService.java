@@ -81,6 +81,15 @@ public final class RaidRewardService {
         return queue != null && !queue.isEmpty();
     }
 
+    /**
+     * Choice ids this player can claim right now, for command tab completion. Only the front of the
+     * queue is claimable, so suggesting anything else would offer an id the claim would reject.
+     */
+    public static Set<String> pendingChoiceIds(UUID playerId) {
+        PendingRaidReward pending = peek(playerId);
+        return pending == null ? Set.of() : pending.rewards().choices().keySet();
+    }
+
     public static boolean openCurrent(ServerPlayer player) {
         PendingRaidReward pending = peek(player.getUUID());
         if (pending == null) {
