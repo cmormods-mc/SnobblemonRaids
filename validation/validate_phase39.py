@@ -89,14 +89,6 @@ def validate_no_new_gradle_dependency() -> None:
     assert len(mod_implementations) == 4, mod_implementations
 
 
-def validate_no_new_assets_yet() -> None:
-    # Still placeholder-only this phase. Unlike the other checks in this file, this one is expected
-    # to be REMOVED (not violated) whenever a future phase actually ships real texture art -- it's
-    # not a permanent invariant like the physical-side boundary above.
-    assert not (RESOURCES / "assets/cobbleraids/textures").exists()
-    assert not (RESOURCES / "assets/cobbleraids/models").exists()
-
-
 def validate_jar(path: Path) -> None:
     with zipfile.ZipFile(path) as archive:
         names = set(archive.namelist())
@@ -114,7 +106,6 @@ def main() -> None:
     validate_physical_side_boundary()
     validate_server_side_untouched()
     validate_no_new_gradle_dependency()
-    validate_no_new_assets_yet()
     for argument in sys.argv[1:]:
         validate_jar(Path(argument))
     print("Phase 39 textured reward panel validation: PASS")

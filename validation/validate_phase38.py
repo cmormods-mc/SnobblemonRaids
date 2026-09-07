@@ -83,9 +83,9 @@ def validate_no_new_gradle_dependency() -> None:
     assert len(mod_implementations) == 4, mod_implementations
 
 
-def validate_no_new_assets() -> None:
-    assert not (RESOURCES / "assets/cobbleraids/textures").exists()
-    assert not (RESOURCES / "assets/cobbleraids/models").exists()
+def validate_no_new_sound_assets() -> None:
+    # Textures were legitimately added in Phase 39 (see validate_phase39.py) -- this mod still bundles
+    # no sound files of its own, reusing Cobblemon's existing ball send-out sounds by reference.
     assert not (RESOURCES / "assets/cobbleraids/sounds").exists()
 
 
@@ -105,7 +105,7 @@ def main() -> None:
     validate_state_machine()
     validate_tier_reuse()
     validate_no_new_gradle_dependency()
-    validate_no_new_assets()
+    validate_no_new_sound_assets()
     for argument in sys.argv[1:]:
         validate_jar(Path(argument))
     print("Phase 38 cinematic reveal validation: PASS")
