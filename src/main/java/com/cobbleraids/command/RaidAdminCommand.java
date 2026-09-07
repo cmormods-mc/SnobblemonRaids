@@ -1,9 +1,14 @@
 package com.cobbleraids.command;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
+import com.cobbleraids.config.RaidRarityTier;
 import com.cobbleraids.spawn.RaidSpawnScheduler;
+import java.util.Arrays;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.ResourceLocationArgument;
 import net.minecraft.commands.arguments.coordinates.Vec3Argument;
@@ -12,6 +17,10 @@ import net.minecraft.commands.arguments.coordinates.Vec3Argument;
 public final class RaidAdminCommand {
     private static final int ADMIN_PERMISSION_LEVEL = 2;
 
+    private static final SuggestionProvider<CommandSourceStack> TIER_SUGGESTIONS = (ctx, builder) ->
+            SharedSuggestionProvider.suggest(
+                    Arrays.stream(RaidRarityTier.values()).map(RaidRarityTier::serializedName), builder);
+
     private RaidAdminCommand() {}
 
     public static void register() {
@@ -19,7 +28,11 @@ public final class RaidAdminCommand {
                 Commands.literal("cobbleraids")
                         .requires(source -> source.hasPermission(ADMIN_PERMISSION_LEVEL))
                         .then(Commands.literal("list")
-                                .executes(ctx -> RaidAdminSpawnOps.list(ctx.getSource())))
+                                .executes(ctx -> RaidAdminSpawnOps.list(ctx.getSource()))
+                                .then(Commands.argument("tier", StringArgumentType.word())
+                                        .suggests(TIER_SUGGESTIONS)
+                                        .executes(ctx -> RaidAdminSpawnOps.listTier(
+                                                ctx.getSource(), StringArgumentType.getString(ctx, "tier")))))
                         .then(Commands.literal("spawn")
                                 .then(Commands.argument("pokemon", StringArgumentType.word())
                                         .executes(ctx -> RaidAdminSpawnOps.spawnNearPlayer(

@@ -6,6 +6,7 @@ import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.config.RaidDefinitionRegistry;
 import com.cobbleraids.config.RaidRarityTier;
 import com.cobbleraids.lobby.RaidLobbyManager;
+import com.cobbleraids.presentation.CommandFormat;
 import com.cobbleraids.presentation.RaidTierPresentation;
 import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
@@ -156,7 +157,7 @@ public final class RaidSpawnScheduler {
 
         spawnTracked(level, pos, biomeId, dimensionId, selected);
         RaidSpawnHistory.record(schedulerTick, playerName, dimensionId, RaidSpawnHistory.Outcome.SUCCESS,
-                selected.id() + " (" + selected.rarityTier().serializedName() + ")");
+                CommandFormat.shortId(selected.id()) + " (" + selected.rarityTier().serializedName() + ")");
     }
 
     private static PokemonEntity spawnTracked(
@@ -271,40 +272,36 @@ public final class RaidSpawnScheduler {
         Map<RaidRarityTier, Integer> counts = RaidTierSelector.counts(eligible, RaidDefinition::rarityTier);
         Map<RaidRarityTier, Double> odds = RaidTierSelector.normalizedPercentages(counts, config.tierWeights());
 
-        source.sendSuccess(() -> Component.literal("CobbleRaids wild spawn director")
-                .withStyle(ChatFormatting.GOLD), false);
-        source.sendSuccess(() -> Component.literal(" Location: " + (biomeId == null ? "unknown" : biomeId)
-                + " | " + dimensionId + " | "
-                + RaidDefinition.SpawnTime.current(level.getDayTime()).name().toLowerCase(Locale.ROOT)), false);
-        source.sendSuccess(() -> Component.literal(" Active: " + ACTIVE.size() + "/" + config.maxActiveRaids()
-                + " globally, " + activeInDimension(dimensionId) + "/"
-                + config.maxActiveRaidsPerDimension() + " in this dimension"), false);
+        source.sendSuccess(() -> CommandFormat.header("Wild spawn director"), false);
+        if (!config.enabled()) {
+            // Promoted from a trailing note to its own red line: it makes every number below moot.
+            source.sendSuccess(() -> Component.literal(" natural spawning is DISABLED")
+                    .withStyle(ChatFormatting.RED), false);
+        }
+        source.sendSuccess(() -> CommandFormat.row((biomeId == null ? "unknown biome" : CommandFormat.shortId(biomeId))
+                + " · " + CommandFormat.shortId(dimensionId)
+                + " · " + RaidDefinition.SpawnTime.current(level.getDayTime()).name().toLowerCase(Locale.ROOT)), false);
+        source.sendSuccess(() -> CommandFormat.row("active " + ACTIVE.size() + "/" + config.maxActiveRaids()
+                + " global · " + activeInDimension(dimensionId) + "/"
+                + config.maxActiveRaidsPerDimension() + " here"), false);
 
         for (RaidRarityTier tier : RaidRarityTier.values()) {
             List<String> names = eligible.stream()
                     .filter(definition -> definition.rarityTier() == tier)
                     .map(definition -> definition.species().getPath())
                     .toList();
-            source.sendSuccess(() -> Component.literal(String.format(
-                            Locale.ROOT,
-                            " %s: %.2f%% | %d eligible | %s",
-                            tier.displayName(), odds.getOrDefault(tier, 0.0), names.size(), namesSummary(names)))
+            source.sendSuccess(() -> CommandFormat.row(
+                            CommandFormat.pad(tier.serializedName(), 11)
+                                    + CommandFormat.pad(CommandFormat.percent(odds.getOrDefault(tier, 0.0)), 7)
+                                    + CommandFormat.pad(Integer.toString(names.size()), 4)
+                                    + CommandFormat.names(names, 3))
                     .withStyle(RaidTierPresentation.color(tier)), false);
         }
 
         int blocked = environmental.size() - eligible.size();
-        source.sendSuccess(() -> Component.literal(" Eligible now: " + eligible.size() + "/"
-                + environmental.size() + " environmental matches"
-                + (blocked == 0 ? "" : " (" + blocked + " on cooldown/at cap)")
-                + (config.enabled() ? "" : " | NATURAL SPAWNING DISABLED")), false);
+        source.sendSuccess(() -> CommandFormat.row("eligible " + eligible.size() + "/" + environmental.size()
+                + " here" + (blocked == 0 ? "" : " · " + blocked + " on cooldown or at cap")), false);
         return eligible.size();
-    }
-
-    private static String namesSummary(List<String> names) {
-        if (names.isEmpty()) return "none";
-        int shown = Math.min(12, names.size());
-        String result = String.join(", ", names.subList(0, shown));
-        return shown == names.size() ? result : result + " +" + (names.size() - shown) + " more";
     }
 
     public static int testWild(CommandSourceStack source, String rawPokemonName) {
@@ -350,10 +347,12 @@ public final class RaidSpawnScheduler {
             try {
                 PokemonEntity boss = spawnTracked(level, pos, biomeId, dimensionId, definition);
                 source.sendSuccess(() -> Component.literal("Spawned tracked wild "
-                        + definition.rarityTier().displayName() + " " + definition.species().getPath()
-                        + " at " + format(boss.position())
-                        + ". Random chance and the prior cooldown were bypassed; natural tracking is active.")
+                        + definition.species().getPath() + " ("
+                        + definition.rarityTier().serializedName() + ") at "
+                        + CommandFormat.coords(boss.getX(), boss.getY(), boss.getZ()))
                         .withStyle(ChatFormatting.GREEN), true);
+                source.sendSuccess(() -> CommandFormat.hint(
+                        " chance and cooldown bypassed · wild tracking active"), false);
                 return 1;
             } catch (RuntimeException ex) {
                 source.sendFailure(Component.literal("Failed to spawn " + definition.species().getPath()
@@ -384,10 +383,6 @@ public final class RaidSpawnScheduler {
             return null;
         }
         return matches.getFirst();
-    }
-
-    private static String format(Vec3 position) {
-        return String.format(Locale.ROOT, "%.1f %.1f %.1f", position.x, position.y, position.z);
     }
 
     private static boolean offCooldown(RaidDefinition definition) {

@@ -2,9 +2,13 @@ package com.cobbleraids.command;
 
 import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.config.RaidDefinitionRegistry;
+import com.cobbleraids.config.RaidRarityTier;
+import com.cobbleraids.presentation.CommandFormat;
+import com.cobbleraids.presentation.RaidTierPresentation;
 import com.cobbleraids.spawn.RaidBossSpawner;
 import com.cobbleraids.spawn.RaidSpawnScheduler;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -19,23 +23,83 @@ import net.minecraft.world.phys.Vec3;
 final class RaidAdminSpawnOps {
     private RaidAdminSpawnOps() {}
 
+    /** Per-tier counts. 130 individual rows scroll a chat window straight off the screen. */
     static int list(CommandSourceStack source) {
-        List<RaidDefinition> definitions = RaidDefinitionRegistry.all().stream()
-                .sorted(Comparator.comparing(definition -> definition.id().toString())).toList();
+        List<RaidDefinition> definitions = sorted();
         if (definitions.isEmpty()) {
-            source.sendSuccess(() -> Component.literal("No CobbleRaids definitions are currently loaded.")
+            source.sendSuccess(() -> Component.literal("No raid definitions are loaded.")
                     .withStyle(ChatFormatting.YELLOW), false);
             return 0;
         }
-        source.sendSuccess(() -> Component.literal("Loaded CobbleRaids definitions (" + definitions.size() + "):")
-                .withStyle(ChatFormatting.GOLD), false);
+
+        source.sendSuccess(() -> CommandFormat.header("Raid definitions (" + definitions.size() + ")"), false);
+        for (RaidRarityTier tier : RaidRarityTier.values()) {
+            List<String> names = definitions.stream()
+                    .filter(definition -> definition.rarityTier() == tier)
+                    .map(definition -> definition.species().getPath())
+                    .toList();
+            if (names.isEmpty()) continue;
+            source.sendSuccess(() -> CommandFormat.row(CommandFormat.pad(tier.serializedName(), 11)
+                            + CommandFormat.pad(Integer.toString(names.size()), 4)
+                            + CommandFormat.names(names, 3))
+                    .withStyle(RaidTierPresentation.color(tier)), false);
+        }
+        source.sendSuccess(() -> CommandFormat.hint(" /cobbleraids list <tier> for full detail"), false);
+        return definitions.size();
+    }
+
+    /** Full rows for one tier only, which is a length a chat window can actually show. */
+    static int listTier(CommandSourceStack source, String rawTier) {
+        RaidRarityTier tier;
+        try {
+            tier = RaidRarityTier.parse(rawTier);
+        } catch (IllegalArgumentException ex) {
+            source.sendFailure(Component.literal("Unknown tier '" + rawTier + "'. Use one of: "
+                    + Arrays.stream(RaidRarityTier.values())
+                            .map(RaidRarityTier::serializedName).collect(Collectors.joining(", "))));
+            return 0;
+        }
+
+        List<RaidDefinition> definitions = sorted().stream()
+                .filter(definition -> definition.rarityTier() == tier).toList();
+        if (definitions.isEmpty()) {
+            source.sendSuccess(() -> Component.literal("No " + tier.serializedName() + " definitions are loaded.")
+                    .withStyle(ChatFormatting.YELLOW), false);
+            return 0;
+        }
+
+        // A tier usually shares one level and one spawn mode across every entry, and repeating
+        // "Lv.75  wild" down 27 identical rows is the noise this listing is meant to avoid. Any
+        // property that is the same for all of them is stated once in the header instead, leaving
+        // the rows carrying only what actually differs.
+        boolean uniformLevel = definitions.stream().mapToInt(RaidDefinition::level).distinct().count() == 1;
+        boolean uniformSpawn = definitions.stream().map(d -> d.spawn().enabled()).distinct().count() == 1;
+        String all = definitions.size() > 1 ? "all " : "";
+        String headline = tier.displayName() + " definitions (" + definitions.size() + ")"
+                + (uniformLevel ? " · " + all + "Lv." + definitions.getFirst().level() : "")
+                + (uniformSpawn ? " · " + all + (definitions.getFirst().spawn().enabled() ? "wild" : "manual") : "");
+
+        source.sendSuccess(() -> CommandFormat.header(headline)
+                .withStyle(RaidTierPresentation.color(tier)), false);
         for (RaidDefinition definition : definitions) {
-            source.sendSuccess(() -> Component.literal(" - " + definition.species().getPath() + " | definition=" + definition.id()
-                    + " | Lv." + definition.level() + " | natural=" + definition.spawn().enabled()
-                    + " | tier=" + definition.rarityTier().serializedName()
-                    + " | maxPlayers=" + definition.recruitment().maxPlayers()), false);
+            // The id is only worth a column when it is not simply cobbleraids:<species>, which is
+            // what every shipped definition uses; showing it always just repeated the name.
+            String expectedId = "cobbleraids:" + definition.species().getPath();
+            String row = uniformLevel && uniformSpawn
+                    ? definition.species().getPath()
+                    : CommandFormat.pad(definition.species().getPath(), 14)
+                            + (uniformLevel ? "" : CommandFormat.pad("Lv." + definition.level(), 7))
+                            + (uniformSpawn ? "" : definition.spawn().enabled() ? "wild" : "manual");
+            String suffix = definition.id().toString().equals(expectedId)
+                    ? "" : "  " + CommandFormat.shortId(definition.id());
+            source.sendSuccess(() -> CommandFormat.row(row + suffix), false);
         }
         return definitions.size();
+    }
+
+    private static List<RaidDefinition> sorted() {
+        return RaidDefinitionRegistry.all().stream()
+                .sorted(Comparator.comparing(definition -> definition.species().getPath())).toList();
     }
 
     static int spawnNearPlayer(CommandSourceStack source, String rawId) {
@@ -73,8 +137,9 @@ final class RaidAdminSpawnOps {
         RaidDefinition definition = matches.getFirst();
         try {
             PokemonEntity boss = RaidBossSpawner.spawnAt(source.getLevel(), position, definition);
-            source.sendSuccess(() -> Component.literal("Spawned " + pokemonName + " raid (" + definition.id() + ") at "
-                    + format(boss.position()) + " in " + source.getLevel().dimension().location())
+            source.sendSuccess(() -> Component.literal("Spawned " + pokemonName + " raid at "
+                    + CommandFormat.coords(boss.getX(), boss.getY(), boss.getZ()) + " in "
+                    + CommandFormat.shortId(source.getLevel().dimension().location()))
                     .withStyle(ChatFormatting.GREEN), true);
             return 1;
         } catch (RuntimeException ex) {

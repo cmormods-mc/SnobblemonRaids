@@ -5,6 +5,7 @@ import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.config.RaidDefinitionRegistry;
 import com.cobbleraids.lobby.RaidLobby;
 import com.cobbleraids.lobby.RaidLobbyManager;
+import com.cobbleraids.presentation.CommandFormat;
 import com.cobbleraids.raid.RaidRegistry;
 import com.cobbleraids.raid.RaidSession;
 import com.cobbleraids.reward.ContributionMath;
@@ -34,61 +35,74 @@ final class RaidAdminDebugOps {
         int battles = RaidRegistry.all().size();
         int natural = RaidSpawnScheduler.activeCount(source.getServer());
         String rewardGui = RewardGuiBackends.active().name();
-        source.sendSuccess(() -> Component.literal("CobbleRaids status: definitions=" + definitions
-                + ", bosses=" + bosses.size() + ", lobbies=" + lobbies + ", battles=" + battles
-                + ", naturalTracked=" + natural + ", rewardGui=" + rewardGui).withStyle(ChatFormatting.AQUA), false);
+
+        source.sendSuccess(() -> CommandFormat.header("CobbleRaids status"), false);
+        source.sendSuccess(() -> CommandFormat.row(definitions + " definitions · " + bosses.size()
+                + " bosses · " + natural + " tracked wild"), false);
+        source.sendSuccess(() -> CommandFormat.row(lobbies + " lobbies · " + battles
+                + " battles · reward gui " + rewardGui), false);
         return bosses.size() + battles + lobbies;
     }
 
     static int raids(CommandSourceStack source) {
         List<PokemonEntity> bosses = RaidAdminBossOps.allBosses(source.getServer());
         if (bosses.isEmpty()) {
-            source.sendSuccess(() -> Component.literal("No live CobbleRaids bosses are loaded.")
+            source.sendSuccess(() -> Component.literal("No live raid bosses are loaded.")
                     .withStyle(ChatFormatting.YELLOW), false);
             return 0;
         }
         bosses.sort(Comparator.comparing(b -> RaidBossEntityMarker.definitionId(b)
                 .map(ResourceLocation::toString).orElse("~unknown")));
-        source.sendSuccess(() -> Component.literal("Live CobbleRaids bosses (" + bosses.size() + "):")
-                .withStyle(ChatFormatting.GOLD), false);
+        source.sendSuccess(() -> CommandFormat.header("Live raid bosses (" + bosses.size() + ")"), false);
         for (PokemonEntity boss : bosses) sendBoss(source, boss);
         return bosses.size();
     }
 
     private static void sendBoss(CommandSourceStack source, PokemonEntity boss) {
-        String definition = RaidBossEntityMarker.definitionId(boss).map(ResourceLocation::toString).orElse("unknown");
+        String definition = RaidBossEntityMarker.definitionId(boss)
+                .map(CommandFormat::shortId).orElse("unknown");
         RaidSession session = RaidAdminBossOps.sessionForBoss(boss);
         RaidLobby lobby = RaidLobbyManager.get(boss);
-        String state = session != null ? "battle:" + session.getStatus()
-                : lobby != null ? "lobby:" + lobby.status() : "idle";
-        source.sendSuccess(() -> Component.literal(" - " + definition + " | " + state + " | "
-                + boss.level().dimension().location() + " @ " + pos(boss)
-                + " | natural=" + RaidBossEntityMarker.isNatural(boss)), false);
+        String state = session != null ? "battle" : lobby != null ? "lobby" : "idle";
+        // "wild" only when it is true -- natural=false on every admin-spawned row was pure noise.
+        String origin = RaidBossEntityMarker.isNatural(boss) ? "  wild" : "";
+
+        source.sendSuccess(() -> CommandFormat.row(CommandFormat.pad(definition, 14)
+                + CommandFormat.pad(state, 7)
+                + CommandFormat.shortId(boss.level().dimension().location()) + " "
+                + CommandFormat.coords(boss.getX(), boss.getY(), boss.getZ())
+                + origin), false);
+
         if (lobby != null) {
             long remaining = Math.max(0L, lobby.closesAtTick() - boss.level().getGameTime());
-            source.sendSuccess(() -> Component.literal("    lobby players=" + lobby.joinedCount() + "/"
-                    + lobby.definition().recruitment().maxPlayers() + ", remaining="
-                    + String.format(Locale.ROOT, "%.1fs", remaining / 20.0)), false);
+            source.sendSuccess(() -> CommandFormat.detail(lobby.status().name().toLowerCase(Locale.ROOT)
+                    + " · " + lobby.joinedCount() + "/" + lobby.definition().recruitment().maxPlayers()
+                    + " players · " + CommandFormat.seconds(remaining / 20.0) + " left"), false);
         }
         if (session != null) sendSession(source, session);
     }
 
     private static void sendSession(CommandSourceStack source, RaidSession session) {
-        String timer = session.isTimed() ? String.format(Locale.ROOT, "%.1fs", session.getRemainingCombatTicks() / 20.0) : "unlimited";
-        source.sendSuccess(() -> Component.literal("    hp=" + String.format(Locale.ROOT, "%.1f/%.1f", session.getCurrentHealth(), session.getMaxHealth())
-                + ", activePlayers=" + session.getActiveParticipants().size() + "/" + session.getParticipants().size()
-                + ", timer=" + timer + ", flee=" + session.isFleeAllowed()), false);
-        Map<UUID, Double> shares = ContributionMath.percentages(session.getContributionSnapshot(), session.getActiveParticipants());
+        String timer = session.isTimed()
+                ? CommandFormat.seconds(session.getRemainingCombatTicks() / 20.0) + " left" : "no limit";
+        source.sendSuccess(() -> CommandFormat.detail(session.getStatus().name().toLowerCase(Locale.ROOT)
+                + " · " + Math.round(session.getCurrentHealth()) + "/" + Math.round(session.getMaxHealth()) + " hp"
+                + " · " + session.getActiveParticipants().size() + "/" + session.getParticipants().size() + " players"
+                + " · " + timer + (session.isFleeAllowed() ? " · flee on" : "")), false);
+
+        Map<UUID, Double> shares = ContributionMath.percentages(
+                session.getContributionSnapshot(), session.getActiveParticipants());
+        if (shares.isEmpty()) return;
+        // One line for all contributors rather than one line each: a 4-player raid was 4 rows deep.
+        StringBuilder line = new StringBuilder();
         for (Map.Entry<UUID, Double> entry : shares.entrySet()) {
             ServerPlayer player = source.getServer().getPlayerList().getPlayer(entry.getKey());
-            String name = player == null ? entry.getKey().toString() : player.getGameProfile().getName();
-            source.sendSuccess(() -> Component.literal("      " + name + ": "
-                    + String.format(Locale.ROOT, "%.1f%%", entry.getValue())), false);
+            String name = player == null ? entry.getKey().toString().substring(0, 8)
+                    : player.getGameProfile().getName();
+            if (line.length() > 0) line.append(" · ");
+            line.append(name).append(' ').append(CommandFormat.percent(entry.getValue()));
         }
-    }
-
-    private static String pos(PokemonEntity boss) {
-        return String.format(Locale.ROOT, "%.1f %.1f %.1f", boss.getX(), boss.getY(), boss.getZ());
+        source.sendSuccess(() -> CommandFormat.detail(line.toString()), false);
     }
 
     static int history(CommandSourceStack source) {
@@ -98,46 +112,104 @@ final class RaidAdminDebugOps {
                     .withStyle(ChatFormatting.YELLOW), false);
             return 0;
         }
-        source.sendSuccess(() -> Component.literal("Recent natural-spawn attempts (" + entries.size() + ", oldest first):")
-                .withStyle(ChatFormatting.GOLD), false);
-        for (RaidSpawnHistory.Entry entry : entries) {
-            ChatFormatting color = entry.outcome() == RaidSpawnHistory.Outcome.SUCCESS
-                    ? ChatFormatting.GREEN : ChatFormatting.RED;
-            source.sendSuccess(() -> Component.literal(String.format(Locale.ROOT, " - [%.1fs] %s @ %s -> %s: %s",
-                    entry.tick() / 20.0, entry.player(), entry.dimension(), entry.outcome(), entry.detail()))
-                    .withStyle(color), false);
+        source.sendSuccess(() -> CommandFormat.header("Recent wild-spawn attempts (" + entries.size()
+                + ", oldest first)"), false);
+        // The scheduler retries on a fixed interval, so the same outcome usually repeats for as long
+        // as its cause lasts -- a blocked spawn can easily fill the whole buffer with one identical
+        // reason. Consecutive runs of the same player/dimension/outcome collapse to a single row
+        // with a time span and a count, so what is on screen is the sequence of distinct events.
+        int index = 0;
+        int rows = 0;
+        while (index < entries.size()) {
+            RaidSpawnHistory.Entry first = entries.get(index);
+            int end = index + 1;
+            while (end < entries.size() && sameRun(first, entries.get(end))) end++;
+
+            RaidSpawnHistory.Entry last = entries.get(end - 1);
+            int count = end - index;
+            String when = count == 1
+                    ? CommandFormat.seconds(first.tick() / 20.0)
+                    : CommandFormat.seconds(first.tick() / 20.0).replace("s", "")
+                            + "-" + CommandFormat.seconds(last.tick() / 20.0);
+            boolean success = first.outcome() == RaidSpawnHistory.Outcome.SUCCESS;
+
+            source.sendSuccess(() -> CommandFormat.row(CommandFormat.pad(when, 10)
+                            + CommandFormat.pad(first.player(), 12)
+                            + first.outcome().name().toLowerCase(Locale.ROOT)
+                            + (count == 1 ? "" : " x" + count))
+                    .withStyle(success ? ChatFormatting.GREEN : ChatFormatting.RED), false);
+            // The reason is the useful half of a failure, so it keeps its own dimmed line -- but
+            // only once per run, showing the most recent of them.
+            source.sendSuccess(() -> CommandFormat.detail(CommandFormat.shortId(last.dimension())
+                    + " · " + last.detail()), false);
+            index = end;
+            rows++;
         }
-        return entries.size();
+        return rows;
     }
 
+    /**
+     * Keys are printed exactly as they appear in server.json, not as the Java accessor names.
+     * The point of this command is to find the value you then go and edit, and the old output
+     * showed "checkIntervalTicks" for a field the file calls "check_interval_ticks" -- which an
+     * operator cannot search the file for.
+     */
     static int config(CommandSourceStack source) {
         CobbleRaidsConfig config = CobbleRaidsConfigManager.get();
         CobbleRaidsConfig.NaturalSpawning ns = config.naturalSpawning();
-        source.sendSuccess(() -> Component.literal("CobbleRaids config (" + CobbleRaidsConfigManager.path() + "):")
-                .withStyle(ChatFormatting.GOLD), false);
-        source.sendSuccess(() -> Component.literal(" natural_spawning: enabled=" + ns.enabled()
-                + " checkIntervalTicks=" + ns.checkIntervalTicks()
-                + " spawnAttemptChance=" + ns.spawnAttemptChance()
-                + " attemptsPerCheck=" + ns.attemptsPerCheck()), false);
-        source.sendSuccess(() -> Component.literal("   maxActiveRaids=" + ns.maxActiveRaids()
-                + " maxActiveRaidsPerDimension=" + ns.maxActiveRaidsPerDimension()
-                + " minDistanceBetweenRaids=" + ns.minDistanceBetweenRaids()), false);
-        source.sendSuccess(() -> Component.literal("   playerDistance=" + ns.minDistanceFromPlayer() + ".."
-                + ns.maxDistanceFromPlayer()
-                + " locationAttempts=" + ns.locationAttempts()
-                + " despawnPlayerRadius=" + ns.despawnPlayerRadius()), false);
-        source.sendSuccess(() -> Component.literal("   defaultDespawnSeconds=" + ns.defaultDespawnSeconds()
-                + " defaultDefinitionCooldownSeconds=" + ns.defaultDefinitionCooldownSeconds()
-                + " announcementPrecision=" + ns.announcementPrecision().serializedName()), false);
-        source.sendSuccess(() -> Component.literal(" recruitment_defaults: duration="
-                + config.recruitmentDefaults().durationSeconds() + "s radius=" + config.recruitmentDefaults().radius()
-                + " maxPlayers=" + config.recruitmentDefaults().maxPlayers()), false);
-        source.sendSuccess(() -> Component.literal(" combat_defaults: timeLimit="
-                + config.combatDefaults().timeLimitSeconds() + "s allowFlee=" + config.combatDefaults().allowFlee()), false);
-        source.sendSuccess(() -> Component.literal(" tier_scaling: enabled=" + config.tierScaling().enabled()), false);
-        source.sendSuccess(() -> Component.literal(" boss_glow: enabled=" + config.bossGlow().enabled()
-                + " radiusBlocks=" + config.bossGlow().radiusBlocks()), false);
-        source.sendSuccess(() -> Component.literal(" debug_logging=" + config.debugLogging()), false);
+
+        source.sendSuccess(() -> CommandFormat.header("CobbleRaids config"), false);
+        source.sendSuccess(() -> CommandFormat.hint(" " + CobbleRaidsConfigManager.path()), false);
+
+        section(source, "natural_spawning");
+        setting(source, "enabled", ns.enabled());
+        setting(source, "check_interval_ticks", ns.checkIntervalTicks());
+        setting(source, "spawn_attempt_chance", ns.spawnAttemptChance());
+        setting(source, "attempts_per_check", ns.attemptsPerCheck());
+        setting(source, "max_active_raids", ns.maxActiveRaids());
+        setting(source, "max_active_raids_per_dimension", ns.maxActiveRaidsPerDimension());
+        setting(source, "min_distance_between_raids", ns.minDistanceBetweenRaids());
+        setting(source, "min_distance_from_player", ns.minDistanceFromPlayer());
+        setting(source, "max_distance_from_player", ns.maxDistanceFromPlayer());
+        setting(source, "location_attempts", ns.locationAttempts());
+        setting(source, "despawn_player_radius", ns.despawnPlayerRadius());
+        setting(source, "default_despawn_seconds", ns.defaultDespawnSeconds());
+        setting(source, "default_definition_cooldown_seconds", ns.defaultDefinitionCooldownSeconds());
+        setting(source, "announcement_precision", ns.announcementPrecision().serializedName());
+
+        section(source, "recruitment_defaults");
+        setting(source, "duration_seconds", config.recruitmentDefaults().durationSeconds());
+        setting(source, "radius", config.recruitmentDefaults().radius());
+        setting(source, "max_players", config.recruitmentDefaults().maxPlayers());
+
+        section(source, "combat_defaults");
+        setting(source, "time_limit_seconds", config.combatDefaults().timeLimitSeconds());
+        setting(source, "allow_flee", config.combatDefaults().allowFlee());
+
+        section(source, "boss_glow");
+        setting(source, "enabled", config.bossGlow().enabled());
+        setting(source, "radius_blocks", config.bossGlow().radiusBlocks());
+
+        section(source, "other");
+        setting(source, "tier_scaling.enabled", config.tierScaling().enabled());
+        setting(source, "debug_logging", config.debugLogging());
         return 1;
+    }
+
+    /** Same player, dimension and outcome -- the detail (a candidate position) is expected to differ. */
+    private static boolean sameRun(RaidSpawnHistory.Entry a, RaidSpawnHistory.Entry b) {
+        return a.outcome() == b.outcome()
+                && a.player().equals(b.player())
+                && a.dimension().equals(b.dimension());
+    }
+
+    private static void section(CommandSourceStack source, String name) {
+        source.sendSuccess(() -> Component.literal(name).withStyle(ChatFormatting.AQUA), false);
+    }
+
+    private static void setting(CommandSourceStack source, String key, Object value) {
+        source.sendSuccess(() -> Component.literal(" " + CommandFormat.pad(key, 36))
+                .withStyle(ChatFormatting.GRAY)
+                .append(Component.literal(String.valueOf(value)).withStyle(ChatFormatting.WHITE)), false);
     }
 }
