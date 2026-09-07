@@ -6,6 +6,7 @@ import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.config.RaidDefinitionRegistry;
 import com.cobbleraids.config.RaidRarityTier;
 import com.cobbleraids.lobby.RaidLobbyManager;
+import com.cobbleraids.presentation.RaidTierPresentation;
 import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import java.util.ArrayList;
@@ -211,7 +212,7 @@ public final class RaidSpawnScheduler {
         MutableComponent message = Component.literal("[CobbleRaids] ")
                 .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD)
                 .append(Component.literal("A wild ").withStyle(ChatFormatting.YELLOW))
-                .append(Component.literal(tier.displayName() + " ").withStyle(tierColor(tier)))
+                .append(Component.literal(tier.displayName() + " ").withStyle(RaidTierPresentation.color(tier)))
                 .append(speciesName.copy().withStyle(ChatFormatting.WHITE))
                 .append(Component.literal(" raid has appeared in ").withStyle(ChatFormatting.YELLOW))
                 .append(Component.literal(biomeName).withStyle(ChatFormatting.GREEN))
@@ -239,15 +240,6 @@ public final class RaidSpawnScheduler {
             if (word.length() > 1) result.append(word.substring(1));
         }
         return result.isEmpty() ? id.toString() : result.toString();
-    }
-
-    private static ChatFormatting tierColor(RaidRarityTier tier) {
-        return switch (tier) {
-            case STARTER -> ChatFormatting.GREEN;
-            case POWERHOUSE -> ChatFormatting.AQUA;
-            case LEGENDARY -> ChatFormatting.GOLD;
-            case MYTHICAL -> ChatFormatting.LIGHT_PURPLE;
-        };
     }
 
     public static int sendSpawnInfo(CommandSourceStack source) {
@@ -297,7 +289,7 @@ public final class RaidSpawnScheduler {
                             Locale.ROOT,
                             " %s: %.2f%% | %d eligible | %s",
                             tier.displayName(), odds.getOrDefault(tier, 0.0), names.size(), namesSummary(names)))
-                    .withStyle(tierColor(tier)), false);
+                    .withStyle(RaidTierPresentation.color(tier)), false);
         }
 
         int blocked = environmental.size() - eligible.size();

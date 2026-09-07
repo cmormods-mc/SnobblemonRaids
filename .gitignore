@@ -2,6 +2,10 @@
 build/
 run/
 out/
+# IDE settings hold machine-specific absolute JDK paths
+.vscode/
+.idea/
+*.iml
 validation/**/out/
 *.log
 validation/showdown/
