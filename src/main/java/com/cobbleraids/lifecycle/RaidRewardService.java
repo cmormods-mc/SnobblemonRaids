@@ -254,6 +254,17 @@ public final class RaidRewardService {
         return builder.toString();
     }
 
+    /**
+     * Bound to SERVER_STOPPED rather than SERVER_STOPPING on purpose: the queue is mirrored into
+     * PendingRewardStore, a SavedData written during the world save that SERVER_STOPPING still
+     * precedes. Clearing the live map only once every world is closed keeps unclaimed rewards a
+     * disk concern and this map a memory one. onServerStarted refills it from disk either way.
+     */
+    public static void onServerStopped() {
+        PENDING.clear();
+        OPEN_DELAY.clear();
+    }
+
     private static String describeAll(RewardGrantResult result) {
         List<RaidDefinition.RewardItem> all = result.allGranted();
         if (all.isEmpty()) return "nothing";

@@ -38,4 +38,13 @@ public final class RaidSpawnHistory {
     public static synchronized List<Entry> recent() {
         return List.copyOf(RECENT);
     }
+
+    /**
+     * Entries are keyed by scheduler tick, which restarts at 0 for each server, so carrying them
+     * across a shutdown would make `debug history` interleave two worlds' attempts under times that
+     * no longer mean anything. Bounded at CAPACITY, so this is about correctness, not memory.
+     */
+    public static synchronized void onServerStopped() {
+        RECENT.clear();
+    }
 }

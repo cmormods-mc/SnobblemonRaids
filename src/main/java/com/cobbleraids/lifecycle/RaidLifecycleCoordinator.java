@@ -214,4 +214,14 @@ public final class RaidLifecycleCoordinator {
         FINALIZED.remove(raidId);
         VICTORY_REQUESTED.remove(raidId);
     }
+
+    /**
+     * Both sets are emptied per raid by forgetFinalizationState, but only along a path that reaches
+     * a terminal transition. A server that stops with raids still in flight leaves their ids behind,
+     * and an integrated (single-player) client reuses this JVM for every world it opens.
+     */
+    public static void onServerStopped() {
+        FINALIZED.clear();
+        VICTORY_REQUESTED.clear();
+    }
 }

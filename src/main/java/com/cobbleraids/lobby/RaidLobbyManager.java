@@ -166,6 +166,19 @@ public final class RaidLobbyManager {
     /** Snapshot used by admin/debug commands; lobby mutation remains server-thread owned. */
     public static List<RaidLobby> all() { return List.copyOf(BY_BOSS.values()); }
 
+    /**
+     * Drops every lobby once the server is gone. A RaidLobby holds its boss PokemonEntity, and an
+     * entity reaches its ServerLevel, so a lobby left here after a world closes pins that entire
+     * world in memory -- and an integrated (single-player) client reuses this JVM for every world
+     * it opens. tick() only ever revisits RECRUITING lobbies, so anything left in another status
+     * would never be reclaimed on its own.
+     */
+    public static int onServerStopped() {
+        int dropped = BY_BOSS.size();
+        BY_BOSS.clear();
+        return dropped;
+    }
+
     /** Cancels and forgets recruitment for a boss before an administrative despawn. */
     public static boolean cancelForBoss(PokemonEntity boss) {
         if (boss == null) return false;

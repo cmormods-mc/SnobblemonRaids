@@ -32,4 +32,17 @@ public final class RaidRegistry {
     }
 
     public static boolean contains(PokemonBattle battle) { return get(battle) != null; }
+
+    /**
+     * Drops every session once the server is gone. A RaidSession holds its PokemonBattle and its
+     * boss PokemonEntity, and an entity reaches its ServerLevel, so a session left here after a
+     * world closes pins that entire world in memory. An integrated (single-player) client reuses
+     * this JVM for every world it opens, so the leak is per world visited, and the stale battle ids
+     * would also be consulted against the next world's battles.
+     */
+    public static int onServerStopped() {
+        int dropped = BY_BATTLE.size();
+        BY_BATTLE.clear();
+        return dropped;
+    }
 }

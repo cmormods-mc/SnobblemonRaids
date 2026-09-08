@@ -41,6 +41,11 @@ public final class RaidCombatRuleService {
         if (raidId != null) WARNED_SECONDS.remove(raidId);
     }
 
+    /** Warning state for raids that never reached a terminal transition before shutdown. */
+    public static void onServerStopped() {
+        WARNED_SECONDS.clear();
+    }
+
     private static void broadcast(MinecraftServer server, RaidSession raid, Component message) {
         for (UUID playerId : raid.getActiveParticipants()) {
             ServerPlayer player = server.getPlayerList().getPlayer(playerId);
