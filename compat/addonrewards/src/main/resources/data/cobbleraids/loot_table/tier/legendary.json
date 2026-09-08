@@ -1,0 +1,50 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": 2,
+      "entries": [
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:addons/training_caps",
+          "weight": 20
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:addons/charms",
+          "weight": 18
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:addons/capsules",
+          "weight": 14
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:addons/bonds",
+          "weight": 12
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:addons/tms",
+          "weight": 10
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:addons/breeding",
+          "weight": 8
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:addons/utility",
+          "weight": 8
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:addons/cards",
+          "weight": 6
+        }
+      ]
+    }
+  ]
+}

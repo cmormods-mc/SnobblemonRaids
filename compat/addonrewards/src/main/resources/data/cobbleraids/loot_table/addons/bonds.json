@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "companion_bonds:friendship_bracelet",
+          "weight": 10
+        },
+        {
+          "type": "minecraft:item",
+          "name": "companion_bonds:contest_journal",
+          "weight": 8
+        },
+        {
+          "type": "minecraft:item",
+          "name": "companion_bonds:shiny_leaf",
+          "weight": 4
+        },
+        {
+          "type": "minecraft:item",
+          "name": "companion_bonds:shiny_crown",
+          "weight": 1
+        }
+      ]
+    }
+  ]
+}

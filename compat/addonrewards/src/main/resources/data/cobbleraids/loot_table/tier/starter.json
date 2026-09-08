@@ -1,0 +1,50 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:addons/utility",
+          "weight": 20
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:addons/safari",
+          "weight": 16
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:addons/vitamins",
+          "weight": 14
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:addons/cards",
+          "weight": 12
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:addons/breeding",
+          "weight": 10
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:addons/riding",
+          "weight": 8
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:addons/tms",
+          "weight": 8
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:addons/capsules",
+          "weight": 6
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "daycareplus:daycare_spark",
+          "weight": 12,
+          "functions": [
+            {
+              "function": "minecraft:set_count",
+              "add": false,
+              "count": {
+                "min": 1,
+                "max": 2
+              }
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "daycareplus:fertility_candy",
+          "weight": 8
+        },
+        {
+          "type": "minecraft:item",
+          "name": "daycareplus:daycare_booster",
+          "weight": 6
+        },
+        {
+          "type": "minecraft:item",
+          "name": "daycareplus:copper_incubator",
+          "weight": 6
+        },
+        {
+          "type": "minecraft:item",
+          "name": "daycareplus:iron_incubator",
+          "weight": 4
+        },
+        {
+          "type": "minecraft:item",
+          "name": "daycareplus:gold_incubator",
+          "weight": 3
+        },
+        {
+          "type": "minecraft:item",
+          "name": "daycareplus:diamond_incubator",
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "daycareplus:shiny_booster",
+          "weight": 1
+        },
+        {
+          "type": "minecraft:item",
+          "name": "daycareplus:netherite_incubator",
+          "weight": 1
+        }
+      ]
+    }
+  ]
+}

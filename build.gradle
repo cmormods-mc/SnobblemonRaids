@@ -74,6 +74,9 @@ sourceSets {
     biomeCompat {
         resources.srcDir 'compat/biome/src/main/resources'
     }
+    addonRewards {
+        resources.srcDir 'compat/addonrewards/src/main/resources'
+    }
 }
 
 tasks.register('biomeCompatJar', Jar) {
@@ -86,6 +89,17 @@ tasks.register('biomeCompatJar', Jar) {
     from sourceSets.biomeCompat.output
 }
 
+tasks.register('addonRewardsJar', Jar) {
+    group = 'build'
+    description = 'Builds the optional raid-reward loot tables for common Cobblemon add-ons.'
+    dependsOn tasks.named('processAddonRewardsResources')
+    archiveBaseName = 'CobbleRaids-AddonRewards'
+    archiveVersion = '1.0.0'
+    archiveClassifier = ''
+    from sourceSets.addonRewards.output
+}
+
 tasks.named('build') {
     dependsOn tasks.named('biomeCompatJar')
+    dependsOn tasks.named('addonRewardsJar')
 }

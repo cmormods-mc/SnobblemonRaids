@@ -1,0 +1,35 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "ridetraining:stamina_berry",
+          "weight": 12,
+          "functions": [
+            {
+              "function": "minecraft:set_count",
+              "add": false,
+              "count": {
+                "min": 1,
+                "max": 3
+              }
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "ridetraining:training_reader",
+          "weight": 6
+        },
+        {
+          "type": "minecraft:item",
+          "name": "ridetraining:riding_upgrade",
+          "weight": 3
+        }
+      ]
+    }
+  ]
+}

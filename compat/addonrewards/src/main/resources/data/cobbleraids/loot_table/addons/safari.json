@@ -1,0 +1,60 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "cobblesafari:bait",
+          "weight": 14,
+          "functions": [
+            {
+              "function": "minecraft:set_count",
+              "add": false,
+              "count": {
+                "min": 1,
+                "max": 4
+              }
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblesafari:balm",
+          "weight": 10,
+          "functions": [
+            {
+              "function": "minecraft:set_count",
+              "add": false,
+              "count": {
+                "min": 1,
+                "max": 2
+              }
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblesafari:auspicious_pokeball",
+          "weight": 6
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblesafari:union_room_pokeball",
+          "weight": 4
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblesafari:redchain_random_ball",
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblesafari:auspiciouspokeball_gold",
+          "weight": 1
+        }
+      ]
+    }
+  ]
+}
