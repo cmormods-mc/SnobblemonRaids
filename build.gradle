@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.26-mega-showdown-compat'
+version = '0.8.27-tier-spawn-rates'
 group = 'com.cobbleraids'
 
 base {

@@ -183,6 +183,18 @@ public final class RaidSpawnScheduler {
             return;
         }
 
+        // Deliberately after tier selection and deliberately terminal: a failed roll means no raid
+        // this attempt, never a re-roll into a different tier. Re-rolling would just redistribute
+        // the spawn, which is exactly the behaviour tier_weights already has and the reason it
+        // cannot be used to make one tier rarer -- see RaidTierSpawnChance.
+        double tierChance = config.tierSpawnChance().chanceFor(selected.rarityTier());
+        if (ThreadLocalRandom.current().nextDouble() >= tierChance) {
+            RaidSpawnHistory.record(schedulerTick, playerName, dimensionId, RaidSpawnHistory.Outcome.TIER_CHANCE_SKIPPED,
+                    selected.rarityTier().serializedName() + " selected but skipped by tier_spawn_chance "
+                            + CommandFormat.percent(tierChance * 100.0));
+            return;
+        }
+
         spawnTracked(level, pos, biomeId, dimensionId, selected);
         RaidSpawnHistory.record(schedulerTick, playerName, dimensionId, RaidSpawnHistory.Outcome.SUCCESS,
                 CommandFormat.shortId(selected.id()) + " (" + selected.rarityTier().serializedName() + ")");
@@ -298,7 +310,9 @@ public final class RaidSpawnScheduler {
                 .filter(RaidSpawnScheduler::belowDefinitionCap)
                 .toList();
         Map<RaidRarityTier, Integer> counts = RaidTierSelector.counts(eligible, RaidDefinition::rarityTier);
-        Map<RaidRarityTier, Double> odds = RaidTierSelector.normalizedPercentages(counts, config.tierWeights());
+        Map<RaidRarityTier, Double> odds =
+                RaidTierSelector.normalizedPercentages(counts, config.tierWeights(), config.tierSpawnChance());
+        double noSpawn = RaidTierSelector.noSpawnPercentage(odds);
 
         source.sendSuccess(() -> CommandFormat.header("Wild spawn director"), false);
         if (!config.enabled()) {
@@ -324,6 +338,15 @@ public final class RaidSpawnScheduler {
                                     + CommandFormat.pad(Integer.toString(names.size()), 4)
                                     + CommandFormat.names(names, 3))
                     .withStyle(RaidTierPresentation.color(tier)), false);
+        }
+
+        // Only worth a line when tier_spawn_chance is actually holding raids back; at the default
+        // 1.0 across the board this is 0 and the odds column sums to 100 as it always did.
+        if (noSpawn > 0.05) {
+            source.sendSuccess(() -> CommandFormat.row(
+                            CommandFormat.pad("no spawn", 11) + CommandFormat.pad(CommandFormat.percent(noSpawn), 7)
+                                    + "held back by tier_spawn_chance")
+                    .withStyle(ChatFormatting.DARK_GRAY), false);
         }
 
         int blocked = environmental.size() - eligible.size();

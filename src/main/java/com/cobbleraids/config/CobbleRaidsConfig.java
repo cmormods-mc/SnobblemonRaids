@@ -41,6 +41,7 @@ public record CobbleRaidsConfig(
             int defaultMaxLifetimeSeconds,
             int defaultDefinitionCooldownSeconds,
             RaidTierWeights tierWeights,
+            RaidTierSpawnChance tierSpawnChance,
             AnnouncementPrecision announcementPrecision
     ) {
         public NaturalSpawning {
@@ -87,6 +88,8 @@ public record CobbleRaidsConfig(
                 throw new IllegalArgumentException("natural_spawning.default_definition_cooldown_seconds must be 0..604800");
             if (tierWeights == null)
                 throw new IllegalArgumentException("natural_spawning.tier_weights cannot be null");
+            if (tierSpawnChance == null)
+                throw new IllegalArgumentException("natural_spawning.tier_spawn_chance cannot be null");
             if (announcementPrecision == null)
                 throw new IllegalArgumentException("natural_spawning.announcement_precision cannot be null");
         }
@@ -197,6 +200,7 @@ public record CobbleRaidsConfig(
                         1800,           // default_max_lifetime_seconds (total, camped or not)
                         1800,           // default_definition_cooldown_seconds
                         RaidTierWeights.defaults(),
+                        RaidTierSpawnChance.defaults(),
                         AnnouncementPrecision.NEAREST_HUNDRED
                 ),
                 new RecruitmentDefaults(20, 10.0, VALIDATED_MAX_HUMAN_PLAYERS),
@@ -220,6 +224,14 @@ public record CobbleRaidsConfig(
                 integer(tierObject, "legendary", tw.legendary()),
                 integer(tierObject, "mythical", tw.mythical())
         );
+        JsonObject chanceObject = object(natural, "tier_spawn_chance");
+        RaidTierSpawnChance tc = nd.tierSpawnChance();
+        RaidTierSpawnChance tierSpawnChance = new RaidTierSpawnChance(
+                decimal(chanceObject, "starter", tc.starter()),
+                decimal(chanceObject, "powerhouse", tc.powerhouse()),
+                decimal(chanceObject, "legendary", tc.legendary()),
+                decimal(chanceObject, "mythical", tc.mythical())
+        );
         NaturalSpawning naturalSpawning = new NaturalSpawning(
                 bool(natural, "enabled", nd.enabled()),
                 integer(natural, "check_interval_ticks", nd.checkIntervalTicks()),
@@ -236,6 +248,7 @@ public record CobbleRaidsConfig(
                 integer(natural, "default_max_lifetime_seconds", nd.defaultMaxLifetimeSeconds()),
                 integer(natural, "default_definition_cooldown_seconds", nd.defaultDefinitionCooldownSeconds()),
                 tierWeights,
+                tierSpawnChance,
                 natural.has("announcement_precision")
                         ? AnnouncementPrecision.parse(natural.get("announcement_precision").getAsString())
                         : nd.announcementPrecision()
@@ -309,6 +322,12 @@ public record CobbleRaidsConfig(
         tierWeights.addProperty("legendary", naturalSpawning.tierWeights().legendary());
         tierWeights.addProperty("mythical", naturalSpawning.tierWeights().mythical());
         natural.add("tier_weights", tierWeights);
+        JsonObject tierSpawnChance = new JsonObject();
+        tierSpawnChance.addProperty("starter", naturalSpawning.tierSpawnChance().starter());
+        tierSpawnChance.addProperty("powerhouse", naturalSpawning.tierSpawnChance().powerhouse());
+        tierSpawnChance.addProperty("legendary", naturalSpawning.tierSpawnChance().legendary());
+        tierSpawnChance.addProperty("mythical", naturalSpawning.tierSpawnChance().mythical());
+        natural.add("tier_spawn_chance", tierSpawnChance);
         natural.addProperty("announcement_precision", naturalSpawning.announcementPrecision().serializedName());
         root.add("natural_spawning", natural);
 

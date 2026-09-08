@@ -18,6 +18,7 @@ public final class RaidSpawnHistory {
         TOO_CLOSE_TO_EXISTING,
         NO_ELIGIBLE_DEFINITIONS,
         TIER_SELECTION_FAILED,
+        TIER_CHANCE_SKIPPED,
         SHOWDOWN_INTEGRATION_FAILED
     }
 

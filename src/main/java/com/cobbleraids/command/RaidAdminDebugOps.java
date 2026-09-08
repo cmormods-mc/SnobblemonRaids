@@ -182,6 +182,13 @@ final class RaidAdminDebugOps {
         setting(source, "default_despawn_seconds", ns.defaultDespawnSeconds());
         setting(source, "default_max_lifetime_seconds", ns.defaultMaxLifetimeSeconds());
         setting(source, "default_definition_cooldown_seconds", ns.defaultDefinitionCooldownSeconds());
+        // Printed together and in that order because they are the pair people confuse: weights pick
+        // WHICH tier a spawn is, chances decide WHETHER it happens at all. Tuning the first to get
+        // fewer common raids just hands those spawns to the rarer tiers.
+        setting(source, "tier_weights", ns.tierWeights().starter() + "/" + ns.tierWeights().powerhouse()
+                + "/" + ns.tierWeights().legendary() + "/" + ns.tierWeights().mythical() + " (mix, not rate)");
+        setting(source, "tier_spawn_chance", ns.tierSpawnChance().starter() + "/" + ns.tierSpawnChance().powerhouse()
+                + "/" + ns.tierSpawnChance().legendary() + "/" + ns.tierSpawnChance().mythical() + " (rate)");
         setting(source, "announcement_precision", ns.announcementPrecision().serializedName());
 
         section(source, "recruitment_defaults");

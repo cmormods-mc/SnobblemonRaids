@@ -1,6 +1,7 @@
 package com.cobbleraids.spawn;
 
 import com.cobbleraids.config.RaidRarityTier;
+import com.cobbleraids.config.RaidTierSpawnChance;
 import com.cobbleraids.config.RaidTierWeights;
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -60,9 +61,20 @@ public final class RaidTierSelector {
         return result;
     }
 
+    /**
+     * The chance a single spawn attempt actually produces each tier, as a percentage.
+     *
+     * <p>Folds in tier_spawn_chance rather than reporting the raw weight share, because those two
+     * numbers stopped being the same thing once a selected tier could be skipped. Reporting the mix
+     * alone would tell an operator "starter 70%" for a tier that in practice spawns on 14% of
+     * attempts, which is precisely the number they came to this command to find. These no longer
+     * sum to 100: the shortfall is the chance the attempt produces nothing, which
+     * {@link #noSpawnPercentage} names explicitly.
+     */
     public static Map<RaidRarityTier, Double> normalizedPercentages(
             Map<RaidRarityTier, Integer> counts,
-            RaidTierWeights weights
+            RaidTierWeights weights,
+            RaidTierSpawnChance chances
     ) {
         long total = 0L;
         for (RaidRarityTier tier : RaidRarityTier.values()) {
@@ -72,11 +84,18 @@ public final class RaidTierSelector {
         EnumMap<RaidRarityTier, Double> result = new EnumMap<>(RaidRarityTier.class);
         for (RaidRarityTier tier : RaidRarityTier.values()) {
             double percentage = total > 0L && counts.getOrDefault(tier, 0) > 0
-                    ? weights.weightFor(tier) * 100.0 / total
+                    ? weights.weightFor(tier) * 100.0 / total * chances.chanceFor(tier)
                     : 0.0;
             result.put(tier, percentage);
         }
         return result;
+    }
+
+    /** The share of attempts that select a tier and are then skipped by its tier_spawn_chance. */
+    public static double noSpawnPercentage(Map<RaidRarityTier, Double> odds) {
+        double spawned = 0.0;
+        for (double percentage : odds.values()) spawned += percentage;
+        return Math.max(0.0, 100.0 - spawned);
     }
 
     private static <T> EnumMap<RaidRarityTier, List<T>> group(
