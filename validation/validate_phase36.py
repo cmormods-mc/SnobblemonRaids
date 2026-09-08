@@ -76,7 +76,7 @@ def validate_skiesguis_optional() -> None:
     assert "Failed to install/load CobbleRaids reward GUI" in installer, "installer behavior must be unchanged"
 
     debug_ops = read(ROOT / "src/main/java/com/cobbleraids/command/RaidAdminDebugOps.java")
-    assert "rewardGui=" in debug_ops, "the active reward-GUI backend must be surfaced to admins"
+    assert "reward gui " in debug_ops, "the active reward-GUI backend must be surfaced to admins"
 
 
 def validate_jar(path: Path) -> None:

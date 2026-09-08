@@ -24,10 +24,12 @@ def validate_despawn_integrity() -> None:
 
     # An entity unloaded with its chunk reports isRemoved() == true while still existing, so a
     # cached PokemonEntity reference cannot be the tracking key.
-    assert "private record ActiveSpawn(" in scheduler
-    record = scheduler.split("private record ActiveSpawn(", 1)[1].split(")", 1)[0]
-    assert "PokemonEntity" not in record, record
-    assert "BlockPos position" in record, record
+    # ActiveSpawn is a class rather than a record on purpose: the maintenance pass mutates a timer
+    # on it every second, and a record meant allocating a replacement each time.
+    assert "private static final class ActiveSpawn {" in scheduler
+    fields = scheduler.split("private static final class ActiveSpawn {", 1)[1].split("ActiveSpawn(", 1)[0]
+    assert "PokemonEntity" not in fields, fields
+    assert "BlockPos position" in fields, fields
 
     # Bosses are resolved on demand, and "does not resolve" must never be read as "is gone".
     assert "private static PokemonEntity resolveBoss(" in scheduler
@@ -37,7 +39,7 @@ def validate_despawn_integrity() -> None:
     # Idle time has to keep accruing while the boss is unloaded, which is precisely when no
     # player can be near it.
     assert "if (boss != null) {" in scheduler
-    assert "idleTicks < active.despawnSeconds() * 20L" in scheduler
+    assert "idleTicks < active.despawnSeconds * 20L" in scheduler
 
     # The orphan sweep, and the guard that keeps it from eating a boss we are mid-spawn.
     assert "public static void onNaturalBossLoaded(" in scheduler

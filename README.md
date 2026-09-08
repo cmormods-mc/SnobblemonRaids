@@ -1,121 +1,88 @@
-# CobbleRaids / SnobblemonRaids
+# CobbleRaids
 
-CobbleRaids is a cooperative wild-boss raid framework for **Cobblemon 1.7.3** on
-**Minecraft 1.21.1 / Fabric**. This repository now contains the complete buildable
-Phase 35 source instead of only the historical CI reconstruction bundle.
+Cooperative wild raid bosses for **Cobblemon 1.7.3** on **Minecraft 1.21.1 / Fabric**.
 
-## Current release
+Right-click a wild boss to open a recruitment window, up to four players join, and
+one shared Showdown battle runs against a single boss HP pool with per-player
+contribution tracking. Winning opens a reward screen; losing costs the party and
+wears the boss down.
 
-- Core: `CobbleRaids-0.8.20-phase35-biome-compat.jar`
-- Optional compatibility: `CobbleRaids-BiomeCompat-1.0.0.jar`
-- Java: 21
-- Fabric Loader: 0.17.2 or newer
-- Fabric API: 0.116.6+1.21.1 or newer
-- Cobblemon: exactly 1.7.3
-- SkiesGUIs: exactly 1.8.1
+## Requirements
 
-CobbleBoss and Raid Dens are reference implementations only and are not runtime
-dependencies.
+| | |
+|---|---|
+| Java | 21 |
+| Fabric Loader | 0.17.2+ |
+| Fabric API | 0.116.6+1.21.1 |
+| Cobblemon | exactly 1.7.3 |
+| SkiesGUIs | exactly 1.8.1 |
 
-### Recent changes (Phase 35)
+`CobbleRaids-BiomeCompat` is an optional data-only JAR. CobbleBoss and Raid Dens are
+reference implementations, not dependencies.
 
-- **4th raid player silently dropped from battle** — fixed a mismatch inside
-  Cobblemon itself between its PNX letter generator (supports up to 6 active
-  slots per battle side) and its PNX validation regex (only accepted `a`–`c`),
-  which only surfaces on a shared raid side with 4+ players. A targeted mixin
-  widens the validator to `a`–`f` so a 4th player's Pokemon no longer throws
-  `InvalidInstructionException` on every referencing instruction.
-- **Boss faints outside the tracked HP pool never finalized the raid** —
-  abilities like Perish Body (and other non-`-raiddamage` faint paths) could
-  faint the boss while its virtual HP pool was still nonzero, leaving the raid
-  session hanging with no reward GUI. Victory/defeat handling now covers those
-  previously-silent outcomes.
-- **Move blacklist for non-HP-damage faints** — Explosion, Self-Destruct, Misty
-  Explosion, Final Gambit, Memento, Healing Wish, Lunar Dance, Destiny Bond, and
-  Perish Song are blocked for both players and the boss AI, since raid HP is
-  tracked as a virtual pool that only the `-raiddamage`/`-raidheal` Showdown
-  instructions update.
-- **Biome compatibility generalized** — the former BWG-only compatibility JAR
-  (`CobbleRaids-BWG-Compat`) is now `CobbleRaids-BiomeCompat`, driven by Fabric
-  convention/vanilla biome-category tags instead of hardcoded biome IDs. Any
-  biome mod that populates those tags (Terralith, Oh The Biomes We've Gone,
-  etc.) now works without a dedicated compatibility JAR per mod.
-- **SkiesGUIs reward-GUI crash fixed** — the reward-choice GUI's open/close
-  messages now use `COMMAND_PLAYER` `tellraw` instead of SkiesGUIs' `MESSAGE`
-  action type, avoiding a crash triggered by adventure-platform-fabric +
-  CobblemonExtras being present together.
+## Content
 
-## Included raid content
+130 boss definitions: 27 starter, 10 powerhouse, 71 legendary, 22 mythical. Each is
+tagged with one or two element-type biome tags, and each carries a fixed competitive
+moveset.
 
-The core contains 130 unique boss definitions derived from
-`cobblemon_boss_pack_v2.zip`:
+The core ships vanilla biome mappings only. Installing `CobbleRaids-BiomeCompat` maps
+the same 18 tags onto Fabric convention tags (Fire → `#c:is_hot/overworld`,
+`#minecraft:is_badlands`, …), so any biome mod populating those conventions —
+Terralith, Oh The Biomes We've Gone — extends the spawn pool automatically. Removing
+the JAR returns spawning to vanilla biomes.
 
-- 27 starter bosses
-- 10 powerhouse bosses
-- 71 legendary bosses
-- 22 mythical bosses
+## Spawning
 
-Every boss uses one or two element-type biome tags. The core supplies only vanilla
-Minecraft biomes. Installing the optional `CobbleRaids-BiomeCompat` JAR maps those
-same 18 tags to Fabric convention/vanilla biome-category tags (e.g. Fire →
-`#c:is_hot/overworld`, `#minecraft:is_badlands`, `#minecraft:is_savanna`), so any
-installed biome mod that populates those conventions — Terralith, Oh The Biomes
-We've Gone, or others — extends the eligible biome pool automatically. Removing
-the compatibility JAR safely returns the pool to vanilla-only spawning.
+A rarity tier is chosen first, then a species within it.
 
-## Spawn director
+- `tier_weights` is a **mix** selector, renormalised across tiers that currently have
+  eligible species. Lowering one tier converts its spawns into other tiers; it does
+  not produce fewer raids.
+- `tier_spawn_chance` is the **rate** dial, rolled after the tier is chosen. A failed
+  roll means no raid that attempt, never a re-roll into another tier, so tiers stay
+  independent.
 
-Natural spawning selects a rarity tier before selecting an eligible species. The
-default aggregate tier weights are:
+`/cobbleraids spawninfo` reports the effective per-attempt odds at your location,
+including the chance of no spawn at all.
 
-```json
-"tier_weights": {
-  "starter": 70,
-  "powerhouse": 20,
-  "legendary": 8,
-  "mythical": 2
-}
-```
+## Rewards and cost
 
-Weights automatically renormalize when no species from a tier can spawn in the
-current biome, dimension, or time. A definition's `spawn.weight` only determines
-the species selected inside its chosen tier.
+Raids are fought on copies of the party, so the two directions are configured
+separately.
 
-When a natural boss appears, all online players receive its translated species
-name, rarity tier, biome, dimension, and a coordinate hint rounded to the nearest
-100 blocks.
-
-## Encounter behavior
-
-- Right-click a wild boss to begin the recruitment window.
-- Nearby players explicitly join within the configured radius and duration.
-- One shared Cobblemon/Showdown battle starts for up to four participants.
-- The boss uses one canonical shared HP pool with contribution tracking.
-- Fully eliminated or disconnected players withdraw without freezing the raid.
-- Boss attacks, player attacks, boss healing, and every participant's health bar
-  remain synchronized.
-- Victory opens a one-time, server-authoritative SkiesGUIs reward choice with
-  contribution bonus rolls.
+- **Reward** — experience and EVs from a won raid are granted to the Pokémon that
+  faced the boss and survived, using Cobblemon's own calculators. Withdrawing or
+  disconnecting forfeits them.
+- **Cost** — `battle_carryover` copies health and PP back to the real party (both on
+  by default; `status` off). Faints carry with health and recover on Cobblemon's own
+  faint timer. Applied on wins and losses alike, and not waived by disconnecting.
+- **Attempts** — a defeated party leaves the boss standing and healed. After
+  `combat_defaults.max_failed_attempts` defeats (default 3, `0` = unlimited) it
+  departs. A surviving boss keeps its raid slot and despawn timers.
 
 ## Commands
 
-All administrative commands require permission level 2.
+`/cobbleraids reward claim` is player-facing; `info` is unrestricted. Everything else
+requires permission level 2.
 
 ```text
-/cobbleraids list
-/cobbleraids spawn <species> [x y z]
-/cobbleraids spawninfo
-/cobbleraids testwild <species>
-/cobbleraids despawn
-/cobbleraids despawn all
-/cobbleraids debug status
-/cobbleraids debug raids
+/cobbleraids list | info <species> | spawninfo
+/cobbleraids spawn <species> [x y z] | testwild <species>
+/cobbleraids despawn [all] | reload
+/cobbleraids cooldown list | cooldown reset <definition>
+/cobbleraids reward claim | reward grant <player> <definition> | reward list [player] | reward clear <player>
+/cobbleraids debug status | raids | history | config | definition <species>
 ```
 
-`spawninfo` reports eligible bosses and renormalized tier odds at the player's
-current location. `testwild` bypasses the random chance and existing species
-cooldown while retaining natural placement, biome checks, tracking, announcements,
-and active caps.
+`testwild` bypasses the spawn roll and species cooldown while keeping placement,
+biome checks, tracking, announcements and active caps.
+
+## Configuration
+
+`config/cobbleraids/server.json` is created on first run and migrated forward on
+later starts, so new settings appear with their defaults instead of silently
+missing. `/cobbleraids debug config` prints the active values.
 
 ## Build
 
@@ -123,16 +90,16 @@ and active caps.
 gradle --no-daemon clean build
 ```
 
-Build outputs are written to `build/libs`. The normal `build` task produces both
-the remapped core JAR and the data-only BiomeCompat JAR.
+Outputs both JARs to `build/libs`, and runs the unit suite covering the spawn-rate
+maths, contribution maths, config round-trip and the Showdown file patcher.
 
 ## Validation
 
 ```text
 validation/validate_phase31.sh
+python3 validation/validate_phase{32,36,37,38,39,40}.py [jar]
 ```
 
-The validator checks all 130 definitions, exact tier membership, vanilla/tag-based
-biome-compat separation, optional-mod manifests, the raid mixin registry, the
-shared-HP packet path, and the tier-selection math. GitHub Actions additionally
-performs the real Java 21 Fabric Loom build.
+Structural checks over the 130 definitions, tier membership, biome-compat separation,
+optional-mod manifests, the mixin registry and the shared-HP packet path. They run in
+CI against both the source tree and the built JAR.
