@@ -6,6 +6,8 @@
     "showdown.ShowdownResourceLoaderMixin",
     "showdown.ShowdownContextBootMixin",
     "battle.RaidBattleRegistryMixin",
+    "battle.RaidBossBattleStartGuardMixin",
+    "battle.RaidBossInvulnerabilityMixin",
     "battle.RaidBattleSelectActionsMixin",
     "battle.RaidMoveActionResponseMixin",
     "battle.RaidPokemonBattleMixin",
