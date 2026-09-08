@@ -10,6 +10,7 @@
     "battle.RaidBossInvulnerabilityMixin",
     "battle.RaidBossPushImmunityMixin",
     "battle.RaidBossFishingImmunityMixin",
+    "battle.BattleClonePersistenceMixin",
     "battle.RaidBattleSelectActionsMixin",
     "battle.RaidMoveActionResponseMixin",
     "battle.RaidPokemonBattleMixin",
