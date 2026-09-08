@@ -20,6 +20,7 @@ public record RaidDefinition(
         int timeLimitSeconds,
         boolean allowFlee,
         List<String> moves,
+        RaidBossTraits traits,
         Rewards rewards
 ) {
     /** Natural spawning is opt-in. Empty biome lists mean any biome in an allowed dimension. */
@@ -201,11 +202,12 @@ public record RaidDefinition(
         boolean allowFlee = root.has("allow_flee") ? root.get("allow_flee").getAsBoolean() : cd.allowFlee();
 
         List<String> moves = readMoves(root);
+        RaidBossTraits traits = RaidBossTraits.fromJson(root, id.toString());
 
         Rewards rewards = parseRewards(object(root, "rewards"));
         return new RaidDefinition(id, species, rarityTier, level, baseHealth, spawn,
                 new Recruitment(duration, radius, maxPlayers), new Scaling(healthPerExtra),
-                timeLimit, allowFlee, moves, rewards);
+                timeLimit, allowFlee, moves, traits, rewards);
     }
 
     /**

@@ -4,6 +4,7 @@ import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.config.RaidDefinitionRegistry;
 import com.cobbleraids.presentation.CommandFormat;
 import com.cobbleraids.presentation.RaidTierPresentation;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import net.minecraft.ChatFormatting;
@@ -63,6 +64,12 @@ final class RaidInfoOps {
                 + Math.round(definition.scaling().healthPerExtraPlayer() * 100) + "% per extra player · "
                 + definition.timeLimitSeconds() + "s limit · flee "
                 + (definition.allowFlee() ? "on" : "off")), false);
+        // Only shown when the definition actually pins something, so the 130 shipped definitions
+        // read exactly as they did before traits existed.
+        if (!definition.traits().isEmpty()) {
+            source.sendSuccess(() -> CommandFormat.row(CommandFormat.pad("traits", 10)
+                    + describeTraits(definition.traits())), false);
+        }
         source.sendSuccess(() -> CommandFormat.row(CommandFormat.pad("recruit", 10)
                 + definition.recruitment().durationSeconds() + "s · radius "
                 + definition.recruitment().radius() + " · max "
@@ -88,6 +95,20 @@ final class RaidInfoOps {
                 + (bonus.enabled() ? "enabled" : "disabled") + " · " + bonus.tiers().size()
                 + " tiers · pool " + bonus.pool().size()), false);
         return 1;
+    }
+
+    private static String describeTraits(com.cobbleraids.config.RaidBossTraits traits) {
+        List<String> parts = new ArrayList<>();
+        if (traits.nature() != null) parts.add(traits.nature());
+        if (traits.ability() != null) parts.add(traits.ability());
+        if (traits.gender() != null) parts.add(traits.gender());
+        if (traits.form() != null) parts.add("form " + traits.form());
+        if (traits.teraType() != null) parts.add("tera " + traits.teraType());
+        if (traits.heldItem() != null) parts.add(CommandFormat.shortId(
+                ResourceLocation.parse(traits.heldItem())));
+        if (!traits.ivs().isEmpty()) parts.add("ivs " + traits.ivs());
+        if (!traits.evs().isEmpty()) parts.add("evs " + traits.evs());
+        return String.join(" · ", parts);
     }
 
     private static RaidDefinition resolve(CommandSourceStack source, String rawName) {

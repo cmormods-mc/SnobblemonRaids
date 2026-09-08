@@ -9,6 +9,7 @@ public record CobbleRaidsConfig(
         RecruitmentDefaults recruitmentDefaults,
         CombatDefaults combatDefaults,
         BattleCarryover battleCarryover,
+        BossTraits bossTraits,
         TierScaling tierScaling,
         BossGlow bossGlow,
         BossMovement bossMovement,
@@ -136,6 +137,27 @@ public record CobbleRaidsConfig(
      * luck rather than by play, and is the part players push back on hardest. Turn it on for a
      * harsher server.
      */
+    /**
+     * Server-wide handling of the per-definition "traits" block.
+     *
+     * <p>ivJitter spreads a <em>pinned</em> IV by up to this much in either direction so repeat
+     * raids are not byte-identical; 0 pins exactly. It has no effect on a definition that leaves
+     * IVs unset, which stays on Cobblemon's fully random roll.
+     *
+     * <p>shinyChance is rolled per spawn. Bosses are uncatchable today, so a shiny one is currently
+     * a spectacle rather than a prize.
+     */
+    public record BossTraits(int ivJitter, double shinyChance) {
+        public BossTraits {
+            if (ivJitter < 0 || ivJitter > 31)
+                throw new IllegalArgumentException("boss_traits.iv_jitter must be 0..31");
+            if (!(shinyChance >= 0.0) || shinyChance > 1.0)
+                throw new IllegalArgumentException("boss_traits.shiny_chance must be 0..1");
+        }
+
+        public static BossTraits defaults() { return new BossTraits(3, 0.01); }
+    }
+
     public record BattleCarryover(boolean health, boolean pp, boolean status) {
         public static BattleCarryover defaults() { return new BattleCarryover(true, true, false); }
 
@@ -255,6 +277,7 @@ public record CobbleRaidsConfig(
                 new RecruitmentDefaults(20, 10.0, VALIDATED_MAX_HUMAN_PLAYERS),
                 new CombatDefaults(900, false, 3),
                 BattleCarryover.defaults(),
+                BossTraits.defaults(),
                 TierScaling.defaults(),
                 BossGlow.defaults(),
                 BossMovement.defaults(),
@@ -329,6 +352,13 @@ public record CobbleRaidsConfig(
                 bool(carryover, "status", bc.status())
         );
 
+        JsonObject bossTraitsObject = object(root, "boss_traits");
+        BossTraits bt = defaults.bossTraits();
+        BossTraits bossTraits = new BossTraits(
+                integer(bossTraitsObject, "iv_jitter", bt.ivJitter()),
+                decimal(bossTraitsObject, "shiny_chance", bt.shinyChance())
+        );
+
         JsonObject tierScalingObject = object(root, "tier_scaling");
         TierScaling ts = defaults.tierScaling();
         TierScaling tierScaling = new TierScaling(
@@ -354,7 +384,8 @@ public record CobbleRaidsConfig(
                 bool(bossMovementObject, "prevent_knockback", bm.preventKnockback()));
 
         return new CobbleRaidsConfig(naturalSpawning, recruitmentDefaults, combatDefaults, battleCarryover,
-                tierScaling, bossGlow, bossMovement, bool(root, "debug_logging", defaults.debugLogging()));
+                bossTraits, tierScaling, bossGlow, bossMovement,
+                bool(root, "debug_logging", defaults.debugLogging()));
     }
 
     private static TierMultipliers readTierMultipliers(JsonObject tierScaling, String key, TierMultipliers fallback) {
@@ -415,6 +446,11 @@ public record CobbleRaidsConfig(
         carryoverObject.addProperty("pp", battleCarryover.pp());
         carryoverObject.addProperty("status", battleCarryover.status());
         root.add("battle_carryover", carryoverObject);
+
+        JsonObject bossTraitsJson = new JsonObject();
+        bossTraitsJson.addProperty("iv_jitter", bossTraits.ivJitter());
+        bossTraitsJson.addProperty("shiny_chance", bossTraits.shinyChance());
+        root.add("boss_traits", bossTraitsJson);
 
         JsonObject tierScalingObject = new JsonObject();
         tierScalingObject.addProperty("enabled", tierScaling.enabled());

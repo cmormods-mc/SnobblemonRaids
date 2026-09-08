@@ -2,6 +2,7 @@ package com.cobbleraids.spawn;
 
 import com.cobbleraids.config.CobbleRaidsConfig;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
+import com.cobbleraids.config.RaidBossTraits;
 import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.presentation.RaidBossGlowService;
 import com.cobbleraids.presentation.RaidTierPresentation;
@@ -9,14 +10,21 @@ import com.cobbleraids.showdown.ShowdownIntegrationInstaller;
 import com.cobblemon.mod.common.api.moves.Move;
 import com.cobblemon.mod.common.api.moves.MoveTemplate;
 import com.cobblemon.mod.common.api.moves.Moves;
+import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
 import com.cobblemon.mod.common.api.pokemon.PokemonSpecies;
+import com.cobblemon.mod.common.api.pokemon.stats.Stat;
+import com.cobblemon.mod.common.api.pokemon.stats.Stats;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
+import com.cobblemon.mod.common.pokemon.EVs;
+import com.cobblemon.mod.common.pokemon.Gender;
+import com.cobblemon.mod.common.pokemon.IVs;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.cobblemon.mod.common.pokemon.Species;
 import com.cobblemon.mod.common.pokemon.properties.UncatchableProperty;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.ThreadLocalRandom;
 import kotlin.Unit;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -48,6 +56,9 @@ public final class RaidBossSpawner {
         pokemon.setLevel(definition.level());
         pokemon.initializeMoveset(false);
         applyFixedMoveset(pokemon, definition);
+        // Strictly before the health line below: IVs, EVs and nature all change getMaxHealth(), so
+        // applying them afterwards would spawn every boss already damaged.
+        applyTraits(pokemon, definition);
         pokemon.setCurrentHealth(pokemon.getMaxHealth());
         UncatchableProperty.INSTANCE.uncatchable().apply(pokemon);
 
@@ -94,6 +105,83 @@ public final class RaidBossSpawner {
         if (resolved.isEmpty()) return;
         pokemon.getMoveSet().clear();
         for (Move move : resolved) pokemon.getMoveSet().add(move);
+    }
+
+    /**
+     * Applies the definition's optional traits, plus the server-wide shiny roll.
+     *
+     * <p>Routed through PokemonProperties rather than Pokemon's own setters because the ones that
+     * matter here -- setIvs, setEvs, setAbility, setHeldItem -- are Kotlin-internal ($common) and
+     * are not API. PokemonProperties is what Cobblemon's own /pokegive and /pokeedit use, so this
+     * gets its parsing, its validation and its behaviour for free, including quietly ignoring an
+     * id that does not resolve.
+     *
+     * <p>A definition with no traits block still reaches this for the shiny roll, and otherwise
+     * leaves the Pokemon exactly as Cobblemon built it.
+     */
+    private static void applyTraits(Pokemon pokemon, RaidDefinition definition) {
+        CobbleRaidsConfig.BossTraits config = CobbleRaidsConfigManager.get().bossTraits();
+        RaidBossTraits traits = definition.traits();
+
+        PokemonProperties properties = new PokemonProperties();
+        boolean any = false;
+
+        if (traits.nature() != null) { properties.setNature(traits.nature()); any = true; }
+        if (traits.ability() != null) { properties.setAbility(traits.ability()); any = true; }
+        if (traits.form() != null) { properties.setForm(traits.form()); any = true; }
+        if (traits.teraType() != null) { properties.setTeraType(traits.teraType()); any = true; }
+        if (traits.heldItem() != null) { properties.setHeldItem(traits.heldItem()); any = true; }
+        if (traits.gender() != null) {
+            Gender gender = parseGender(traits.gender(), definition);
+            if (gender != null) { properties.setGender(gender); any = true; }
+        }
+
+        if (!traits.ivs().isEmpty()) {
+            IVs ivs = new IVs();
+            // Jitter is applied only to values a definition actually pinned. An unset stat stays on
+            // Cobblemon's own random roll, which is what keeps an empty traits block a no-op.
+            traits.ivs().forEach((stat, value) ->
+                    ivs.set(statFor(stat), RaidBossTraits.jitterIv(value, config.ivJitter(), ThreadLocalRandom.current())));
+            properties.setIvs(ivs);
+            any = true;
+        }
+        if (!traits.evs().isEmpty()) {
+            EVs evs = new EVs();
+            traits.evs().forEach((stat, value) -> evs.set(statFor(stat), value));
+            properties.setEvs(evs);
+            any = true;
+        }
+
+        if (config.shinyChance() > 0.0 && ThreadLocalRandom.current().nextDouble() < config.shinyChance()) {
+            properties.setShiny(Boolean.TRUE);
+            any = true;
+        }
+
+        if (any) properties.apply(pokemon);
+    }
+
+    private static Stat statFor(String name) {
+        return switch (name) {
+            case "hp" -> Stats.HP;
+            case "attack" -> Stats.ATTACK;
+            case "defence" -> Stats.DEFENCE;
+            case "special_attack" -> Stats.SPECIAL_ATTACK;
+            case "special_defence" -> Stats.SPECIAL_DEFENCE;
+            default -> Stats.SPEED;
+        };
+    }
+
+    private static Gender parseGender(String value, RaidDefinition definition) {
+        return switch (value) {
+            case "male" -> Gender.MALE;
+            case "female" -> Gender.FEMALE;
+            case "genderless", "none" -> Gender.GENDERLESS;
+            default -> {
+                System.err.println("[CobbleRaids] " + definition.id() + " traits: unknown gender '" + value
+                        + "'; expected male, female or genderless.");
+                yield null;
+            }
+        };
     }
 
     /**

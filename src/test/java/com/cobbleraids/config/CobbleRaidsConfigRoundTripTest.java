@@ -47,6 +47,7 @@ class CobbleRaidsConfigRoundTripTest {
                 new CobbleRaidsConfig.RecruitmentDefaults(45, 12.5, 3),
                 new CobbleRaidsConfig.CombatDefaults(600, true, 7),
                 new CobbleRaidsConfig.BattleCarryover(false, true, true),
+                new CobbleRaidsConfig.BossTraits(5, 0.25),
                 CobbleRaidsConfig.defaults().tierScaling(),
                 CobbleRaidsConfig.defaults().bossGlow(),
                 CobbleRaidsConfig.defaults().bossMovement(),
@@ -58,6 +59,8 @@ class CobbleRaidsConfigRoundTripTest {
         assertEquals(7, reparsed.combatDefaults().maxFailedAttempts());
         assertFalse(reparsed.battleCarryover().health());
         assertTrue(reparsed.battleCarryover().status());
+        assertEquals(5, reparsed.bossTraits().ivJitter());
+        assertEquals(0.25, reparsed.bossTraits().shinyChance(), 0.0);
     }
 
     @Test
@@ -68,6 +71,7 @@ class CobbleRaidsConfigRoundTripTest {
         // attempt cap of zero.
         JsonObject old = CobbleRaidsConfig.defaults().toJson();
         old.remove("battle_carryover");
+        old.remove("boss_traits");
         old.getAsJsonObject("combat_defaults").remove("max_failed_attempts");
 
         CobbleRaidsConfig loaded = CobbleRaidsConfig.fromJson(old);
@@ -75,6 +79,7 @@ class CobbleRaidsConfigRoundTripTest {
         assertEquals(CobbleRaidsConfig.defaults().battleCarryover(), loaded.battleCarryover());
         assertEquals(CobbleRaidsConfig.defaults().combatDefaults().maxFailedAttempts(),
                 loaded.combatDefaults().maxFailedAttempts());
+        assertEquals(CobbleRaidsConfig.defaults().bossTraits(), loaded.bossTraits());
     }
 
     @Test
