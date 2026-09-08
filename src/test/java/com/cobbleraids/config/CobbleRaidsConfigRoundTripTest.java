@@ -48,6 +48,7 @@ class CobbleRaidsConfigRoundTripTest {
                 new CobbleRaidsConfig.CombatDefaults(600, true, 7),
                 new CobbleRaidsConfig.BattleCarryover(false, true, true),
                 new CobbleRaidsConfig.BossTraits(5, 0.25),
+                new CobbleRaidsConfig.Catching(true, 0.5, 0.25, 0.1, 0.0),
                 CobbleRaidsConfig.defaults().tierScaling(),
                 CobbleRaidsConfig.defaults().bossGlow(),
                 CobbleRaidsConfig.defaults().bossMovement(),
@@ -61,6 +62,9 @@ class CobbleRaidsConfigRoundTripTest {
         assertTrue(reparsed.battleCarryover().status());
         assertEquals(5, reparsed.bossTraits().ivJitter());
         assertEquals(0.25, reparsed.bossTraits().shinyChance(), 0.0);
+        assertTrue(reparsed.catching().enabled());
+        assertEquals(0.5, reparsed.catching().chanceFor(RaidRarityTier.STARTER), 0.0);
+        assertEquals(0.0, reparsed.catching().chanceFor(RaidRarityTier.MYTHICAL), 0.0);
     }
 
     @Test
@@ -72,6 +76,7 @@ class CobbleRaidsConfigRoundTripTest {
         JsonObject old = CobbleRaidsConfig.defaults().toJson();
         old.remove("battle_carryover");
         old.remove("boss_traits");
+        old.remove("catching");
         old.getAsJsonObject("combat_defaults").remove("max_failed_attempts");
 
         CobbleRaidsConfig loaded = CobbleRaidsConfig.fromJson(old);
@@ -80,6 +85,7 @@ class CobbleRaidsConfigRoundTripTest {
         assertEquals(CobbleRaidsConfig.defaults().combatDefaults().maxFailedAttempts(),
                 loaded.combatDefaults().maxFailedAttempts());
         assertEquals(CobbleRaidsConfig.defaults().bossTraits(), loaded.bossTraits());
+        assertEquals(CobbleRaidsConfig.defaults().catching(), loaded.catching());
     }
 
     @Test
@@ -104,6 +110,27 @@ class CobbleRaidsConfigRoundTripTest {
     void allOffIsNoOp() {
         assertTrue(new CobbleRaidsConfig.BattleCarryover(false, false, false).isNoOp());
         assertFalse(new CobbleRaidsConfig.BattleCarryover(false, false, true).isNoOp());
+    }
+
+    @Test
+    @DisplayName("catching ships off, so the infrastructure is inert until a mechanic is chosen")
+    void catchingIsOffByDefault() {
+        CobbleRaidsConfig.Catching catching = CobbleRaidsConfig.defaults().catching();
+
+        assertFalse(catching.enabled());
+        assertTrue(catching.isNoOp(), "no tier should be catchable by default");
+        for (RaidRarityTier tier : RaidRarityTier.values()) {
+            assertEquals(0.0, catching.chanceFor(tier), 0.0, tier.name());
+        }
+    }
+
+    @Test
+    @DisplayName("a chance above 1 is rejected rather than read as a percentage")
+    void catchChanceIsBounded() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new CobbleRaidsConfig.Catching(true, 50.0, 0.0, 0.0, 0.0));
+        assertThrows(IllegalArgumentException.class,
+                () -> new CobbleRaidsConfig.Catching(true, -0.1, 0.0, 0.0, 0.0));
     }
 
     @Test

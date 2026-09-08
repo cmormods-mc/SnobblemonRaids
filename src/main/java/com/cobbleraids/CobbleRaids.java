@@ -1,5 +1,6 @@
 package com.cobbleraids;
 
+import com.cobbleraids.catching.RaidPlayerRecords;
 import com.cobbleraids.command.RaidAdminCommand;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.config.RaidDefinitionRegistry;
@@ -62,6 +63,9 @@ public final class CobbleRaids implements ModInitializer {
         // After SERVER_STARTED specifically: restoring a saved claim resolves its rewards from the
         // datapack registry, which is only populated once the initial resource load has finished.
         ServerLifecycleEvents.SERVER_STARTED.register(RaidRewardService::onServerStarted);
+        // Raid history is the substrate every catch mechanic reads, so it is restored with the
+        // rewards and cleared with everything else below.
+        ServerLifecycleEvents.SERVER_STARTED.register(RaidPlayerRecords::onServerStarted);
         // Presents a reward that outlived a disconnect or restart. Without this the queue is
         // restored but nothing ever offers it, so the reveal screen is only ever seen by players
         // who happened to be online when the raid was won.
@@ -89,6 +93,7 @@ public final class CobbleRaids implements ModInitializer {
             RaidCombatRuleService.onServerStopped();
             RaidRewardService.onServerStopped();
             RaidSpawnHistory.onServerStopped();
+            RaidPlayerRecords.onServerStopped();
             // Only these two mean somebody lost progress, so only these two are worth a line on an
             // otherwise clean shutdown. Unclaimed rewards are not listed: those survive on disk.
             if (raids > 0 || lobbies > 0) {

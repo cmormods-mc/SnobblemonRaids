@@ -1,8 +1,11 @@
 package com.cobbleraids.command;
 
+import com.cobbleraids.catching.RaidPlayerRecord;
+import com.cobbleraids.catching.RaidPlayerRecords;
 import com.cobbleraids.config.CobbleRaidsConfig;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.config.RaidDefinitionRegistry;
+import com.cobbleraids.config.RaidRarityTier;
 import com.cobbleraids.lobby.RaidLobby;
 import com.cobbleraids.lobby.RaidLobbyManager;
 import com.cobbleraids.presentation.CommandFormat;
@@ -16,11 +19,13 @@ import com.cobbleraids.spawn.RaidSpawnHistory;
 import com.cobbleraids.spawn.RaidSpawnScheduler;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import net.minecraft.ChatFormatting;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.commands.CommandSourceStack;
@@ -69,6 +74,28 @@ final class RaidAdminDebugOps {
         }
         source.sendSuccess(() -> CommandFormat.row(rolled.size() + " stack(s) this roll; run it again for another"), false);
         return rolled.size();
+    }
+
+    /** A player's raid history: what every catch mechanic gets to reason about. */
+    static int record(CommandSourceStack source, ServerPlayer target) {
+        RaidPlayerRecord record = RaidPlayerRecords.get(target.getUUID());
+        source.sendSuccess(() -> CommandFormat.header("Raid record  " + target.getGameProfile().getName()), false);
+        source.sendSuccess(() -> CommandFormat.row(CommandFormat.pad("won", 10) + record.raidsWon()
+                + " raid(s) · " + record.bossesCaught() + " boss(es) caught"), false);
+        source.sendSuccess(() -> CommandFormat.row(CommandFormat.pad("by tier", 10)
+                + Arrays.stream(RaidRarityTier.values())
+                        .map(tier -> tier.serializedName() + " " + record.winsIn(tier))
+                        .collect(Collectors.joining(" · "))), false);
+        source.sendSuccess(() -> CommandFormat.row(CommandFormat.pad("avg share", 10)
+                + String.format(Locale.ROOT, "%.1f%%", record.averageContribution())), false);
+        if (record.defeatsBySpecies().isEmpty()) return record.raidsWon();
+        String top = record.defeatsBySpecies().entrySet().stream()
+                .sorted(Map.Entry.<ResourceLocation, Integer>comparingByValue().reversed())
+                .limit(5)
+                .map(e -> CommandFormat.shortId(e.getKey()) + " x" + e.getValue())
+                .collect(Collectors.joining(" · "));
+        source.sendSuccess(() -> CommandFormat.row(CommandFormat.pad("most", 10) + top), false);
+        return record.raidsWon();
     }
 
     static int raids(CommandSourceStack source) {

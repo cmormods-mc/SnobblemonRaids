@@ -10,6 +10,7 @@ public record CobbleRaidsConfig(
         CombatDefaults combatDefaults,
         BattleCarryover battleCarryover,
         BossTraits bossTraits,
+        Catching catching,
         TierScaling tierScaling,
         BossGlow bossGlow,
         BossMovement bossMovement,
@@ -158,6 +159,44 @@ public record CobbleRaidsConfig(
         public static BossTraits defaults() { return new BossTraits(3, 0.01); }
     }
 
+    /**
+     * Whether a victor may keep the boss, and how likely that is per rarity tier.
+     *
+     * <p>Off, and zero everywhere, by default. The catching infrastructure is deliberately inert
+     * until a mechanic is chosen: these flat per-tier odds exist so the wiring can be proven end to
+     * end, not as a proposal for how catching should finally work. See RaidCatchPolicy.
+     */
+    public record Catching(boolean enabled, double starter, double powerhouse,
+                           double legendary, double mythical) {
+        public Catching {
+            validate("starter", starter);
+            validate("powerhouse", powerhouse);
+            validate("legendary", legendary);
+            validate("mythical", mythical);
+        }
+
+        public static Catching defaults() { return new Catching(false, 0.0, 0.0, 0.0, 0.0); }
+
+        public double chanceFor(RaidRarityTier tier) {
+            return switch (tier) {
+                case STARTER -> starter;
+                case POWERHOUSE -> powerhouse;
+                case LEGENDARY -> legendary;
+                case MYTHICAL -> mythical;
+            };
+        }
+
+        /** True when no tier can ever be caught, so the victory path can skip the roll entirely. */
+        public boolean isNoOp() {
+            return starter <= 0.0 && powerhouse <= 0.0 && legendary <= 0.0 && mythical <= 0.0;
+        }
+
+        private static void validate(String name, double chance) {
+            if (!(chance >= 0.0) || chance > 1.0)
+                throw new IllegalArgumentException("catching." + name + " must be 0..1");
+        }
+    }
+
     public record BattleCarryover(boolean health, boolean pp, boolean status) {
         public static BattleCarryover defaults() { return new BattleCarryover(true, true, false); }
 
@@ -278,6 +317,7 @@ public record CobbleRaidsConfig(
                 new CombatDefaults(900, false, 3),
                 BattleCarryover.defaults(),
                 BossTraits.defaults(),
+                Catching.defaults(),
                 TierScaling.defaults(),
                 BossGlow.defaults(),
                 BossMovement.defaults(),
@@ -359,6 +399,16 @@ public record CobbleRaidsConfig(
                 decimal(bossTraitsObject, "shiny_chance", bt.shinyChance())
         );
 
+        JsonObject catchingObject = object(root, "catching");
+        Catching cat = defaults.catching();
+        Catching catching = new Catching(
+                bool(catchingObject, "enabled", cat.enabled()),
+                decimal(catchingObject, "starter", cat.starter()),
+                decimal(catchingObject, "powerhouse", cat.powerhouse()),
+                decimal(catchingObject, "legendary", cat.legendary()),
+                decimal(catchingObject, "mythical", cat.mythical())
+        );
+
         JsonObject tierScalingObject = object(root, "tier_scaling");
         TierScaling ts = defaults.tierScaling();
         TierScaling tierScaling = new TierScaling(
@@ -384,7 +434,7 @@ public record CobbleRaidsConfig(
                 bool(bossMovementObject, "prevent_knockback", bm.preventKnockback()));
 
         return new CobbleRaidsConfig(naturalSpawning, recruitmentDefaults, combatDefaults, battleCarryover,
-                bossTraits, tierScaling, bossGlow, bossMovement,
+                bossTraits, catching, tierScaling, bossGlow, bossMovement,
                 bool(root, "debug_logging", defaults.debugLogging()));
     }
 
@@ -451,6 +501,14 @@ public record CobbleRaidsConfig(
         bossTraitsJson.addProperty("iv_jitter", bossTraits.ivJitter());
         bossTraitsJson.addProperty("shiny_chance", bossTraits.shinyChance());
         root.add("boss_traits", bossTraitsJson);
+
+        JsonObject catchingJson = new JsonObject();
+        catchingJson.addProperty("enabled", catching.enabled());
+        catchingJson.addProperty("starter", catching.starter());
+        catchingJson.addProperty("powerhouse", catching.powerhouse());
+        catchingJson.addProperty("legendary", catching.legendary());
+        catchingJson.addProperty("mythical", catching.mythical());
+        root.add("catching", catchingJson);
 
         JsonObject tierScalingObject = new JsonObject();
         tierScalingObject.addProperty("enabled", tierScaling.enabled());

@@ -108,6 +108,10 @@ public final class RaidAdminCommand {
                                         .executes(ctx -> RaidAdminDebugOps.history(ctx.getSource())))
                                 .then(Commands.literal("config")
                                         .executes(ctx -> RaidAdminDebugOps.config(ctx.getSource())))
+                                .then(Commands.literal("record")
+                                        .then(Commands.argument("target", EntityArgument.player())
+                                                .executes(ctx -> RaidAdminDebugOps.record(
+                                                        ctx.getSource(), EntityArgument.getPlayer(ctx, "target")))))
                                 .then(Commands.literal("loot")
                                         .then(Commands.argument("loot_table", ResourceLocationArgument.id())
                                                 .suggests(RaidSuggestions.LOOT_TABLES)

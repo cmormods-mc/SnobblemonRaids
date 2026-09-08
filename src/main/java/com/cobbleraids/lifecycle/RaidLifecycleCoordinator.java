@@ -1,14 +1,21 @@
 package com.cobbleraids.lifecycle;
 
+import com.cobbleraids.catching.RaidCatchService;
+import com.cobbleraids.catching.RaidPlayerRecords;
 import com.cobbleraids.config.CobbleRaidsConfig;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
+import com.cobbleraids.config.RaidDefinition;
+import com.cobbleraids.config.RaidDefinitionRegistry;
 import com.cobbleraids.raid.RaidRegistry;
+import com.cobbleraids.reward.ContributionMath;
 import com.cobbleraids.raid.RaidSession;
 import com.cobbleraids.spawn.RaidBossEntityMarker;
 import com.cobbleraids.spawn.RaidSpawnScheduler;
 import com.cobblemon.mod.common.api.battles.model.PokemonBattle;
 import com.cobblemon.mod.common.api.battles.model.actor.BattleActor;
 import com.cobblemon.mod.common.net.messages.client.battle.BattleEndPacket;
+import com.cobblemon.mod.common.pokemon.Pokemon;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -174,11 +181,43 @@ public final class RaidLifecycleCoordinator {
         // or aborted raid pays nothing, exactly as it pays no items.
         RaidProgressionTransfer.grant(raid, server);
         RaidBattleStateCarryover.apply(raid);
+        // Both need the boss's Pokemon, which cleanupBossEntity is about to discard, and both read
+        // the same per-player history, so they run together and before it.
+        recordAndOfferCatch(raid, server);
         RaidRewardEligibility eligibility = RaidRewardEligibility.victory(raid);
         RaidRewardService.grant(eligibility, server);
         RaidRegistry.remove(raid.getBattle());
         cleanupBossEntity(raid);
         forgetFinalizationState(raid.getId());
+    }
+
+    /**
+     * Credits every victor's raid history, then offers each of them a chance at the boss.
+     *
+     * <p>History is recorded for everyone who stayed, whether or not catching is switched on: the
+     * record is the substrate a catch mechanic is chosen from later, so it has to have been
+     * accumulating before the choice is made, or the feature launches with every player at zero.
+     */
+    private static void recordAndOfferCatch(RaidSession raid, MinecraftServer server) {
+        RaidDefinition definition = RaidDefinitionRegistry.get(raid.getDefinitionId());
+        if (definition == null) return;
+        var boss = raid.getBossEntity();
+        Pokemon bossPokemon = boss == null ? null : boss.getPokemon();
+        Set<UUID> victors = raid.getActiveParticipants();
+        int participants = victors.size();
+        // Same figures the reward screen shows, computed once rather than per player.
+        Map<UUID, Double> contributions =
+                ContributionMath.percentages(raid.getContributionSnapshot(), victors);
+
+        for (UUID playerId : victors) {
+            ServerPlayer player = server.getPlayerList().getPlayer(playerId);
+            double contribution = contributions.getOrDefault(playerId, 0.0);
+            RaidPlayerRecords.recordWin(server, playerId, definition.rarityTier(),
+                    definition.id(), contribution);
+            if (player != null) {
+                RaidCatchService.tryCatch(player, definition, bossPokemon, contribution, participants);
+            }
+        }
     }
 
     /** Used when Cobblemon/Showdown already ended the battle and then emitted BATTLE_VICTORY. */
