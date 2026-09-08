@@ -28,6 +28,12 @@
   },
   "time_limit_seconds": 900,
   "allow_flee": false,
+  "moves": [
+    "psychic",
+    "aurasphere",
+    "nastyplot",
+    "softboiled"
+  ],
   "rewards": {
     "gui_id": "cobbleraids_reward",
     "choices": {

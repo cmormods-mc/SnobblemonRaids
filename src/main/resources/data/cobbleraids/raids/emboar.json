@@ -29,6 +29,12 @@
   },
   "time_limit_seconds": 900,
   "allow_flee": false,
+  "moves": [
+    "flareblitz",
+    "closecombat",
+    "wildcharge",
+    "suckerpunch"
+  ],
   "rewards": {
     "gui_id": "cobbleraids_reward",
     "choices": {

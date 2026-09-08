@@ -29,6 +29,12 @@
   },
   "time_limit_seconds": 900,
   "allow_flee": false,
+  "moves": [
+    "psyshock",
+    "shadowball",
+    "nastyplot",
+    "focusblast"
+  ],
   "rewards": {
     "gui_id": "cobbleraids_reward",
     "choices": {

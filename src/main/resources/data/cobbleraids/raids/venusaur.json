@@ -29,6 +29,12 @@
   },
   "time_limit_seconds": 900,
   "allow_flee": false,
+  "moves": [
+    "gigadrain",
+    "sludgebomb",
+    "sleeppowder",
+    "synthesis"
+  ],
   "rewards": {
     "gui_id": "cobbleraids_reward",
     "choices": {

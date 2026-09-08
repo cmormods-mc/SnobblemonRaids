@@ -28,6 +28,10 @@
   },
   "time_limit_seconds": 900,
   "allow_flee": false,
+  "moves": [
+    "cosmicpower",
+    "splash"
+  ],
   "rewards": {
     "gui_id": "cobbleraids_reward",
     "choices": {

@@ -6,11 +6,16 @@ import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.presentation.RaidBossGlowService;
 import com.cobbleraids.presentation.RaidTierPresentation;
 import com.cobbleraids.showdown.ShowdownIntegrationInstaller;
+import com.cobblemon.mod.common.api.moves.Move;
+import com.cobblemon.mod.common.api.moves.MoveTemplate;
+import com.cobblemon.mod.common.api.moves.Moves;
 import com.cobblemon.mod.common.api.pokemon.PokemonSpecies;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.cobblemon.mod.common.pokemon.Species;
 import com.cobblemon.mod.common.pokemon.properties.UncatchableProperty;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import kotlin.Unit;
 import net.minecraft.server.level.ServerLevel;
@@ -42,6 +47,7 @@ public final class RaidBossSpawner {
         pokemon.setSpecies(species);
         pokemon.setLevel(definition.level());
         pokemon.initializeMoveset(false);
+        applyFixedMoveset(pokemon, definition);
         pokemon.setCurrentHealth(pokemon.getMaxHealth());
         UncatchableProperty.INSTANCE.uncatchable().apply(pokemon);
 
@@ -59,6 +65,35 @@ public final class RaidBossSpawner {
         applyMovementLock(entity);
         RaidBossGlowService.register(entity, level);
         return entity;
+    }
+
+    /**
+     * Replaces the species' level-up moves with the definition's hand-picked set.
+     *
+     * <p>Runs after initializeMoveset rather than instead of it: that call also seeds PP and the
+     * benched moves Cobblemon expects a Pokemon to carry, and leaving it in means a definition with
+     * no "moves" list keeps exactly the behaviour it had before this existed.
+     *
+     * <p>An unrecognised move id is skipped with a warning rather than aborting the spawn. The
+     * alternative is a raid that refuses to appear because of one typo in one datapack entry, which
+     * is a far worse failure for a live server than a boss that is one move short. Everything else
+     * about the boss is already valid at this point.
+     */
+    private static void applyFixedMoveset(Pokemon pokemon, RaidDefinition definition) {
+        if (definition.moves().isEmpty()) return;
+        List<Move> resolved = new ArrayList<>();
+        for (String moveId : definition.moves()) {
+            MoveTemplate template = Moves.getByName(moveId);
+            if (template == null) {
+                System.err.println("[CobbleRaids] " + definition.id() + " lists unknown move '" + moveId
+                        + "'; skipping it. Check the id against Cobblemon's move list.");
+                continue;
+            }
+            resolved.add(template.create());
+        }
+        if (resolved.isEmpty()) return;
+        pokemon.getMoveSet().clear();
+        for (Move move : resolved) pokemon.getMoveSet().add(move);
     }
 
     /**

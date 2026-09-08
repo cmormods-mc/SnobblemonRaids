@@ -28,6 +28,12 @@
   },
   "time_limit_seconds": 900,
   "allow_flee": false,
+  "moves": [
+    "originpulse",
+    "icebeam",
+    "thunder",
+    "calmmind"
+  ],
   "rewards": {
     "gui_id": "cobbleraids_reward",
     "choices": {

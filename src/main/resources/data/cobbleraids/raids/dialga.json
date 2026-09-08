@@ -29,6 +29,12 @@
   },
   "time_limit_seconds": 900,
   "allow_flee": false,
+  "moves": [
+    "dragonpulse",
+    "flashcannon",
+    "flamethrower",
+    "thunderbolt"
+  ],
   "rewards": {
     "gui_id": "cobbleraids_reward",
     "choices": {

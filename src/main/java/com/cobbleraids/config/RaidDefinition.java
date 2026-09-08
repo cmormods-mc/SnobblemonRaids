@@ -19,6 +19,7 @@ public record RaidDefinition(
         Scaling scaling,
         int timeLimitSeconds,
         boolean allowFlee,
+        List<String> moves,
         Rewards rewards
 ) {
     /** Natural spawning is opt-in. Empty biome lists mean any biome in an allowed dimension. */
@@ -144,6 +145,14 @@ public record RaidDefinition(
         Objects.requireNonNull(scaling, "scaling");
         Objects.requireNonNull(rewards, "rewards");
         if (timeLimitSeconds < 0) throw new IllegalArgumentException("time_limit_seconds must be >= 0");
+        Objects.requireNonNull(moves, "moves");
+        // Cobblemon's MoveSet is fixed at four slots, so a fifth entry would be silently dropped
+        // rather than doing what whoever wrote the definition intended.
+        if (moves.size() > 4) throw new IllegalArgumentException("moves may list at most 4 entries, got " + moves.size());
+        if (moves.stream().anyMatch(move -> move == null || move.isBlank()))
+            throw new IllegalArgumentException("moves entries must not be blank");
+        if (moves.stream().distinct().count() != moves.size())
+            throw new IllegalArgumentException("moves must not repeat the same move: " + moves);
     }
 
     public long scaledHealth(int participantCount) {
@@ -191,10 +200,27 @@ public record RaidDefinition(
         int timeLimit = integer(root, "time_limit_seconds", cd.timeLimitSeconds());
         boolean allowFlee = root.has("allow_flee") ? root.get("allow_flee").getAsBoolean() : cd.allowFlee();
 
+        List<String> moves = readMoves(root);
+
         Rewards rewards = parseRewards(object(root, "rewards"));
         return new RaidDefinition(id, species, rarityTier, level, baseHealth, spawn,
                 new Recruitment(duration, radius, maxPlayers), new Scaling(healthPerExtra),
-                timeLimit, allowFlee, rewards);
+                timeLimit, allowFlee, moves, rewards);
+    }
+
+    /**
+     * Optional fixed moveset, as Showdown-style ids ("flamethrower", "airslash"). An empty list --
+     * the default, and what every definition had before this existed -- leaves RaidBossSpawner on
+     * Cobblemon's own initializeMoveset, i.e. the species' level-up moves.
+     */
+    private static List<String> readMoves(JsonObject root) {
+        if (!root.has("moves")) return List.of();
+        if (!root.get("moves").isJsonArray()) throw new IllegalArgumentException("moves must be an array");
+        List<String> moves = new ArrayList<>();
+        for (JsonElement element : root.getAsJsonArray("moves")) {
+            moves.add(element.getAsString().trim().toLowerCase(Locale.ROOT));
+        }
+        return List.copyOf(moves);
     }
 
     private static Rewards parseRewards(JsonObject rewards) {
