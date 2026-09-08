@@ -1,0 +1,70 @@
+{
+  "_template": "Copy this into data/cobbleraids/raids/<name>.json in a datapack to override or add a raid. Only the rewards block is documented here; everything above it is the minimum a definition needs to load. Keys starting with _ are ignored by the parser and exist only as notes.",
+
+  "species": "cobblemon:blastoise",
+  "level": 75,
+  "base_health": 2000,
+  "rarity_tier": "starter",
+
+  "spawn": {
+    "enabled": false,
+    "_enabled": "false keeps this out of natural spawning while you test it with /cobbleraids spawn.",
+    "weight": 5,
+    "dimensions": ["minecraft:overworld"],
+    "biome_tags": ["cobbleraids:raid_types/water"],
+    "times": ["all_day"]
+  },
+
+  "rewards": {
+    "gui_id": "cobbleraids_reward",
+
+    "_loot_tables": "Rolled for every victor, whatever choice they pick. Any loot table the server has loaded works, including other mods' and your own datapack's. Preview one before using it: /cobbleraids debug loot <table>",
+    "loot_tables": [
+      "minecraft:chests/simple_dungeon"
+    ],
+
+    "_choices": "The player picks exactly one. A choice may use items, chance_items, loot_tables, or any mix.",
+    "choices": {
+      "supplies": {
+        "_items": "Always granted. 'item' is any registered item id, so another mod's items work as-is: create:brass_ingot, mekanism:steel_ingot, and so on. An item whose mod is not installed is skipped with a server-log warning; the rest of the reward is still granted.",
+        "items": [
+          { "item": "minecraft:diamond", "amount": 3 },
+          { "item": "cobblemon:rare_candy", "amount": 2 }
+        ],
+        "_chance_items": "Rolled independently, chance is 0..1.",
+        "chance_items": [
+          { "item": "cobblemon:master_ball", "amount": 1, "chance": 0.05 }
+        ]
+      },
+
+      "mod_loot": {
+        "_this": "A choice that is nothing but loot tables. This is the cheap way to hand out another mod's rewards: you borrow whatever that mod already balanced instead of restating it item by item, and it keeps working when that mod changes its own drops.",
+        "loot_tables": [
+          "minecraft:chests/buried_treasure"
+        ]
+      },
+
+      "gamble": {
+        "items": [{ "item": "minecraft:gold_ingot", "amount": 8 }],
+        "chance_items": [
+          { "item": "minecraft:netherite_scrap", "amount": 1, "chance": 0.15 }
+        ]
+      }
+    },
+
+    "_contribution_bonus": "Extra rolls earned by damage share, on top of the chosen option. tiers map a minimum contribution percentage to a number of rolls; pool is the weighted table those rolls draw from.",
+    "contribution_bonus": {
+      "enabled": true,
+      "tiers": [
+        { "min_percentage": 10.0, "rolls": 1 },
+        { "min_percentage": 35.0, "rolls": 2 },
+        { "min_percentage": 60.0, "rolls": 3 }
+      ],
+      "pool": [
+        { "item": "minecraft:emerald", "amount": 2, "weight": 60 },
+        { "item": "minecraft:diamond", "amount": 1, "weight": 30 },
+        { "item": "cobblemon:exp_candy_l", "amount": 1, "weight": 10 }
+      ]
+    }
+  }
+}

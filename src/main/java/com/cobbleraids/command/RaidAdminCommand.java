@@ -108,6 +108,11 @@ public final class RaidAdminCommand {
                                         .executes(ctx -> RaidAdminDebugOps.history(ctx.getSource())))
                                 .then(Commands.literal("config")
                                         .executes(ctx -> RaidAdminDebugOps.config(ctx.getSource())))
+                                .then(Commands.literal("loot")
+                                        .then(Commands.argument("loot_table", ResourceLocationArgument.id())
+                                                .suggests(RaidSuggestions.LOOT_TABLES)
+                                                .executes(ctx -> RaidAdminDebugOps.lootPreview(
+                                                        ctx.getSource(), ResourceLocationArgument.getId(ctx, "loot_table")))))
                                 .then(Commands.literal("definition")
                                         .then(Commands.argument("pokemon", StringArgumentType.word())
                                                 .suggests(RaidSuggestions.SPECIES)

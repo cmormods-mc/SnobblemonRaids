@@ -40,6 +40,20 @@ final class RaidSuggestions {
         return builder.buildFuture();
     };
 
+    /**
+     * Every loot table the server has loaded, which is exactly the set a reward can name -- vanilla,
+     * this mod's, and every other mod's. Authoring a cross-mod reward is otherwise a matter of
+     * guessing ids out of someone else's jar.
+     */
+    static final SuggestionProvider<CommandSourceStack> LOOT_TABLES = (context, builder) -> {
+        String typed = builder.getRemaining().toLowerCase(Locale.ROOT);
+        for (ResourceLocation id : context.getSource().getServer().reloadableRegistries()
+                .getKeys(net.minecraft.core.registries.Registries.LOOT_TABLE)) {
+            if (id.toString().startsWith(typed) || id.getPath().contains(typed)) builder.suggest(id.toString());
+        }
+        return builder.buildFuture();
+    };
+
     static final SuggestionProvider<CommandSourceStack> TIERS = (context, builder) ->
             SharedSuggestionProvider.suggest(
                     Arrays.stream(RaidRarityTier.values()).map(RaidRarityTier::serializedName), builder);

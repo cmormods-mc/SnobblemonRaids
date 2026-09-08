@@ -96,8 +96,58 @@ def validate_jar(path: Path) -> None:
         assert len([name for name in names if name.startswith("data/cobbleraids/raids/") and name.endswith(".json")]) == 130
 
 
+def validate_reward_template() -> None:
+    """The documented reward template must stay loadable and stay in step with the parser.
+
+    examples/server.json drifted several settings behind the schema and was deleted; this exists so
+    the replacement cannot do the same quietly. It checks the shape a datapack author would copy,
+    not the values.
+    """
+    template = ROOT / "docs/reward-template.json"
+    assert template.exists(), "docs/reward-template.json is referenced by the README and must exist"
+    data = json.loads(template.read_text(encoding="utf-8"))
+
+    for required in ("species", "level", "base_health", "rewards"):
+        assert required in data, f"template is missing {required}, so it would not load"
+
+    rewards = data["rewards"]
+    # Keys RaidDefinition.parseRewards actually reads. A key here that the parser dropped, or a
+    # parser key the template never shows, means the template is teaching something untrue.
+    assert set(k for k in rewards if not k.startswith("_")) == {
+        "gui_id", "loot_tables", "choices", "contribution_bonus"}, sorted(rewards)
+
+    definition = (ROOT / "src/main/java/com/cobbleraids/config/RaidDefinition.java").read_text(encoding="utf-8")
+    for key in ("gui_id", "loot_tables", "choices", "contribution_bonus", "chance_items", "min_percentage"):
+        assert f'"{key}"' in definition, f"template documents {key} but the parser never reads it"
+
+    def check_items(items, where):
+        for entry in items:
+            assert ":" in entry["item"], f"{where}: item ids need a namespace ({entry})"
+            assert entry.get("amount", 1) >= 1, f"{where}: amount must be at least 1"
+
+    for table in rewards["loot_tables"]:
+        assert ":" in table, f"loot table ids need a namespace ({table})"
+    assert rewards["choices"], "the template must show at least one choice"
+    for name, choice in rewards["choices"].items():
+        body = {k: v for k, v in choice.items() if not k.startswith("_")}
+        assert body, f"choice {name} is empty"
+        assert set(body) <= {"items", "chance_items", "loot_tables"}, (name, sorted(body))
+        check_items(body.get("items", []), name)
+        for entry in body.get("chance_items", []):
+            assert 0.0 <= entry["chance"] <= 1.0, f"{name}: chance must be 0..1"
+        check_items(body.get("chance_items", []), name)
+    # One choice must demonstrate loot tables, since that is what the template is for.
+    assert any("loot_tables" in c for c in rewards["choices"].values()),         "the template must show a loot-table-only choice"
+
+    bonus = rewards["contribution_bonus"]
+    check_items(bonus["pool"], "contribution_bonus.pool")
+    for entry in bonus["pool"]:
+        assert entry["weight"] >= 1, "contribution bonus weights must be at least 1"
+
+
 def main() -> None:
     validate_tree()
+    validate_reward_template()
     for argument in sys.argv[1:]:
         validate_jar(Path(argument))
     print("Phase 31 source/resource validation: PASS")

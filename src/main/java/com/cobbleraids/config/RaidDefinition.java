@@ -100,12 +100,15 @@ public record RaidDefinition(
     }
 
     /** A GUI choice is authoritative server-side; SkiesGUIs only sends the choice id back to CobbleRaids. */
-    public record RewardChoice(String id, List<RewardItem> items, List<RewardItem> chanceItems) {
+    public record RewardChoice(String id, List<RewardItem> items, List<RewardItem> chanceItems,
+                               List<ResourceLocation> lootTables) {
         public RewardChoice {
             if (id == null || !id.matches("[a-z0-9_.-]+")) throw new IllegalArgumentException("reward choice ids must match [a-z0-9_.-]+");
             items = List.copyOf(items);
             chanceItems = List.copyOf(chanceItems);
-            if (items.isEmpty() && chanceItems.isEmpty()) throw new IllegalArgumentException("reward choice " + id + " has no rewards");
+            lootTables = List.copyOf(lootTables);
+            if (items.isEmpty() && chanceItems.isEmpty() && lootTables.isEmpty())
+                throw new IllegalArgumentException("reward choice " + id + " has no rewards");
         }
     }
 
@@ -235,7 +238,8 @@ public record RaidDefinition(
             JsonObject choice = entry.getValue().getAsJsonObject();
             choices.put(entry.getKey(), new RewardChoice(entry.getKey(),
                     readRewardItems(choice, "items", 1.0, 1),
-                    readRewardItems(choice, "chance_items", -1.0, 1)));
+                    readRewardItems(choice, "chance_items", -1.0, 1),
+                    readResourceLocations(choice, "loot_tables")));
         }
 
         JsonObject contribution = object(rewards, "contribution_bonus");

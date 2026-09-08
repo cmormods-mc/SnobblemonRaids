@@ -61,6 +61,37 @@ separately.
   `combat_defaults.max_failed_attempts` defeats (default 3, `0` = unlimited) it
   departs. A surviving boss keeps its raid slot and despawn timers.
 
+## Rewards from other mods
+
+Reward items are plain registry ids, so any installed mod's items work with no code or bridge:
+
+```json
+"items": [{ "item": "create:brass_ingot", "amount": 4 }]
+```
+
+An item whose mod is not installed is skipped with a server-log warning and the rest of the reward
+is still granted, so dropping a mod from the pack does not break existing raids.
+
+For anything larger, name a **loot table** instead of listing items. That borrows whatever the other
+mod already balanced, and keeps working when it changes its own drops:
+
+```json
+"loot_tables": ["minecraft:chests/buried_treasure"]
+```
+
+Loot tables can sit on the rewards block (rolled for every victor) or on a single choice (rolled
+only if the player picks it). Preview any table the server has loaded, without granting it, with:
+
+```text
+/cobbleraids debug loot <loot_table>
+```
+
+That command tab-completes over every loot table on the server, including those from other mods,
+which is the quickest way to find an id worth using.
+
+`docs/reward-template.json` is a complete, copy-pasteable definition showing every reward form. It
+is checked by CI against the parser, so it cannot drift out of date.
+
 ## Commands
 
 `/cobbleraids reward claim` is player-facing; `info` is unrestricted. Everything else
@@ -72,7 +103,7 @@ requires permission level 2.
 /cobbleraids despawn [all] | reload
 /cobbleraids cooldown list | cooldown reset <definition>
 /cobbleraids reward claim | reward grant <player> <definition> | reward list [player] | reward clear <player>
-/cobbleraids debug status | raids | history | config | definition <species>
+/cobbleraids debug status | raids | history | config | definition <species> | loot <loot_table>
 ```
 
 `testwild` bypasses the spawn roll and species cooldown while keeping placement,

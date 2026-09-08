@@ -9,17 +9,20 @@ import com.cobbleraids.presentation.CommandFormat;
 import com.cobbleraids.raid.RaidRegistry;
 import com.cobbleraids.raid.RaidSession;
 import com.cobbleraids.reward.ContributionMath;
+import com.cobbleraids.reward.RaidLootRoller;
 import com.cobbleraids.reward.RewardGuiBackends;
 import com.cobbleraids.spawn.RaidBossEntityMarker;
 import com.cobbleraids.spawn.RaidSpawnHistory;
 import com.cobbleraids.spawn.RaidSpawnScheduler;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.ChatFormatting;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -42,6 +45,31 @@ final class RaidAdminDebugOps {
         source.sendSuccess(() -> CommandFormat.row(lobbies + " lobbies · " + battles
                 + " battles · reward gui " + rewardGui), false);
         return bosses.size() + battles + lobbies;
+    }
+
+    /**
+     * Rolls a loot table against the running player and reports what it produced, granting nothing.
+     * The point is to be able to check a table -- especially another mod's -- before wiring it into
+     * a reward, since a raid reward is claimed once and there is no second look.
+     */
+    static int lootPreview(CommandSourceStack source, ResourceLocation tableId) throws CommandSyntaxException {
+        ServerPlayer player = source.getPlayerOrException();
+        List<ItemStack> rolled = RaidLootRoller.preview(player, tableId, ResourceLocation.fromNamespaceAndPath(
+                "cobbleraids", "debug_loot_preview"));
+        if (rolled.isEmpty()) {
+            source.sendSuccess(() -> Component.literal("'" + tableId
+                            + "' rolled nothing. If that is unexpected, check the server log: a table that does"
+                            + " not exist, or wants context a raid cannot supply, is reported there.")
+                    .withStyle(ChatFormatting.YELLOW), false);
+            return 0;
+        }
+        source.sendSuccess(() -> CommandFormat.header("Loot preview  " + CommandFormat.shortId(tableId)), false);
+        for (ItemStack stack : rolled) {
+            source.sendSuccess(() -> CommandFormat.row(CommandFormat.pad(String.valueOf(stack.getCount()), 5)
+                    + stack.getHoverName().getString()), false);
+        }
+        source.sendSuccess(() -> CommandFormat.row(rolled.size() + " stack(s) this roll; run it again for another"), false);
+        return rolled.size();
     }
 
     static int raids(CommandSourceStack source) {

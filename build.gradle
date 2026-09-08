@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.37-boss-traits'
+version = '0.8.38-loot-table-rewards'
 group = 'com.cobbleraids'
 
 base {
