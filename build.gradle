@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.27-tier-spawn-rates'
+version = '0.8.28-reward-prompt-on-join'
 group = 'com.cobbleraids'
 
 base {

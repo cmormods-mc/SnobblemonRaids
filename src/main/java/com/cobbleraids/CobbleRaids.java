@@ -20,6 +20,7 @@ import com.cobbleraids.spawn.RaidSpawnScheduler;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -58,6 +59,11 @@ public final class CobbleRaids implements ModInitializer {
         // After SERVER_STARTED specifically: restoring a saved claim resolves its rewards from the
         // datapack registry, which is only populated once the initial resource load has finished.
         ServerLifecycleEvents.SERVER_STARTED.register(RaidRewardService::onServerStarted);
+        // Presents a reward that outlived a disconnect or restart. Without this the queue is
+        // restored but nothing ever offers it, so the reveal screen is only ever seen by players
+        // who happened to be online when the raid was won.
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
+                RaidRewardService.onPlayerJoin(handler.getPlayer()));
         // Repairs the Showdown integration (ShowdownResourceLoaderMixin) if another mod's own
         // unbundle-time file writes clobbered it after ours -- confirmed live against a real pack
         // (mega_showdown) that patches the same Cobblemon Showdown files at the same injection point.

@@ -27,6 +27,13 @@ public final class RaidRewardService {
     private static final Map<UUID, ArrayDeque<PendingRaidReward>> PENDING = new ConcurrentHashMap<>();
     private static final Map<UUID, Integer> OPEN_DELAY = new ConcurrentHashMap<>();
     private static final int GUI_OPEN_DELAY_TICKS = 2;
+    /**
+     * Longer than the post-victory delay on purpose. At victory the player is already in the world
+     * and we are only waiting for the battle-end screen packet; on join the client is still
+     * finishing its terrain load, and a screen pushed into that window is drawn behind the loading
+     * overlay and dismissed with it -- which looks exactly like the reward silently not appearing.
+     */
+    private static final int JOIN_OPEN_DELAY_TICKS = 40;
     private RaidRewardService() {}
 
     /**
@@ -41,6 +48,21 @@ public final class RaidRewardService {
         if (claims > 0) {
             System.out.println("[CobbleRaids] Restored " + claims + " unclaimed raid reward(s) for "
                     + PENDING.size() + " player(s).");
+        }
+    }
+
+    /**
+     * Re-offers an unclaimed reward when its owner logs in.
+     *
+     * <p>{@link #grant} only queues a screen-open for participants who are online at the moment of
+     * victory, so a reward that outlived a disconnect or a server restart had nothing left to
+     * present it: the queue was restored correctly and the player was simply never told, leaving
+     * "/cobbleraids reward claim all" -- the raw claim the GUI button itself runs -- as the only way
+     * to collect it, which grants the items with no reveal screen at all.
+     */
+    public static void onPlayerJoin(ServerPlayer player) {
+        if (player != null && hasPending(player.getUUID())) {
+            OPEN_DELAY.put(player.getUUID(), JOIN_OPEN_DELAY_TICKS);
         }
     }
 
