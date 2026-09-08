@@ -1,7 +1,10 @@
 package com.cobbleraids.lifecycle;
 
+import com.cobbleraids.config.CobbleRaidsConfig;
+import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.raid.RaidRegistry;
 import com.cobbleraids.raid.RaidSession;
+import com.cobbleraids.spawn.RaidBossEntityMarker;
 import com.cobbleraids.spawn.RaidSpawnScheduler;
 import com.cobblemon.mod.common.api.battles.model.PokemonBattle;
 import com.cobblemon.mod.common.api.battles.model.actor.BattleActor;
@@ -13,6 +16,7 @@ import java.util.stream.Collectors;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
 /** Single authority for raid terminal transitions, cleanup, withdrawal, and reward finalization. */
@@ -150,9 +154,15 @@ public final class RaidLifecycleCoordinator {
         // A single faint is intentionally non-terminal. Showdown requests replacement normally.
     }
 
+    /**
+     * Administrative cancellation, not a defeat. It must not record a failed attempt against the
+     * boss, and it must always remove it: RaidAdminBossOps.safelyRemove delegates the whole despawn
+     * to this for a boss that is mid-battle, so leaving the boss standing here would make
+     * /cobbleraids despawn silently do nothing to exactly the bosses an operator most wants gone.
+     */
     public static void abort(RaidSession raid) {
         if (raid == null || !raid.abort()) return;
-        finalizeNonVictory(raid);
+        finalizeNonVictory(raid, false);
     }
 
     private static void finalizeVictory(RaidSession raid) {
@@ -163,6 +173,7 @@ public final class RaidLifecycleCoordinator {
         // ahead of the screen rather than arriving behind it. Victory paths only: a lost, timed-out
         // or aborted raid pays nothing, exactly as it pays no items.
         RaidProgressionTransfer.grant(raid, server);
+        RaidBattleStateCarryover.apply(raid);
         RaidRewardEligibility eligibility = RaidRewardEligibility.victory(raid);
         RaidRewardService.grant(eligibility, server);
         RaidRegistry.remove(raid.getBattle());
@@ -174,23 +185,31 @@ public final class RaidLifecycleCoordinator {
     private static void finalizeAfterBattleEnded(RaidSession raid) {
         if (!FINALIZED.add(raid.getId())) return;
         RaidCombatRuleService.forget(raid.getId());
+        RaidBattleStateCarryover.apply(raid);
         RaidRegistry.remove(raid.getBattle());
-        cleanupBossEntity(raid);
+        releaseBossAfterFailure(raid);
         forgetFinalizationState(raid.getId());
     }
 
-    /** Used for timeout/flee/abort paths where no normal Showdown win packet is guaranteed. */
+    /** Every ordinary way a raid is lost: the players failed, so the boss records the attempt. */
     private static void finalizeNonVictory(RaidSession raid) {
+        finalizeNonVictory(raid, true);
+    }
+
+    /** Used for timeout/flee/abort paths where no normal Showdown win packet is guaranteed. */
+    private static void finalizeNonVictory(RaidSession raid, boolean countsAsFailedAttempt) {
         if (!FINALIZED.add(raid.getId())) return;
         RaidCombatRuleService.forget(raid.getId());
         PokemonBattle battle = raid.getBattle();
+        // Read the clones before end(), which retires the actors this walks.
+        RaidBattleStateCarryover.apply(raid);
         if (!battle.getEnded()) {
             // PokemonBattle.end() sends BattleEndPacket, lets entity-backed actors clear battleId,
             // and calls BattleRegistry.closeBattle(this). Do not close the registry first.
             battle.end();
         }
         RaidRegistry.remove(battle);
-        cleanupBossEntity(raid);
+        if (countsAsFailedAttempt) releaseBossAfterFailure(raid); else cleanupBossEntity(raid);
         forgetFinalizationState(raid.getId());
     }
 
@@ -202,6 +221,58 @@ public final class RaidLifecycleCoordinator {
      * covers the case where the entity is already gone and discard() is skipped. Forgetting a UUID
      * the scheduler never tracked (an admin-spawned boss) is a no-op.
      */
+    /**
+     * A raid that ended in defeat leaves the boss standing for another attempt, until it has beaten
+     * enough parties. Before this, every terminal path discarded the boss, so any loss consumed it
+     * and there was effectively one attempt per boss no matter what.
+     *
+     * <p>The count lives on the entity ({@link RaidBossEntityMarker#recordFailedAttempt}), so it
+     * has the boss's own lifetime and needs no cleanup anywhere. A surviving boss is deliberately
+     * NOT forgotten by the scheduler: it still holds its raid slot, and its unattended-despawn and
+     * total-lifetime timers keep running, so a boss nobody can beat still leaves on schedule.
+     *
+     * <p>The boss is fully healed between attempts. Its Pokemon is the real entity's, not a clone,
+     * so the damage from the failed raid is really on it, and a second party would otherwise walk
+     * into a boss at whatever HP the last one left -- while the raid's own health pool restarts at
+     * full, making the bar disagree with the entity.
+     */
+    private static void releaseBossAfterFailure(RaidSession raid) {
+        var boss = raid.getBossEntity();
+        if (boss == null || boss.isRemoved()) {
+            cleanupBossEntity(raid);
+            return;
+        }
+
+        int attempts = RaidBossEntityMarker.recordFailedAttempt(boss);
+        CobbleRaidsConfig.CombatDefaults combat = CobbleRaidsConfigManager.get().combatDefaults();
+        boolean spent = combat.attemptsAreLimited() && attempts >= combat.maxFailedAttempts();
+
+        MinecraftServer server = ((ServerLevel) boss.level()).getServer();
+        if (spent) {
+            announce(server, raid, Component.literal("The raid boss has driven off enough challengers and departs.")
+                    .withStyle(ChatFormatting.RED));
+            cleanupBossEntity(raid);
+            return;
+        }
+
+        boss.getPokemon().heal();
+        if (combat.attemptsAreLimited()) {
+            int left = combat.maxFailedAttempts() - attempts;
+            announce(server, raid, Component.literal("The raid boss remains. "
+                    + left + " more failed attempt" + (left == 1 ? "" : "s") + " and it will depart.")
+                    .withStyle(ChatFormatting.YELLOW));
+        }
+    }
+
+    /** Everyone still in the battle, including players who withdrew, since they were all there. */
+    private static void announce(MinecraftServer server, RaidSession raid, Component message) {
+        if (server == null) return;
+        for (UUID id : raid.getParticipants()) {
+            ServerPlayer player = server.getPlayerList().getPlayer(id);
+            if (player != null) player.sendSystemMessage(message);
+        }
+    }
+
     private static void cleanupBossEntity(RaidSession raid) {
         var boss = raid.getBossEntity();
         if (boss != null) RaidSpawnScheduler.forget(boss.getUUID());

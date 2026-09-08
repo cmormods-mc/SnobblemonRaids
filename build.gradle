@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.35-raid-progression'
+version = '0.8.36-raid-cost-and-attempts'
 group = 'com.cobbleraids'
 
 base {

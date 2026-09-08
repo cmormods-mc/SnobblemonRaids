@@ -8,6 +8,7 @@ public record CobbleRaidsConfig(
         NaturalSpawning naturalSpawning,
         RecruitmentDefaults recruitmentDefaults,
         CombatDefaults combatDefaults,
+        BattleCarryover battleCarryover,
         TierScaling tierScaling,
         BossGlow bossGlow,
         BossMovement bossMovement,
@@ -109,11 +110,37 @@ public record CobbleRaidsConfig(
 
 
     /** Defaults applied when an individual raid JSON omits combat rule fields. */
-    public record CombatDefaults(int timeLimitSeconds, boolean allowFlee) {
+    public record CombatDefaults(int timeLimitSeconds, boolean allowFlee, int maxFailedAttempts) {
         public CombatDefaults {
             if (timeLimitSeconds < 0 || timeLimitSeconds > 86_400)
                 throw new IllegalArgumentException("combat_defaults.time_limit_seconds must be 0..86400");
+            if (maxFailedAttempts < 0 || maxFailedAttempts > 1000)
+                throw new IllegalArgumentException("combat_defaults.max_failed_attempts must be 0..1000");
         }
+
+        /** 0 disables the cap, so a boss can be attempted until one of its timers removes it. */
+        public boolean attemptsAreLimited() { return maxFailedAttempts > 0; }
+    }
+
+    /**
+     * How much of a raid's battle damage follows the players home -- the cost of a raid.
+     *
+     * <p>Raids are fought on clones ({@code toBattleTeam(clone = true)}), so nothing that happens in
+     * one reaches the party unless it is copied across deliberately. Health and PP are copied by
+     * default so a raid costs something legible: you come out of it needing to heal. Faints come
+     * with health for free, because {@code Pokemon.isFainted()} is just {@code currentHealth <= 0},
+     * and Cobblemon's own faint timer then revives them on its usual schedule -- the cost is
+     * self-limiting without any extra machinery here.
+     *
+     * <p>Status is off by default on purpose. A burn or paralysis that outlives the raid lands by
+     * luck rather than by play, and is the part players push back on hardest. Turn it on for a
+     * harsher server.
+     */
+    public record BattleCarryover(boolean health, boolean pp, boolean status) {
+        public static BattleCarryover defaults() { return new BattleCarryover(true, true, false); }
+
+        /** True when nothing at all is carried, so the whole pass can be skipped. */
+        public boolean isNoOp() { return !health && !pp && !status; }
     }
 
     /**
@@ -226,7 +253,8 @@ public record CobbleRaidsConfig(
                         AnnouncementPrecision.NEAREST_HUNDRED
                 ),
                 new RecruitmentDefaults(20, 10.0, VALIDATED_MAX_HUMAN_PLAYERS),
-                new CombatDefaults(900, false),
+                new CombatDefaults(900, false, 3),
+                BattleCarryover.defaults(),
                 TierScaling.defaults(),
                 BossGlow.defaults(),
                 BossMovement.defaults(),
@@ -289,7 +317,16 @@ public record CobbleRaidsConfig(
         CombatDefaults cd = defaults.combatDefaults();
         CombatDefaults combatDefaults = new CombatDefaults(
                 integer(combat, "time_limit_seconds", cd.timeLimitSeconds()),
-                bool(combat, "allow_flee", cd.allowFlee())
+                bool(combat, "allow_flee", cd.allowFlee()),
+                integer(combat, "max_failed_attempts", cd.maxFailedAttempts())
+        );
+
+        JsonObject carryover = object(root, "battle_carryover");
+        BattleCarryover bc = defaults.battleCarryover();
+        BattleCarryover battleCarryover = new BattleCarryover(
+                bool(carryover, "health", bc.health()),
+                bool(carryover, "pp", bc.pp()),
+                bool(carryover, "status", bc.status())
         );
 
         JsonObject tierScalingObject = object(root, "tier_scaling");
@@ -316,8 +353,8 @@ public record CobbleRaidsConfig(
                 integer(bossMovementObject, "slowness_amplifier", bm.slownessAmplifier()),
                 bool(bossMovementObject, "prevent_knockback", bm.preventKnockback()));
 
-        return new CobbleRaidsConfig(naturalSpawning, recruitmentDefaults, combatDefaults, tierScaling, bossGlow,
-                bossMovement, bool(root, "debug_logging", defaults.debugLogging()));
+        return new CobbleRaidsConfig(naturalSpawning, recruitmentDefaults, combatDefaults, battleCarryover,
+                tierScaling, bossGlow, bossMovement, bool(root, "debug_logging", defaults.debugLogging()));
     }
 
     private static TierMultipliers readTierMultipliers(JsonObject tierScaling, String key, TierMultipliers fallback) {
@@ -370,7 +407,14 @@ public record CobbleRaidsConfig(
         JsonObject combat = new JsonObject();
         combat.addProperty("time_limit_seconds", combatDefaults.timeLimitSeconds());
         combat.addProperty("allow_flee", combatDefaults.allowFlee());
+        combat.addProperty("max_failed_attempts", combatDefaults.maxFailedAttempts());
         root.add("combat_defaults", combat);
+
+        JsonObject carryoverObject = new JsonObject();
+        carryoverObject.addProperty("health", battleCarryover.health());
+        carryoverObject.addProperty("pp", battleCarryover.pp());
+        carryoverObject.addProperty("status", battleCarryover.status());
+        root.add("battle_carryover", carryoverObject);
 
         JsonObject tierScalingObject = new JsonObject();
         tierScalingObject.addProperty("enabled", tierScaling.enabled());

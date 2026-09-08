@@ -33,11 +33,24 @@ public final class CobbleRaidsConfigManager {
                 System.out.println("[CobbleRaids] Created default config: " + CONFIG_PATH);
                 return CURRENT;
             }
+            JsonObject root;
             try (Reader reader = Files.newBufferedReader(CONFIG_PATH, StandardCharsets.UTF_8)) {
-                JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
-                CURRENT = CobbleRaidsConfig.fromJson(root);
-                return CURRENT;
+                root = JsonParser.parseReader(reader).getAsJsonObject();
             }
+            CURRENT = CobbleRaidsConfig.fromJson(root);
+
+            // Migrate the file forward. Every unknown key already falls back to its default, so an
+            // older config loads correctly -- but it would never gain the new settings, leaving an
+            // operator with no way to discover a feature short of reading a changelog. Writing the
+            // canonical form back keeps their existing values (those were just parsed into CURRENT)
+            // and adds whatever this build knows about. CobbleRaidsConfigRoundTripTest pins the
+            // round trip, because a key that toJson forgets would be silently erased here.
+            JsonObject canonical = CURRENT.toJson();
+            if (!canonical.equals(root)) {
+                write(CURRENT);
+                System.out.println("[CobbleRaids] Updated " + CONFIG_PATH + " with settings new to this version.");
+            }
+            return CURRENT;
         } catch (Exception ex) {
             throw new IllegalStateException("Failed to load CobbleRaids config " + CONFIG_PATH, ex);
         }

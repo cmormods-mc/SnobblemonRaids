@@ -199,6 +199,10 @@ final class RaidAdminDebugOps {
         section(source, "combat_defaults");
         setting(source, "time_limit_seconds", config.combatDefaults().timeLimitSeconds());
         setting(source, "allow_flee", config.combatDefaults().allowFlee());
+        setting(source, "max_failed_attempts", config.combatDefaults().maxFailedAttempts());
+        setting(source, "carry_over_health", config.battleCarryover().health());
+        setting(source, "carry_over_pp", config.battleCarryover().pp());
+        setting(source, "carry_over_status", config.battleCarryover().status());
 
         section(source, "boss_glow");
         setting(source, "enabled", config.bossGlow().enabled());

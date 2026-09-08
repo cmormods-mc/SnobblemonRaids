@@ -12,6 +12,7 @@ public final class RaidBossEntityMarker {
     private static final String DEFINITION_PREFIX = "cobbleraids_definition=";
     private static final String NATURAL = "cobbleraids_natural_spawn";
     private static final String SPAWN_TICK_PREFIX = "cobbleraids_spawn_tick=";
+    private static final String ATTEMPTS_PREFIX = "cobbleraids_failed_attempts=";
 
     private RaidBossEntityMarker() {}
 
@@ -52,6 +53,35 @@ public final class RaidBossEntityMarker {
             catch (NumberFormatException ignored) { return OptionalLong.empty(); }
         }
         return OptionalLong.empty();
+    }
+
+    /**
+     * How many raids against this boss have ended in defeat.
+     *
+     * <p>Held on the entity as a scoreboard tag, like everything else here, rather than in a static
+     * map keyed by UUID. That is deliberate: the count then has exactly the lifetime of the boss it
+     * describes. It survives a chunk unload and a restart, needs no cleanup hook on despawn, on
+     * dimension close or at shutdown, and cannot leak an entry for an entity that no longer exists.
+     */
+    public static int failedAttempts(PokemonEntity entity) {
+        if (entity == null) return 0;
+        for (String tag : entity.getTags()) {
+            if (!tag.startsWith(ATTEMPTS_PREFIX)) continue;
+            try { return Math.max(0, Integer.parseInt(tag.substring(ATTEMPTS_PREFIX.length()))); }
+            catch (NumberFormatException ignored) { return 0; }
+        }
+        return 0;
+    }
+
+    /** Records one more defeat and returns the new total. */
+    public static int recordFailedAttempt(PokemonEntity entity) {
+        if (entity == null) return 0;
+        int next = failedAttempts(entity) + 1;
+        for (String tag : List.copyOf(entity.getTags())) {
+            if (tag.startsWith(ATTEMPTS_PREFIX)) entity.removeTag(tag);
+        }
+        entity.addTag(ATTEMPTS_PREFIX + next);
+        return next;
     }
 
     public static Optional<ResourceLocation> definitionId(PokemonEntity entity) {
