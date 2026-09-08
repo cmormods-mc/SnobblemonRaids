@@ -204,6 +204,12 @@ final class RaidAdminDebugOps {
         setting(source, "enabled", config.bossGlow().enabled());
         setting(source, "radius_blocks", config.bossGlow().radiusBlocks());
 
+        section(source, "boss_movement");
+        setting(source, "slowness_enabled", config.bossMovement().slownessEnabled());
+        setting(source, "slowness_amplifier", config.bossMovement().slownessAmplifier()
+                + " (Slowness " + (config.bossMovement().slownessAmplifier() + 1) + ")");
+        setting(source, "prevent_knockback", config.bossMovement().preventKnockback());
+
         section(source, "other");
         setting(source, "tier_scaling.enabled", config.tierScaling().enabled());
         setting(source, "debug_logging", config.debugLogging());

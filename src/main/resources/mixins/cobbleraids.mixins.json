@@ -8,6 +8,8 @@
     "battle.RaidBattleRegistryMixin",
     "battle.RaidBossBattleStartGuardMixin",
     "battle.RaidBossInvulnerabilityMixin",
+    "battle.RaidBossPushImmunityMixin",
+    "battle.RaidBossFishingImmunityMixin",
     "battle.RaidBattleSelectActionsMixin",
     "battle.RaidMoveActionResponseMixin",
     "battle.RaidPokemonBattleMixin",

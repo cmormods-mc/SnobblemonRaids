@@ -1,5 +1,7 @@
 package com.cobbleraids.spawn;
 
+import com.cobbleraids.config.CobbleRaidsConfig;
+import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.presentation.RaidBossGlowService;
 import com.cobbleraids.presentation.RaidTierPresentation;
@@ -12,6 +14,10 @@ import com.cobblemon.mod.common.pokemon.properties.UncatchableProperty;
 import java.util.Objects;
 import kotlin.Unit;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.phys.Vec3;
 
 /** Creates a real Cobblemon PokemonEntity in the normal world for a raid definition. */
@@ -50,7 +56,40 @@ public final class RaidBossSpawner {
             return Unit.INSTANCE;
         });
         if (entity == null) throw new IllegalStateException("Cobblemon did not create a PokemonEntity for " + definition.id());
+        applyMovementLock(entity);
         RaidBossGlowService.register(entity, level);
         return entity;
+    }
+
+    /**
+     * Roots the boss and makes it unshovable. Applied here because this is the one path every boss
+     * takes, natural or admin-spawned.
+     *
+     * <p>The slowness is infinite rather than refreshed on a timer: MobEffectInstance supports
+     * INFINITE_DURATION, it is saved in entity NBT, and so it survives chunk unloads and restarts
+     * with no per-tick cost at all. Particles and the HUD icon are suppressed the same way
+     * RaidBossGlowService suppresses them for the glow, so the boss does not trail swirls.
+     *
+     * <p>Knockback resistance is the vanilla mechanism -- LivingEntity#knockback multiplies by
+     * (1 - KNOCKBACK_RESISTANCE), so 1.0 zeroes melee and projectile knockback outright, with no
+     * mixin needed. It does NOT cover explosions, entity collisions or fishing rods, which reach
+     * the entity through other paths; RaidBossPushImmunityMixin and RaidBossFishingImmunityMixin
+     * close those.
+     */
+    private static void applyMovementLock(PokemonEntity boss) {
+        CobbleRaidsConfig.BossMovement config = CobbleRaidsConfigManager.get().bossMovement();
+        if (config.slownessEnabled()) {
+            boss.addEffect(new MobEffectInstance(
+                    MobEffects.MOVEMENT_SLOWDOWN,
+                    MobEffectInstance.INFINITE_DURATION,
+                    config.slownessAmplifier(),
+                    false,
+                    false,
+                    false));
+        }
+        if (config.preventKnockback()) {
+            AttributeInstance knockbackResistance = boss.getAttribute(Attributes.KNOCKBACK_RESISTANCE);
+            if (knockbackResistance != null) knockbackResistance.setBaseValue(1.0);
+        }
     }
 }

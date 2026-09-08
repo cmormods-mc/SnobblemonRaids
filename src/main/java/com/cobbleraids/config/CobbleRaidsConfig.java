@@ -10,6 +10,7 @@ public record CobbleRaidsConfig(
         CombatDefaults combatDefaults,
         TierScaling tierScaling,
         BossGlow bossGlow,
+        BossMovement bossMovement,
         boolean debugLogging
 ) {
     public static final int VALIDATED_MAX_HUMAN_PLAYERS = 4;
@@ -154,6 +155,27 @@ public record CobbleRaidsConfig(
         }
     }
 
+    /**
+     * Keeps a raid boss where it spawned and stops anyone shoving it around.
+     *
+     * <p>Both halves are about the same failure: a boss that has wandered off is one nobody at the
+     * announced coordinates can find, and one that can be launched is an event any player can ruin
+     * on their own. Slowness rather than NoAI so the boss still turns, looks at players and
+     * animates -- a frozen statue reads as broken.
+     */
+    public record BossMovement(boolean slownessEnabled, int slownessAmplifier, boolean preventKnockback) {
+        public BossMovement {
+            // Slowness reduces speed by 15% per level, and level is amplifier + 1, so amplifier 6
+            // (Slowness VII) is the first that fully roots the boss. Lower values let it drift.
+            if (slownessAmplifier < 0 || slownessAmplifier > 9)
+                throw new IllegalArgumentException("boss_movement.slowness_amplifier must be 0..9");
+        }
+
+        public static BossMovement defaults() {
+            return new BossMovement(true, 6, true);
+        }
+    }
+
     /** Lets players spot a raid boss through terrain from a distance, tinted per rarity tier. */
     public record BossGlow(boolean enabled, double radiusBlocks) {
         public BossGlow {
@@ -207,6 +229,7 @@ public record CobbleRaidsConfig(
                 new CombatDefaults(900, false),
                 TierScaling.defaults(),
                 BossGlow.defaults(),
+                BossMovement.defaults(),
                 false
         );
     }
@@ -286,8 +309,15 @@ public record CobbleRaidsConfig(
                 decimal(bossGlowObject, "radius_blocks", bg.radiusBlocks())
         );
 
+        JsonObject bossMovementObject = object(root, "boss_movement");
+        BossMovement bm = defaults.bossMovement();
+        BossMovement bossMovement = new BossMovement(
+                bool(bossMovementObject, "slowness_enabled", bm.slownessEnabled()),
+                integer(bossMovementObject, "slowness_amplifier", bm.slownessAmplifier()),
+                bool(bossMovementObject, "prevent_knockback", bm.preventKnockback()));
+
         return new CobbleRaidsConfig(naturalSpawning, recruitmentDefaults, combatDefaults, tierScaling, bossGlow,
-                bool(root, "debug_logging", defaults.debugLogging()));
+                bossMovement, bool(root, "debug_logging", defaults.debugLogging()));
     }
 
     private static TierMultipliers readTierMultipliers(JsonObject tierScaling, String key, TierMultipliers fallback) {
@@ -354,6 +384,12 @@ public record CobbleRaidsConfig(
         bossGlowObject.addProperty("enabled", bossGlow.enabled());
         bossGlowObject.addProperty("radius_blocks", bossGlow.radiusBlocks());
         root.add("boss_glow", bossGlowObject);
+
+        JsonObject bossMovementJson = new JsonObject();
+        bossMovementJson.addProperty("slowness_enabled", bossMovement.slownessEnabled());
+        bossMovementJson.addProperty("slowness_amplifier", bossMovement.slownessAmplifier());
+        bossMovementJson.addProperty("prevent_knockback", bossMovement.preventKnockback());
+        root.add("boss_movement", bossMovementJson);
 
         root.addProperty("debug_logging", debugLogging);
         return root;
