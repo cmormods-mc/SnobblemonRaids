@@ -74,6 +74,11 @@ public final class CobbleRaids implements ModInitializer {
         // the scheduler has stopped tracking. Checking on load is the only point where an orphan
         // in a previously unloaded chunk becomes reachable.
         ServerEntityEvents.ENTITY_LOAD.register(RaidSpawnScheduler::onNaturalBossLoaded);
+        // The converse: release a tracked boss's raid slot as soon as the entity is destroyed.
+        // discard() removes it from ServerLevel's UUID lookup synchronously, so the scheduler's
+        // once-a-second maintenance pass can never observe the removal itself and would hold the
+        // slot against max_active_raids for the rest of the boss's despawn_seconds.
+        ServerEntityEvents.ENTITY_UNLOAD.register(RaidSpawnScheduler::onEntityUnloaded);
         // A dimension-managing mod can close a ServerLevel outright (not just unload its chunks),
         // which would otherwise leave a tracked boss there occupying a raid slot until its despawn
         // timer expires, since it can never resolve again.

@@ -480,8 +480,12 @@ public final class RaidSpawnScheduler {
             ActiveSpawn active = entry.getValue();
             PokemonEntity boss = resolveBoss(server, entry.getKey(), active);
 
-            // A boss that resolves and still reports removed is genuinely gone: killed, discarded
-            // or captured. An unloaded boss does not resolve at all and is handled below.
+            // Fallback only. onEntityUnloaded already released the slot for anything destroyed in a
+            // loaded chunk, and it runs synchronously inside discard(). This still catches the one
+            // case it cannot see: an entity destroyed while its section is inaccessible skips
+            // PersistentEntitySectionManager.stopTracking, so no unload event fires and the entry
+            // stays resolvable while reporting removed. An ordinary unloaded boss does not resolve
+            // at all and is handled below.
             if (boss != null && boss.isRemoved()) {
                 iterator.remove();
                 continue;
@@ -607,6 +611,43 @@ public final class RaidSpawnScheduler {
         pokemon.discard();
     }
 
+    /**
+     * Frees a tracked boss's raid slot the moment the entity is genuinely destroyed, whatever
+     * destroyed it: raid finalization, an admin despawn, /kill, the void, or another mod.
+     *
+     * <p>This exists because the scheduler cannot detect the destruction on its own. Its
+     * maintenance pass looks for an entry that still resolves and reports isRemoved(), but
+     * Entity.discard() unhooks the entity from ServerLevel's UUID lookup synchronously --
+     * setRemoved -> PersistentEntitySectionManager.stopTracking -> EntityLookup.remove drops
+     * byUuid before discard() even returns -- while the pass only runs once a second. By then the
+     * boss no longer resolves at all, which is deliberately read as "chunk not loaded, keep
+     * waiting". The finished raid therefore held its slot against max_active_raids (and blocked
+     * min_distance_between_raids) for the remainder of its despawn_seconds.
+     *
+     * <p>RemovalReason.shouldDestroy() is exactly the distinction the Phase 32 invariant needs:
+     * true only for KILLED and DISCARDED, false for UNLOADED_TO_CHUNK, UNLOADED_WITH_PLAYER and
+     * CHANGED_DIMENSION. An unloading boss is left tracked, as before.
+     *
+     * <p>Bound to ServerEntityEvents.ENTITY_UNLOAD, which fires for every entity leaving every
+     * loaded chunk, so the body is ordered cheapest-test-first and allocates nothing. The reason
+     * check is deliberately ahead of the instanceof: ordinary chunk unload is the overwhelming
+     * majority of this traffic and shouldDestroy() rejects all of it with one field read.
+     */
+    public static void onEntityUnloaded(Entity entity, ServerLevel level) {
+        if (ACTIVE.isEmpty()) return;
+        Entity.RemovalReason reason = entity.getRemovalReason();
+        // Null happens when a section merely stops being accessible without the entity being
+        // removed at all; that is an unload, not a destruction.
+        if (reason == null || !reason.shouldDestroy()) return;
+        if (!(entity instanceof PokemonEntity pokemon)) return;
+        if (ACTIVE.remove(pokemon.getUUID()) == null) return;
+
+        if (CobbleRaidsConfigManager.get().debugLogging()) {
+            System.out.println("[CobbleRaids] Released raid slot for destroyed boss " + pokemon.getUUID()
+                    + " (" + reason + ") in " + level.dimension().location() + ", active=" + ACTIVE.size());
+        }
+    }
+
     private static boolean hasNearbyPlayer(MinecraftServer server, PokemonEntity boss, double radius) {
         double radiusSqr = radius * radius;
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
@@ -620,6 +661,10 @@ public final class RaidSpawnScheduler {
      * Drops only bosses that are provably gone. An entry whose boss does not resolve is kept,
      * because "not loaded" and "no longer exists" are indistinguishable from a lookup alone and
      * treating the first as the second is what leaked untracked bosses before Phase 32.
+     *
+     * <p>Same fallback role as the equivalent check in maintainTrackedBosses: onEntityUnloaded is
+     * what releases a slot in practice. Kept because it is bounded by max_active_raids entries and
+     * runs only on a spawn attempt.
      */
     private static void purgeRemoved(MinecraftServer server) {
         ACTIVE.entrySet().removeIf(entry -> {

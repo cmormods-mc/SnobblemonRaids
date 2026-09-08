@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.32-meta-movesets'
+version = '0.8.33-raid-slot-release'
 group = 'com.cobbleraids'
 
 base {
@@ -35,6 +35,25 @@ dependencies {
     modImplementation 'maven.modrinth:eTmjDQ2A:azTJ3S8C' // SkiesGUIs 1.8.1
 
     compileOnly 'org.jetbrains.kotlin:kotlin-stdlib:2.2.20'
+
+    testImplementation platform('org.junit:junit-bom:5.11.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+/**
+ * Covers the parts of CobbleRaids that are deliberately free of Minecraft, Cobblemon and Fabric
+ * types -- spawn-rate maths, contribution maths, config validation, and the Showdown file patcher.
+ * Those are also where a regression is silent rather than loud: a mispatched simulator produces
+ * invulnerable bosses with a clean log, and a spawn-weight change produces a wrong rate nobody can
+ * see. Verifying them here takes a second instead of a jar build plus a modded server boot.
+ */
+tasks.named('test', Test) {
+    useJUnitPlatform()
+    testLogging {
+        events 'failed'
+        exceptionFormat = 'full'
+    }
 }
 
 java {

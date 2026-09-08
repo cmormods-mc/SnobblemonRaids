@@ -25,6 +25,12 @@ import java.util.regex.Pattern;
  * uses.
  */
 public final class ShowdownIntegrationInstaller {
+    // patchPlayerCount, patchOutputPump and patchIndexBootstrap are package-private rather than
+    // private so ShowdownIntegrationInstallerTest can drive them against real file fixtures. They
+    // are the part of this mod most likely to break silently -- a simulator that loads without the
+    // raid patch produces bosses that take no damage while the battle otherwise runs normally, with
+    // nothing in the log -- and the alternative is finding that out on a live server.
+
     /** A JavaScript identifier, so a reformatted or renamed copy still matches. */
     private static final String ID = "[A-Za-z_$][A-Za-z0-9_$]*";
 
@@ -134,7 +140,7 @@ public final class ShowdownIntegrationInstaller {
      * it would no longer contain the stock right-hand side either, and would be rejected below
      * rather than silently mispatched.
      */
-    private static void patchPlayerCount(Path path) {
+    static void patchPlayerCount(Path path) {
         try {
             String source = Files.readString(path, StandardCharsets.UTF_8);
             // Idempotent on a second unbundle attempt, but never silently accept an unknown simulator layout.
@@ -187,7 +193,7 @@ public final class ShowdownIntegrationInstaller {
      * is intended -- the only behaviour it changes is the case where the battle would
      * otherwise be irrecoverably dead.
      */
-    private static void patchOutputPump(Path path) {
+    static void patchOutputPump(Path path) {
         try {
             String source = Files.readString(path, StandardCharsets.UTF_8);
             if (source.contains(OUTPUT_PUMP_MARKER)) return;
@@ -248,7 +254,7 @@ public final class ShowdownIntegrationInstaller {
                 + base + "})();";
     }
 
-    private static void patchIndexBootstrap(Path path) {
+    static void patchIndexBootstrap(Path path) {
         try {
             String source = Files.readString(path, StandardCharsets.UTF_8);
             if (source.contains(INDEX_RAID_HOOK)) return;

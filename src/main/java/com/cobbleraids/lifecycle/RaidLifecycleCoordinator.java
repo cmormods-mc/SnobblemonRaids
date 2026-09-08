@@ -2,6 +2,7 @@ package com.cobbleraids.lifecycle;
 
 import com.cobbleraids.raid.RaidRegistry;
 import com.cobbleraids.raid.RaidSession;
+import com.cobbleraids.spawn.RaidSpawnScheduler;
 import com.cobblemon.mod.common.api.battles.model.PokemonBattle;
 import com.cobblemon.mod.common.api.battles.model.actor.BattleActor;
 import com.cobblemon.mod.common.net.messages.client.battle.BattleEndPacket;
@@ -188,8 +189,17 @@ public final class RaidLifecycleCoordinator {
         forgetFinalizationState(raid.getId());
     }
 
+    /**
+     * Every terminal path ends here, so this is the single place that hands a natural boss's raid
+     * slot back to the scheduler. RaidSpawnScheduler.onEntityUnloaded would also catch the discard
+     * below, but only while the boss is in a loaded chunk; forgetting it explicitly makes the
+     * release a property of the raid ending rather than of Minecraft's entity-removal plumbing, and
+     * covers the case where the entity is already gone and discard() is skipped. Forgetting a UUID
+     * the scheduler never tracked (an admin-spawned boss) is a no-op.
+     */
     private static void cleanupBossEntity(RaidSession raid) {
         var boss = raid.getBossEntity();
+        if (boss != null) RaidSpawnScheduler.forget(boss.getUUID());
         if (boss != null && !boss.isRemoved()) boss.discard();
     }
 
