@@ -33,50 +33,46 @@ public final class RaidLootRoller {
     /**
      * Rolls every table and places the results in the player's inventory.
      *
+     * @param context what to name in a warning -- a definition id, or where the roll came from.
      * @return one display line per stack granted, so loot-table drops appear in the claim message
      *         and the reveal screen exactly like hand-listed items do.
      */
     public static List<RaidDefinition.RewardItem> rollAll(
-            ServerPlayer player, List<ResourceLocation> tables, ResourceLocation definitionId) {
+            ServerPlayer player, List<ResourceLocation> tables, Object context) {
         if (tables.isEmpty()) return List.of();
         List<RaidDefinition.RewardItem> granted = new ArrayList<>();
         for (ResourceLocation tableId : tables) {
             try {
-                roll(player, tableId, definitionId, granted);
+                for (ItemStack stack : roll(player, tableId, context)) {
+                    // Read the line before granting: placeItemBackInInventory consumes the stack, so
+                    // one inspected afterwards reports minecraft:air and a count of zero.
+                    granted.add(new RaidDefinition.RewardItem(
+                            BuiltInRegistries.ITEM.getKey(stack.getItem()), stack.getCount(), 1.0, 1));
+                    player.getInventory().placeItemBackInInventory(stack);
+                }
             } catch (RuntimeException ex) {
                 // Most often a table whose own parameter set demands context a raid has no way to
                 // provide -- an entity table wanting the killed entity, say.
-                warn(definitionId, tableId, "could not be rolled (" + ex + ")");
+                warn(context, tableId, "could not be rolled (" + ex + ")");
             }
         }
         return granted;
     }
 
-    private static void roll(ServerPlayer player, ResourceLocation tableId, ResourceLocation definitionId,
-                             List<RaidDefinition.RewardItem> granted) {
-        for (ItemStack stack : preview(player, tableId, definitionId)) {
-            // Read the line before granting: placeItemBackInInventory consumes the stack, so a
-            // stack inspected afterwards reports minecraft:air and a count of zero.
-            RaidDefinition.RewardItem line = new RaidDefinition.RewardItem(
-                    BuiltInRegistries.ITEM.getKey(stack.getItem()), Math.max(1, stack.getCount()), 1.0, 1);
-            player.getInventory().placeItemBackInInventory(stack);
-            granted.add(line);
-        }
-    }
-
     /**
-     * Rolls a table and returns the stacks <em>without</em> granting them, so an operator can see
-     * what a table produces before wiring it into a definition. Same context and same failure
-     * handling as a real reward roll, so a preview that works is a reward that will work.
+     * Rolls a table and returns the stacks without granting them, which is also what
+     * {@code /cobbleraids debug loot} shows: an operator can see what a table produces before
+     * wiring it into a definition, using the same context and the same failure handling, so a
+     * preview that works is a reward that will work.
      */
-    public static List<ItemStack> preview(ServerPlayer player, ResourceLocation tableId, ResourceLocation definitionId) {
+    public static List<ItemStack> roll(ServerPlayer player, ResourceLocation tableId, Object context) {
         ServerLevel level = player.serverLevel();
         LootTable table = level.getServer().reloadableRegistries()
                 .getLootTable(ResourceKey.create(Registries.LOOT_TABLE, tableId));
         // Vanilla answers a missing id with the empty table rather than null, so an id that never
         // resolved would otherwise look like a table that legitimately rolled nothing.
         if (table == LootTable.EMPTY) {
-            warn(definitionId, tableId, "does not exist; is the mod that owns it installed?");
+            warn(context, tableId, "does not exist; is the mod that owns it installed?");
             return List.of();
         }
 
@@ -95,7 +91,7 @@ public final class RaidLootRoller {
         return rolled;
     }
 
-    private static void warn(ResourceLocation definitionId, ResourceLocation tableId, String problem) {
-        System.err.println("[CobbleRaids] " + definitionId + " reward loot table '" + tableId + "' " + problem);
+    private static void warn(Object context, ResourceLocation tableId, String problem) {
+        System.err.println("[CobbleRaids] " + context + " reward loot table '" + tableId + "' " + problem);
     }
 }

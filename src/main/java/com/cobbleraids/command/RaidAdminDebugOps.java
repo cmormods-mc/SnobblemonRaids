@@ -54,8 +54,7 @@ final class RaidAdminDebugOps {
      */
     static int lootPreview(CommandSourceStack source, ResourceLocation tableId) throws CommandSyntaxException {
         ServerPlayer player = source.getPlayerOrException();
-        List<ItemStack> rolled = RaidLootRoller.preview(player, tableId, ResourceLocation.fromNamespaceAndPath(
-                "cobbleraids", "debug_loot_preview"));
+        List<ItemStack> rolled = RaidLootRoller.roll(player, tableId, "debug loot");
         if (rolled.isEmpty()) {
             source.sendSuccess(() -> Component.literal("'" + tableId
                             + "' rolled nothing. If that is unexpected, check the server log: a table that does"
