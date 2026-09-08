@@ -158,8 +158,13 @@ public final class RaidLifecycleCoordinator {
     private static void finalizeVictory(RaidSession raid) {
         if (!FINALIZED.add(raid.getId())) return;
         RaidCombatRuleService.forget(raid.getId());
+        MinecraftServer server = ((net.minecraft.server.level.ServerLevel) raid.getBossEntity().level()).getServer();
+        // Before the reward screen is queued, so a level-up and its evolution offer reach the chat
+        // ahead of the screen rather than arriving behind it. Victory paths only: a lost, timed-out
+        // or aborted raid pays nothing, exactly as it pays no items.
+        RaidProgressionTransfer.grant(raid, server);
         RaidRewardEligibility eligibility = RaidRewardEligibility.victory(raid);
-        RaidRewardService.grant(eligibility, ((net.minecraft.server.level.ServerLevel) raid.getBossEntity().level()).getServer());
+        RaidRewardService.grant(eligibility, server);
         RaidRegistry.remove(raid.getBattle());
         cleanupBossEntity(raid);
         forgetFinalizationState(raid.getId());

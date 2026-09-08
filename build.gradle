@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.34-shutdown-state-reset'
+version = '0.8.35-raid-progression'
 group = 'com.cobbleraids'
 
 base {
