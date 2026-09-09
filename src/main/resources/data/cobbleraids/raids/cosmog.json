@@ -92,7 +92,9 @@
         }
       ]
     },
-    "loot_tables": []
+    "loot_tables": [
+      "cobbleraids:tier/legendary"
+    ]
   },
   "rarity_tier": "legendary"
 }

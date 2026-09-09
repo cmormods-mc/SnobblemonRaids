@@ -135,9 +135,10 @@ maths, contribution maths, config round-trip and the Showdown file patcher.
 
 ```text
 validation/validate_phase31.sh
-python3 validation/validate_phase{32,36,37,38,39,40}.py [jar]
+python3 validation/validate_phase{32,36,37,38,39,40,41}.py [jar]
 ```
 
 Structural checks over the 130 definitions, tier membership, biome-compat separation,
-optional-mod manifests, the mixin registry and the shared-HP packet path. They run in
-CI against both the source tree and the built JAR.
+optional-mod manifests, the mixin registry, the shared-HP packet path, and the tier
+loot table each definition rolls. They run in CI against both the source tree and the
+built JAR.

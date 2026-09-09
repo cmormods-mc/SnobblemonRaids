@@ -95,7 +95,9 @@
         }
       ]
     },
-    "loot_tables": []
+    "loot_tables": [
+      "cobbleraids:tier/powerhouse"
+    ]
   },
   "rarity_tier": "powerhouse"
 }

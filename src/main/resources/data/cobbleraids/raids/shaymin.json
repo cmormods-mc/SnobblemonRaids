@@ -95,7 +95,9 @@
         }
       ]
     },
-    "loot_tables": []
+    "loot_tables": [
+      "cobbleraids:tier/mythical"
+    ]
   },
   "rarity_tier": "mythical"
 }

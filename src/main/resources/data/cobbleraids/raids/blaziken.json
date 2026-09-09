@@ -96,7 +96,9 @@
         }
       ]
     },
-    "loot_tables": []
+    "loot_tables": [
+      "cobbleraids:tier/starter"
+    ]
   },
   "rarity_tier": "starter"
 }
