@@ -94,9 +94,9 @@ is checked by CI against the parser, so it cannot drift out of date.
 
 The optional `CobbleRaids-AddonRewards` JAR ships ready-made tables for common Cobblemon add-ons —
 `cobbleraids:tier/{starter,powerhouse,legendary,mythical}` bundles, and one table per add-on
-(`cobbleraids:addons/charms`, `addons/tms`, `addons/training_caps`, …) covering CobblemonCharms,
-Cobblemon Utility+, SimpleTMs, Cobblemon Cards, Perfect Partners, Mount Mastery, Daycare+, Cobble
-Capsule and CobbleSafari. Each add-on has its own table, so a pack missing one loses that table and
+(`cobbleraids:addons/charms`, `addons/tms`, `addons/cards`, …) covering CobblemonCharms,
+SimpleTMs, Cobblemon Cards, Perfect Partners, Mount Mastery, Daycare+, Cobble Capsule and
+CobbleSafari. Each add-on has its own table, so a pack missing one loses that table and
 nothing else.
 
 ## Commands

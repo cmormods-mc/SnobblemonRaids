@@ -6,37 +6,27 @@
       "entries": [
         {
           "type": "minecraft:loot_table",
-          "value": "cobbleraids:addons/training_caps",
+          "value": "cobbleraids:addons/charms",
           "weight": 20
         },
         {
           "type": "minecraft:loot_table",
-          "value": "cobbleraids:addons/charms",
-          "weight": 18
-        },
-        {
-          "type": "minecraft:loot_table",
           "value": "cobbleraids:addons/capsules",
-          "weight": 14
+          "weight": 16
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:addons/bonds",
-          "weight": 12
+          "weight": 13
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:addons/tms",
-          "weight": 10
+          "weight": 11
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:addons/breeding",
-          "weight": 8
-        },
-        {
-          "type": "minecraft:loot_table",
-          "value": "cobbleraids:addons/utility",
           "weight": 8
         },
         {

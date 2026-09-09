@@ -10,47 +10,37 @@
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:addons/vitamins",
-          "weight": 18
-        },
-        {
-          "type": "minecraft:loot_table",
-          "value": "cobbleraids:addons/training_caps",
-          "weight": 16
+          "weight": 20
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:addons/tms",
-          "weight": 14
+          "weight": 16
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:addons/cards",
-          "weight": 12
+          "weight": 13
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:addons/capsules",
-          "weight": 12
-        },
-        {
-          "type": "minecraft:loot_table",
-          "value": "cobbleraids:addons/utility",
-          "weight": 10
+          "weight": 13
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:addons/breeding",
-          "weight": 8
+          "weight": 9
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:addons/bonds",
-          "weight": 6
+          "weight": 7
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:addons/safari",
-          "weight": 6
+          "weight": 7
         }
       ]
     }

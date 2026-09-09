@@ -10,7 +10,7 @@ Reference them from a raid definition's rewards block:
       "loot_tables": ["cobbleraids:tier/legendary"],
       "choices": {
         "charms": { "loot_tables": ["cobbleraids:addons/charms"] },
-        "training": { "loot_tables": ["cobbleraids:addons/training_caps"] }
+        "capsules": { "loot_tables": ["cobbleraids:addons/capsules"] }
       }
     }
 
@@ -26,8 +26,6 @@ tier/starter, tier/powerhouse, tier/legendary, tier/mythical
 
 addons/charms          cobblemoncharms   type charms, catch/exp charm, gold bottle cap, shiny charm
 addons/vitamins        cobblemoncharms   super vitamins and stat candies
-addons/training_caps   cobblemon_utility silver, obsidian, golden and void bottle caps
-addons/utility         cobblemon_utility candies, poketreat, ball synchroniser, devolution relic
 addons/tms             simpletms         one random TM out of 632
 addons/cards           cobblemon-cards   booster packs, by type and by generation
 addons/bonds           companion_bonds   friendship bracelet, contest journal, shiny leaf/crown
