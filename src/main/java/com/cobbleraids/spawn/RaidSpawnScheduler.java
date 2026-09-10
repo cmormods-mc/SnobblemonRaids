@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -474,11 +473,19 @@ public final class RaidSpawnScheduler {
 
     private static void maintainTrackedBosses(MinecraftServer server) {
         CobbleRaidsConfig.NaturalSpawning config = CobbleRaidsConfigManager.get().naturalSpawning();
-        Iterator<Map.Entry<UUID, ActiveSpawn>> iterator = ACTIVE.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<UUID, ActiveSpawn> entry = iterator.next();
+        // Walk a snapshot, not ACTIVE itself. boss.discard() below fires
+        // ServerEntityEvents.ENTITY_UNLOAD synchronously on this thread, and onEntityUnloaded
+        // services it by removing that boss's entry from ACTIVE. Iterating the live map meant that
+        // re-entrant removal bumped the map's modCount mid-pass, and the next structural change
+        // from this loop -- an iterator.remove() a few lines on, or the following iterator.next()
+        // -- threw ConcurrentModificationException straight into the server tick. This pass now
+        // makes its own removals directly on ACTIVE; the copy is cheap, bounded by max_active_raids.
+        for (Map.Entry<UUID, ActiveSpawn> entry : List.copyOf(ACTIVE.entrySet())) {
+            UUID bossId = entry.getKey();
             ActiveSpawn active = entry.getValue();
-            PokemonEntity boss = resolveBoss(server, entry.getKey(), active);
+            // Already released by onEntityUnloaded during an earlier discard() in this same pass.
+            if (!ACTIVE.containsKey(bossId)) continue;
+            PokemonEntity boss = resolveBoss(server, bossId, active);
 
             // Fallback only. onEntityUnloaded already released the slot for anything destroyed in a
             // loaded chunk, and it runs synchronously inside discard(). This still catches the one
@@ -487,7 +494,7 @@ public final class RaidSpawnScheduler {
             // stays resolvable while reporting removed. An ordinary unloaded boss does not resolve
             // at all and is handled below.
             if (boss != null && boss.isRemoved()) {
-                iterator.remove();
+                ACTIVE.remove(bossId);
                 continue;
             }
 
@@ -512,7 +519,7 @@ public final class RaidSpawnScheduler {
                             + " hit its " + active.maxLifetimeSeconds + "s lifetime cap"
                             + (boss == null ? " (deferred: chunk not loaded)" : ""));
                 }
-                iterator.remove();
+                ACTIVE.remove(bossId);
                 continue;
             }
 
@@ -543,7 +550,7 @@ public final class RaidSpawnScheduler {
             if (boss != null) boss.discard();
             // An unloaded boss cannot be discarded from here. Dropping it from ACTIVE hands it to
             // onNaturalBossLoaded, which removes any untracked natural boss the moment it loads.
-            iterator.remove();
+            ACTIVE.remove(bossId);
         }
     }
 
