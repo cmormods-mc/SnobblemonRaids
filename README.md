@@ -102,12 +102,32 @@ which is the quickest way to find an id worth using.
 `docs/reward-template.json` is a complete, copy-pasteable definition showing every reward form. It
 is checked by CI against the parser, so it cannot drift out of date.
 
-The optional `CobbleRaids-AddonRewards` JAR ships ready-made tables for common Cobblemon add-ons —
-`cobbleraids:tier/{starter,powerhouse,legendary,mythical}` bundles, and one table per add-on
-(`cobbleraids:addons/charms`, `addons/tms`, `addons/cards`, …) covering CobblemonCharms,
-SimpleTMs, Cobblemon Cards, Perfect Partners, Mount Mastery, Daycare+, Cobble Capsule and
-CobbleSafari. Each add-on has its own table, so a pack missing one loses that table and
-nothing else.
+### The reward policy
+
+A definition that names **no** rewards of its own is *policy-driven*: what it grants comes from
+`config/cobbleraids/reward_policy.json` and the tables in the optional `CobbleRaids-AddonRewards`
+JAR. All 130 bundled definitions work this way. Each claim is one **specialty** selection plus two
+**general** ones, and contribution adds up to three more general selections — 3 to 6 in total, with
+the specialty selection happening exactly once however hard the player fought.
+
+```text
+cobbleraids:specialty/<tier>            one premium roll: mega stones, charms, TMs, capsules…
+cobbleraids:specialty/boss/<species>    the same, for the 21 bosses that have a Mega Stone
+cobbleraids:general/<tier>              the ordinary roll: base consumables, cards, materials
+cobbleraids:base/<tier>                 what both fall back to, and never itself a premium item
+```
+
+`validation/economy/probability_report.md` lists the exact drop rate of every row, computed from
+the table weights rather than sampled. The tables are generated: edit the matrix in
+`validation/economy/build_tables.py` and re-run it rather than editing a table by hand, which CI
+will notice.
+
+A definition that names anything of its own — items, chance items, loot tables, a contribution
+pool — keeps its own behaviour instead and ignores the policy entirely. That is what the
+per-add-on tables are for: `cobbleraids:addons/charms`, `addons/tms`, `addons/cards` and the rest
+each grant one item from one mod, so a hand-written definition can reward exactly one add-on.
+`/cobbleraids debug audit` names any definition still on that path, in case it is there by
+accident rather than on purpose.
 
 ## Commands
 
@@ -161,9 +181,11 @@ consistency audit's reporting rules, and the Showdown file patcher.
 
 ```text
 validation/validate_phase31.sh
-python3 validation/validate_phase{32,36,37,38,39,40,41}.py [jar]
+python3 validation/validate_phase{32,36,37,38,39,40}.py [jar]
 python3 validation/validate_{logging,callback_guards}.py
 python3 validation/validate_mixin_guards.py [jar]      # after a build: reads bytecode
+python3 validation/economy/validate_economy_manifest.py
+python3 validation/economy/build_tables.py --check
 ```
 
 Structural checks over the 130 definitions, tier membership, biome-compat separation,

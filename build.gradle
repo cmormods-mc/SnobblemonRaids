@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.58-reward-plan-resolver'
+version = '0.8.59-policy-migration'
 group = 'com.cobbleraids'
 
 base {

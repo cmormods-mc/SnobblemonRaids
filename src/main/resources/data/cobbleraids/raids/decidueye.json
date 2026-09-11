@@ -38,67 +38,8 @@
   "rewards": {
     "gui_id": "cobbleraids_reward",
     "choices": {
-      "all": {
-        "items": [
-          {
-            "item": "cobblemon:rare_candy",
-            "amount": 5
-          },
-          {
-            "item": "cobblemon:ultra_ball",
-            "amount": 8
-          },
-          {
-            "item": "cobblemon:great_ball",
-            "amount": 5
-          }
-        ],
-        "chance_items": [
-          {
-            "item": "cobblemon:master_ball",
-            "amount": 1,
-            "chance": 0.05
-          }
-        ]
-      }
-    },
-    "contribution_bonus": {
-      "enabled": true,
-      "tiers": [
-        {
-          "min_percentage": 20.0,
-          "bonus_rolls": 1
-        },
-        {
-          "min_percentage": 35.0,
-          "bonus_rolls": 2
-        },
-        {
-          "min_percentage": 50.0,
-          "bonus_rolls": 3
-        }
-      ],
-      "pool": [
-        {
-          "item": "cobblemon:rare_candy",
-          "amount": 1,
-          "weight": 50
-        },
-        {
-          "item": "cobblemon:ultra_ball",
-          "amount": 3,
-          "weight": 35
-        },
-        {
-          "item": "cobblemon:exp_candy_l",
-          "amount": 1,
-          "weight": 15
-        }
-      ]
-    },
-    "loot_tables": [
-      "cobbleraids:tier/starter"
-    ]
+      "all": {}
+    }
   },
   "rarity_tier": "starter"
 }

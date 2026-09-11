@@ -1,6 +1,7 @@
 package com.cobbleraids.fault;
 
 import com.cobbleraids.RaidLog;
+import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.config.RaidDefinitionRegistry;
 import com.cobbleraids.config.RaidRarityTier;
 import com.cobbleraids.lifecycle.RaidLifecycleCoordinator;
@@ -59,6 +60,7 @@ public final class RaidConsistencyAudit {
         RaidFaultBarrier.guard("audit:rewards", () -> auditPendingRewards(report));
         RaidFaultBarrier.guard("audit:finalization", () -> auditFinalization(report));
         RaidFaultBarrier.guard("audit:threading", () -> auditThreading(report));
+        RaidFaultBarrier.guard("audit:reward-policy", () -> auditRewardPolicy(report));
         return report;
     }
 
@@ -85,6 +87,25 @@ public final class RaidConsistencyAudit {
             if (status == RaidSession.Status.ACTIVE && (boss == null || boss.isRemoved())) {
                 report.warn("active-raid-without-boss",
                         "raid " + raid.getId() + " is ACTIVE but its boss entity is gone");
+            }
+        }
+    }
+
+    /**
+     * A definition still naming its own rewards ignores the server-wide policy.
+     *
+     * <p>Warned about rather than errored, because it is a legitimate thing to do on purpose -- a
+     * hand-written definition is meant to keep its own loot. What it must not be is an accident,
+     * and an unfinished migration looks exactly like a deliberate choice from the outside: the raid
+     * works, nothing throws, and the boss keeps handing out whatever it always did. Naming the
+     * definition is the whole point; the operator decides whether it belongs there.
+     */
+    private static void auditRewardPolicy(RaidAuditReport report) {
+        for (RaidDefinition definition : RaidDefinitionRegistry.all()) {
+            report.checked();
+            if (RaidDefinitionRegistry.isSelfDescribing(definition)) {
+                report.warn("reward-policy-legacy", "raid definition " + definition.id()
+                        + " names rewards of its own, so the reward policy does not apply to it");
             }
         }
     }
