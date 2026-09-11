@@ -142,9 +142,20 @@ public final class RaidRewardRevealScreen extends Screen {
     // separator does not follow the client's locale into something the chat line disagrees with.
     private static final NumberFormat CURRENCY_FORMAT = NumberFormat.getIntegerInstance(Locale.ROOT);
 
+    // Slot colours, picked to read against the chamber's blue without competing with it.
+    private static final int SLOT_FILL = 0xBE081828;
+    private static final int SLOT_EDGE = 0xDC5ED6FF;
+    private static final int CURRENCY_FILL = 0xD22E2206;
+    private static final int CURRENCY_EDGE = 0xE6F0BE46;
+    private static final int CURRENCY_TEXT = 0xFFFFD666;
+
     // Built once when the result arrives, not per frame.
     private ItemStack resultIcon;
     private List<Component> resultLines = List.of();
+    // The granted items, as stacks, so the receipt can be a row of slots the player recognises
+    // rather than a paragraph. Built once on arrival, like everything else here.
+    private List<ItemStack> resultStacks = List.of();
+    private long resultCurrency;
 
     private RaidRewardRevealScreen(PendingRewardRevealPayload pending) {
         super(Component.literal(pending.speciesDisplayName()));
@@ -188,24 +199,25 @@ public final class RaidRewardRevealScreen extends Screen {
             this.resultLines = payload == null
                     ? List.of()
                     : List.of(Component.literal("Something went wrong. Check chat for details."));
+            this.resultStacks = List.of();
+            this.resultCurrency = 0L;
             return;
         }
         // A claim can pay currency and no items -- an economy-only reward, or every item line
         // skipped because its mod is gone -- so the currency is what decides whether there is
         // anything to show, not the item list.
-        List<Component> lines = new ArrayList<>(payload.granted().size() + 1);
+        List<ItemStack> stacks = new ArrayList<>(payload.granted().size());
         for (RewardItemPayload item : payload.granted()) {
-            lines.add(Component.literal(new ItemStack(BuiltInRegistries.ITEM.get(item.item())).getHoverName().getString()
-                    + " x" + item.amount()));
+            ItemStack stack = new ItemStack(BuiltInRegistries.ITEM.get(item.item()));
+            stack.setCount(Math.max(1, item.amount()));
+            stacks.add(stack);
         }
-        if (payload.currencyGranted() > 0L) {
-            lines.add(Component.literal("+" + CURRENCY_FORMAT.format(payload.currencyGranted()) + " CobbleDollars")
-                    .withStyle(ChatFormatting.GOLD));
-        }
+        this.resultStacks = List.copyOf(stacks);
+        this.resultCurrency = payload.currencyGranted();
         this.resultIcon = payload.granted().isEmpty()
                 ? new ItemStack(BuiltInRegistries.ITEM.get(BALL_ITEM))
                 : new ItemStack(BuiltInRegistries.ITEM.get(payload.granted().get(0).item()));
-        this.resultLines = List.copyOf(lines);
+        this.resultLines = List.of();
     }
 
     private Layout computeLayout() {
@@ -313,6 +325,8 @@ public final class RaidRewardRevealScreen extends Screen {
             default -> { }
         }
 
+        if (state == State.RESULT) renderResultRow(graphics, layout.chamber(), mouseX, mouseY);
+
         RevealParticles.renderAndCull(graphics);
     }
 
@@ -402,6 +416,78 @@ public final class RaidRewardRevealScreen extends Screen {
         }
 
         if (state == State.RESULT) renderResult(graphics, chamber);
+    }
+
+    /**
+     * The granted items, as a row of slots on the chamber floor.
+     *
+     * <p>Drawn after everything else so a tooltip sits above the art, and sized by
+     * {@link RewardSlotLayout} as a share of the chamber rather than in fixed pixels -- the text
+     * list this replaced stepped a constant 12px per line, which ran off the bottom of a small
+     * panel and then, once that was fixed, sat on top of the Poke Ball.
+     */
+    private void renderResultRow(GuiGraphics graphics, Rect chamber, int mouseX, int mouseY) {
+        if (result == null || !result.success() || resultStacks.isEmpty()) return;
+        boolean paid = resultCurrency > 0L;
+        RewardSlotLayout slots = RewardSlotLayout.of(chamber.x(), chamber.y(), chamber.width(),
+                chamber.height(), resultStacks.size() + (paid ? 1 : 0));
+        if (slots == null) return;
+
+        for (int index = 0; index < resultStacks.size(); index++) {
+            drawSlotBox(graphics, slots, index, SLOT_FILL, SLOT_EDGE);
+            ItemStack stack = resultStacks.get(index);
+            float scale = slots.itemScale();
+            int inset = Math.round((slots.cell() - RewardSlotLayout.ITEM_PIXELS * scale) / 2f);
+            graphics.pose().pushPose();
+            graphics.pose().translate(slots.slotX(index) + inset, slots.y() + inset, 0);
+            graphics.pose().scale(scale, scale, 1.0f);
+            graphics.renderItem(stack, 0, 0);
+            // Vanilla's own count rendering, so a stack reads the way it does in any inventory.
+            graphics.renderItemDecorations(this.font, stack, 0, 0);
+            graphics.pose().popPose();
+        }
+
+        if (paid) {
+            int index = resultStacks.size();
+            drawSlotBox(graphics, slots, index, CURRENCY_FILL, CURRENCY_EDGE);
+            // A payout is not something you can hold, so it gets a chip rather than an item slot.
+            drawFittedText(graphics, "+" + CURRENCY_FORMAT.format(resultCurrency),
+                    slots.slotX(index) + slots.cell() / 2, slots.y() + slots.cell() / 2,
+                    slots.cell(), CURRENCY_TEXT);
+        }
+
+        int hovered = slots.slotAt(mouseX, mouseY);
+        if (hovered >= 0 && hovered < resultStacks.size()) {
+            graphics.renderTooltip(this.font, resultStacks.get(hovered), mouseX, mouseY);
+        } else if (hovered == resultStacks.size() && paid) {
+            graphics.renderTooltip(this.font,
+                    Component.literal(CURRENCY_FORMAT.format(resultCurrency) + " CobbleDollars")
+                            .withStyle(ChatFormatting.GOLD), mouseX, mouseY);
+        }
+    }
+
+    private static void drawSlotBox(GuiGraphics graphics, RewardSlotLayout slots, int index,
+                                    int fill, int edge) {
+        int x = slots.slotX(index);
+        int y = slots.y();
+        int size = slots.cell();
+        graphics.fill(x, y, x + size, y + size, fill);
+        graphics.fill(x, y, x + size, y + 1, edge);
+        graphics.fill(x, y + size - 1, x + size, y + size, edge);
+        graphics.fill(x, y, x + 1, y + size, edge);
+        graphics.fill(x + size - 1, y, x + size, y + size, edge);
+    }
+
+    /** Centred text scaled to sit inside a slot, however small the window has made one. */
+    private void drawFittedText(GuiGraphics graphics, String text, int centreX, int centreY,
+                                int cell, int color) {
+        float scale = Math.min(1.0f, (cell - 4) / (float) Math.max(1, this.font.width(text)));
+        graphics.pose().pushPose();
+        graphics.pose().translate(centreX, centreY, 0);
+        graphics.pose().scale(scale, scale, 1.0f);
+        graphics.drawString(this.font, text, -this.font.width(text) / 2, -this.font.lineHeight / 2,
+                color, false);
+        graphics.pose().popPose();
     }
 
     private void renderResult(GuiGraphics graphics, Rect chamber) {
