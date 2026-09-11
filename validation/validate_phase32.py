@@ -20,14 +20,20 @@ def read(path: Path) -> str:
 
 
 def validate_despawn_integrity() -> None:
+    # Tracking moved out of RaidSpawnScheduler into ActiveRaidSpawnTracker/TrackedRaidSpawn, so the
+    # invariants below are asserted against their new homes. The decision rules themselves are now
+    # covered properly by ActiveRaidSpawnTrackerTest, which can reproduce them without a server;
+    # these string checks remain as the cheap guard that the wiring is still in place.
     scheduler = read(JAVA / "spawn/RaidSpawnScheduler.java")
+    tracker = read(JAVA / "spawn/ActiveRaidSpawnTracker.java")
+    entry = read(JAVA / "spawn/TrackedRaidSpawn.java")
 
     # An entity unloaded with its chunk reports isRemoved() == true while still existing, so a
     # cached PokemonEntity reference cannot be the tracking key.
-    # ActiveSpawn is a class rather than a record on purpose: the maintenance pass mutates a timer
-    # on it every second, and a record meant allocating a replacement each time.
-    assert "private static final class ActiveSpawn {" in scheduler
-    fields = scheduler.split("private static final class ActiveSpawn {", 1)[1].split("ActiveSpawn(", 1)[0]
+    # TrackedRaidSpawn is a class rather than a record on purpose: the maintenance pass mutates a
+    # timer on it every second, and a record meant allocating a replacement each time.
+    assert "final class TrackedRaidSpawn {" in entry
+    fields = entry.split("final class TrackedRaidSpawn {", 1)[1].split("TrackedRaidSpawn(", 1)[0]
     assert "PokemonEntity" not in fields, fields
     assert "BlockPos position" in fields, fields
 
@@ -35,17 +41,24 @@ def validate_despawn_integrity() -> None:
     assert "private static PokemonEntity resolveBoss(" in scheduler
     assert "level.getEntity(bossId)" in scheduler
     assert "boss != null && boss.isRemoved()" in scheduler
+    assert "releaseProvablyGone" in tracker
 
     # Idle time has to keep accruing while the boss is unloaded, which is precisely when no
-    # player can be near it.
-    assert "if (boss != null) {" in scheduler
-    assert "idleTicks < active.despawnSeconds * 20L" in scheduler
+    # player can be near it: the tracker only consults presence when the boss actually resolved.
+    assert "if (presence != null) {" in tracker
+    assert "idleLongEnoughToDespawn" in tracker
+    assert "nowTick - lastNearbyPlayerTick >= despawnSeconds * 20L" in entry
+
+    # The maintenance pass must never walk the live map. A discard() re-enters the tracker through
+    # ENTITY_UNLOAD, which threw ConcurrentModificationException onto the server thread (f261da0).
+    assert "for (Map.Entry<UUID, TrackedRaidSpawn> entry : snapshot()) {" in tracker
+    assert "if (!active.containsKey(bossId)) continue;" in tracker
 
     # The orphan sweep, and the guard that keeps it from eating a boss we are mid-spawn.
     assert "public static void onNaturalBossLoaded(" in scheduler
     assert "if (spawningTrackedBoss) return;" in scheduler
     assert "spawningTrackedBoss = true;" in scheduler
-    assert "ACTIVE.containsKey(pokemon.getUUID())" in scheduler
+    assert "TRACKER.isTracked(pokemon.getUUID())" in scheduler
 
     initializer = read(JAVA / "CobbleRaids.java")
     assert "ServerEntityEvents.ENTITY_LOAD.register(RaidSpawnScheduler::onNaturalBossLoaded)" in initializer

@@ -69,9 +69,14 @@ def validate_tree() -> None:
 
     scheduler = (ROOT / "src/main/java/com/cobbleraids/spawn/RaidSpawnScheduler.java").read_text()
     damage = (ROOT / "src/main/java/com/cobbleraids/showdown/RaidDamageInstruction.java").read_text()
+    # Announcements and the two admin commands moved out of the scheduler; assert they still exist
+    # and are still wired, rather than that they live in any one file.
+    announcements = (ROOT / "src/main/java/com/cobbleraids/spawn/RaidSpawnAnnouncementService.java").read_text()
+    commands = (ROOT / "src/main/java/com/cobbleraids/spawn/RaidSpawnCommands.java").read_text()
     assert "RaidTierSelector.select" in scheduler
-    assert "announceNaturalSpawn" in scheduler
-    assert "sendSpawnInfo" in scheduler and "testWild" in scheduler
+    assert "static void naturalSpawn(" in announcements
+    assert "RaidSpawnAnnouncementService.naturalSpawn(" in scheduler
+    assert "sendSpawnInfo" in commands and "testWild" in commands
     assert "sendSidedUpdate" in damage
     assert "BattleHealthChangePacket(pnx, ratio, null)" in damage
 
