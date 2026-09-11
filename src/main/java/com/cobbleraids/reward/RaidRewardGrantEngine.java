@@ -11,7 +11,7 @@ import com.cobbleraids.reward.plan.RewardPlanResolver;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.Random;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -42,9 +42,13 @@ public final class RaidRewardGrantEngine {
                 RaidRewardPolicyManager.get(), CobbleRaidsConfigManager.get().currency(),
                 table -> RaidLootRoller.exists(player, parse(table, definitionId)));
 
+        // One generator per claim, seeded from the claim token, handing a fresh sub-seed to each
+        // selection. Reusing the claim seed directly for every roll would make all of a bundle's
+        // general selections identical -- reproducible, and useless.
+        Random claimRandom = new Random(pending.rewardSeed());
         RewardGrantResult result = switch (plan) {
-            case RewardPlan.Policy policy -> grantPolicy(player, definitionId, policy);
-            case RewardPlan.Legacy legacy -> grantLegacy(player, definitionId, legacy);
+            case RewardPlan.Policy policy -> grantPolicy(player, definitionId, policy, claimRandom);
+            case RewardPlan.Legacy legacy -> grantLegacy(player, definitionId, legacy, claimRandom);
         };
         if (CobbleRaidsConfigManager.get().debugLogging()) {
             RaidLog.info("" + definitionId + " granted via the " + plan.mode() + " path: "
@@ -55,7 +59,7 @@ public final class RaidRewardGrantEngine {
 
     /** Policy path: roll each table in the plan once, then pay. Every selection is one table roll. */
     private static RewardGrantResult grantPolicy(ServerPlayer player, ResourceLocation definitionId,
-                                                 RewardPlan.Policy plan) {
+                                                 RewardPlan.Policy plan, Random claimRandom) {
         List<RaidDefinition.RewardItem> standard = new ArrayList<>();
         List<RaidDefinition.RewardItem> bonus = new ArrayList<>();
         // The plan lists the specialty table first, then one general table per selection. The last
@@ -65,7 +69,8 @@ public final class RaidRewardGrantEngine {
         for (int index = 0; index < plan.lootTables().size(); index++) {
             ResourceLocation tableId = parse(plan.lootTables().get(index), definitionId);
             if (tableId == null) continue;
-            List<RaidDefinition.RewardItem> rolled = RaidLootRoller.rollAll(player, List.of(tableId), definitionId);
+            List<RaidDefinition.RewardItem> rolled = RaidLootRoller.rollAll(
+                    player, List.of(tableId), definitionId, nextSeed(claimRandom));
             (index >= firstBonusIndex ? bonus : standard).addAll(rolled);
         }
         return new RewardGrantResult(standard, List.of(), bonus, payCurrency(player, definitionId, plan.currency()));
@@ -73,14 +78,14 @@ public final class RaidRewardGrantEngine {
 
     /** Legacy path: exactly what a hand-written definition did before the policy existed. */
     private static RewardGrantResult grantLegacy(ServerPlayer player, ResourceLocation definitionId,
-                                                 RewardPlan.Legacy plan) {
+                                                 RewardPlan.Legacy plan, Random claimRandom) {
         List<RaidDefinition.RewardItem> base = new ArrayList<>();
         for (RaidDefinition.RewardItem item : plan.items()) {
             if (give(player, item, definitionId)) base.add(item);
         }
         List<RaidDefinition.RewardItem> chanceGranted = new ArrayList<>();
         for (RaidDefinition.RewardItem item : plan.chanceItems()) {
-            if (ThreadLocalRandom.current().nextDouble() < item.chance() && give(player, item, definitionId)) {
+            if (claimRandom.nextDouble() < item.chance() && give(player, item, definitionId)) {
                 chanceGranted.add(item);
             }
         }
@@ -90,11 +95,11 @@ public final class RaidRewardGrantEngine {
             ResourceLocation parsed = parse(table, definitionId);
             if (parsed != null) tables.add(parsed);
         }
-        base.addAll(RaidLootRoller.rollAll(player, tables, definitionId));
+        base.addAll(RaidLootRoller.rollAll(player, tables, definitionId, nextSeed(claimRandom)));
 
         List<RaidDefinition.RewardItem> bonusGranted = new ArrayList<>();
         for (int index = 0; index < plan.bonusRolls() && !plan.bonusPool().isEmpty(); index++) {
-            RaidDefinition.RewardItem rolled = weighted(plan.bonusPool());
+            RaidDefinition.RewardItem rolled = weighted(plan.bonusPool(), claimRandom);
             if (give(player, rolled, definitionId)) bonusGranted.add(rolled);
         }
         return new RewardGrantResult(base, chanceGranted, bonusGranted,
@@ -110,10 +115,16 @@ public final class RaidRewardGrantEngine {
         return parsed;
     }
 
-    static RaidDefinition.RewardItem weighted(List<RaidDefinition.RewardItem> pool) {
+    /** RANDOMIZE_SEED means "roll freely" to the loot API, so it must never be handed out as a seed. */
+    private static long nextSeed(Random claimRandom) {
+        long seed = claimRandom.nextLong();
+        return seed == net.minecraft.world.level.storage.loot.LootTable.RANDOMIZE_SEED ? 1L : seed;
+    }
+
+    static RaidDefinition.RewardItem weighted(List<RaidDefinition.RewardItem> pool, Random random) {
         long total = 0;
         for (RaidDefinition.RewardItem item : pool) total += item.weight();
-        long roll = ThreadLocalRandom.current().nextLong(total);
+        long roll = Math.floorMod(random.nextLong(), total);
         for (RaidDefinition.RewardItem item : pool) {
             roll -= item.weight();
             if (roll < 0) return item;

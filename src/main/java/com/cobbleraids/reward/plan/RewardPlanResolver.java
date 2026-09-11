@@ -4,6 +4,7 @@ import com.cobbleraids.config.CobbleRaidsConfig;
 import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.config.RaidRarityTier;
 import com.cobbleraids.config.RaidRewardPolicy;
+import com.cobbleraids.reward.ContributionMath;
 import com.cobbleraids.reward.currency.RaidCurrencyPolicy;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -38,6 +39,29 @@ public final class RewardPlanResolver {
         if (bonus != null && bonus.enabled() && !bonus.pool().isEmpty()) return true;
         if (choice == null) return false;
         return !choice.items().isEmpty() || !choice.chanceItems().isEmpty() || !choice.lootTables().isEmpty();
+    }
+
+    /**
+     * How many bonus general selections a damage share earns.
+     *
+     * <p>Which thresholds apply follows the same split as everything else: a self-describing
+     * definition uses the ones written into it, and a policy-driven one uses the server's. Keeping
+     * the choice here rather than at the victory site is what stops the two drifting -- when the
+     * bundled definitions were migrated their inline contribution blocks went with them, and a
+     * victory site that only knew about inline blocks awarded every player zero bonus rolls while
+     * looking entirely correct.
+     */
+    public static int bonusRollsFor(RaidDefinition.Rewards rewards, RaidDefinition.RewardChoice choice,
+                                    RaidRewardPolicy policy, double contributionPercentage) {
+        if (isSelfDescribing(rewards, choice)) {
+            RaidDefinition.ContributionBonus bonus = rewards.contributionBonus();
+            if (bonus == null || !bonus.enabled()) return 0;
+            List<ContributionMath.Threshold> thresholds = bonus.tiers().stream()
+                    .map(tier -> new ContributionMath.Threshold(tier.minPercentage(), tier.bonusRolls()))
+                    .toList();
+            return ContributionMath.bonusRolls(contributionPercentage, thresholds);
+        }
+        return ContributionMath.bonusRolls(contributionPercentage, policy.contributionThresholds());
     }
 
     /**

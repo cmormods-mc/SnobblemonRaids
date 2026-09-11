@@ -209,6 +209,44 @@ class RewardPlanResolverTest {
         assertTrue(plan.lootTables().isEmpty(), "a legacy plan must not gain policy tables");
     }
 
+    // --- how many bonus rolls a share earns -------------------------------------------------------
+
+    @Test
+    @DisplayName("a policy-driven definition earns its bonus rolls from the server policy")
+    void policyDefinitionUsesPolicyThresholds() {
+        // The regression this pins: when the bundled definitions were migrated, their inline
+        // contribution blocks went with them. A victory site that only read inline blocks awarded
+        // every player zero bonus rolls, so every claim was three selections and the 20/35/50
+        // thresholds did nothing -- while the config, the tables and the logs all looked right.
+        RaidDefinition.Rewards policyDriven = rewards(List.of(), noBonus());
+
+        assertEquals(0, RewardPlanResolver.bonusRollsFor(policyDriven, emptyChoice(), POLICY, 19.99));
+        assertEquals(1, RewardPlanResolver.bonusRollsFor(policyDriven, emptyChoice(), POLICY, 20.0));
+        assertEquals(2, RewardPlanResolver.bonusRollsFor(policyDriven, emptyChoice(), POLICY, 35.0));
+        assertEquals(3, RewardPlanResolver.bonusRollsFor(policyDriven, emptyChoice(), POLICY, 100.0));
+    }
+
+    @Test
+    @DisplayName("a legacy definition earns its bonus rolls from its own block, not the policy")
+    void legacyDefinitionUsesItsOwnThresholds() {
+        RaidDefinition.Rewards legacy = rewards(List.of(), new RaidDefinition.ContributionBonus(true,
+                List.of(new RaidDefinition.ContributionTier(80.0, 1)),
+                List.of(item("cobblemon:rare_candy", 1))));
+
+        // The policy would award 3 at this share; this definition awards nothing until 80%.
+        assertEquals(0, RewardPlanResolver.bonusRollsFor(legacy, emptyChoice(), POLICY, 60.0));
+        assertEquals(1, RewardPlanResolver.bonusRollsFor(legacy, emptyChoice(), POLICY, 80.0));
+    }
+
+    @Test
+    @DisplayName("a legacy definition with contribution switched off earns nothing")
+    void legacyWithBonusOffEarnsNothing() {
+        RaidDefinition.Rewards legacy = rewards(
+                List.of(ResourceLocation.parse("cobbleraids:tier/starter")), noBonus());
+
+        assertEquals(0, RewardPlanResolver.bonusRollsFor(legacy, emptyChoice(), POLICY, 100.0));
+    }
+
     // --- currency ---------------------------------------------------------------------------------
 
     @Test

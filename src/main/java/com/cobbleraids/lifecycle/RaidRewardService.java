@@ -9,10 +9,13 @@ import com.cobbleraids.reward.PendingRaidReward;
 import com.cobbleraids.reward.PendingRewardStore;
 import com.cobbleraids.reward.NativeRewardScreenGateway;
 import com.cobbleraids.reward.RaidRewardGrantEngine;
+import com.cobbleraids.config.RaidRewardPolicyManager;
 import com.cobbleraids.reward.RewardGuiBackends;
+import com.cobbleraids.reward.plan.RewardPlanResolver;
 import com.cobbleraids.reward.RewardGrantResult;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
@@ -112,17 +115,19 @@ public final class RaidRewardService {
         }
 
         Map<UUID, Double> percentages = ContributionMath.percentages(eligibility.contribution(), eligibility.participants());
-        List<ContributionMath.Threshold> thresholds = rewards.contributionBonus().tiers().stream()
-                .map(t -> new ContributionMath.Threshold(t.minPercentage(), t.bonusRolls()))
-                .toList();
+        RaidDefinition.RewardChoice sampleChoice = rewards.choices().values().stream().findFirst().orElse(null);
 
         for (UUID playerId : eligibility.participants()) {
             double percentage = percentages.getOrDefault(playerId, 0.0);
-            int bonusRolls = rewards.contributionBonus().enabled()
-                    ? ContributionMath.bonusRolls(percentage, thresholds) : 0;
+            int bonusRolls = RewardPlanResolver.bonusRollsFor(rewards, sampleChoice,
+                    RaidRewardPolicyManager.get(), percentage);
+            // Fixed per claim, at victory, so an unclaimed reward regenerates rather than rerolls
+            // when the server restarts. See PendingRewardStore for why the contents themselves are
+            // not written to disk.
+            long rewardSeed = ThreadLocalRandom.current().nextLong();
             PendingRaidReward pending = new PendingRaidReward(
                     eligibility.raidId(), eligibility.definitionId(), definition.rarityTier(), rewards, percentage, bonusRolls,
-                    eligibility.elapsedCombatTicks(), eligibility.participants().size());
+                    eligibility.elapsedCombatTicks(), eligibility.participants().size(), rewardSeed);
             PENDING.computeIfAbsent(playerId, ignored -> new ArrayDeque<>()).addLast(pending);
             if (server.getPlayerList().getPlayer(playerId) != null) OPEN_DELAY.putIfAbsent(playerId, GUI_OPEN_DELAY_TICKS);
         }

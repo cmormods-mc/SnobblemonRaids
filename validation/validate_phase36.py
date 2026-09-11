@@ -34,10 +34,14 @@ def validate_reward_result() -> None:
     for field in ("baseItems", "chanceItemsGranted", "contributionBonusItems"):
         assert field in result, f"RewardGrantResult is missing {field}"
 
-    # The RNG draw sites must be unchanged -- exactly one nextDouble() per chance item and one
-    # nextLong() per weighted() roll, same as before the refactor.
-    assert engine.count("ThreadLocalRandom.current().nextDouble() < item.chance()") == 1
-    assert engine.count("ThreadLocalRandom.current().nextLong(total)") == 1
+    # The grant path must draw from the claim's own seeded generator, never a global one. This
+    # replaced a pair of assertions pinning the exact ThreadLocalRandom call sites, which were
+    # asserting the opposite of what is now required: a claim that draws from ThreadLocalRandom
+    # cannot be reproduced after a restart, which is the whole point of the per-claim seed. Nothing
+    # else would catch that -- the rewards would still arrive, just different ones each time.
+    assert "ThreadLocalRandom" not in engine, (
+        "RaidRewardGrantEngine draws from ThreadLocalRandom, so an unclaimed reward would reroll"
+        " across a restart instead of regenerating")
 
     # The one production call site must actually capture the result, not discard it again.
     assert "RewardGrantResult result = RaidRewardGrantEngine.grantChoice(" in service
