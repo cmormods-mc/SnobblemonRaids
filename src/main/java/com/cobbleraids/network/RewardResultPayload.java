@@ -9,11 +9,17 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
-/** S2C: the actual result of the player's claim -- what the server rolled and granted, or failure. */
+/**
+ * S2C: the actual result of the player's claim -- what the server rolled and granted, or failure.
+ *
+ * <p>{@code currencyGranted} is a long rather than the BigInteger the economy API uses: the payout
+ * policy caps a tier amount well inside a long, and the client only ever displays this number.
+ */
 public record RewardResultPayload(
         UUID raidId,
         boolean success,
         List<RewardItemPayload> granted,
+        long currencyGranted,
         boolean hasMoreQueued
 ) implements CustomPacketPayload {
     public static final Type<RewardResultPayload> TYPE =
@@ -23,6 +29,7 @@ public record RewardResultPayload(
             UUIDUtil.STREAM_CODEC, RewardResultPayload::raidId,
             ByteBufCodecs.BOOL, RewardResultPayload::success,
             RewardItemPayload.STREAM_CODEC.apply(ByteBufCodecs.list()), RewardResultPayload::granted,
+            ByteBufCodecs.VAR_LONG, RewardResultPayload::currencyGranted,
             ByteBufCodecs.BOOL, RewardResultPayload::hasMoreQueued,
             RewardResultPayload::new);
 

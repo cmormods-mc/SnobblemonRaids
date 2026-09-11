@@ -43,7 +43,11 @@ public final class NativeRewardScreenGateway {
                 ? result.allGranted().stream().map(item -> new RewardItemPayload(item.item(), item.amount())).toList()
                 : List.of();
         boolean hasMoreQueued = RaidRewardService.hasPending(player.getUUID());
-        ServerPlayNetworking.send(player, new RewardResultPayload(payload.raidId(), success, granted, hasMoreQueued));
+        // longValue() is safe: Currency caps a tier amount at a billion, and the policy only ever
+        // scales that down. A failed claim reports zero rather than what the policy would have paid.
+        long currency = success ? result.currencyGranted().longValue() : 0L;
+        ServerPlayNetworking.send(player,
+                new RewardResultPayload(payload.raidId(), success, granted, currency, hasMoreQueued));
     }
 
     private static String speciesDisplayName(RaidDefinition definition) {

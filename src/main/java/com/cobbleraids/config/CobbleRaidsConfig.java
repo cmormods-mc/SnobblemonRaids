@@ -202,11 +202,16 @@ public record CobbleRaidsConfig(
     /**
      * Currency paid alongside a claimed raid reward, when a supported economy mod is installed.
      *
-     * <p>Off, and zero everywhere, by default, for the same reason {@link Catching} is: the wiring
-     * exists so the seam can be proven end to end, and the amounts are a balance decision nobody
-     * has made yet. Pricing a raid means pricing it against a particular server's shops, so a
-     * plausible-looking default here would quietly become the balance by accident. Zero grants
-     * nothing at all, which is the only honest placeholder.
+     * <p>The shipped figures are priced against CobbleDollars' own default shop, where a Poke Ball
+     * costs 2000, a Great Ball 6000, an Ultra Ball 8000 and a Rare Candy 100000. A server that has
+     * rewritten those prices should rewrite these too.
+     *
+     * <p>They are a top-up, not the whole payout. CobbleDollars already pays every winner of a
+     * battle whose loser is a WILD actor, which a raid boss is, on a curve of roughly
+     * {@code level squared / 10} with a random 1.5x-3x spread -- about 1264 for a level 75 starter
+     * boss and 2250 for a level 100 legendary, to each participant, flat. That curve cannot tell a
+     * legendary from a mythical, because both are level 100; this block is what makes the tiers
+     * differ, and what makes a carry worth more than a tag-along.
      *
      * <p>{@code scale_with_contribution} chooses between paying every eligible victor the tier's
      * full amount and splitting it by damage share; {@code minimum_share_percentage} withholds the
@@ -227,7 +232,16 @@ public record CobbleRaidsConfig(
                 throw new IllegalArgumentException("currency.minimum_share_percentage must be 0..100");
         }
 
-        public static Currency defaults() { return new Currency(false, 0L, 0L, 0L, 0L, false, 0.0); }
+        /**
+         * Roughly: a starter raid buys a Poke Ball, a powerhouse most of a Great Ball, a legendary
+         * an Ultra Ball and a half, a mythical about three. Split by share, so a solo victor takes
+         * the whole amount and a four-way raid divides it, and withheld entirely below a tenth of
+         * the damage so that tagging a boss once pays nothing.
+         */
+        public static Currency defaults() { return new Currency(true, 2_000L, 5_000L, 12_000L, 25_000L, true, 10.0); }
+
+        /** The all-zero configuration, kept for tests and for an operator switching payouts off. */
+        public static Currency disabled() { return new Currency(false, 0L, 0L, 0L, 0L, false, 0.0); }
 
         public long amountFor(RaidRarityTier tier) {
             return switch (tier) {
