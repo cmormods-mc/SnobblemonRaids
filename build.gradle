@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.67-calmer-spawn-defaults'
+version = '0.8.68-spawn-every-45-minutes'
 group = 'com.cobbleraids'
 
 base {
