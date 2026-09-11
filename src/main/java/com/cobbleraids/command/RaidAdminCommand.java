@@ -104,6 +104,10 @@ public final class RaidAdminCommand {
                                         .executes(ctx -> RaidAdminDebugOps.status(ctx.getSource())))
                                 .then(Commands.literal("audit")
                                         .executes(ctx -> RaidAdminDebugOps.audit(ctx.getSource())))
+                                .then(Commands.literal("join")
+                                        .then(Commands.argument("target", EntityArgument.player())
+                                                .executes(ctx -> RaidAdminBossOps.joinNearest(
+                                                        ctx.getSource(), EntityArgument.getPlayer(ctx, "target")))))
                                 .then(Commands.literal("raids")
                                         .executes(ctx -> RaidAdminDebugOps.raids(ctx.getSource())))
                                 .then(Commands.literal("history")

@@ -27,6 +27,8 @@ import net.minecraft.world.item.ItemStack;
 public final class RaidRewardService {
     private static final Map<UUID, ArrayDeque<PendingRaidReward>> PENDING = new ConcurrentHashMap<>();
     private static final Map<UUID, Integer> OPEN_DELAY = new ConcurrentHashMap<>();
+    /** Per-player claim monitors; see {@link #lockFor}. */
+    private static final Map<UUID, Object> CLAIM_LOCKS = new ConcurrentHashMap<>();
     private static final int GUI_OPEN_DELAY_TICKS = 2;
     /**
      * Longer than the post-victory delay on purpose. At victory the player is already in the world
@@ -181,7 +183,25 @@ public final class RaidRewardService {
         }
     }
 
-    public static synchronized boolean claim(ServerPlayer player, String choiceId) {
+    /**
+     * One lock per claiming player rather than one for the whole server.
+     *
+     * <p>All three claim entry points used to be {@code static synchronized}, so every player's claim
+     * serialized on a single monitor -- and RaidRewardGrantEngine.grantChoice, which rolls loot and
+     * inserts into an inventory, ran inside it. On a 30-player server a raid wave means thirty claims
+     * queued behind one another on the server thread for no reason: they touch different queues and
+     * different inventories.
+     *
+     * <p>The lock still has to exist per player, because a GUI click and a command can arrive for the
+     * same player in the same tick and both try to spend one claim token. Interning on the player's
+     * UUID gives exactly that scope. Entries are dropped when the player's queue empties, so this map
+     * does not outlive the rewards it guards.
+     */
+    private static Object lockFor(UUID playerId) {
+        return CLAIM_LOCKS.computeIfAbsent(playerId, ignored -> new Object());
+    }
+
+    public static boolean claim(ServerPlayer player, String choiceId) {
         return claimInternal(player, choiceId) != null;
     }
 
@@ -191,7 +211,13 @@ public final class RaidRewardService {
      * RuntimeException from a failed grant is already messaged to the player here; callers that don't
      * want the exception to propagate should use {@link #claimNative} instead.
      */
-    static synchronized RewardGrantResult claimInternal(ServerPlayer player, String choiceId) {
+    static RewardGrantResult claimInternal(ServerPlayer player, String choiceId) {
+        synchronized (lockFor(player.getUUID())) {
+            return claimLocked(player, choiceId);
+        }
+    }
+
+    private static RewardGrantResult claimLocked(ServerPlayer player, String choiceId) {
         ArrayDeque<PendingRaidReward> queue = PENDING.get(player.getUUID());
         PendingRaidReward pending = queue == null ? null : queue.peekFirst();
         if (pending == null) {
@@ -206,7 +232,12 @@ public final class RaidRewardService {
 
         // Consume before granting so duplicate GUI/command clicks cannot double-spend the claim token.
         queue.removeFirst();
-        if (queue.isEmpty()) PENDING.remove(player.getUUID());
+        if (queue.isEmpty()) {
+            PENDING.remove(player.getUUID());
+            // Safe to drop while holding it: a later claim by this player simply interns a new
+            // monitor, and there is no longer a queue for two callers to race over.
+            CLAIM_LOCKS.remove(player.getUUID());
+        }
         persist(player.getServer());
         try {
             RewardGrantResult result = RaidRewardGrantEngine.grantChoice(player, pending, choice);
@@ -232,7 +263,7 @@ public final class RaidRewardService {
     }
 
     /** Used by the native reward screen's network handler: never throws, since the player is already messaged. */
-    public static synchronized RewardGrantResult claimNative(ServerPlayer player, String choiceId) {
+    public static RewardGrantResult claimNative(ServerPlayer player, String choiceId) {
         try {
             return claimInternal(player, choiceId);
         } catch (RuntimeException ex) {
@@ -264,6 +295,7 @@ public final class RaidRewardService {
     public static void onServerStopped() {
         PENDING.clear();
         OPEN_DELAY.clear();
+        CLAIM_LOCKS.clear();
     }
 
     private static String describeAll(RewardGrantResult result) {

@@ -14,3 +14,6 @@ validation/showdown/
 # started logging through SLF4J instead of System.out these began appearing in the repo root -- and
 # were committed twice before anyone noticed.
 logs/
+
+# mineflayer, vendored from the live-test rig; see validation/smoke/README.md
+validation/smoke/node_modules/

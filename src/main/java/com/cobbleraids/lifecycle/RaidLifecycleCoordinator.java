@@ -1,5 +1,6 @@
 package com.cobbleraids.lifecycle;
 
+import com.cobbleraids.fault.RaidThreadGuard;
 import com.cobbleraids.catching.RaidCatchService;
 import com.cobbleraids.catching.RaidPlayerRecords;
 import com.cobbleraids.config.CobbleRaidsConfig;
@@ -15,6 +16,7 @@ import com.cobblemon.mod.common.api.battles.model.PokemonBattle;
 import com.cobblemon.mod.common.api.battles.model.actor.BattleActor;
 import com.cobblemon.mod.common.net.messages.client.battle.BattleEndPacket;
 import com.cobblemon.mod.common.pokemon.Pokemon;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -173,6 +175,7 @@ public final class RaidLifecycleCoordinator {
     }
 
     private static void finalizeVictory(RaidSession raid) {
+        RaidThreadGuard.expectServerThread("finalize-victory");
         RaidCombatRuleService.forget(raid.getId());
         MinecraftServer server = ((net.minecraft.server.level.ServerLevel) raid.getBossEntity().level()).getServer();
         FINALIZATION.finalizeOnce(raid.getId(), () -> {
@@ -210,14 +213,17 @@ public final class RaidLifecycleCoordinator {
         Map<UUID, Double> contributions =
                 ContributionMath.percentages(raid.getContributionSnapshot(), victors);
 
+        // History first, for every victor, in one persist. Catching reads that history, so it has to
+        // be written before any of the rolls below.
+        Map<UUID, Double> earned = new LinkedHashMap<>();
+        for (UUID playerId : victors) earned.put(playerId, contributions.getOrDefault(playerId, 0.0));
+        RaidPlayerRecords.recordWins(server, definition.rarityTier(), definition.id(), earned);
+
         for (UUID playerId : victors) {
             ServerPlayer player = server.getPlayerList().getPlayer(playerId);
-            double contribution = contributions.getOrDefault(playerId, 0.0);
-            RaidPlayerRecords.recordWin(server, playerId, definition.rarityTier(),
-                    definition.id(), contribution);
-            if (player != null) {
-                RaidCatchService.tryCatch(player, definition, bossPokemon, contribution, participants);
-            }
+            if (player == null) continue;
+            RaidCatchService.tryCatch(player, definition, bossPokemon,
+                    contributions.getOrDefault(playerId, 0.0), participants);
         }
     }
 

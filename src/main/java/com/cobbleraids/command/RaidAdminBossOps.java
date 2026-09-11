@@ -1,5 +1,6 @@
 package com.cobbleraids.command;
 
+import net.minecraft.server.level.ServerPlayer;
 import com.cobbleraids.lifecycle.RaidLifecycleCoordinator;
 import com.cobbleraids.lobby.RaidLobbyManager;
 import com.cobbleraids.raid.RaidRegistry;
@@ -21,6 +22,47 @@ import net.minecraft.world.phys.Vec3;
 final class RaidAdminBossOps {
     private static final double NEAREST_RADIUS = 64.0;
     private RaidAdminBossOps() {}
+
+    /**
+     * Makes a player join the raid lobby on the boss nearest them, exactly as right-clicking it does.
+     *
+     * <p>Two reasons this is a real command rather than test scaffolding. An operator debugging a
+     * lobby nobody can join needs to know whether the refusal is in the recruitment rules or in the
+     * interaction path, and this separates them. And it makes the multiplayer load test possible at
+     * all: driving twenty bots through a genuine raid via right-clicks is unreliable, because a
+     * mineflayer client's view of a Cobblemon entity is not dependable enough to distinguish "the mod
+     * is broken" from "the bot lost the entity".
+     *
+     * <p>It calls the same RaidLobbyManager.interact the listener calls, so every recruitment rule --
+     * radius, capacity, lifetime, already-joined -- still applies.
+     */
+    static int joinNearest(CommandSourceStack source, ServerPlayer player) {
+        PokemonEntity nearest = nearestBoss(player.level(), player.position());
+        if (nearest == null) {
+            source.sendFailure(Component.literal(player.getGameProfile().getName()
+                    + " is not within " + (int) NEAREST_RADIUS + " blocks of a raid boss."));
+            return 0;
+        }
+        RaidLobbyManager.JoinResult result = RaidLobbyManager.interact(player, nearest);
+        source.sendSuccess(() -> Component.literal(player.getGameProfile().getName() + ": " + result)
+                .withStyle(result == RaidLobbyManager.JoinResult.JOINED
+                        || result == RaidLobbyManager.JoinResult.STARTED_RECRUITMENT
+                        ? ChatFormatting.GREEN : ChatFormatting.YELLOW), true);
+        return result == RaidLobbyManager.JoinResult.JOINED
+                || result == RaidLobbyManager.JoinResult.STARTED_RECRUITMENT ? 1 : 0;
+    }
+
+    private static PokemonEntity nearestBoss(net.minecraft.world.level.Level level, Vec3 origin) {
+        PokemonEntity nearest = null;
+        double best = NEAREST_RADIUS * NEAREST_RADIUS;
+        for (var entity : ((ServerLevel) level).getAllEntities()) {
+            if (!(entity instanceof PokemonEntity pokemon) || pokemon.isRemoved()
+                    || !RaidBossEntityMarker.isRaidBoss(pokemon)) continue;
+            double distance = pokemon.distanceToSqr(origin);
+            if (distance <= best) { best = distance; nearest = pokemon; }
+        }
+        return nearest;
+    }
 
     static int despawnNearest(CommandSourceStack source) {
         PokemonEntity nearest = null;

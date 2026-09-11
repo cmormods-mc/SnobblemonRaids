@@ -8,6 +8,7 @@ left to review.
 import json
 import sys
 import zipfile
+import re
 from pathlib import Path
 
 
@@ -16,6 +17,15 @@ JAVA = ROOT / "src/main/java/com/cobbleraids"
 CLIENT = JAVA / "client"
 REVEAL = CLIENT / "reveal"
 RESOURCES = ROOT / "src/main/resources"
+
+
+BLOCK_COMMENT = re.compile(r"/\*.*?\*/", re.S)
+LINE_COMMENT = re.compile(r"//[^\n]*")
+
+
+def strip_comments(text: str) -> str:
+    """Java source with comments removed, so assertions match code rather than prose."""
+    return LINE_COMMENT.sub("", BLOCK_COMMENT.sub("", text))
 
 
 def read(path: Path) -> str:
@@ -55,7 +65,16 @@ def validate_server_side_untouched() -> None:
     gateway = read(JAVA / "reward/NativeRewardScreenGateway.java")
     command = read(JAVA / "reward/RaidRewardCommand.java")
 
-    assert "public static synchronized boolean claim(ServerPlayer player, String choiceId)" in service
+    # Claiming must stay serialized per player, or a GUI click and a command arriving in the same
+    # tick can both spend one claim token. It used to be a single static monitor for the whole
+    # server, which serialized every player's claim behind every other on the server thread; the
+    # scope is now per player. Assert the property -- one claim at a time per player -- rather than
+    # the keyword that used to implement it.
+    # Comments stripped first: this file's own javadoc explains the global monitor it replaced,
+    # and matching prose instead of code is the exact mistake these scripts keep making.
+    service_code = strip_comments(service)
+    assert "synchronized (lockFor(player.getUUID()))" in service_code, "claims are no longer serialized per player"
+    assert "static synchronized" not in service_code, "a global claim monitor has come back"
     assert "public static RewardGrantResult grantChoice(" in engine
     assert "RaidRewardGrantEngine" not in gateway
     assert "RaidRewardService.claim(player, StringArgumentType.getString(ctx, \"choice\"))" in command

@@ -8,6 +8,7 @@ import com.cobbleraids.config.RaidDefinitionRegistry;
 import com.cobbleraids.config.RaidRarityTier;
 import com.cobbleraids.fault.RaidAuditReport;
 import com.cobbleraids.fault.RaidConsistencyAudit;
+import com.cobbleraids.fault.RaidThreadGuard;
 import com.cobbleraids.lobby.RaidLobby;
 import com.cobbleraids.lobby.RaidLobbyManager;
 import com.cobbleraids.presentation.CommandFormat;
@@ -50,6 +51,16 @@ final class RaidAdminDebugOps {
         RaidConsistencyAudit.log(report);
 
         source.sendSuccess(() -> CommandFormat.header("Consistency audit"), false);
+        // Printed whether or not anything is wrong: a threading check that has never run is not
+        // evidence of anything, and this is the only place that distinction is visible.
+        Map<String, Integer> observed = RaidThreadGuard.observations();
+        String coverage = observed.isEmpty() ? "no thread-sensitive path has run yet"
+                : observed.entrySet().stream()
+                        .map(e -> e.getKey() + "=" + e.getValue())
+                        .sorted()
+                        .collect(java.util.stream.Collectors.joining(", "));
+        source.sendSuccess(() -> CommandFormat.row("thread checks: " + coverage)
+                .withStyle(ChatFormatting.DARK_GRAY), false);
         if (report.isClean()) {
             source.sendSuccess(() -> CommandFormat.row(report.summary()).withStyle(ChatFormatting.GREEN), false);
             return 1;

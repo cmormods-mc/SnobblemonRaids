@@ -1,5 +1,6 @@
 package com.cobbleraids;
 
+import com.cobbleraids.fault.RaidThreadGuard;
 import com.cobbleraids.catching.RaidPlayerRecords;
 import com.cobbleraids.command.RaidAdminCommand;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
@@ -73,6 +74,9 @@ public final class CobbleRaids implements ModInitializer {
                 RaidFaultBarrier.guard("config-reload", CobbleRaidsConfigManager::reload));
         ServerLifecycleEvents.SERVER_STARTING.register(server ->
                 RaidFaultBarrier.guard("startup:reward-gui", RewardGuiBackends::ensureReady));
+        // First SERVER_STARTED listener on purpose: everything after it is worth checking against.
+        ServerLifecycleEvents.SERVER_STARTED.register(server ->
+                RaidFaultBarrier.guard("startup:thread-guard", () -> RaidThreadGuard.onServerStarted(server)));
         ServerLifecycleEvents.SERVER_STARTED.register(server ->
                 RaidFaultBarrier.guard("startup:spawn-scheduler", () -> RaidSpawnScheduler.onServerStarted(server)));
         // After SERVER_STARTED specifically: restoring a saved claim resolves its rewards from the
@@ -122,6 +126,7 @@ public final class CobbleRaids implements ModInitializer {
             int raids = counts[0];
             int lobbies = counts[1];
             RaidFaultBarrier.onServerStopped();
+            RaidThreadGuard.onServerStopped();
             // Only these two mean somebody lost progress, so only these two are worth a line on an
             // otherwise clean shutdown. Unclaimed rewards are not listed: those survive on disk.
             if (raids > 0 || lobbies > 0) {

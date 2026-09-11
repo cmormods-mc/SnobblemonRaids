@@ -40,11 +40,23 @@ public final class RaidPlayerRecords extends SavedData {
         return Map.copyOf(LIVE);
     }
 
-    /** Records a won raid and persists immediately; a raid is rare enough for that to be free. */
-    public static void recordWin(MinecraftServer server, UUID playerId, RaidRarityTier tier,
-                                 ResourceLocation definitionId, double contribution) {
-        LIVE.merge(playerId, RaidPlayerRecord.EMPTY.withWin(tier, definitionId, contribution),
-                (existing, ignored) -> existing.withWin(tier, definitionId, contribution));
+    /**
+     * Records a won raid for every victor and persists once.
+     *
+     * <p>Deliberately takes the whole party rather than one player at a time. Persisting copies the
+     * entire record map, which grows with every distinct player the server has ever seen -- so a
+     * four-player victory used to do four full copies of a map that keeps growing all season, on the
+     * server thread, inside raid finalization. Once per raid is the same durability for a quarter of
+     * the work, and it stays a quarter as the map grows.
+     */
+    public static void recordWins(MinecraftServer server, RaidRarityTier tier,
+                                  ResourceLocation definitionId, Map<UUID, Double> contributionByPlayer) {
+        if (contributionByPlayer.isEmpty()) return;
+        for (Map.Entry<UUID, Double> entry : contributionByPlayer.entrySet()) {
+            double contribution = entry.getValue();
+            LIVE.merge(entry.getKey(), RaidPlayerRecord.EMPTY.withWin(tier, definitionId, contribution),
+                    (existing, ignored) -> existing.withWin(tier, definitionId, contribution));
+        }
         persist(server);
     }
 

@@ -58,6 +58,7 @@ public final class RaidConsistencyAudit {
         RaidFaultBarrier.guard("audit:glow", () -> auditGlowTeams(server, report));
         RaidFaultBarrier.guard("audit:rewards", () -> auditPendingRewards(report));
         RaidFaultBarrier.guard("audit:finalization", () -> auditFinalization(report));
+        RaidFaultBarrier.guard("audit:threading", () -> auditThreading(report));
         return report;
     }
 
@@ -172,6 +173,23 @@ public final class RaidConsistencyAudit {
     }
 
 
+
+    /**
+     * Whether anything has touched world state off the server thread since startup.
+     *
+     * <p>Reported long after the fact on purpose: the offending call already returned, and its log
+     * line may be hours old or rotated away, but the consequence -- a Pokemon's health or a packet
+     * written from an arbitrary thread -- is the kind of corruption that surfaces much later.
+     */
+    private static void auditThreading(RaidAuditReport report) {
+        report.checked();
+        if (!RaidThreadGuard.isKnown()) return;
+        for (Map.Entry<String, Integer> entry : RaidThreadGuard.offThreadObservations().entrySet()) {
+            report.error("off-server-thread", entry.getKey() + " has run off the server thread "
+                    + entry.getValue() + " time(s) since startup; entity and packet writes on that"
+                    + " path are not thread safe");
+        }
+    }
 
     private static UUID parseUuid(String value) {
         try {
