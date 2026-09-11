@@ -1,5 +1,6 @@
 package com.cobbleraids.mixin.battle;
 
+import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobbleraids.battle.RaidBannedMoves;
 import com.cobbleraids.lifecycle.RaidLifecycleCoordinator;
 import com.cobbleraids.raid.RaidRegistry;
@@ -57,6 +58,20 @@ public abstract class RaidBattleSelectActionsMixin {
     )
     private void cobbleRaids$prepareRaidActions(BattleSelectActionsPacket packet, MinecraftServer server,
                                                  ServerPlayer player, CallbackInfo ci) {
+        try {
+            cobbleRaids$prepareRaidActionsOrThrow(packet, server, player, ci);
+        } catch (Exception ex) {
+            // Fails open: the packet falls through to Cobblemon's stock handler. A banned move or a
+            // forfeit might slip past for one action, which the lifecycle's own victory/defeat paths
+            // still have to cope with anyway. Throwing instead would unwind into the network thread's
+            // packet dispatch, which handles every battle on the server, not just this raid.
+            RaidFaultBarrier.report("mixin:selectActions", ex);
+        }
+    }
+
+    private static void cobbleRaids$prepareRaidActionsOrThrow(BattleSelectActionsPacket packet,
+                                                               MinecraftServer server,
+                                                               ServerPlayer player, CallbackInfo ci) {
         PokemonBattle battle = BattleRegistry.getBattle(packet.getBattleId());
         RaidSession raid = RaidRegistry.get(battle);
         if (raid == null || raid.getStatus() != RaidSession.Status.ACTIVE) return;

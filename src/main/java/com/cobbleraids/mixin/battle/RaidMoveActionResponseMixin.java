@@ -1,5 +1,6 @@
 package com.cobbleraids.mixin.battle;
 
+import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobbleraids.raid.RaidRegistry;
 import com.cobbleraids.raid.RaidSession;
 import com.cobblemon.mod.common.battles.ActiveBattlePokemon;
@@ -20,22 +21,26 @@ public abstract class RaidMoveActionResponseMixin {
             ShowdownMoveset moveset,
             CallbackInfoReturnable<String> cir
     ) {
-        RaidSession raid = RaidRegistry.get(user.getBattle());
-        if (raid == null || raid.getStatus() != RaidSession.Status.ACTIVE || moveset == null) return;
+        try {
+            RaidSession raid = RaidRegistry.get(user.getBattle());
+            if (raid == null || raid.getStatus() != RaidSession.Status.ACTIVE || moveset == null) return;
 
-        MoveActionResponse response = (MoveActionResponse) (Object) this;
-        int moveIndex = 0;
-        for (int i = 0; i < moveset.getMoves().size(); i++) {
-            InBattleMove candidate = moveset.getMoves().get(i);
-            if (candidate.getId().equals(response.getMoveName())) {
-                moveIndex = i + 1;
-                break;
+            MoveActionResponse response = (MoveActionResponse) (Object) this;
+            int moveIndex = 0;
+            for (int i = 0; i < moveset.getMoves().size(); i++) {
+                InBattleMove candidate = moveset.getMoves().get(i);
+                if (candidate.getId().equals(response.getMoveName())) {
+                    moveIndex = i + 1;
+                    break;
+                }
             }
-        }
-        if (moveIndex == 0) return;
+            if (moveIndex == 0) return;
 
-        String serialized = "move " + moveIndex;
-        if (response.getGimmickID() != null) serialized += " " + response.getGimmickID();
-        cir.setReturnValue(serialized);
+            String serialized = "move " + moveIndex;
+            if (response.getGimmickID() != null) serialized += " " + response.getGimmickID();
+            cir.setReturnValue(serialized);
+        } catch (Exception ex) {
+            RaidFaultBarrier.report("mixin:toShowdownString", ex);
+        }
     }
 }

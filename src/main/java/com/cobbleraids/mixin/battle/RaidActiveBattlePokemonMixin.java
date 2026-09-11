@@ -1,5 +1,6 @@
 package com.cobbleraids.mixin.battle;
 
+import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobbleraids.raid.RaidRegistry;
 import com.cobblemon.mod.common.battles.ActiveBattlePokemon;
 import com.cobblemon.mod.common.battles.Targetable;
@@ -29,15 +30,21 @@ public abstract class RaidActiveBattlePokemonMixin {
      */
     @Inject(method = "getOppositeOpponent", at = @At("HEAD"), cancellable = true)
     private void cobbleRaids$raidOppositeOpponent(CallbackInfoReturnable<Targetable> cir) {
-        ActiveBattlePokemon self = (ActiveBattlePokemon) (Object) this;
-        if (!RaidRegistry.contains(self.getBattle())) return;
+        try {
+            ActiveBattlePokemon self = (ActiveBattlePokemon) (Object) this;
+            if (!RaidRegistry.contains(self.getBattle())) return;
 
-        for (ActiveBattlePokemon candidate : self.getAllActivePokemon()) {
-            if (candidate == self || !candidate.hasPokemon() || candidate.isGone()) continue;
-            if (!self.isAllied(candidate)) {
-                cir.setReturnValue(candidate);
-                return;
+            for (ActiveBattlePokemon candidate : self.getAllActivePokemon()) {
+                if (candidate == self || !candidate.hasPokemon() || candidate.isGone()) continue;
+                if (!self.isAllied(candidate)) {
+                    cir.setReturnValue(candidate);
+                    return;
+                }
             }
+        } catch (Exception ex) {
+            // Falls through to Cobblemon's mirrored-slot lookup, which is wrong for a raid but
+            // answers; throwing here would unwind into move resolution instead.
+            RaidFaultBarrier.report("mixin:getOppositeOpponent", ex);
         }
     }
 
@@ -63,16 +70,20 @@ public abstract class RaidActiveBattlePokemonMixin {
      */
     @Inject(method = "getAdjacent", at = @At("HEAD"), cancellable = true)
     private void cobbleRaids$raidAdjacency(CallbackInfoReturnable<List<Targetable>> cir) {
-        ActiveBattlePokemon self = (ActiveBattlePokemon) (Object) this;
-        if (!RaidRegistry.contains(self.getBattle())) return;
+        try {
+            ActiveBattlePokemon self = (ActiveBattlePokemon) (Object) this;
+            if (!RaidRegistry.contains(self.getBattle())) return;
 
-        List<Targetable> adjacent = new ArrayList<>();
-        for (ActiveBattlePokemon candidate : self.getAllActivePokemon()) {
-            // isGone() covers a fainted or withdrawn slot and hasPokemon() an empty one; either would
-            // otherwise be offered as a target that cannot legally be hit.
-            if (candidate == self || !candidate.hasPokemon() || candidate.isGone()) continue;
-            adjacent.add(candidate);
+            List<Targetable> adjacent = new ArrayList<>();
+            for (ActiveBattlePokemon candidate : self.getAllActivePokemon()) {
+                // isGone() covers a fainted or withdrawn slot and hasPokemon() an empty one; either
+                // would otherwise be offered as a target that cannot legally be hit.
+                if (candidate == self || !candidate.hasPokemon() || candidate.isGone()) continue;
+                adjacent.add(candidate);
+            }
+            cir.setReturnValue(adjacent);
+        } catch (Exception ex) {
+            RaidFaultBarrier.report("mixin:getAdjacent", ex);
         }
-        cir.setReturnValue(adjacent);
     }
 }

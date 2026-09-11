@@ -1,5 +1,6 @@
 package com.cobbleraids.mixin.battle;
 
+import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.spawn.RaidBossEntityMarker;
@@ -37,12 +38,22 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class RaidBossPushImmunityMixin {
     @Inject(method = "push(DDD)V", at = @At("HEAD"), cancellable = true)
     private void cobbleRaids$raidBossUnpushable(double x, double y, double z, CallbackInfo ci) {
-        if (cobbleRaids$isProtectedBoss()) ci.cancel();
+        // Entity.push runs on every collision resolution, so this is one of the hottest injections
+        // in the mod. An untaken try/catch costs nothing; an escaping exception costs the server.
+        try {
+            if (cobbleRaids$isProtectedBoss()) ci.cancel();
+        } catch (Exception ex) {
+            RaidFaultBarrier.report("mixin:push", ex);
+        }
     }
 
     @Inject(method = "ignoreExplosion", at = @At("HEAD"), cancellable = true)
     private void cobbleRaids$raidBossIgnoresExplosions(Explosion explosion, CallbackInfoReturnable<Boolean> cir) {
-        if (cobbleRaids$isProtectedBoss()) cir.setReturnValue(true);
+        try {
+            if (cobbleRaids$isProtectedBoss()) cir.setReturnValue(true);
+        } catch (Exception ex) {
+            RaidFaultBarrier.report("mixin:ignoreExplosion", ex);
+        }
     }
 
     private boolean cobbleRaids$isProtectedBoss() {

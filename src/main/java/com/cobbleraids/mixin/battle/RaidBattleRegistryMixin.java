@@ -1,5 +1,6 @@
 package com.cobbleraids.mixin.battle;
 
+import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobblemon.mod.common.api.battles.model.PokemonBattle;
 import com.cobblemon.mod.common.api.battles.model.actor.BattleActor;
 import com.cobblemon.mod.common.battles.BattleRegistry;
@@ -36,12 +37,22 @@ public abstract class RaidBattleRegistryMixin {
      * For a raid, a disconnect withdraws only that participant and forfeits their rewards. */
     @Inject(method = "onPlayerDisconnect", at = @At("HEAD"), cancellable = true)
     private void cobbleRaids$raidDisconnect(ServerPlayer player, CallbackInfo ci) {
-        PokemonBattle battle = BattleRegistry.getBattleByParticipatingPlayer(player);
-        RaidSession raid = RaidRegistry.get(battle);
-        if (raid == null) return;
-        if (raid.isActiveParticipant(player.getUUID())) {
-            RaidLifecycleCoordinator.onPlayerDisconnected(raid, player.getUUID());
+        boolean isRaid;
+        try {
+            PokemonBattle battle = BattleRegistry.getBattleByParticipatingPlayer(player);
+            RaidSession raid = RaidRegistry.get(battle);
+            isRaid = raid != null;
+            if (isRaid && raid.isActiveParticipant(player.getUUID())) {
+                RaidLifecycleCoordinator.onPlayerDisconnected(raid, player.getUUID());
+            }
+        } catch (Exception ex) {
+            // Returns without cancelling, so Cobblemon's own disconnect handling runs. That ends the
+            // battle for everyone, which is bad -- but we no longer know whether this was a raid at
+            // all, and leaving a real disconnect half-processed strands the actor instead.
+            RaidFaultBarrier.report("mixin:onPlayerDisconnect", ex);
+            return;
         }
+        if (!isRaid) return;
         // Even a player who explicitly withdrew remains an actor until shared-battle cleanup;
         // never let their later disconnect invoke PokemonBattle.stop() for everyone else.
         ci.cancel();
@@ -52,6 +63,20 @@ public abstract class RaidBattleRegistryMixin {
         at = @At(value = "INVOKE", target = "Lcom/cobblemon/mod/common/battles/runner/ShowdownService;startBattle(Lcom/cobblemon/mod/common/api/battles/model/PokemonBattle;[Ljava/lang/String;)V")
     )
     private void cobbleRaids$startShowdown(ShowdownService service, PokemonBattle battle, String[] messages) {
+        try {
+            cobbleRaids$startShowdownOrThrow(service, battle, messages);
+        } catch (Exception ex) {
+            // A redirect replaces Cobblemon's own call, so failing open means making that call
+            // ourselves -- otherwise the battle silently never starts and the players just stand
+            // there. Actor ids may already be partly rewritten by the time we arrive here, so this
+            // raid will likely misbehave and be closed out by its combat timer. That is one broken
+            // raid rather than an exception unwinding through battle startup for everybody.
+            RaidFaultBarrier.report("mixin:startShowdown", ex);
+            service.startBattle(battle, messages);
+        }
+    }
+
+    private void cobbleRaids$startShowdownOrThrow(ShowdownService service, PokemonBattle battle, String[] messages) {
         if (!"raid".equals(battle.getFormat().getBattleType().getName())) {
             service.startBattle(battle, messages);
             return;

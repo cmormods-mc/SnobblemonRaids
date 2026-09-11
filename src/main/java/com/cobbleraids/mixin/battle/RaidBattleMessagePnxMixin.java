@@ -1,5 +1,6 @@
 package com.cobbleraids.mixin.battle;
 
+import com.cobbleraids.fault.RaidFaultBarrier;
 import kotlin.text.Regex;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -30,6 +31,16 @@ public abstract class RaidBattleMessagePnxMixin {
         at = @At(value = "NEW", target = "kotlin/text/Regex")
     )
     private static Regex cobbleRaids$widenPnxMatcher(String pattern) {
-        return new Regex("p\\d[a-c]".equals(pattern) ? "p\\d[a-f]" : pattern);
+        // This redirect runs inside BattleMessage's static initialiser. An exception escaping
+        // a <clinit> becomes ExceptionInInitializerError and then NoClassDefFoundError on every
+        // subsequent touch of the class for the life of the JVM -- Cobblemon's whole battle
+        // message interpreter, permanently dead, with no way back but a restart. Falling back
+        // to Cobblemon's own pattern costs only the 4th player's letter.
+        try {
+            return new Regex("p\\d[a-c]".equals(pattern) ? "p\\d[a-f]" : pattern);
+        } catch (Exception ex) {
+            RaidFaultBarrier.report("mixin:PNX_MATCHER", ex);
+            return new Regex(pattern);
+        }
     }
 }

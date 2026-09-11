@@ -1,5 +1,6 @@
 package com.cobbleraids.mixin.battle;
 
+import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobbleraids.raid.RaidRegistry;
 import com.cobblemon.mod.common.api.battles.model.PokemonBattle;
 import org.spongepowered.asm.mixin.Mixin;
@@ -15,7 +16,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class RaidPokemonBattleMixin {
     @Inject(method = "checkFlee", at = @At("HEAD"), cancellable = true)
     private void cobbleRaids$disableNativeRaidDistanceFlee(CallbackInfo ci) {
-        PokemonBattle self = (PokemonBattle) (Object) this;
-        if (RaidRegistry.contains(self)) ci.cancel();
+        try {
+            PokemonBattle self = (PokemonBattle) (Object) this;
+            if (RaidRegistry.contains(self)) ci.cancel();
+        } catch (Exception ex) {
+            RaidFaultBarrier.report("mixin:checkFlee", ex);
+        }
     }
 }

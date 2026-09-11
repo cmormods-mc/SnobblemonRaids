@@ -1,5 +1,6 @@
 package com.cobbleraids.mixin.battle;
 
+import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobblemon.mod.common.api.battles.model.actor.BattleActor;
 import com.cobblemon.mod.common.battles.BattleActorErrors;
 import com.cobblemon.mod.common.battles.BattleFormat;
@@ -49,12 +50,20 @@ public abstract class RaidBossBattleStartGuardMixin {
             BattleSide side2,
             boolean party,
             CallbackInfoReturnable<BattleStartResult> cir) {
-        if ("raid".equals(format.getBattleType().getName())) return;
+        try {
+            if ("raid".equals(format.getBattleType().getName())) return;
 
-        PokemonEntity boss = findRaidBoss(side1, side2);
-        if (boss == null) return;
+            PokemonEntity boss = findRaidBoss(side1, side2);
+            if (boss == null) return;
 
-        tellParticipants(boss, side1, side2);
+            tellParticipants(boss, side1, side2);
+        } catch (Exception ex) {
+            // Fails open, which lets an unmanaged battle against a raid boss start. That is the
+            // gameplay bug this guard exists to prevent, but it is recoverable and one raid wide;
+            // an exception out of startBattle is not.
+            RaidFaultBarrier.report("mixin:startBattle-guard", ex);
+            return;
+        }
         // Empty errors on purpose: Cobblemon's own messages describe ordinary battle failures
         // ("that Pokemon is busy") and would misdescribe this. The players are told directly above.
         cir.setReturnValue(new ErroredBattleStart(new HashSet<>(), new BattleActorErrors()));

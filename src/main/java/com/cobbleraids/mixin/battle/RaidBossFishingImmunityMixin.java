@@ -1,5 +1,6 @@
 package com.cobbleraids.mixin.battle;
 
+import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.spawn.RaidBossEntityMarker;
@@ -23,8 +24,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class RaidBossFishingImmunityMixin {
     @Inject(method = "pullEntity", at = @At("HEAD"), cancellable = true)
     private void cobbleRaids$raidBossUnreelable(Entity entity, CallbackInfo ci) {
-        if (!(entity instanceof PokemonEntity pokemon)) return;
-        if (!RaidBossEntityMarker.isRaidBoss(pokemon)) return;
-        if (CobbleRaidsConfigManager.get().bossMovement().preventKnockback()) ci.cancel();
+        try {
+            if (!(entity instanceof PokemonEntity pokemon)) return;
+            if (!RaidBossEntityMarker.isRaidBoss(pokemon)) return;
+            if (CobbleRaidsConfigManager.get().bossMovement().preventKnockback()) ci.cancel();
+        } catch (Exception ex) {
+            RaidFaultBarrier.report("mixin:pullEntity", ex);
+        }
     }
 }

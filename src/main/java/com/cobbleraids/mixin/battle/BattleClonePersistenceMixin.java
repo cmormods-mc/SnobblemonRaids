@@ -1,5 +1,6 @@
 package com.cobbleraids.mixin.battle;
 
+import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import net.minecraft.world.entity.Entity;
 import org.spongepowered.asm.mixin.Mixin;
@@ -38,8 +39,16 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class BattleClonePersistenceMixin {
     @Inject(method = "shouldBeSaved", at = @At("HEAD"), cancellable = true)
     private void cobbleRaids$neverSaveBattleClones(CallbackInfoReturnable<Boolean> cir) {
-        if ((Object) this instanceof PokemonEntity pokemon && pokemon.isBattleClone()) {
-            cir.setReturnValue(false);
+        // Injected into Entity.shouldBeSaved, so this runs for every entity in every chunk save.
+        // Failing open (letting the entity save) is the correct asymmetry: if we cannot tell whether
+        // this is a battle clone, saving a clone costs a duplicate that an admin can delete, while
+        // refusing to save a real Pokemon would destroy a player's.
+        try {
+            if ((Object) this instanceof PokemonEntity pokemon && pokemon.isBattleClone()) {
+                cir.setReturnValue(false);
+            }
+        } catch (Exception ex) {
+            RaidFaultBarrier.report("mixin:shouldBeSaved", ex);
         }
     }
 }

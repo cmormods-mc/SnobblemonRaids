@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.42-spawn-split'
+version = '0.8.43-mixin-guards'
 group = 'com.cobbleraids'
 
 base {

@@ -55,6 +55,11 @@ jobs:
       - name: Compile and remap
         run: gradle --no-daemon clean build --stacktrace --warning-mode all
 
+      # After the build on purpose: this reads compiled bytecode, so there is nothing to inspect
+      # until the classes exist. `clean` above also wipes anything a previous run left behind.
+      - name: Validate mixin fault barriers
+        run: python3 validation/validate_mixin_guards.py
+
       - name: Validate runtime JAR
         # Derived from build.gradle so a version bump cannot silently skip JAR validation.
         run: |
@@ -69,6 +74,7 @@ jobs:
           python3 validation/validate_phase39.py "$jar"
           python3 validation/validate_phase40.py "$jar"
           python3 validation/validate_phase41.py "$jar"
+          python3 validation/validate_mixin_guards.py "$jar"
 
       - name: Upload build outputs
         if: always()
