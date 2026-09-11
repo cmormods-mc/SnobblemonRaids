@@ -3,8 +3,11 @@ package com.cobbleraids.client.reveal;
 import com.cobbleraids.config.RaidRarityTier;
 import com.cobbleraids.network.PendingRewardRevealPayload;
 import com.cobbleraids.network.RewardChoicePayload;
+import com.cobbleraids.network.RewardItemPayload;
 import com.cobbleraids.network.RewardResultPayload;
 import com.cobbleraids.presentation.RaidTierPresentation;
+import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -135,6 +138,10 @@ public final class RaidRewardRevealScreen extends Screen {
 
     // Rebuilt in init(), which vanilla also calls on window resize -- the only thing that moves it.
     private Layout layout;
+    // Grouped digits, because a five-figure payout is unreadable otherwise. Locale.ROOT so the
+    // separator does not follow the client's locale into something the chat line disagrees with.
+    private static final NumberFormat CURRENCY_FORMAT = NumberFormat.getIntegerInstance(Locale.ROOT);
+
     // Built once when the result arrives, not per frame.
     private ItemStack resultIcon;
     private List<Component> resultLines = List.of();
@@ -176,19 +183,29 @@ public final class RaidRewardRevealScreen extends Screen {
     /** Resolves the granted items into display form once, on arrival, instead of once per frame. */
     private void showResult(RewardResultPayload payload) {
         this.result = payload;
-        if (payload == null || !payload.success() || payload.granted().isEmpty()) {
+        if (payload == null || !payload.success()) {
             this.resultIcon = new ItemStack(BuiltInRegistries.ITEM.get(BALL_ITEM));
-            this.resultLines = payload != null && !payload.success()
-                    ? List.of(Component.literal("Something went wrong. Check chat for details."))
-                    : List.of();
+            this.resultLines = payload == null
+                    ? List.of()
+                    : List.of(Component.literal("Something went wrong. Check chat for details."));
             return;
         }
-        this.resultIcon = new ItemStack(BuiltInRegistries.ITEM.get(payload.granted().get(0).item()));
-        this.resultLines = payload.granted().stream()
-                .map(item -> (Component) Component.literal(
-                        new ItemStack(BuiltInRegistries.ITEM.get(item.item())).getHoverName().getString()
-                                + " x" + item.amount()))
-                .toList();
+        // A claim can pay currency and no items -- an economy-only reward, or every item line
+        // skipped because its mod is gone -- so the currency is what decides whether there is
+        // anything to show, not the item list.
+        List<Component> lines = new ArrayList<>(payload.granted().size() + 1);
+        for (RewardItemPayload item : payload.granted()) {
+            lines.add(Component.literal(new ItemStack(BuiltInRegistries.ITEM.get(item.item())).getHoverName().getString()
+                    + " x" + item.amount()));
+        }
+        if (payload.currencyGranted() > 0L) {
+            lines.add(Component.literal("+" + CURRENCY_FORMAT.format(payload.currencyGranted()) + " CobbleDollars")
+                    .withStyle(ChatFormatting.GOLD));
+        }
+        this.resultIcon = payload.granted().isEmpty()
+                ? new ItemStack(BuiltInRegistries.ITEM.get(BALL_ITEM))
+                : new ItemStack(BuiltInRegistries.ITEM.get(payload.granted().get(0).item()));
+        this.resultLines = List.copyOf(lines);
     }
 
     private Layout computeLayout() {

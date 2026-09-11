@@ -61,6 +61,12 @@ separately.
 - **Catching** — off by default. `catching.enabled` plus a per-tier chance
   (`starter`/`powerhouse`/`legendary`/`mythical`, each `0.0`–`1.0`) rolls once per victor
   for a copy of the boss. Leaving every tier at `0.0` skips the roll entirely.
+- **Currency** — with CobbleDollars installed, a claimed reward also pays
+  `currency.<tier>` (2000 / 5000 / 12000 / 25000 by default), split by damage share
+  and withheld below `currency.minimum_share_percentage` (10%). This is on top of the
+  income CobbleDollars already pays every winner of a wild battle, which a raid is.
+  `currency.enabled: false` switches it off; without CobbleDollars nothing is paid and
+  item rewards are unaffected. `/cobbleraids debug status` names the active backend.
 - **Attempts** — a defeated party leaves the boss standing and healed. After
   `combat_defaults.max_failed_attempts` defeats (default 3, `0` = unlimited) it
   departs. A surviving boss keeps its raid slot and despawn timers.

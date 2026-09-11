@@ -27,12 +27,13 @@ public final class CobbleDollarsCurrencyBackend implements RaidCurrencyBackend {
     private static final String METHOD = "earnCobbleDollars";
 
     /**
-     * CobbleDollars' own default for this flag is false (see the synthetic {@code $default}
-     * wrapper). It is passed straight through to CobbleDollarsEarnedEvent and does not change
-     * whether the money arrives, so matching their default keeps our payouts indistinguishable
-     * from any other way a player earns.
+     * CobbleDollarsEarnedEvent names this field {@code applyMultiplier}: it decides whether the
+     * server's income multiplier applies to the amount. True, because CobbleDollars' own
+     * battle-victory award passes true -- a raid payout is earned income like any other battle, so
+     * an operator running a double-income weekend should see raids take part in it. The Kotlin
+     * default is false, which is the right value for a direct admin grant and the wrong one here.
      */
-    private static final boolean EVENT_FLAG = false;
+    private static final boolean APPLY_INCOME_MULTIPLIER = true;
 
     private volatile Method earn;
     private volatile boolean unavailable;
@@ -55,7 +56,7 @@ public final class CobbleDollarsCurrencyBackend implements RaidCurrencyBackend {
         try {
             // Their own guard rejects a negative amount and their event is cancelable, so the
             // return value is the only trustworthy answer to "did this player actually get paid".
-            return Boolean.TRUE.equals(handle.invoke(null, player, amount, EVENT_FLAG));
+            return Boolean.TRUE.equals(handle.invoke(null, player, amount, APPLY_INCOME_MULTIPLIER));
         } catch (ReflectiveOperationException | RuntimeException | LinkageError ex) {
             unavailable = true;
             // Throwable last, so the stack trace stays attached rather than being flattened

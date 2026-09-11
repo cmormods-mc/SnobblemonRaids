@@ -13,8 +13,8 @@ import org.junit.jupiter.api.Test;
 
 /**
  * The payout arithmetic, which is the whole of "how much" -- a backend only moves an amount decided
- * here. Every tier ships at zero on purpose, so the first tests are really asserting that an
- * unconfigured server pays nothing at all rather than something nobody chose.
+ * here. The first tests pin the shipped figures, so changing them is a deliberate edit to a test
+ * rather than something that slips through; the rest cover the shape of the rules around them.
  */
 class RaidCurrencyPolicyTest {
 
@@ -27,14 +27,47 @@ class RaidCurrencyPolicyTest {
     }
 
     @Test
-    @DisplayName("ships inert: defaults pay nothing to anyone")
-    void defaultsPayNothing() {
+    @DisplayName("the shipped figures rise with tier and are priced against the default shop")
+    void shippedFiguresRiseWithTier() {
         CobbleRaidsConfig.Currency defaults = CobbleRaidsConfig.Currency.defaults();
 
-        assertFalse(defaults.enabled());
-        assertTrue(defaults.isNoOp());
+        assertTrue(defaults.enabled());
+        assertFalse(defaults.isNoOp());
+        // A solo victor takes the whole tier amount, so 100% is the figure itself.
+        assertEquals(BigInteger.valueOf(2_000L), RaidCurrencyPolicy.payout(defaults, RaidRarityTier.STARTER, 100.0));
+        assertEquals(BigInteger.valueOf(5_000L), RaidCurrencyPolicy.payout(defaults, RaidRarityTier.POWERHOUSE, 100.0));
+        assertEquals(BigInteger.valueOf(12_000L), RaidCurrencyPolicy.payout(defaults, RaidRarityTier.LEGENDARY, 100.0));
+        assertEquals(BigInteger.valueOf(25_000L), RaidCurrencyPolicy.payout(defaults, RaidRarityTier.MYTHICAL, 100.0));
+
+        // Strictly increasing, which is the only relationship between the four that is a rule
+        // rather than a tuning choice: a rarer boss is never worth less than a commoner one.
+        long previous = 0L;
         for (RaidRarityTier tier : RaidRarityTier.values()) {
-            assertEquals(BigInteger.ZERO, RaidCurrencyPolicy.payout(defaults, tier, 100.0));
+            long amount = defaults.amountFor(tier);
+            assertTrue(amount > previous, tier + " pays " + amount + ", not more than the tier below");
+            previous = amount;
+        }
+    }
+
+    @Test
+    @DisplayName("the shipped figures withhold from a tag-along and split among a group")
+    void shippedFiguresRewardParticipation() {
+        CobbleRaidsConfig.Currency defaults = CobbleRaidsConfig.Currency.defaults();
+
+        assertEquals(BigInteger.ZERO, RaidCurrencyPolicy.payout(defaults, RaidRarityTier.LEGENDARY, 9.99));
+        assertEquals(BigInteger.valueOf(1_200L), RaidCurrencyPolicy.payout(defaults, RaidRarityTier.LEGENDARY, 10.0));
+        assertEquals(BigInteger.valueOf(6_000L), RaidCurrencyPolicy.payout(defaults, RaidRarityTier.LEGENDARY, 50.0));
+    }
+
+    @Test
+    @DisplayName("switching payouts off pays nothing to anyone")
+    void disabledPaysNothing() {
+        CobbleRaidsConfig.Currency disabled = CobbleRaidsConfig.Currency.disabled();
+
+        assertFalse(disabled.enabled());
+        assertTrue(disabled.isNoOp());
+        for (RaidRarityTier tier : RaidRarityTier.values()) {
+            assertEquals(BigInteger.ZERO, RaidCurrencyPolicy.payout(disabled, tier, 100.0));
         }
     }
 
