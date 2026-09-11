@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+#
+# Pre-push gate: runs the full CI sequence locally, because GitHub Actions is disabled
+# account-wide and nothing else checks a push.
+#
+# Install (from a fresh clone):  bash validation/hooks/install.sh
+# Bypass for one push:           git push --no-verify     or     SKIP_LOCAL_CI=1 git push
+set -euo pipefail
+
+if [ "${SKIP_LOCAL_CI:-}" = "1" ]; then
+  echo "pre-push: SKIP_LOCAL_CI=1, skipping local CI" >&2
+  exit 0
+fi
+
+# stdin is "<local ref> <local sha> <remote ref> <remote sha>" per ref. A branch/tag *deletion*
+# has an all-zero local sha and nothing to build, so a push that only deletes refs is let through.
+zero='0000000000000000000000000000000000000000'
+has_content=0
+while read -r _local_ref local_sha _remote_ref _remote_sha; do
+  [ "$local_sha" = "$zero" ] || has_content=1
+done
+if [ "$has_content" -eq 0 ]; then
+  echo "pre-push: deletion-only push, nothing to validate" >&2
+  exit 0
+fi
+
+repo_root="$(git rev-parse --show-toplevel)"
+echo "pre-push: running the full CI sequence (this is the only gate while Actions is off)" >&2
+if ! bash "$repo_root/validation/ci_local.sh"; then
+  cat >&2 <<'MSG'
+
+pre-push: local CI FAILED -- push aborted.
+Fix the failure above, or push anyway with:  git push --no-verify
+MSG
+  exit 1
+fi

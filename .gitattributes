@@ -1,0 +1,11 @@
+# Shell scripts must stay LF: Git Bash and Linux both choke on a CRLF shebang line,
+# and core.autocrlf=true would otherwise hand a fresh Windows clone broken copies of gradlew,
+# validation/*.sh and the pre-push hook.
+*.sh        text eol=lf
+gradlew     text eol=lf
+# The git hooks have no extension, and the pre-push one is the gate itself.
+validation/hooks/* text eol=lf
+
+# Windows batch files are the mirror case.
+*.bat       text eol=crlf
+gradlew.bat text eol=crlf

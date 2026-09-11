@@ -5,9 +5,30 @@ proves nothing about them. Run the lot before pushing any change that moves, ren
 code:
 
 ```sh
+bash validation/ci_local.sh
+```
+
+`ci_local.sh` is `.github/workflows/build.yml` minus the GitHub-specific steps: the source
+validators, `gradlew clean build`, then the validators again over the produced JAR, with the
+version read out of `build.gradle` so a bump cannot skip the JAR pass. **Add any new workflow
+step here too** — a stale copy is a false green. Run it by hand, or install the hook that runs
+it on every push:
+
+```sh
+bash validation/hooks/install.sh     # once per clone
+```
+
+That hook is currently the only gate: GitHub Actions is disabled account-wide, so the last
+remote run in this repo's history is from 2026-09-10. `git push --no-verify` or
+`SKIP_LOCAL_CI=1 git push` bypasses it for one push.
+
+The steps individually, if you want to run just one:
+
+```sh
 bash validation/validate_phase31.sh
 for n in 32 36 37 38 39 40 41; do python validation/validate_phase$n.py; done
 python validation/validate_logging.py
+python validation/validate_callback_guards.py
 gradlew clean build
 python validation/validate_mixin_guards.py
 for n in 31 32 36 37 38 39 40 41; do python validation/validate_phase$n.py build/libs/CobbleRaids-<version>.jar; done
