@@ -134,3 +134,13 @@ currency backend reaches CobbleDollars by reflection into a Kotlin file facade, 
 of running it proves the handle resolves and the money arrives. With them installed the checks
 assert the shipped starter figure exactly (`currency=2000` for a solo starter claim); without
 them they assert the opposite -- that no payout is reported when there is no backend to pay it.
+
+The run ends by restarting the server with a reward left unclaimed, because the claim's contents
+are never written to disk -- only the seed and the scalars are, and the bundle is regenerated. The
+check is that the count of held rewards does not drop across the restart; `reward list` shows
+offline players by UUID rather than name, so a name is not what travels.
+
+It also clears the bot's queue first. The rig keeps its world between runs and the queue is FIFO
+and persistent, so a reward left unclaimed by a previous run sits in front of the one this run
+grants -- and the claim pays for that one instead. That cost two failures which looked exactly
+like payout bugs.
