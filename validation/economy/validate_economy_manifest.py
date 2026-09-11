@@ -90,9 +90,26 @@ def main():
 
     with io.open(MANIFEST_PATH, "rb") as handle:
         raw = handle.read()
-    manifest = json.loads(raw.decode("utf-8"))
+    try:
+        manifest = json.loads(raw.decode("utf-8"))
+    except ValueError as error:
+        # A truncated or half-merged manifest is a plausible state, and a traceback out of a
+        # pre-push hook tells an operator far less than a sentence naming the file and the fix.
+        print("Economy manifest validation: FAIL -- manifest.json is not valid JSON (" + str(error)
+              + "). Regenerate it with validation/economy/build_manifest.py --pack <modpack>.",
+              file=sys.stderr)
+        return 1
+    if not isinstance(manifest, dict) or "items" not in manifest or "bosses" not in manifest:
+        print("Economy manifest validation: FAIL -- manifest.json is missing its top-level"
+              " sections. Regenerate it with validation/economy/build_manifest.py.", file=sys.stderr)
+        return 1
 
-    check(raw == canonical_bytes(manifest),
+    # Line endings are normalised out before comparing. core.autocrlf is on for this repo, so a
+    # fresh Windows clone hands this file back with CRLF even though it is stored with LF -- and a
+    # byte comparison would then fail on a manifest nobody had touched, refusing every push from
+    # that clone. What this check is for is a hand edit that breaks the ordering or spacing, and
+    # that survives the normalisation intact.
+    check(raw.replace(b"\r\n", b"\n") == canonical_bytes(manifest),
           "manifest.json is not in canonical form; regenerate it with build_manifest.py rather"
           " than editing it by hand")
 
