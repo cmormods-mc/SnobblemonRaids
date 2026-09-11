@@ -17,3 +17,7 @@ logs/
 
 # mineflayer, vendored from the live-test rig; see validation/smoke/README.md
 validation/smoke/node_modules/
+
+# Python bytecode from the validation scripts. Two .pyc files were committed by accident.
+__pycache__/
+*.pyc

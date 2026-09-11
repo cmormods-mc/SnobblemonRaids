@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.52-concurrency'
+version = '0.8.53-repo-cleanup'
 group = 'com.cobbleraids'
 
 base {

@@ -15,10 +15,12 @@ wears the boss down.
 | Fabric Loader | 0.17.2+ |
 | Fabric API | 0.116.6+1.21.1 |
 | Cobblemon | exactly 1.7.3 |
-| SkiesGUIs | exactly 1.8.1 |
 
-`CobbleRaids-BiomeCompat` is an optional data-only JAR. CobbleBoss and Raid Dens are
-reference implementations, not dependencies.
+**Optional.** `SkiesGUIs` 1.8.1 gives reward claiming a chest GUI; without it the same
+rewards are claimed from chat with `/cobbleraids reward claim`, and a SkiesGUIs that
+fails to load degrades to that fallback rather than aborting server start.
+`CobbleRaids-BiomeCompat` and `CobbleRaids-AddonRewards` are optional data-only JARs.
+CobbleBoss and Raid Dens are reference implementations, not dependencies.
 
 ## Content
 
@@ -57,6 +59,9 @@ separately.
 - **Cost** — `battle_carryover` copies health and PP back to the real party (both on
   by default; `status` off). Faints carry with health and recover on Cobblemon's own
   faint timer. Applied on wins and losses alike, and not waived by disconnecting.
+- **Catching** — off by default. `catching.enabled` plus a per-tier chance
+  (`starter`/`powerhouse`/`legendary`/`mythical`, each `0.0`–`1.0`) rolls once per victor
+  for a copy of the boss. Leaving every tier at `0.0` skips the roll entirely.
 - **Attempts** — a defeated party leaves the boss standing and healed. After
   `combat_defaults.max_failed_attempts` defeats (default 3, `0` = unlimited) it
   departs. A surviving boss keeps its raid slot and despawn timers.
@@ -110,7 +115,8 @@ requires permission level 2.
 /cobbleraids despawn [all] | reload
 /cobbleraids cooldown list | cooldown reset <definition>
 /cobbleraids reward claim | reward grant <player> <definition> | reward list [player] | reward clear <player>
-/cobbleraids debug status | raids | history | config | definition <species> | loot <loot_table>
+/cobbleraids debug status | raids | history | config | audit
+/cobbleraids debug definition <species> | loot <loot_table> | record <player> | join <player>
 ```
 
 `testwild` bypasses the spawn roll and species cooldown while keeping placement,
@@ -122,23 +128,59 @@ biome checks, tracking, announcements and active caps.
 later starts, so new settings appear with their defaults instead of silently
 missing. `/cobbleraids debug config` prints the active values.
 
+## Operations
+
+The mod audits its own state every five minutes and on demand with
+`/cobbleraids debug audit`, reporting stranded sessions, leaked raid slots, orphaned
+scoreboard entries, lobbies without a boss and rewards naming an unknown definition. It
+reports and never repairs, so a bug surfaces instead of being papered over. A clean server
+prints nothing.
+
+Every tick subsystem, Fabric callback and mixin injection runs inside a fault barrier, so a
+failure is contained to the raid that caused it and logged (rate-limited) rather than
+taking the server down. Because of that, **a broken build can look healthy from outside** —
+grep the log for `[CobbleRaids]` before declaring a run good.
+
 ## Build
 
 ```text
 gradle --no-daemon clean build
 ```
 
-Outputs both JARs to `build/libs`, and runs the unit suite covering the spawn-rate
-maths, contribution maths, config round-trip and the Showdown file patcher.
+Outputs the mod JAR, a sources JAR and the two optional data JARs to `build/libs`, and runs
+the 196-test unit suite over the Minecraft-free core: spawn-rate and contribution maths,
+config round-trip, lobby recruitment and raid progress rules, fault containment, the
+consistency audit's reporting rules, and the Showdown file patcher.
 
 ## Validation
 
 ```text
 validation/validate_phase31.sh
 python3 validation/validate_phase{32,36,37,38,39,40,41}.py [jar]
+python3 validation/validate_{logging,callback_guards}.py
+python3 validation/validate_mixin_guards.py [jar]      # after a build: reads bytecode
 ```
 
 Structural checks over the 130 definitions, tier membership, biome-compat separation,
-optional-mod manifests, the mixin registry, the shared-HP packet path, and the tier
-loot table each definition rolls. They run in CI against both the source tree and the
-built JAR.
+optional-mod manifests, the mixin registry, the shared-HP packet path, and the tier loot
+table each definition rolls — plus three property checks that re-derive their subject from
+the tree each run: every Fabric callback and every mixin injection is wrapped in a fault
+barrier, and all logging goes through `RaidLog`. CI runs them against both the source tree
+and the built JAR.
+
+A live server harness covers what static checks cannot:
+
+```text
+python validation/smoke/smoke_test.py --server-dir <rig> --java <jdk21>/bin/java.exe
+python validation/smoke/prove_audit_detects.py --server-dir <rig> --java <jdk21>/bin/java.exe
+python validation/smoke/load_test.py --server-dir <rig> --java <jdk21>/bin/java.exe
+```
+
+`smoke_test.py` boots a server, drives server-authoritative checks over RCON and fails on
+any contained fault in the log; `prove_audit_detects.py` injects a real inconsistency and
+asserts the audit names it; `load_test.py` drives concurrent raids to exercise contention.
+See `validation/README.md` for what belongs in a validator versus a unit test.
+
+## License
+
+MIT — see [LICENSE](LICENSE).

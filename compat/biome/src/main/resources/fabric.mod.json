@@ -4,7 +4,13 @@
   "version": "1.0.0",
   "name": "CobbleRaids Biome Compatibility",
   "description": "Tag-based optional biome compatibility for CobbleRaids, including Terralith and Oh The Biomes We've Gone.",
-  "authors": ["CobbleRaids"],
+  "authors": ["CMor"],
+  "contact": {
+    "homepage": "https://github.com/cmormods-mc/SnobblemonRaids",
+    "sources": "https://github.com/cmormods-mc/SnobblemonRaids",
+    "issues": "https://github.com/cmormods-mc/SnobblemonRaids/issues"
+  },
+  "license": "MIT",
   "environment": "*",
   "depends": {
     "fabricloader": ">=0.17.2",
