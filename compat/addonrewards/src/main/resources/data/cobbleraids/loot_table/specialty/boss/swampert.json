@@ -1,0 +1,80 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:specialty/mega/swampert",
+          "weight": 500
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:specialty/leaf/tera_standard",
+          "weight": 1500
+        },
+        {
+          "type": "minecraft:item",
+          "name": "mega_showdown:stellar_tera_shard",
+          "weight": 20
+        },
+        {
+          "type": "minecraft:item",
+          "name": "daycareplus:copper_incubator",
+          "weight": 150
+        },
+        {
+          "type": "minecraft:item",
+          "name": "daycareplus:iron_incubator",
+          "weight": 60
+        },
+        {
+          "type": "minecraft:item",
+          "name": "daycareplus:gold_incubator",
+          "weight": 20
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:specialty/leaf/tm_tr",
+          "weight": 200
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:specialty/leaf/capsule_basic",
+          "weight": 50
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:specialty/leaf/bonds_pair",
+          "weight": 20
+        },
+        {
+          "type": "minecraft:item",
+          "name": "ridetraining:training_reader",
+          "weight": 10
+        },
+        {
+          "type": "minecraft:item",
+          "name": "ridetraining:riding_upgrade",
+          "weight": 5
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblesafari:auspicious_pokeball",
+          "weight": 20
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemon:rare_candy",
+          "weight": 100
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:base/starter",
+          "weight": 7345
+        }
+      ]
+    }
+  ]
+}

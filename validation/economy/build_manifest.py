@@ -55,6 +55,7 @@ PROVIDER_NAMESPACES = [
 BANNED_NAMESPACES = ["cobblemon_utility"]
 
 ITEM_MODEL = re.compile(r"^assets/([a-z0-9_.-]+)/models/item/(.+)\.json$")
+ITEM_TAG = re.compile(r"^data/([a-z0-9_.-]+)/tags/item/(.+)\.json$")
 MEGA_ENTRY = re.compile(r"^data/mega_showdown/mega_showdown/mega/.+\.json$")
 TERA_SHARD = re.compile(r"^[a-z]+_tera_shard$")
 
@@ -132,6 +133,7 @@ def read_mods(pack):
     Cobblemon Mount Mastery registers `ridetraining`, and nothing about its filename says so."""
     mods = {}
     registries = {}
+    tags = {}
     mega_entries = []
     for jar in pack.jars():
         raw = pack.read_jar(jar)
@@ -149,10 +151,19 @@ def read_mods(pack):
             match = ITEM_MODEL.match(name)
             if match:
                 registries.setdefault(match.group(1), set()).add(match.group(2))
+            tag_match = ITEM_TAG.match(name)
+            if tag_match:
+                # Item tags matter because the TM/TR row selects through one rather than naming
+                # 1260 items. A typo in a tag id is otherwise invisible until a player claims.
+                try:
+                    values = json.loads(inner.read(name).decode("utf-8-sig", "replace")).get("values", [])
+                except ValueError:
+                    values = []
+                tags[tag_match.group(1) + ":" + tag_match.group(2)] = len(values)
             if MEGA_ENTRY.match(name):
                 entry = json.loads(inner.read(name).decode("utf-8", "replace"))
                 mega_entries.append(entry)
-    return mods, registries, mega_entries
+    return mods, registries, tags, mega_entries
 
 
 def read_bosses():
@@ -221,7 +232,7 @@ def main():
     args = parser.parse_args()
 
     pack = Pack(args.pack)
-    mods, registries, mega_entries = read_mods(pack)
+    mods, registries, tags, mega_entries = read_mods(pack)
     print("build_manifest: %d jars, %d mods, %d mega entries" % (len(pack.jars()), len(mods), len(mega_entries)))
 
     missing = [ns for ns in PROVIDER_NAMESPACES if ns not in mods]
@@ -262,6 +273,8 @@ def main():
         "mega": mega,
         "tera_shards": ["mega_showdown:" + path for path in tera],
         "banned": banned,
+        "item_tags": {tag: size for tag, size in sorted(tags.items())
+                      if tag.split(":")[0] in PROVIDER_NAMESPACES},
         "items": items,
     }
 
@@ -273,8 +286,9 @@ def main():
     print("build_manifest: %d bosses (%s)" % (len(bosses), ", ".join(
         "%s %d" % (tier, count) for tier, count in sorted(tier_counts.items()))))
     print("build_manifest: %d bosses carry a mega stone, %d distinct stone ids" % (len(mega), len(stones)))
-    print("build_manifest: %d tera shards, %d banned items recorded" % (
-        len(tera), sum(len(v) for v in banned.values())))
+    print("build_manifest: %d tera shards, %d banned items, %d provider item tags" % (
+        len(tera), sum(len(v) for v in banned.values()),
+        len([t for t in tags if t.split(":")[0] in PROVIDER_NAMESPACES])))
     print("build_manifest: wrote " + os.path.relpath(args.out, REPO_ROOT))
 
 

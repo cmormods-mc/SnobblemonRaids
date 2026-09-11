@@ -42,6 +42,9 @@ step "Validate callback fault barriers"
 step "Validate reward-economy manifest"
 "$py" validation/economy/validate_economy_manifest.py
 
+step "Validate generated reward tables"
+"$py" validation/economy/build_tables.py --check
+
 step "Compile, test and remap"
 ./gradlew clean build --stacktrace --warning-mode all
 

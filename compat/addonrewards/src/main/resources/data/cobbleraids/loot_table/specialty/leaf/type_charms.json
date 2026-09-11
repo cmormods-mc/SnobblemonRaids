@@ -1,0 +1,100 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "cobblemoncharms:normal_charm",
+          "weight": 1
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemoncharms:fire_charm",
+          "weight": 1
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemoncharms:water_charm",
+          "weight": 1
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemoncharms:electric_charm",
+          "weight": 1
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemoncharms:grass_charm",
+          "weight": 1
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemoncharms:ice_charm",
+          "weight": 1
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemoncharms:fighting_charm",
+          "weight": 1
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemoncharms:poison_charm",
+          "weight": 1
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemoncharms:ground_charm",
+          "weight": 1
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemoncharms:flying_charm",
+          "weight": 1
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemoncharms:psychic_charm",
+          "weight": 1
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemoncharms:bug_charm",
+          "weight": 1
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemoncharms:rock_charm",
+          "weight": 1
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemoncharms:ghost_charm",
+          "weight": 1
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemoncharms:dragon_charm",
+          "weight": 1
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemoncharms:dark_charm",
+          "weight": 1
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemoncharms:steel_charm",
+          "weight": 1
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemoncharms:fairy_charm",
+          "weight": 1
+        }
+      ]
+    }
+  ]
+}

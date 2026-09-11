@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:specialty/leaf/tr",
+          "weight": 80
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:specialty/leaf/tm",
+          "weight": 20
+        }
+      ]
+    }
+  ]
+}

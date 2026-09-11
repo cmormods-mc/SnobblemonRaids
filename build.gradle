@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.56-economy-manifest'
+version = '0.8.57-economy-tables'
 group = 'com.cobbleraids'
 
 base {

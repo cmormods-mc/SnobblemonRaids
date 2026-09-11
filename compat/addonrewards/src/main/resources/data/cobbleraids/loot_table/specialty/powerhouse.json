@@ -1,0 +1,90 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "daycareplus:copper_incubator",
+          "weight": 100
+        },
+        {
+          "type": "minecraft:item",
+          "name": "daycareplus:iron_incubator",
+          "weight": 100
+        },
+        {
+          "type": "minecraft:item",
+          "name": "daycareplus:gold_incubator",
+          "weight": 40
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:specialty/leaf/tm_tr",
+          "weight": 300
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:specialty/leaf/capsule_basic",
+          "weight": 100
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:specialty/leaf/capsule_rare",
+          "weight": 60
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:specialty/leaf/bonds_pair",
+          "weight": 40
+        },
+        {
+          "type": "minecraft:item",
+          "name": "ridetraining:training_reader",
+          "weight": 20
+        },
+        {
+          "type": "minecraft:item",
+          "name": "ridetraining:riding_upgrade",
+          "weight": 10
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:specialty/leaf/type_charms",
+          "weight": 50
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:specialty/leaf/catch_exp_charms",
+          "weight": 20
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblesafari:auspicious_pokeball",
+          "weight": 30
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblesafari:union_room_pokeball",
+          "weight": 10
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemon:rare_candy",
+          "weight": 200
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemon:exp_candy_l",
+          "weight": 500
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:base/powerhouse",
+          "weight": 8420
+        }
+      ]
+    }
+  ]
+}
