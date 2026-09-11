@@ -1,5 +1,6 @@
 package com.cobbleraids.lobby;
 
+import com.cobbleraids.presentation.RaidBroadcast;
 import com.cobbleraids.RaidLog;
 import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.config.RaidDefinitionRegistry;
@@ -154,12 +155,13 @@ public final class RaidLobbyManager {
         return player.level() == boss.level() && player.distanceToSqr(boss) <= radius * radius;
     }
 
+    /**
+     * Twice the recruitment radius, and never less than 16 blocks: someone standing just outside the
+     * radius should still hear the countdown and get the chance to walk in.
+     */
     private static void broadcastNearby(RaidLobby lobby, Component message) {
-        PokemonEntity boss = lobby.boss();
         double radius = Math.max(16.0, lobby.definition().recruitment().radius() * 2.0);
-        for (ServerPlayer player : ((ServerLevel) boss.level()).players()) {
-            if (player.distanceToSqr(boss) <= radius * radius) player.sendSystemMessage(message);
-        }
+        RaidBroadcast.near(lobby.boss(), radius, message);
     }
 
 

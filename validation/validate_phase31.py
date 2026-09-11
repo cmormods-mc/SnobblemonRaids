@@ -73,9 +73,16 @@ def validate_tree() -> None:
     # spelling: RaidTierSelectorTest pins selection, and the live smoke test actually runs
     # `cobbleraids spawn`, `cobbleraids spawninfo` and `cobbleraids list` against a real server,
     # which is a stronger statement than "this identifier appears in this file".
-    damage = (ROOT / "src/main/java/com/cobbleraids/showdown/RaidDamageInstruction.java").read_text()
-    assert "sendSidedUpdate" in damage
-    assert "BattleHealthChangePacket(pnx, ratio, null)" in damage
+    # The boss's HP has to reach both sides of the battle differently -- the boss's own actor gets the
+    # pool's absolute value, everyone else a ratio -- or the health bar disagrees with the model. That
+    # mechanism now lives in the base class shared by the damage and heal instructions, so it is
+    # asserted where the behaviour is rather than where it used to be written out twice.
+    pool = (ROOT / "src/main/java/com/cobbleraids/showdown/RaidPoolInstruction.java").read_text()
+    assert "sendSidedUpdate" in pool
+    assert "BattleHealthChangePacket(pnx, ratio, null)" in pool
+    for subclass in ("RaidDamageInstruction", "RaidHealInstruction"):
+        source = (ROOT / f"src/main/java/com/cobbleraids/showdown/{subclass}.java").read_text()
+        assert "extends RaidPoolInstruction" in source, f"{subclass} no longer shares the pool pipeline"
 
 
 def project_version() -> str:

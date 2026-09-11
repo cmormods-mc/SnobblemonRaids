@@ -329,39 +329,39 @@ public record CobbleRaidsConfig(
     public static CobbleRaidsConfig fromJson(JsonObject root) {
         CobbleRaidsConfig defaults = defaults();
 
-        JsonObject natural = object(root, "natural_spawning");
+        JsonObject natural = Json.object(root, "natural_spawning");
         NaturalSpawning nd = defaults.naturalSpawning();
-        JsonObject tierObject = object(natural, "tier_weights");
+        JsonObject tierObject = Json.object(natural, "tier_weights");
         RaidTierWeights tw = nd.tierWeights();
         RaidTierWeights tierWeights = new RaidTierWeights(
-                integer(tierObject, "starter", tw.starter()),
-                integer(tierObject, "powerhouse", tw.powerhouse()),
-                integer(tierObject, "legendary", tw.legendary()),
-                integer(tierObject, "mythical", tw.mythical())
+                Json.integer(tierObject, "starter", tw.starter()),
+                Json.integer(tierObject, "powerhouse", tw.powerhouse()),
+                Json.integer(tierObject, "legendary", tw.legendary()),
+                Json.integer(tierObject, "mythical", tw.mythical())
         );
-        JsonObject chanceObject = object(natural, "tier_spawn_chance");
+        JsonObject chanceObject = Json.object(natural, "tier_spawn_chance");
         RaidTierSpawnChance tc = nd.tierSpawnChance();
         RaidTierSpawnChance tierSpawnChance = new RaidTierSpawnChance(
-                decimal(chanceObject, "starter", tc.starter()),
-                decimal(chanceObject, "powerhouse", tc.powerhouse()),
-                decimal(chanceObject, "legendary", tc.legendary()),
-                decimal(chanceObject, "mythical", tc.mythical())
+                Json.decimal(chanceObject, "starter", tc.starter()),
+                Json.decimal(chanceObject, "powerhouse", tc.powerhouse()),
+                Json.decimal(chanceObject, "legendary", tc.legendary()),
+                Json.decimal(chanceObject, "mythical", tc.mythical())
         );
         NaturalSpawning naturalSpawning = new NaturalSpawning(
-                bool(natural, "enabled", nd.enabled()),
-                integer(natural, "check_interval_ticks", nd.checkIntervalTicks()),
-                decimal(natural, "spawn_attempt_chance", nd.spawnAttemptChance()),
-                integer(natural, "attempts_per_check", nd.attemptsPerCheck()),
-                integer(natural, "max_active_raids", nd.maxActiveRaids()),
-                integer(natural, "max_active_raids_per_dimension", nd.maxActiveRaidsPerDimension()),
-                decimal(natural, "min_distance_from_player", nd.minDistanceFromPlayer()),
-                decimal(natural, "max_distance_from_player", nd.maxDistanceFromPlayer()),
-                decimal(natural, "min_distance_between_raids", nd.minDistanceBetweenRaids()),
-                integer(natural, "location_attempts", nd.locationAttempts()),
-                decimal(natural, "despawn_player_radius", nd.despawnPlayerRadius()),
-                integer(natural, "default_despawn_seconds", nd.defaultDespawnSeconds()),
-                integer(natural, "default_max_lifetime_seconds", nd.defaultMaxLifetimeSeconds()),
-                integer(natural, "default_definition_cooldown_seconds", nd.defaultDefinitionCooldownSeconds()),
+                Json.bool(natural, "enabled", nd.enabled()),
+                Json.integer(natural, "check_interval_ticks", nd.checkIntervalTicks()),
+                Json.decimal(natural, "spawn_attempt_chance", nd.spawnAttemptChance()),
+                Json.integer(natural, "attempts_per_check", nd.attemptsPerCheck()),
+                Json.integer(natural, "max_active_raids", nd.maxActiveRaids()),
+                Json.integer(natural, "max_active_raids_per_dimension", nd.maxActiveRaidsPerDimension()),
+                Json.decimal(natural, "min_distance_from_player", nd.minDistanceFromPlayer()),
+                Json.decimal(natural, "max_distance_from_player", nd.maxDistanceFromPlayer()),
+                Json.decimal(natural, "min_distance_between_raids", nd.minDistanceBetweenRaids()),
+                Json.integer(natural, "location_attempts", nd.locationAttempts()),
+                Json.decimal(natural, "despawn_player_radius", nd.despawnPlayerRadius()),
+                Json.integer(natural, "default_despawn_seconds", nd.defaultDespawnSeconds()),
+                Json.integer(natural, "default_max_lifetime_seconds", nd.defaultMaxLifetimeSeconds()),
+                Json.integer(natural, "default_definition_cooldown_seconds", nd.defaultDefinitionCooldownSeconds()),
                 tierWeights,
                 tierSpawnChance,
                 natural.has("announcement_precision")
@@ -369,82 +369,82 @@ public record CobbleRaidsConfig(
                         : nd.announcementPrecision()
         );
 
-        JsonObject recruitment = object(root, "recruitment_defaults");
+        JsonObject recruitment = Json.object(root, "recruitment_defaults");
         RecruitmentDefaults rd = defaults.recruitmentDefaults();
         RecruitmentDefaults recruitmentDefaults = new RecruitmentDefaults(
-                integer(recruitment, "duration_seconds", rd.durationSeconds()),
-                decimal(recruitment, "radius", rd.radius()),
-                integer(recruitment, "max_players", rd.maxPlayers())
+                Json.integer(recruitment, "duration_seconds", rd.durationSeconds()),
+                Json.decimal(recruitment, "radius", rd.radius()),
+                Json.integer(recruitment, "max_players", rd.maxPlayers())
         );
 
-        JsonObject combat = object(root, "combat_defaults");
+        JsonObject combat = Json.object(root, "combat_defaults");
         CombatDefaults cd = defaults.combatDefaults();
         CombatDefaults combatDefaults = new CombatDefaults(
-                integer(combat, "time_limit_seconds", cd.timeLimitSeconds()),
-                bool(combat, "allow_flee", cd.allowFlee()),
-                integer(combat, "max_failed_attempts", cd.maxFailedAttempts())
+                Json.integer(combat, "time_limit_seconds", cd.timeLimitSeconds()),
+                Json.bool(combat, "allow_flee", cd.allowFlee()),
+                Json.integer(combat, "max_failed_attempts", cd.maxFailedAttempts())
         );
 
-        JsonObject carryover = object(root, "battle_carryover");
+        JsonObject carryover = Json.object(root, "battle_carryover");
         BattleCarryover bc = defaults.battleCarryover();
         BattleCarryover battleCarryover = new BattleCarryover(
-                bool(carryover, "health", bc.health()),
-                bool(carryover, "pp", bc.pp()),
-                bool(carryover, "status", bc.status())
+                Json.bool(carryover, "health", bc.health()),
+                Json.bool(carryover, "pp", bc.pp()),
+                Json.bool(carryover, "status", bc.status())
         );
 
-        JsonObject bossTraitsObject = object(root, "boss_traits");
+        JsonObject bossTraitsObject = Json.object(root, "boss_traits");
         BossTraits bt = defaults.bossTraits();
         BossTraits bossTraits = new BossTraits(
-                integer(bossTraitsObject, "iv_jitter", bt.ivJitter()),
-                decimal(bossTraitsObject, "shiny_chance", bt.shinyChance())
+                Json.integer(bossTraitsObject, "iv_jitter", bt.ivJitter()),
+                Json.decimal(bossTraitsObject, "shiny_chance", bt.shinyChance())
         );
 
-        JsonObject catchingObject = object(root, "catching");
+        JsonObject catchingObject = Json.object(root, "catching");
         Catching cat = defaults.catching();
         Catching catching = new Catching(
-                bool(catchingObject, "enabled", cat.enabled()),
-                decimal(catchingObject, "starter", cat.starter()),
-                decimal(catchingObject, "powerhouse", cat.powerhouse()),
-                decimal(catchingObject, "legendary", cat.legendary()),
-                decimal(catchingObject, "mythical", cat.mythical())
+                Json.bool(catchingObject, "enabled", cat.enabled()),
+                Json.decimal(catchingObject, "starter", cat.starter()),
+                Json.decimal(catchingObject, "powerhouse", cat.powerhouse()),
+                Json.decimal(catchingObject, "legendary", cat.legendary()),
+                Json.decimal(catchingObject, "mythical", cat.mythical())
         );
 
-        JsonObject tierScalingObject = object(root, "tier_scaling");
+        JsonObject tierScalingObject = Json.object(root, "tier_scaling");
         TierScaling ts = defaults.tierScaling();
         TierScaling tierScaling = new TierScaling(
-                bool(tierScalingObject, "enabled", ts.enabled()),
+                Json.bool(tierScalingObject, "enabled", ts.enabled()),
                 readTierMultipliers(tierScalingObject, "starter", ts.starter()),
                 readTierMultipliers(tierScalingObject, "powerhouse", ts.powerhouse()),
                 readTierMultipliers(tierScalingObject, "legendary", ts.legendary()),
                 readTierMultipliers(tierScalingObject, "mythical", ts.mythical())
         );
 
-        JsonObject bossGlowObject = object(root, "boss_glow");
+        JsonObject bossGlowObject = Json.object(root, "boss_glow");
         BossGlow bg = defaults.bossGlow();
         BossGlow bossGlow = new BossGlow(
-                bool(bossGlowObject, "enabled", bg.enabled()),
-                decimal(bossGlowObject, "radius_blocks", bg.radiusBlocks())
+                Json.bool(bossGlowObject, "enabled", bg.enabled()),
+                Json.decimal(bossGlowObject, "radius_blocks", bg.radiusBlocks())
         );
 
-        JsonObject bossMovementObject = object(root, "boss_movement");
+        JsonObject bossMovementObject = Json.object(root, "boss_movement");
         BossMovement bm = defaults.bossMovement();
         BossMovement bossMovement = new BossMovement(
-                bool(bossMovementObject, "slowness_enabled", bm.slownessEnabled()),
-                integer(bossMovementObject, "slowness_amplifier", bm.slownessAmplifier()),
-                bool(bossMovementObject, "prevent_knockback", bm.preventKnockback()));
+                Json.bool(bossMovementObject, "slowness_enabled", bm.slownessEnabled()),
+                Json.integer(bossMovementObject, "slowness_amplifier", bm.slownessAmplifier()),
+                Json.bool(bossMovementObject, "prevent_knockback", bm.preventKnockback()));
 
         return new CobbleRaidsConfig(naturalSpawning, recruitmentDefaults, combatDefaults, battleCarryover,
                 bossTraits, catching, tierScaling, bossGlow, bossMovement,
-                bool(root, "debug_logging", defaults.debugLogging()));
+                Json.bool(root, "debug_logging", defaults.debugLogging()));
     }
 
     private static TierMultipliers readTierMultipliers(JsonObject tierScaling, String key, TierMultipliers fallback) {
-        JsonObject tier = object(tierScaling, key);
+        JsonObject tier = Json.object(tierScaling, key);
         return new TierMultipliers(
-                decimal(tier, "health_multiplier", fallback.health()),
-                decimal(tier, "time_limit_multiplier", fallback.timeLimit()),
-                decimal(tier, "reward_multiplier", fallback.reward())
+                Json.decimal(tier, "health_multiplier", fallback.health()),
+                Json.decimal(tier, "time_limit_multiplier", fallback.timeLimit()),
+                Json.decimal(tier, "reward_multiplier", fallback.reward())
         );
     }
 
@@ -542,16 +542,4 @@ public record CobbleRaidsConfig(
         return object;
     }
 
-    private static JsonObject object(JsonObject root, String key) {
-        return root.has(key) && root.get(key).isJsonObject() ? root.getAsJsonObject(key) : new JsonObject();
-    }
-    private static int integer(JsonObject root, String key, int fallback) {
-        return root.has(key) ? root.get(key).getAsInt() : fallback;
-    }
-    private static double decimal(JsonObject root, String key, double fallback) {
-        return root.has(key) ? root.get(key).getAsDouble() : fallback;
-    }
-    private static boolean bool(JsonObject root, String key, boolean fallback) {
-        return root.has(key) ? root.get(key).getAsBoolean() : fallback;
-    }
 }

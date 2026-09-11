@@ -149,9 +149,6 @@ final class RaidAdminSpawnOps {
         }
     }
 
-    private static String format(Vec3 position) {
-        return String.format(Locale.ROOT, "%.1f %.1f %.1f", position.x, position.y, position.z);
-    }
 
     static int listCooldowns(CommandSourceStack source) {
         List<Map.Entry<ResourceLocation, Long>> cooldowns = RaidSpawnScheduler.activeCooldowns();

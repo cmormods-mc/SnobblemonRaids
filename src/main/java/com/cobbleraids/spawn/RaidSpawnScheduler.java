@@ -20,8 +20,6 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -237,7 +235,8 @@ public final class RaidSpawnScheduler {
             // Short-circuited deliberately, exactly as the original loop was: a battling or lobbied
             // boss is kept alive regardless, and hasNearbyPlayer walks the whole player list.
             boolean lobbyActive = !battling && RaidLobbyManager.hasActiveLobby(boss);
-            boolean playerNearby = !battling && !lobbyActive && hasNearbyPlayer(server, boss, despawnRadius);
+            boolean playerNearby = !battling && !lobbyActive
+                    && RaidBossLookup.hasNearbyPlayer(server, boss, despawnRadius);
             return new ActiveRaidSpawnTracker.Presence(false, battling, lobbyActive, playerNearby);
         }
 
@@ -276,9 +275,7 @@ public final class RaidSpawnScheduler {
     }
 
     private static PokemonEntity resolveBoss(MinecraftServer server, UUID bossId, TrackedRaidSpawn spawn) {
-        ServerLevel level = server.getLevel(ResourceKey.create(Registries.DIMENSION, spawn.dimension()));
-        if (level == null) return null;
-        return level.getEntity(bossId) instanceof PokemonEntity pokemon ? pokemon : null;
+        return RaidBossLookup.resolve(server, bossId, spawn.dimension());
     }
 
     /**
@@ -339,14 +336,7 @@ public final class RaidSpawnScheduler {
         }
     }
 
-    private static boolean hasNearbyPlayer(MinecraftServer server, PokemonEntity boss, double radius) {
-        double radiusSqr = radius * radius;
-        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            if (player.level() == boss.level() && player.isAlive() && !player.isSpectator()
-                    && player.distanceToSqr(boss) <= radiusSqr) return true;
-        }
-        return false;
-    }
+
 
     /**
      * Drops only bosses that are provably gone. An entry whose boss does not resolve is kept,

@@ -1,5 +1,6 @@
 package com.cobbleraids.presentation;
 
+import com.cobbleraids.spawn.RaidBossLookup;
 import com.cobbleraids.config.CobbleRaidsConfig;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.config.RaidDefinition;
@@ -13,12 +14,9 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.ChatFormatting;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.scores.PlayerTeam;
@@ -53,7 +51,7 @@ public final class RaidBossGlowService {
         // Take every tracked boss out of its glow team first. Clearing the map alone would leave the
         // membership behind in the world save with nothing left that knows to remove it.
         for (Map.Entry<UUID, ResourceLocation> entry : Map.copyOf(TRACKED).entrySet()) {
-            untrack(server, entry.getKey(), resolveBoss(server, entry.getKey(), entry.getValue()));
+            untrack(server, entry.getKey(), RaidBossLookup.resolve(server, entry.getKey(), entry.getValue()));
         }
         TRACKED.clear();
         tickCounter = 0L;
@@ -77,12 +75,11 @@ public final class RaidBossGlowService {
         // bounded by the number of live bosses, so it runs either way and only the glow itself is
         // gated.
         boolean enabled = config.enabled();
-        double radiusSqr = config.radiusBlocks() * config.radiusBlocks();
 
         Iterator<Map.Entry<UUID, ResourceLocation>> iterator = TRACKED.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<UUID, ResourceLocation> entry = iterator.next();
-            PokemonEntity boss = resolveBoss(server, entry.getKey(), entry.getValue());
+            PokemonEntity boss = RaidBossLookup.resolve(server, entry.getKey(), entry.getValue());
             // "Does not resolve" means the chunk holding it is not loaded, which is not the same as
             // gone -- the Phase 32 distinction, which this service was still getting wrong. Dropping
             // an unloaded boss here was permanent, because register() only ever runs at spawn: the
@@ -102,7 +99,7 @@ public final class RaidBossGlowService {
                     .orElse(null);
             if (tier == null) continue;
 
-            if (hasNearbyPlayer(server, boss, radiusSqr)) {
+            if (RaidBossLookup.hasNearbyPlayer(server, boss, config.radiusBlocks())) {
                 applyGlow(server, boss, tier);
             } else if (boss.hasEffect(MobEffects.GLOWING)) {
                 boss.removeEffect(MobEffects.GLOWING);
@@ -186,17 +183,7 @@ public final class RaidBossGlowService {
         return team;
     }
 
-    private static PokemonEntity resolveBoss(MinecraftServer server, UUID bossId, ResourceLocation dimension) {
-        ServerLevel level = server.getLevel(ResourceKey.create(Registries.DIMENSION, dimension));
-        if (level == null) return null;
-        return level.getEntity(bossId) instanceof PokemonEntity pokemon ? pokemon : null;
-    }
 
-    private static boolean hasNearbyPlayer(MinecraftServer server, PokemonEntity boss, double radiusSqr) {
-        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            if (player.level() == boss.level() && player.isAlive() && !player.isSpectator()
-                    && player.distanceToSqr(boss) <= radiusSqr) return true;
-        }
-        return false;
-    }
+
+
 }

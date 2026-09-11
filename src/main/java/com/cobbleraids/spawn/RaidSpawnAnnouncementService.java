@@ -1,6 +1,7 @@
 package com.cobbleraids.spawn;
 
 import com.cobbleraids.config.RaidRarityTier;
+import com.cobbleraids.presentation.RaidBroadcast;
 import com.cobbleraids.presentation.RaidTierPresentation;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 
@@ -10,7 +11,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
 /** Everything the wild-spawn system says to players: who hears it, and how precisely. */
@@ -54,25 +54,13 @@ final class RaidSpawnAnnouncementService {
 
     /** A fading boss, told only to the players close enough to be looking at it. */
     static void expiryWarning(PokemonEntity boss, double radius, long secondsLeft) {
-        broadcastNear(boss, radius, Component.literal("This raid boss will leave in ~" + secondsLeft + "s.")
+        RaidBroadcast.near(boss, radius, Component.literal("This raid boss will leave in ~" + secondsLeft + "s.")
                 .withStyle(ChatFormatting.YELLOW));
     }
 
     static void bossLeft(PokemonEntity boss, double radius) {
-        broadcastNear(boss, radius, Component.literal("The raid boss lost interest and left.")
+        RaidBroadcast.near(boss, radius, Component.literal("The raid boss lost interest and left.")
                 .withStyle(ChatFormatting.GRAY));
-    }
-
-    /**
-     * Level-local player list rather than the whole server's: only players in this dimension can
-     * possibly be in range, and on a busy server that is a much shorter list to walk.
-     */
-    private static void broadcastNear(PokemonEntity boss, double radius, Component message) {
-        if (!(boss.level() instanceof ServerLevel level)) return;
-        double radiusSqr = radius * radius;
-        for (ServerPlayer player : level.players()) {
-            if (player.distanceToSqr(boss) <= radiusSqr) player.sendSystemMessage(message);
-        }
     }
 
     static int coordinateHint(int coordinate) {

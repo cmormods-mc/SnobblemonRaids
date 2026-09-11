@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.50-consistency-audit'
+version = '0.8.51-dedupe'
 group = 'com.cobbleraids'
 
 base {

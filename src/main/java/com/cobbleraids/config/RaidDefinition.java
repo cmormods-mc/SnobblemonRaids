@@ -173,18 +173,18 @@ public record RaidDefinition(
         int level = requireInt(root, "level");
         long baseHealth = root.has("base_health") ? root.get("base_health").getAsLong() : requireLong(root, "health");
 
-        JsonObject spawnObject = object(root, "spawn");
+        JsonObject spawnObject = Json.object(root, "spawn");
         boolean spawnEnabled = spawnObject.has("enabled") && spawnObject.get("enabled").getAsBoolean();
-        int spawnWeight = integer(spawnObject, "weight", 100);
+        int spawnWeight = Json.integer(spawnObject, "weight", 100);
         List<ResourceLocation> dimensions = readResourceLocations(spawnObject, "dimensions");
         if (dimensions.isEmpty()) dimensions = List.of(ResourceLocation.fromNamespaceAndPath("minecraft", "overworld"));
         List<ResourceLocation> biomes = readResourceLocations(spawnObject, "biomes");
         List<ResourceLocation> biomeTags = readResourceLocations(spawnObject, "biome_tags");
         List<SpawnTime> times = readSpawnTimes(spawnObject, "times");
-        int cooldown = integer(spawnObject, "cooldown_seconds", global.naturalSpawning().defaultDefinitionCooldownSeconds());
-        int despawn = integer(spawnObject, "despawn_seconds", global.naturalSpawning().defaultDespawnSeconds());
-        int maxLifetime = integer(spawnObject, "max_lifetime_seconds", global.naturalSpawning().defaultMaxLifetimeSeconds());
-        int maxConcurrent = integer(spawnObject, "max_concurrent", 1);
+        int cooldown = Json.integer(spawnObject, "cooldown_seconds", global.naturalSpawning().defaultDefinitionCooldownSeconds());
+        int despawn = Json.integer(spawnObject, "despawn_seconds", global.naturalSpawning().defaultDespawnSeconds());
+        int maxLifetime = Json.integer(spawnObject, "max_lifetime_seconds", global.naturalSpawning().defaultMaxLifetimeSeconds());
+        int maxConcurrent = Json.integer(spawnObject, "max_concurrent", 1);
         Spawn spawn = new Spawn(spawnEnabled, spawnWeight, dimensions, biomes, biomeTags, times, cooldown, despawn,
                 maxLifetime, maxConcurrent);
         RaidRarityTier rarityTier = root.has("rarity_tier")
@@ -192,22 +192,22 @@ public record RaidDefinition(
                 : legacyTier(spawnWeight);
 
         CobbleRaidsConfig.RecruitmentDefaults rd = global.recruitmentDefaults();
-        JsonObject recruitmentObject = object(root, "recruitment");
-        int duration = integer(recruitmentObject, "duration_seconds", rd.durationSeconds());
-        double radius = decimal(recruitmentObject, "radius", rd.radius());
+        JsonObject recruitmentObject = Json.object(root, "recruitment");
+        int duration = Json.integer(recruitmentObject, "duration_seconds", rd.durationSeconds());
+        double radius = Json.decimal(recruitmentObject, "radius", rd.radius());
         int maxPlayers = recruitmentObject.has("max_players") ? recruitmentObject.get("max_players").getAsInt()
                 : (root.has("max_players") ? root.get("max_players").getAsInt() : rd.maxPlayers());
 
-        JsonObject scalingObject = object(root, "scaling");
-        double healthPerExtra = decimal(scalingObject, "health_per_extra_player", 0.65);
+        JsonObject scalingObject = Json.object(root, "scaling");
+        double healthPerExtra = Json.decimal(scalingObject, "health_per_extra_player", 0.65);
         CobbleRaidsConfig.CombatDefaults cd = global.combatDefaults();
-        int timeLimit = integer(root, "time_limit_seconds", cd.timeLimitSeconds());
+        int timeLimit = Json.integer(root, "time_limit_seconds", cd.timeLimitSeconds());
         boolean allowFlee = root.has("allow_flee") ? root.get("allow_flee").getAsBoolean() : cd.allowFlee();
 
         List<String> moves = readMoves(root);
         RaidBossTraits traits = RaidBossTraits.fromJson(root, id.toString());
 
-        Rewards rewards = parseRewards(object(root, "rewards"));
+        Rewards rewards = parseRewards(Json.object(root, "rewards"));
         return new RaidDefinition(id, species, rarityTier, level, baseHealth, spawn,
                 new Recruitment(duration, radius, maxPlayers), new Scaling(healthPerExtra),
                 timeLimit, allowFlee, moves, traits, rewards);
@@ -229,10 +229,10 @@ public record RaidDefinition(
     }
 
     private static Rewards parseRewards(JsonObject rewards) {
-        String guiId = string(rewards, "gui_id", "cobbleraids_reward");
+        String guiId = Json.string(rewards, "gui_id", "cobbleraids_reward");
         List<ResourceLocation> loot = readResourceLocations(rewards, "loot_tables");
         Map<String, RewardChoice> choices = new LinkedHashMap<>();
-        JsonObject choiceObject = object(rewards, "choices");
+        JsonObject choiceObject = Json.object(rewards, "choices");
         for (Map.Entry<String, JsonElement> entry : choiceObject.entrySet()) {
             if (!entry.getValue().isJsonObject()) throw new IllegalArgumentException("rewards.choices." + entry.getKey() + " must be an object");
             JsonObject choice = entry.getValue().getAsJsonObject();
@@ -242,10 +242,10 @@ public record RaidDefinition(
                     readResourceLocations(choice, "loot_tables")));
         }
 
-        JsonObject contribution = object(rewards, "contribution_bonus");
+        JsonObject contribution = Json.object(rewards, "contribution_bonus");
         boolean enabled = contribution.has("enabled") && contribution.get("enabled").getAsBoolean();
         List<ContributionTier> tiers = new ArrayList<>();
-        JsonArray tierArray = array(contribution, "tiers");
+        JsonArray tierArray = Json.array(contribution, "tiers");
         for (JsonElement element : tierArray) {
             JsonObject tier = element.getAsJsonObject();
             tiers.add(new ContributionTier(tier.get("min_percentage").getAsDouble(), tier.get("bonus_rolls").getAsInt()));
@@ -256,27 +256,18 @@ public record RaidDefinition(
 
     private static List<RewardItem> readRewardItems(JsonObject object, String key, double defaultChance, int defaultWeight) {
         List<RewardItem> values = new ArrayList<>();
-        JsonArray array = array(object, key);
+        JsonArray array = Json.array(object, key);
         for (JsonElement element : array) {
             JsonObject item = element.getAsJsonObject();
             ResourceLocation id = ResourceLocation.parse(requireString(item, "item"));
-            int amount = integer(item, "amount", 1);
-            double chance = defaultChance < 0 ? decimal(item, "chance", 1.0) : decimal(item, "chance", defaultChance);
-            int weight = defaultWeight < 0 ? integer(item, "weight", 1) : integer(item, "weight", defaultWeight);
+            int amount = Json.integer(item, "amount", 1);
+            double chance = defaultChance < 0 ? Json.decimal(item, "chance", 1.0) : Json.decimal(item, "chance", defaultChance);
+            int weight = defaultWeight < 0 ? Json.integer(item, "weight", 1) : Json.integer(item, "weight", defaultWeight);
             values.add(new RewardItem(id, amount, chance, weight));
         }
         return values;
     }
 
-    private static JsonObject object(JsonObject root, String key) {
-        return root.has(key) && root.get(key).isJsonObject() ? root.getAsJsonObject(key) : new JsonObject();
-    }
-    private static JsonArray array(JsonObject root, String key) {
-        return root.has(key) && root.get(key).isJsonArray() ? root.getAsJsonArray(key) : new JsonArray();
-    }
-    private static int integer(JsonObject root, String key, int fallback) { return root.has(key) ? root.get(key).getAsInt() : fallback; }
-    private static double decimal(JsonObject root, String key, double fallback) { return root.has(key) ? root.get(key).getAsDouble() : fallback; }
-    private static String string(JsonObject root, String key, String fallback) { return root.has(key) ? root.get(key).getAsString() : fallback; }
 
     private static List<ResourceLocation> readResourceLocations(JsonObject object, String key) {
         List<ResourceLocation> values = new ArrayList<>();

@@ -12,14 +12,12 @@ import com.cobbleraids.raid.RaidRegistry;
 import com.cobbleraids.raid.RaidSession;
 import com.cobbleraids.reward.PendingRaidReward;
 import com.cobbleraids.spawn.RaidBossEntityMarker;
+import com.cobbleraids.spawn.RaidBossLookup;
 import com.cobbleraids.spawn.RaidSpawnScheduler;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 
-import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.scores.PlayerTeam;
 
 import java.util.Map;
@@ -114,7 +112,7 @@ public final class RaidConsistencyAudit {
     private static void auditSpawnSlots(MinecraftServer server, RaidAuditReport report) {
         for (Map.Entry<UUID, ResourceLocation> entry : RaidSpawnScheduler.trackedBosses().entrySet()) {
             report.checked();
-            PokemonEntity boss = resolve(server, entry.getKey(), entry.getValue());
+            PokemonEntity boss = RaidBossLookup.resolve(server, entry.getKey(), entry.getValue());
             if (boss == null) continue;
             if (boss.isRemoved()) {
                 report.error("leaked-raid-slot", "natural raid slot still held for destroyed boss "
@@ -173,11 +171,7 @@ public final class RaidConsistencyAudit {
         }
     }
 
-    private static PokemonEntity resolve(MinecraftServer server, UUID bossId, ResourceLocation dimension) {
-        ServerLevel level = server.getLevel(ResourceKey.create(Registries.DIMENSION, dimension));
-        if (level == null) return null;
-        return level.getEntity(bossId) instanceof PokemonEntity pokemon ? pokemon : null;
-    }
+
 
     private static UUID parseUuid(String value) {
         try {
