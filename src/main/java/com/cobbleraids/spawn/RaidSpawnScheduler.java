@@ -12,6 +12,7 @@ import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -197,6 +198,15 @@ public final class RaidSpawnScheduler {
     }
 
     static int trackedCount() { return TRACKER.size(); }
+
+    /** Every natural boss holding a raid slot, and the dimension it was spawned in. For auditing. */
+    public static Map<UUID, ResourceLocation> trackedBosses() {
+        Map<UUID, ResourceLocation> snapshot = new LinkedHashMap<>();
+        for (Map.Entry<UUID, TrackedRaidSpawn> entry : TRACKER.snapshot()) {
+            snapshot.put(entry.getKey(), entry.getValue().dimension());
+        }
+        return snapshot;
+    }
 
     static boolean tooCloseToAnotherRaid(ServerLevel level, BlockPos pos, double minimumDistance) {
         return TRACKER.anyWithin(level.dimension().location(), pos, minimumDistance);

@@ -102,6 +102,8 @@ public final class RaidAdminCommand {
                         .then(admin("debug")
                                 .then(Commands.literal("status")
                                         .executes(ctx -> RaidAdminDebugOps.status(ctx.getSource())))
+                                .then(Commands.literal("audit")
+                                        .executes(ctx -> RaidAdminDebugOps.audit(ctx.getSource())))
                                 .then(Commands.literal("raids")
                                         .executes(ctx -> RaidAdminDebugOps.raids(ctx.getSource())))
                                 .then(Commands.literal("history")

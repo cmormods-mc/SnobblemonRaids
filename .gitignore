@@ -9,3 +9,8 @@ out/
 validation/**/out/
 *.log
 validation/showdown/
+
+# Log4j output from the JUnit test worker. Minecraft is on the test classpath, so once CobbleRaids
+# started logging through SLF4J instead of System.out these began appearing in the repo root -- and
+# were committed twice before anyone noticed.
+logs/

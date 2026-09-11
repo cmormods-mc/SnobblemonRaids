@@ -6,6 +6,8 @@ import com.cobbleraids.config.CobbleRaidsConfig;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.config.RaidDefinitionRegistry;
 import com.cobbleraids.config.RaidRarityTier;
+import com.cobbleraids.fault.RaidAuditReport;
+import com.cobbleraids.fault.RaidConsistencyAudit;
 import com.cobbleraids.lobby.RaidLobby;
 import com.cobbleraids.lobby.RaidLobbyManager;
 import com.cobbleraids.presentation.CommandFormat;
@@ -35,6 +37,30 @@ import net.minecraft.server.level.ServerPlayer;
 
 final class RaidAdminDebugOps {
     private RaidAdminDebugOps() {}
+
+    /**
+     * Runs the cross-subsystem consistency sweep now and prints what it found.
+     *
+     * <p>The same sweep runs on a five-minute schedule and logs itself; this exists for the moment an
+     * operator has a suspicion and wants an answer immediately, and for the live smoke test, which
+     * fails the build if a freshly booted server is already inconsistent.
+     */
+    static int audit(CommandSourceStack source) {
+        RaidAuditReport report = RaidConsistencyAudit.run(source.getServer());
+        RaidConsistencyAudit.log(report);
+
+        source.sendSuccess(() -> CommandFormat.header("Consistency audit"), false);
+        if (report.isClean()) {
+            source.sendSuccess(() -> CommandFormat.row(report.summary()).withStyle(ChatFormatting.GREEN), false);
+            return 1;
+        }
+        source.sendSuccess(() -> CommandFormat.row(report.summary()).withStyle(ChatFormatting.RED), false);
+        for (String line : report.lines()) {
+            source.sendSuccess(() -> CommandFormat.row(line).withStyle(ChatFormatting.YELLOW), false);
+        }
+        // The result count is the violation total, so a command block or script can react to it.
+        return report.violationCount();
+    }
 
     static int status(CommandSourceStack source) {
         List<PokemonEntity> bosses = RaidAdminBossOps.allBosses(source.getServer());

@@ -330,6 +330,12 @@ public final class RaidLifecycleCoordinator {
      * stops with raids still in flight never reaches a terminal path at all, and an integrated
      * (single-player) client reuses this JVM for every world it opens.
      */
+    /**
+     * Raids currently mid-finalization. Outside a finalization call this must be zero: a claim that
+     * outlives its call is the leak that stranded raids before RaidFinalizationGuard existed.
+     */
+    public static int finalizationsInFlight() { return FINALIZATION.size(); }
+
     public static void onServerStopped() {
         FINALIZATION.clear();
         VICTORY_REQUESTED.clear();

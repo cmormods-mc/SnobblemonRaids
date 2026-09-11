@@ -59,6 +59,12 @@ public final class RaidBossGlowService {
         tickCounter = 0L;
     }
 
+    /** Every boss this service is tracking, and the dimension it was registered in. For auditing. */
+    public static Map<UUID, ResourceLocation> trackedBosses() { return Map.copyOf(TRACKED); }
+
+    /** Team name for a tier, so an audit can spot members that are no longer tracked bosses. */
+    public static String teamName(RaidRarityTier tier) { return TEAM_PREFIX + tier.serializedName(); }
+
     public static void tick(MinecraftServer server) {
         tickCounter++;
         if ((tickCounter % 20L) != 0L) return;

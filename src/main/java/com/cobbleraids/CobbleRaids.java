@@ -4,6 +4,7 @@ import com.cobbleraids.catching.RaidPlayerRecords;
 import com.cobbleraids.command.RaidAdminCommand;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.config.RaidDefinitionRegistry;
+import com.cobbleraids.fault.RaidConsistencyAuditScheduler;
 import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobbleraids.interaction.RaidBossInteractionListener;
 import com.cobbleraids.lifecycle.RaidBattleEventCoordinator;
@@ -61,6 +62,7 @@ public final class CobbleRaids implements ModInitializer {
             RaidFaultBarrier.safeTick("rewards", server, RaidRewardService::tick);
             RaidFaultBarrier.safeTick("combat-timer", server, RaidCombatRuleService::tick);
             RaidFaultBarrier.safeTick("boss-glow", server, RaidBossGlowService::tick);
+            RaidFaultBarrier.safeTick("consistency-audit", server, RaidConsistencyAuditScheduler::tick);
         });
         // Guarded like everything else, but for a different reason than the rest: reload() throws
         // deliberately on a malformed config, and CURRENT is only replaced after a successful parse,

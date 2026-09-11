@@ -339,6 +339,18 @@ def scenarios() -> list[Check]:
             expect=re.compile(r"Raid definitions \(130\)"),
         ),
 
+        # --- the mod auditing itself -----------------------------------------------------------
+        Check(
+            "the consistency audit finds no inconsistency",
+            "cobbleraids debug audit",
+            expect=re.compile(r"raid state consistent", re.I),
+            note=(
+                "cross-subsystem invariants: no stranded session, no leaked raid slot, no orphaned "
+                "glow team member, no leaked finalization claim. This is the check that grows with "
+                "the mod -- every new invariant added to RaidConsistencyAudit is covered here for free"
+            ),
+        ),
+
         # --- player-context guard --------------------------------------------------------------
         Check(
             "spawninfo is registered and refuses the console politely",

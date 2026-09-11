@@ -64,6 +64,20 @@ live demonstration that malformed-definition isolation works. Delete the datapac
 leftover world datapack silently shadows the mod's own `data/cobbleraids/raids/*.json` and has
 produced a false bug report before.
 
+## Proving the audit fires
+
+`smoke_test.py` asserts the mod's own consistency sweep reports nothing wrong. That is only
+meaningful if the sweep can report something wrong, so a second script proves it does:
+
+```sh
+python validation/smoke/prove_audit_detects.py --server-dir /path/to/testserver --java <jdk21 java>
+```
+
+It boots the server, injects a real inconsistency (a glow scoreboard team left listing a boss that
+is not tracked -- exactly what leaked into `scoreboard.dat` before 0.8.49), and asserts the audit
+names it and the offending id, then removes it and asserts the audit goes quiet again. A detector
+nobody has watched fire is a detector nobody should trust.
+
 ## What is deliberately not covered
 
 Anything needing a connected client. Raid recruitment, the shared battle, contribution and the reward
