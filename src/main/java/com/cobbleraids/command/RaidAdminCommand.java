@@ -2,7 +2,7 @@ package com.cobbleraids.command;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import com.cobbleraids.spawn.RaidSpawnScheduler;
+import com.cobbleraids.spawn.RaidSpawnCommands;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -52,7 +52,7 @@ public final class RaidAdminCommand {
                                                         StringArgumentType.getString(ctx, "pokemon"),
                                                         Vec3Argument.getVec3(ctx, "pos"))))))
                         .then(admin("spawninfo")
-                                .executes(ctx -> RaidSpawnScheduler.sendSpawnInfo(ctx.getSource())))
+                                .executes(ctx -> RaidSpawnCommands.sendSpawnInfo(ctx.getSource())))
                         // Unrestricted on purpose: this is the player-facing "where does X appear?"
                         // lookup. The tuning numbers live in debug definition, which is operator-only.
                         .then(Commands.literal("info")
@@ -63,7 +63,7 @@ public final class RaidAdminCommand {
                         .then(admin("testwild")
                                 .then(Commands.argument("pokemon", StringArgumentType.word())
                                         .suggests(RaidSuggestions.SPECIES)
-                                        .executes(ctx -> RaidSpawnScheduler.testWild(
+                                        .executes(ctx -> RaidSpawnCommands.testWild(
                                                 ctx.getSource(), StringArgumentType.getString(ctx, "pokemon")))))
                         .then(admin("despawn")
                                 .executes(ctx -> RaidAdminBossOps.despawnNearest(ctx.getSource()))

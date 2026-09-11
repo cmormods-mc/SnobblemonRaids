@@ -4,31 +4,21 @@ import com.cobbleraids.config.CobbleRaidsConfig;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.config.RaidDefinitionRegistry;
-import com.cobbleraids.config.RaidRarityTier;
 import com.cobbleraids.lobby.RaidLobbyManager;
 import com.cobbleraids.presentation.CommandFormat;
-import com.cobbleraids.presentation.RaidTierPresentation;
 import com.cobbleraids.showdown.ShowdownIntegrationInstaller;
 import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
-import net.minecraft.ChatFormatting;
-import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -44,7 +34,7 @@ import net.minecraft.world.phys.Vec3;
  */
 public final class RaidSpawnScheduler {
     private static final ActiveRaidSpawnTracker TRACKER = new ActiveRaidSpawnTracker();
-    private static final Map<ResourceLocation, Long> NEXT_ALLOWED_TICK = new HashMap<>();
+    private static final RaidSpawnCooldowns COOLDOWNS = new RaidSpawnCooldowns();
     private static long schedulerTick;
     private static boolean spawningTrackedBoss;
 
@@ -89,7 +79,7 @@ public final class RaidSpawnScheduler {
             return;
         }
 
-        int activeHere = activeInDimension(dimensionId);
+        int activeHere = trackedInDimension(dimensionId);
         if (activeHere >= config.maxActiveRaidsPerDimension()) {
             RaidSpawnHistory.record(schedulerTick, playerName, dimensionId, RaidSpawnHistory.Outcome.PER_DIMENSION_CAP,
                     activeHere + "/" + config.maxActiveRaidsPerDimension() + " active in dimension");
@@ -103,7 +93,7 @@ public final class RaidSpawnScheduler {
             return;
         }
         BlockPos pos = position.get();
-        if (isTooCloseToAnotherRaid(level, pos, config.minDistanceBetweenRaids())) {
+        if (tooCloseToAnotherRaid(level, pos, config.minDistanceBetweenRaids())) {
             RaidSpawnHistory.record(schedulerTick, playerName, dimensionId, RaidSpawnHistory.Outcome.TOO_CLOSE_TO_EXISTING,
                     "candidate " + pos.toShortString() + " within " + config.minDistanceBetweenRaids()
                             + " blocks of an active raid");
@@ -155,7 +145,7 @@ public final class RaidSpawnScheduler {
                 CommandFormat.shortId(selected.id()) + " (" + selected.rarityTier().serializedName() + ")");
     }
 
-    private static PokemonEntity spawnTracked(
+    static PokemonEntity spawnTracked(
             ServerLevel level,
             BlockPos pos,
             ResourceLocation biomeId,
@@ -181,9 +171,10 @@ public final class RaidSpawnScheduler {
                 selected.spawn().despawnSeconds(),
                 selected.spawn().maxLifetimeSeconds()
         );
-        NEXT_ALLOWED_TICK.put(selected.id(), schedulerTick + selected.spawn().cooldownSeconds() * 20L);
+        COOLDOWNS.start(selected.id(), schedulerTick, selected.spawn().cooldownSeconds());
 
-        announceNaturalSpawn(level.getServer(), entity, biomeId, dimensionId, pos, selected.rarityTier());
+        RaidSpawnAnnouncementService.naturalSpawn(
+                level.getServer(), entity, biomeId, dimensionId, pos, selected.rarityTier());
         if (CobbleRaidsConfigManager.get().debugLogging()) {
             System.out.println("[CobbleRaids] Natural raid spawned: " + selected.id() + " at " + pos
                     + " in " + dimensionId + " biome=" + biomeId + " tier="
@@ -192,218 +183,21 @@ public final class RaidSpawnScheduler {
         return entity;
     }
 
-    private static void announceNaturalSpawn(
-            MinecraftServer server,
-            PokemonEntity entity,
-            ResourceLocation biomeId,
-            ResourceLocation dimensionId,
-            BlockPos position,
-            RaidRarityTier tier
-    ) {
-        int hintX = coordinateHint(position.getX());
-        int hintZ = coordinateHint(position.getZ());
-        MutableComponent speciesName = entity.getPokemon().getSpecies().getTranslatedName();
-        String biomeName = biomeId == null ? "Unknown Biome" : friendlyName(biomeId);
-
-        MutableComponent message = Component.literal("[CobbleRaids] ")
-                .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD)
-                .append(Component.literal("A wild ").withStyle(ChatFormatting.YELLOW))
-                .append(Component.literal(tier.displayName() + " ").withStyle(RaidTierPresentation.color(tier)))
-                .append(speciesName.copy().withStyle(ChatFormatting.WHITE))
-                .append(Component.literal(" raid has appeared in ").withStyle(ChatFormatting.YELLOW))
-                .append(Component.literal(biomeName).withStyle(ChatFormatting.GREEN))
-                .append(Component.literal("! Coordinate hint: near X " + hintX + ", Z " + hintZ)
-                        .withStyle(ChatFormatting.YELLOW))
-                .append(Component.literal(" (" + friendlyName(dimensionId) + ").")
-                        .withStyle(ChatFormatting.DARK_GRAY));
-
-        for (ServerPlayer onlinePlayer : server.getPlayerList().getPlayers()) {
-            onlinePlayer.sendSystemMessage(message);
-        }
+    static boolean offCooldown(RaidDefinition definition) {
+        return COOLDOWNS.isOffCooldown(definition.id(), schedulerTick);
     }
 
-    static int coordinateHint(int coordinate) {
-        return coordinate >= 0 ? (coordinate + 50) / 100 * 100 : (coordinate - 50) / 100 * 100;
-    }
-
-    static String friendlyName(ResourceLocation id) {
-        String[] words = id.getPath().replace('/', ' ').replace('_', ' ').split(" +");
-        StringBuilder result = new StringBuilder();
-        for (String word : words) {
-            if (word.isEmpty()) continue;
-            if (!result.isEmpty()) result.append(' ');
-            result.append(Character.toUpperCase(word.charAt(0)));
-            if (word.length() > 1) result.append(word.substring(1));
-        }
-        return result.isEmpty() ? id.toString() : result.toString();
-    }
-
-    public static int sendSpawnInfo(CommandSourceStack source) {
-        ServerPlayer player;
-        try {
-            player = source.getPlayerOrException();
-        } catch (Exception ex) {
-            source.sendFailure(Component.literal("/cobbleraids spawninfo must be run by a player."));
-            return 0;
-        }
-
-        purgeRemoved(source.getServer());
-        ServerLevel level = source.getLevel();
-        BlockPos pos = player.blockPosition();
-        Holder<Biome> biomeHolder = level.getBiome(pos);
-        ResourceLocation biomeId = biomeHolder.unwrapKey().map(key -> key.location()).orElse(null);
-        ResourceLocation dimensionId = level.dimension().location();
-        RaidSpawnContext context = new RaidSpawnContext(dimensionId, biomeId, biomeHolder, level.getDayTime());
-        CobbleRaidsConfig.NaturalSpawning config = CobbleRaidsConfigManager.get().naturalSpawning();
-
-        List<RaidDefinition> environmental = RaidDefinitionRegistry.all().stream()
-                .filter(context::matches)
-                .sorted(Comparator.comparing(definition -> definition.species().getPath()))
-                .toList();
-        List<RaidDefinition> eligible = environmental.stream()
-                .filter(RaidSpawnScheduler::offCooldown)
-                .filter(RaidSpawnScheduler::belowDefinitionCap)
-                .toList();
-        Map<RaidRarityTier, Integer> counts = RaidTierSelector.counts(eligible, RaidDefinition::rarityTier);
-        Map<RaidRarityTier, Double> odds =
-                RaidTierSelector.normalizedPercentages(counts, config.tierWeights(), config.tierSpawnChance());
-        double noSpawn = RaidTierSelector.noSpawnPercentage(odds);
-
-        source.sendSuccess(() -> CommandFormat.header("Wild spawn director"), false);
-        if (!config.enabled()) {
-            // Promoted from a trailing note to its own red line: it makes every number below moot.
-            source.sendSuccess(() -> Component.literal(" natural spawning is DISABLED")
-                    .withStyle(ChatFormatting.RED), false);
-        }
-        source.sendSuccess(() -> CommandFormat.row((biomeId == null ? "unknown biome" : CommandFormat.shortId(biomeId))
-                + " · " + CommandFormat.shortId(dimensionId)
-                + " · " + RaidDefinition.SpawnTime.current(level.getDayTime()).name().toLowerCase(Locale.ROOT)), false);
-        source.sendSuccess(() -> CommandFormat.row("active " + TRACKER.size() + "/" + config.maxActiveRaids()
-                + " global · " + activeInDimension(dimensionId) + "/"
-                + config.maxActiveRaidsPerDimension() + " here"), false);
-
-        for (RaidRarityTier tier : RaidRarityTier.values()) {
-            List<String> names = eligible.stream()
-                    .filter(definition -> definition.rarityTier() == tier)
-                    .map(definition -> definition.species().getPath())
-                    .toList();
-            source.sendSuccess(() -> CommandFormat.row(
-                            CommandFormat.pad(tier.serializedName(), 11)
-                                    + CommandFormat.pad(CommandFormat.percent(odds.getOrDefault(tier, 0.0)), 7)
-                                    + CommandFormat.pad(Integer.toString(names.size()), 4)
-                                    + CommandFormat.names(names, 3))
-                    .withStyle(RaidTierPresentation.color(tier)), false);
-        }
-
-        // Only worth a line when tier_spawn_chance is actually holding raids back; at the default
-        // 1.0 across the board this is 0 and the odds column sums to 100 as it always did.
-        if (noSpawn > 0.05) {
-            source.sendSuccess(() -> CommandFormat.row(
-                            CommandFormat.pad("no spawn", 11) + CommandFormat.pad(CommandFormat.percent(noSpawn), 7)
-                                    + "held back by tier_spawn_chance")
-                    .withStyle(ChatFormatting.DARK_GRAY), false);
-        }
-
-        int blocked = environmental.size() - eligible.size();
-        source.sendSuccess(() -> CommandFormat.row("eligible " + eligible.size() + "/" + environmental.size()
-                + " here" + (blocked == 0 ? "" : " · " + blocked + " on cooldown or at cap")), false);
-        return eligible.size();
-    }
-
-    public static int testWild(CommandSourceStack source, String rawPokemonName) {
-        ServerPlayer player;
-        try {
-            player = source.getPlayerOrException();
-        } catch (Exception ex) {
-            source.sendFailure(Component.literal("/cobbleraids testwild must be run by a player."));
-            return 0;
-        }
-
-        RaidDefinition definition = resolveSpecies(source, rawPokemonName);
-        if (definition == null) return 0;
-
-        CobbleRaidsConfig.NaturalSpawning config = CobbleRaidsConfigManager.get().naturalSpawning();
-        if (!config.enabled()) {
-            source.sendFailure(Component.literal("Natural raid spawning is disabled in the CobbleRaids config."));
-            return 0;
-        }
-
-        purgeRemoved(source.getServer());
-        ServerLevel level = source.getLevel();
-        ResourceLocation dimensionId = level.dimension().location();
-        if (TRACKER.size() >= config.maxActiveRaids()
-                || activeInDimension(dimensionId) >= config.maxActiveRaidsPerDimension()
-                || !belowDefinitionCap(definition)) {
-            source.sendFailure(Component.literal("A natural raid cap is full. Despawn an active boss and retry."));
-            return 0;
-        }
-
-        for (int search = 0; search < 16; search++) {
-            Optional<BlockPos> candidate = RaidSpawnPositionFinder.findLand(level, player, config);
-            if (candidate.isEmpty()) continue;
-            BlockPos pos = candidate.get();
-            if (isTooCloseToAnotherRaid(level, pos, config.minDistanceBetweenRaids())) continue;
-
-            Holder<Biome> biomeHolder = level.getBiome(pos);
-            ResourceLocation biomeId = biomeHolder.unwrapKey().map(key -> key.location()).orElse(null);
-            RaidSpawnContext context = new RaidSpawnContext(
-                    dimensionId, biomeId, biomeHolder, level.getDayTime());
-            if (!context.matches(definition)) continue;
-
-            try {
-                PokemonEntity boss = spawnTracked(level, pos, biomeId, dimensionId, definition);
-                source.sendSuccess(() -> Component.literal("Spawned tracked wild "
-                        + definition.species().getPath() + " ("
-                        + definition.rarityTier().serializedName() + ") at "
-                        + CommandFormat.coords(boss.getX(), boss.getY(), boss.getZ()))
-                        .withStyle(ChatFormatting.GREEN), true);
-                source.sendSuccess(() -> CommandFormat.hint(
-                        " chance and cooldown bypassed · wild tracking active"), false);
-                return 1;
-            } catch (RuntimeException ex) {
-                source.sendFailure(Component.literal("Failed to spawn " + definition.species().getPath()
-                        + ": " + ex.getMessage()));
-                return 0;
-            }
-        }
-
-        source.sendFailure(Component.literal("No valid nearby natural position for "
-                + definition.species().getPath()
-                + ". Stand in one of its allowed biomes/times and use /cobbleraids spawninfo, then retry."));
-        return 0;
-    }
-
-    private static RaidDefinition resolveSpecies(CommandSourceStack source, String rawPokemonName) {
-        String pokemonName = rawPokemonName.trim().toLowerCase(Locale.ROOT);
-        if (pokemonName.isEmpty() || pokemonName.contains(":")) {
-            source.sendFailure(Component.literal(
-                    "Use a species name only, for example: /cobbleraids testwild garchomp"));
-            return null;
-        }
-
-        List<RaidDefinition> matches = RaidDefinitionRegistry.findBySpeciesName(pokemonName);
-        if (matches.size() != 1) {
-            source.sendFailure(Component.literal(matches.isEmpty()
-                    ? "No raid definition uses species '" + pokemonName + "'."
-                    : "Multiple raid definitions use species '" + pokemonName + "'."));
-            return null;
-        }
-        return matches.getFirst();
-    }
-
-    private static boolean offCooldown(RaidDefinition definition) {
-        return schedulerTick >= NEXT_ALLOWED_TICK.getOrDefault(definition.id(), 0L);
-    }
-
-    private static boolean belowDefinitionCap(RaidDefinition definition) {
+    static boolean belowDefinitionCap(RaidDefinition definition) {
         return TRACKER.belowDefinitionCap(definition.id(), definition.spawn().maxConcurrent());
     }
 
-    private static int activeInDimension(ResourceLocation dimension) {
+    static int trackedInDimension(ResourceLocation dimension) {
         return TRACKER.countInDimension(dimension);
     }
 
-    private static boolean isTooCloseToAnotherRaid(ServerLevel level, BlockPos pos, double minimumDistance) {
+    static int trackedCount() { return TRACKER.size(); }
+
+    static boolean tooCloseToAnotherRaid(ServerLevel level, BlockPos pos, double minimumDistance) {
         return TRACKER.anyWithin(level.dimension().location(), pos, minimumDistance);
     }
 
@@ -440,8 +234,7 @@ public final class RaidSpawnScheduler {
         public void onLifetimeExpired(UUID bossId, TrackedRaidSpawn spawn, PokemonEntity boss) {
             if (boss != null) {
                 RaidLobbyManager.cancelForBoss(boss);
-                broadcastNear(boss, despawnRadius, Component.literal("The raid boss lost interest and left.")
-                        .withStyle(ChatFormatting.GRAY));
+                RaidSpawnAnnouncementService.bossLeft(boss, despawnRadius);
                 boss.discard();
             }
             if (CobbleRaidsConfigManager.get().debugLogging()) {
@@ -462,26 +255,13 @@ public final class RaidSpawnScheduler {
 
         @Override
         public void onExpiryWarning(UUID bossId, TrackedRaidSpawn spawn, PokemonEntity boss, long secondsLeft) {
-            broadcastNear(boss, despawnRadius, Component.literal("This raid boss will leave in ~"
-                    + secondsLeft + "s.").withStyle(ChatFormatting.YELLOW));
+            RaidSpawnAnnouncementService.expiryWarning(boss, despawnRadius, secondsLeft);
         }
     }
 
     /** Seconds of lifetime remaining, or -1 for a boss this scheduler does not track (admin-spawned). */
     public static long secondsUntilExpiry(UUID bossId) {
         return TRACKER.secondsUntilExpiry(bossId, schedulerTick);
-    }
-
-    /**
-     * Level-local player list rather than the whole server's: only players in this dimension can
-     * possibly be in range, and on a busy server that is a much shorter list to walk.
-     */
-    private static void broadcastNear(PokemonEntity boss, double radius, Component message) {
-        if (!(boss.level() instanceof ServerLevel level)) return;
-        double radiusSqr = radius * radius;
-        for (ServerPlayer player : level.players()) {
-            if (player.distanceToSqr(boss) <= radiusSqr) player.sendSystemMessage(message);
-        }
     }
 
     private static PokemonEntity resolveBoss(MinecraftServer server, UUID bossId, TrackedRaidSpawn spawn) {
@@ -566,7 +346,7 @@ public final class RaidSpawnScheduler {
      * what releases a slot in practice. Kept because it is bounded by max_active_raids entries and
      * runs only on a spawn attempt.
      */
-    private static void purgeRemoved(MinecraftServer server) {
+    static void purgeRemoved(MinecraftServer server) {
         TRACKER.releaseProvablyGone((bossId, spawn) -> {
             PokemonEntity boss = resolveBoss(server, bossId, spawn);
             return boss != null && boss.isRemoved();
@@ -591,7 +371,7 @@ public final class RaidSpawnScheduler {
     /** Removes stale natural raid entities after a crash/restart. */
     public static void onServerStarted(MinecraftServer server) {
         TRACKER.clear();
-        NEXT_ALLOWED_TICK.clear();
+        COOLDOWNS.clear();
         schedulerTick = 0L;
         int purged = 0;
         for (ServerLevel level : server.getAllLevels()) {
@@ -618,7 +398,7 @@ public final class RaidSpawnScheduler {
             if (boss != null && !boss.isRemoved()) boss.discard();
         }
         TRACKER.clear();
-        NEXT_ALLOWED_TICK.clear();
+        COOLDOWNS.clear();
         schedulerTick = 0L;
     }
 
@@ -641,21 +421,11 @@ public final class RaidSpawnScheduler {
 
     /** Clears one definition's natural-spawn cooldown early. Returns false if it wasn't on cooldown. */
     public static boolean resetCooldown(ResourceLocation definitionId) {
-        return NEXT_ALLOWED_TICK.remove(definitionId) != null;
+        return COOLDOWNS.reset(definitionId);
     }
 
-    /**
-     * Definitions still on natural-spawn cooldown and the seconds left on each, soonest first.
-     * Entries whose cooldown has already elapsed are skipped rather than reported as zero -- the map
-     * keeps expired keys (it is bounded by the definition count), and they are not on cooldown.
-     */
+    /** Definitions still on natural-spawn cooldown and the seconds left on each, soonest first. */
     public static List<Map.Entry<ResourceLocation, Long>> activeCooldowns() {
-        List<Map.Entry<ResourceLocation, Long>> remaining = new ArrayList<>();
-        for (Map.Entry<ResourceLocation, Long> entry : NEXT_ALLOWED_TICK.entrySet()) {
-            long ticksLeft = entry.getValue() - schedulerTick;
-            if (ticksLeft > 0L) remaining.add(Map.entry(entry.getKey(), ticksLeft / 20L));
-        }
-        remaining.sort(Map.Entry.comparingByValue());
-        return remaining;
+        return COOLDOWNS.remaining(schedulerTick);
     }
 }
