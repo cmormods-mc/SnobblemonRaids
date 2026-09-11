@@ -58,6 +58,9 @@ public final class RaidRecruitmentRoster {
     /** Whether the recruitment window has run out at {@code nowTick}. */
     public boolean hasClosed(long nowTick) { return nowTick >= closesAtTick; }
 
+    /** Ticks left before the window closes; zero or negative once it has. */
+    public long ticksRemaining(long nowTick) { return closesAtTick - nowTick; }
+
     public synchronized void starting() { if (status == Status.RECRUITING) status = Status.STARTING; }
     public synchronized void started() { if (status == Status.STARTING) status = Status.STARTED; }
     public synchronized void cancel() { if (status != Status.STARTED) status = Status.CANCELLED; }

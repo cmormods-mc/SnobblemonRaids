@@ -1,6 +1,7 @@
 package com.cobbleraids.fault;
 
 import com.cobbleraids.RaidLog;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.minecraft.server.MinecraftServer;
 
 /**
@@ -11,6 +12,13 @@ import net.minecraft.server.MinecraftServer;
  * that went wrong -- it is a crash report and a stopped dedicated server. This mod is built for a
  * box nobody is watching, where that trade is never worth making: one broken raid must not end
  * everyone else's session.
+ *
+ * <p>The same is true of every other callback this mod registers, which is easy to forget because
+ * they do not look like a tick loop. A Fabric event invoker walks its listeners with no try/catch of
+ * its own, so an escaping exception does two things: it reaches Minecraft's packet or chunk handling
+ * on the server thread, and it stops the listeners registered *after* ours from running at all. On
+ * SERVER_STARTED that second effect is the quieter and nastier one -- three of this mod's four
+ * startup listeners restore player data, and a throw in the first would skip them in silence.
  *
  * <p>Only {@link Exception} is caught. An {@link Error} means the JVM or the mod's own linkage is
  * unsound -- OutOfMemoryError, or a NoSuchMethodError from Cobblemon drifting under our mixins --
@@ -26,6 +34,47 @@ public final class RaidFaultBarrier {
     }
 
     private RaidFaultBarrier() {}
+
+    /**
+     * Runs a one-off callback body, containing any exception to it.
+     *
+     * <p>For cold paths -- startup, shutdown, a player joining, a level unloading. The lambda costs
+     * an allocation per invocation, which is irrelevant when the invocation happens once per server
+     * or once per player. Anything that fires per entity or per tick should use a typed wrapper
+     * below instead, so the allocation happens at registration rather than per event.
+     */
+    public static void guard(String context, Runnable body) {
+        try {
+            body.run();
+        } catch (Exception ex) {
+            report(context, ex);
+        }
+    }
+
+    /**
+     * Wraps an ENTITY_LOAD listener. Allocated once at registration, so the per-entity cost is one
+     * interface call and an untaken try/catch -- this fires for every entity entering every chunk.
+     */
+    public static ServerEntityEvents.Load entityLoad(String context, ServerEntityEvents.Load delegate) {
+        return (entity, level) -> {
+            try {
+                delegate.onLoad(entity, level);
+            } catch (Exception ex) {
+                report(context, ex);
+            }
+        };
+    }
+
+    /** Wraps an ENTITY_UNLOAD listener; the hottest callback this mod registers. */
+    public static ServerEntityEvents.Unload entityUnload(String context, ServerEntityEvents.Unload delegate) {
+        return (entity, level) -> {
+            try {
+                delegate.onUnload(entity, level);
+            } catch (Exception ex) {
+                report(context, ex);
+            }
+        };
+    }
 
     /**
      * Runs one subsystem's tick, containing any exception to that subsystem for that tick.

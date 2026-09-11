@@ -46,7 +46,7 @@ public final class RaidLobbyManager {
         long now = boss.level().getGameTime();
         RaidLobby lobby = BY_BOSS.get(boss.getUUID());
         boolean created = false;
-        if (lobby == null || lobby.status() == RaidLobby.Status.CANCELLED || lobby.status() == RaidLobby.Status.STARTED) {
+        if (lobby == null || lobby.status() == RaidRecruitmentRoster.Status.CANCELLED || lobby.status() == RaidRecruitmentRoster.Status.STARTED) {
             // A wild boss has a total lifetime cap that recruitment does not extend, so refuse to
             // open a lobby that could not finish recruiting before the boss is due to leave. Without
             // this, players would join, wait out the countdown, and watch the boss vanish at lock.
@@ -86,7 +86,7 @@ public final class RaidLobbyManager {
         // copy entirely rather than allocating one 20x/second at idle.
         if (BY_BOSS.isEmpty()) return;
         for (RaidLobby lobby : List.copyOf(BY_BOSS.values())) {
-            if (lobby.status() != RaidLobby.Status.RECRUITING) continue;
+            if (lobby.status() != RaidRecruitmentRoster.Status.RECRUITING) continue;
             PokemonEntity boss = lobby.boss();
             if (boss.isRemoved() || !RaidBossEntityMarker.isRaidBoss(boss)) {
                 lobby.cancel();
@@ -95,8 +95,8 @@ public final class RaidLobbyManager {
             }
 
             long now = boss.level().getGameTime();
-            long remainingTicks = lobby.closesAtTick() - now;
-            if (remainingTicks > 0) {
+            long remainingTicks = lobby.ticksRemaining(now);
+            if (!lobby.hasClosed(now)) {
                 // Lightweight countdown: broadcast at 30, 20, 10, 5, 4, 3, 2, 1 seconds if those values occur.
                 if (remainingTicks % 20L == 0L) {
                     long seconds = remainingTicks / 20L;
@@ -193,7 +193,7 @@ public final class RaidLobbyManager {
     public static boolean hasActiveLobby(PokemonEntity boss) {
         RaidLobby lobby = get(boss);
         if (lobby == null) return false;
-        RaidLobby.Status status = lobby.status();
-        return status == RaidLobby.Status.RECRUITING || status == RaidLobby.Status.STARTING;
+        RaidRecruitmentRoster.Status status = lobby.status();
+        return status == RaidRecruitmentRoster.Status.RECRUITING || status == RaidRecruitmentRoster.Status.STARTING;
     }
 }

@@ -4,6 +4,7 @@
 Both fixes are easy to silently undo with a small edit, so the properties that make them
 work are asserted here rather than left to review.
 """
+import re
 import json
 import sys
 import zipfile
@@ -48,12 +49,20 @@ def validate_despawn_integrity() -> None:
 
     # Wiring. Nothing below is reachable from a unit test: these are the callbacks that connect the
     # tracker to the running server, and losing one is silent.
-    for hook in (
-        "ServerEntityEvents.ENTITY_LOAD.register(RaidSpawnScheduler::onNaturalBossLoaded)",
-        "ServerEntityEvents.ENTITY_UNLOAD.register(RaidSpawnScheduler::onEntityUnloaded)",
-        "ServerWorldEvents.UNLOAD.register(RaidSpawnScheduler::onLevelUnloaded)",
+    #
+    # Matched as "this event is registered, and this handler is named in the registration" rather
+    # than as one exact expression. The exact form broke the day after it was written, when the
+    # registrations were wrapped in fault barriers and a method reference became a lambda -- a
+    # correct change, failing CI, which is precisely the trap validation/README.md warns about.
+    # Whether the handler is wrapped is validate_callback_guards.py's job, not this one's.
+    for event, handler in (
+        ("ServerEntityEvents.ENTITY_LOAD", "onNaturalBossLoaded"),
+        ("ServerEntityEvents.ENTITY_UNLOAD", "onEntityUnloaded"),
+        ("ServerWorldEvents.UNLOAD", "onLevelUnloaded"),
     ):
-        assert hook in initializer, f"lost the boss-lifecycle hook: {hook}"
+        registration = re.search(
+            re.escape(event) + r"\.register\((?:[^;]*?)" + re.escape(handler), initializer, re.S)
+        assert registration, f"lost the boss-lifecycle hook: {event} -> {handler}"
 
     config = read(JAVA / "config/CobbleRaidsConfig.java")
     assert "despawnPlayerRadius >= maxDistanceFromPlayer" in config, "missing keep-alive radius warning"

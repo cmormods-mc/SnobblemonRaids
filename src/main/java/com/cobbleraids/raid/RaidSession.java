@@ -52,9 +52,6 @@ public final class RaidSession {
     public ResourceLocation getDefinitionId() { return definitionId; }
     public boolean isFleeAllowed() { return allowFlee; }
 
-    /** The testable half, for code that wants the state machine rather than the entity. */
-    public RaidProgress progress() { return progress; }
-
     public Set<UUID> getParticipants() { return progress.participants(); }
     public Set<UUID> getActiveParticipants() { return progress.activeParticipants(); }
     public boolean isActiveParticipant(UUID playerId) { return progress.isActiveParticipant(playerId); }

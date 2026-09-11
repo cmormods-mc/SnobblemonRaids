@@ -8,6 +8,7 @@ are asserted here rather than left to review.
 import json
 import sys
 import zipfile
+import re
 from pathlib import Path
 
 
@@ -58,7 +59,9 @@ def validate_skiesguis_optional() -> None:
 
     initializer = read(JAVA / "CobbleRaids.java")
     assert "RaidRewardGuiInstaller" not in initializer, "the unconditional installer call must be gone"
-    assert "RewardGuiBackends.ensureReady()" in initializer
+    # Either call style: the registration was wrapped in a fault barrier, turning the direct
+    # call into a method reference. What matters is that the backend is still readied at startup.
+    assert re.search(r"RewardGuiBackends(?:\.|::)ensureReady", initializer), "ensureReady is no longer wired into startup"
 
     backends = read(REWARD / "RewardGuiBackends.java")
     assert 'FabricLoader.getInstance().isModLoaded("skiesguis")' in backends

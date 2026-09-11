@@ -12,8 +12,6 @@ import java.util.UUID;
  * {@link RaidRecruitmentRoster}, which this delegates to so they can be tested without a server.
  */
 public final class RaidLobby {
-    public enum Status { RECRUITING, STARTING, STARTED, CANCELLED }
-
     private final UUID id = UUID.randomUUID();
     private final PokemonEntity boss;
     private final RaidDefinition definition;
@@ -32,11 +30,10 @@ public final class RaidLobby {
     public PokemonEntity boss() { return boss; }
     public RaidDefinition definition() { return definition; }
 
-    /** The testable half, for code that wants the roster rules rather than the boss. */
-    public RaidRecruitmentRoster roster() { return roster; }
-
     public long openedAtTick() { return roster.openedAtTick(); }
     public long closesAtTick() { return roster.closesAtTick(); }
+    public boolean hasClosed(long nowTick) { return roster.hasClosed(nowTick); }
+    public long ticksRemaining(long nowTick) { return roster.ticksRemaining(nowTick); }
     public Set<UUID> optedIn() { return roster.optedIn(); }
     public boolean isOptedIn(UUID playerId) { return roster.isOptedIn(playerId); }
     public boolean join(UUID playerId) { return roster.join(playerId); }
@@ -45,12 +42,5 @@ public final class RaidLobby {
     public void started() { roster.started(); }
     public void cancel() { roster.cancel(); }
 
-    public Status status() {
-        return switch (roster.status()) {
-            case RECRUITING -> Status.RECRUITING;
-            case STARTING -> Status.STARTING;
-            case STARTED -> Status.STARTED;
-            case CANCELLED -> Status.CANCELLED;
-        };
-    }
+    public RaidRecruitmentRoster.Status status() { return roster.status(); }
 }

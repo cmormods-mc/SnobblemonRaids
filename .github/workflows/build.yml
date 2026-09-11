@@ -55,6 +55,9 @@ jobs:
       - name: Validate logging discipline
         run: python3 validation/validate_logging.py
 
+      - name: Validate callback fault barriers
+        run: python3 validation/validate_callback_guards.py
+
       - name: Compile and remap
         run: gradle --no-daemon clean build --stacktrace --warning-mode all
 
