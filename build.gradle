@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.63-reveal-fits-a-full-bundle'
+version = '0.8.64-claim-button-label'
 group = 'com.cobbleraids'
 
 base {
