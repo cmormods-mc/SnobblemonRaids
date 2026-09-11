@@ -243,7 +243,7 @@ public final class RaidRewardRevealScreen extends Screen {
                 int x = startX + index * (buttonWidth + gap);
                 index++;
                 this.addRenderableWidget(new TexturedButton(x, y, buttonWidth, buttonHeight,
-                        Component.literal(choiceId), button -> onChoose(choiceId),
+                        buttonLabel(choiceId, choices.size()), button -> onChoose(choiceId),
                         CLAIM_BUTTON_BLANK, 488, 83));
             }
         } else if (state == State.RESULT) {
@@ -255,6 +255,19 @@ public final class RaidRewardRevealScreen extends Screen {
                     buttonRect.width(), buttonRect.height(), Component.empty(), widget -> this.onClose(),
                     CLAIM_BUTTON, 488, 83));
         }
+    }
+
+    /**
+     * What the claim button says.
+     *
+     * <p>A choice id is a datapack key -- every bundled definition uses "all" -- and drawing it
+     * raw put the word "all" on a button whose art already says what it does. There is nothing to
+     * choose between when there is one option, so it reads as the action it performs. Only a
+     * definition that genuinely offers alternatives needs its options named, and then the id is
+     * the only name anyone has given them.
+     */
+    private static Component buttonLabel(String choiceId, int choiceCount) {
+        return Component.literal(choiceCount == 1 ? "Claim" : choiceId);
     }
 
     private void onChoose(String choiceId) {
