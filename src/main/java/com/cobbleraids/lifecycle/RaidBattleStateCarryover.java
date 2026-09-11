@@ -1,5 +1,6 @@
 package com.cobbleraids.lifecycle;
 
+import com.cobbleraids.RaidLog;
 import com.cobbleraids.config.CobbleRaidsConfig;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.raid.RaidSession;
@@ -11,8 +12,6 @@ import com.cobblemon.mod.common.battles.actor.PlayerBattleActor;
 import com.cobblemon.mod.common.battles.pokemon.BattlePokemon;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Carries a raid's battle damage back onto the players' real Pokemon -- the cost of a raid.
@@ -37,7 +36,6 @@ import org.slf4j.LoggerFactory;
  * disconnect erase it would make quitting mid-raid the cheapest way to fight one.
  */
 public final class RaidBattleStateCarryover {
-    private static final Logger LOGGER = LoggerFactory.getLogger("CobbleRaids");
 
     private RaidBattleStateCarryover() {}
 
@@ -56,7 +54,7 @@ public final class RaidBattleStateCarryover {
                     applyTo(battlePokemon, carryover);
                 } catch (RuntimeException ex) {
                     // One Pokemon must not stop the rest of the party -- or the raid -- finalizing.
-                    LOGGER.error("[CobbleRaids] Failed to carry raid battle state for {}",
+                    RaidLog.error("Failed to carry raid battle state for {}",
                             battlePokemon.getOriginalPokemon().getSpecies().getName(), ex);
                 }
             }
@@ -91,7 +89,7 @@ public final class RaidBattleStateCarryover {
         }
 
         if (CobbleRaidsConfigManager.get().debugLogging()) {
-            LOGGER.info("[CobbleRaids] Raid cost: {} hp {}/{}{}", original.getSpecies().getName(),
+            RaidLog.info("Raid cost: {} hp {}/{}{}", original.getSpecies().getName(),
                     original.getCurrentHealth(), original.getMaxHealth(),
                     original.isFainted() ? " (fainted)" : "");
         }

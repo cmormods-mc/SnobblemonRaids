@@ -1,5 +1,6 @@
 package com.cobbleraids.catching;
 
+import com.cobbleraids.RaidLog;
 import com.cobbleraids.config.RaidRarityTier;
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -64,7 +65,7 @@ public final class RaidPlayerRecords extends SavedData {
         LIVE.clear();
         LIVE.putAll(get(server).take());
         if (!LIVE.isEmpty()) {
-            System.out.println("[CobbleRaids] Restored raid records for " + LIVE.size() + " player(s).");
+            RaidLog.info("Restored raid records for " + LIVE.size() + " player(s).");
         }
     }
 

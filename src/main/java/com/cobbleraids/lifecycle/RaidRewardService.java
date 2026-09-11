@@ -1,5 +1,6 @@
 package com.cobbleraids.lifecycle;
 
+import com.cobbleraids.RaidLog;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.config.RaidDefinitionRegistry;
@@ -46,7 +47,7 @@ public final class RaidRewardService {
         PENDING.putAll(PendingRewardStore.get(server).take());
         int claims = PENDING.values().stream().mapToInt(ArrayDeque::size).sum();
         if (claims > 0) {
-            System.out.println("[CobbleRaids] Restored " + claims + " unclaimed raid reward(s) for "
+            RaidLog.info("Restored " + claims + " unclaimed raid reward(s) for "
                     + PENDING.size() + " player(s).");
         }
     }
@@ -99,12 +100,12 @@ public final class RaidRewardService {
         if (eligibility == null || eligibility.outcome() != RaidOutcome.VICTORY || server == null) return;
         RaidDefinition definition = RaidDefinitionRegistry.get(eligibility.definitionId());
         if (definition == null) {
-            System.err.println("[CobbleRaids] Cannot create rewards for " + eligibility.raidId() + ": definition " + eligibility.definitionId() + " is not loaded");
+            RaidLog.error("Cannot create rewards for " + eligibility.raidId() + ": definition " + eligibility.definitionId() + " is not loaded");
             return;
         }
         RaidDefinition.Rewards rewards = definition.rewards();
         if (rewards.choices().isEmpty()) {
-            System.err.println("[CobbleRaids] Raid " + definition.id() + " has no GUI reward choices; no claim GUI queued");
+            RaidLog.error("Raid " + definition.id() + " has no GUI reward choices; no claim GUI queued");
             return;
         }
 
@@ -210,7 +211,7 @@ public final class RaidRewardService {
         try {
             RewardGrantResult result = RaidRewardGrantEngine.grantChoice(player, pending, choice);
             if (CobbleRaidsConfigManager.get().debugLogging()) {
-                System.out.println("[CobbleRaids] " + player.getGameProfile().getName() + " claimed '" + choiceId
+                RaidLog.info("" + player.getGameProfile().getName() + " claimed '" + choiceId
                         + "' for raid " + pending.definitionId() + ": base=" + summarize(result.baseItems())
                         + " chance=" + summarize(result.chanceItemsGranted())
                         + " bonus=" + summarize(result.contributionBonusItems()));

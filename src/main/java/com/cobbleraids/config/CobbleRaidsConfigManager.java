@@ -1,5 +1,6 @@
 package com.cobbleraids.config;
 
+import com.cobbleraids.RaidLog;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
@@ -30,7 +31,7 @@ public final class CobbleRaidsConfigManager {
             if (!Files.exists(CONFIG_PATH)) {
                 CURRENT = CobbleRaidsConfig.defaults();
                 write(CURRENT);
-                System.out.println("[CobbleRaids] Created default config: " + CONFIG_PATH);
+                RaidLog.info("Created default config: " + CONFIG_PATH);
                 return CURRENT;
             }
             JsonObject root;
@@ -48,7 +49,7 @@ public final class CobbleRaidsConfigManager {
             JsonObject canonical = CURRENT.toJson();
             if (!canonical.equals(root)) {
                 write(CURRENT);
-                System.out.println("[CobbleRaids] Updated " + CONFIG_PATH + " with settings new to this version.");
+                RaidLog.info("Updated " + CONFIG_PATH + " with settings new to this version.");
             }
             return CURRENT;
         } catch (Exception ex) {

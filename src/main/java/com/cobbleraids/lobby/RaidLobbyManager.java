@@ -1,5 +1,6 @@
 package com.cobbleraids.lobby;
 
+import com.cobbleraids.RaidLog;
 import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.config.RaidDefinitionRegistry;
 import com.cobbleraids.raid.RaidFactory;
@@ -137,8 +138,7 @@ public final class RaidLobbyManager {
             lobby.cancel();
             BY_BOSS.remove(boss.getUUID(), lobby);
             broadcastNearby(lobby, Component.literal("Raid could not start; the boss remains available.").withStyle(ChatFormatting.RED));
-            System.err.println("[CobbleRaids] Failed to start raid " + definition.id() + ": " + ex.getMessage());
-            ex.printStackTrace();
+            RaidLog.error("Failed to start raid {}", definition.id(), ex);
         }
     }
 

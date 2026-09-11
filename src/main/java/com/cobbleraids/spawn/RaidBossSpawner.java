@@ -1,5 +1,6 @@
 package com.cobbleraids.spawn;
 
+import com.cobbleraids.RaidLog;
 import com.cobbleraids.config.CobbleRaidsConfig;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.config.RaidBossTraits;
@@ -96,7 +97,7 @@ public final class RaidBossSpawner {
         for (String moveId : definition.moves()) {
             MoveTemplate template = Moves.getByName(moveId);
             if (template == null) {
-                System.err.println("[CobbleRaids] " + definition.id() + " lists unknown move '" + moveId
+                RaidLog.error("" + definition.id() + " lists unknown move '" + moveId
                         + "'; skipping it. Check the id against Cobblemon's move list.");
                 continue;
             }
@@ -177,7 +178,7 @@ public final class RaidBossSpawner {
             case "female" -> Gender.FEMALE;
             case "genderless", "none" -> Gender.GENDERLESS;
             default -> {
-                System.err.println("[CobbleRaids] " + definition.id() + " traits: unknown gender '" + value
+                RaidLog.error("" + definition.id() + " traits: unknown gender '" + value
                         + "'; expected male, female or genderless.");
                 yield null;
             }

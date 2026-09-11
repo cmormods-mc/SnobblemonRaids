@@ -1,5 +1,6 @@
 package com.cobbleraids.showdown;
 
+import com.cobbleraids.RaidLog;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -111,12 +112,10 @@ public final class ShowdownIntegrationInstaller {
     public static void installSafely(String phase) {
         try {
             install();
-            System.out.println("[CobbleRaids] Showdown integration verified (" + phase + ").");
+            RaidLog.info("Showdown integration verified (" + phase + ").");
         } catch (RuntimeException ex) {
-            System.err.println("[CobbleRaids] Showdown integration FAILED " + phase
-                    + " -- raids are disabled for this session. Ordinary Cobblemon battles are"
-                    + " unaffected. Cause: " + ex);
-            ex.printStackTrace();
+            RaidLog.error("Showdown integration FAILED {} -- raids are disabled for this session."
+                    + " Ordinary Cobblemon battles are unaffected.", phase, ex);
         }
     }
 

@@ -1,5 +1,6 @@
 package com.cobbleraids.config;
 
+import com.cobbleraids.RaidLog;
 import com.google.gson.JsonObject;
 import java.util.Locale;
 
@@ -72,7 +73,7 @@ public record CobbleRaidsConfig(
             // and max_distance_from_player, so a despawn radius at or above that ceiling means every
             // boss is born inside its own keep-alive bubble and the unattended timer never starts.
             if (despawnPlayerRadius >= maxDistanceFromPlayer)
-                System.out.println("[CobbleRaids] WARNING: natural_spawning.despawn_player_radius ("
+                RaidLog.warn("natural_spawning.despawn_player_radius ("
                         + despawnPlayerRadius + ") is not smaller than natural_spawning.max_distance_from_player ("
                         + maxDistanceFromPlayer + "), so wild raid bosses spawn already inside the radius that"
                         + " keeps them alive. Unattended bosses will not despawn until a player leaves that radius.");
@@ -85,7 +86,7 @@ public record CobbleRaidsConfig(
             if (defaultMaxLifetimeSeconds < 60 || defaultMaxLifetimeSeconds > 86_400)
                 throw new IllegalArgumentException("natural_spawning.default_max_lifetime_seconds must be 60..86400");
             if (defaultMaxLifetimeSeconds < defaultDespawnSeconds)
-                System.out.println("[CobbleRaids] WARNING: natural_spawning.default_max_lifetime_seconds ("
+                RaidLog.warn("natural_spawning.default_max_lifetime_seconds ("
                         + defaultMaxLifetimeSeconds + ") is below default_despawn_seconds (" + defaultDespawnSeconds
                         + "), so the total lifetime cap will usually fire before the unattended timer ever can.");
             if (defaultDefinitionCooldownSeconds < 0 || defaultDefinitionCooldownSeconds > 604_800)

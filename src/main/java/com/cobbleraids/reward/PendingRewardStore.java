@@ -1,5 +1,6 @@
 package com.cobbleraids.reward;
 
+import com.cobbleraids.RaidLog;
 import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.config.RaidDefinitionRegistry;
 import com.cobbleraids.config.RaidRarityTier;
@@ -83,7 +84,7 @@ public final class PendingRewardStore extends SavedData {
             if (!queue.isEmpty()) store.loaded.put(playerId, queue);
         }
         if (dropped > 0) {
-            System.err.println("[CobbleRaids] Dropped " + dropped
+            RaidLog.error("Dropped " + dropped
                     + " saved reward claim(s) whose raid definition is no longer loaded.");
         }
         return store;

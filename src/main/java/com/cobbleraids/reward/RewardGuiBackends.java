@@ -1,5 +1,6 @@
 package com.cobbleraids.reward;
 
+import com.cobbleraids.RaidLog;
 import net.fabricmc.loader.api.FabricLoader;
 
 /** Selects and holds the single active reward-GUI backend for the server process. */
@@ -22,7 +23,7 @@ public final class RewardGuiBackends {
         try {
             active.ensureReady();
         } catch (RuntimeException ex) {
-            System.err.println("[CobbleRaids] SkiesGUIs reward GUI unavailable (" + ex.getMessage()
+            RaidLog.error("SkiesGUIs reward GUI unavailable (" + ex.getMessage()
                     + "); falling back to chat-based reward claiming. Players use /cobbleraids reward to claim.");
             active = new ChatFallbackRewardGuiBackend();
         }

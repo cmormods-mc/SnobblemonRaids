@@ -102,7 +102,7 @@ public final class CobbleRaids implements ModInitializer {
             // Only these two mean somebody lost progress, so only these two are worth a line on an
             // otherwise clean shutdown. Unclaimed rewards are not listed: those survive on disk.
             if (raids > 0 || lobbies > 0) {
-                System.out.println("[CobbleRaids] Server stopped with " + raids + " raid(s) in battle and "
+                RaidLog.info("Server stopped with " + raids + " raid(s) in battle and "
                         + lobbies + " still recruiting; their progress is not resumable.");
             }
         });

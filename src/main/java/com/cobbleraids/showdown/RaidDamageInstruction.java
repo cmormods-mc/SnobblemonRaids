@@ -1,5 +1,6 @@
 package com.cobbleraids.showdown;
 
+import com.cobbleraids.RaidLog;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.raid.RaidRegistry;
 import com.cobbleraids.raid.RaidSession;
@@ -11,12 +12,9 @@ import com.cobblemon.mod.common.battles.dispatch.InterpreterInstruction;
 import com.cobblemon.mod.common.battles.pokemon.BattlePokemon;
 import com.cobblemon.mod.common.net.messages.client.battle.BattleHealthChangePacket;
 import java.util.UUID;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** Applies shared raid damage and sends side-correct HP packets to every participant. */
 public final class RaidDamageInstruction implements InterpreterInstruction {
-    private static final Logger LOGGER = LoggerFactory.getLogger("CobbleRaids");
 
     private final BattleActor actor;
     private final BattleMessage publicMessage;
@@ -61,7 +59,7 @@ public final class RaidDamageInstruction implements InterpreterInstruction {
         String pnx = bossActive == null ? RaidBattleTargets.pnx(publicMessage.argumentAt(0)) : bossActive.getPNX();
 
         if (CobbleRaidsConfigManager.get().debugLogging()) {
-            LOGGER.info("Applied raid damage: battle={}, requested={}, applied={}, hp={}/{}, contributor={}",
+            RaidLog.info("Applied raid damage: battle={}, requested={}, applied={}, hp={}/{}, contributor={}",
                     battle.getBattleId(), amount, applied, raid.getCurrentHealth(), raid.getMaxHealth(), contributor);
         }
 

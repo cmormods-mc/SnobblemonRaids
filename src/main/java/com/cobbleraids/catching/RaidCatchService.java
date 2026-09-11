@@ -1,5 +1,6 @@
 package com.cobbleraids.catching;
 
+import com.cobbleraids.RaidLog;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.config.RaidDefinition;
 import com.cobblemon.mod.common.Cobblemon;
@@ -10,8 +11,6 @@ import java.util.concurrent.ThreadLocalRandom;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Turns a won raid into a chance at keeping the boss.
@@ -27,7 +26,6 @@ import org.slf4j.LoggerFactory;
  * <p>Nothing here decides <em>whether</em> a player catches -- see {@link RaidCatchPolicy}.
  */
 public final class RaidCatchService {
-    private static final Logger LOGGER = LoggerFactory.getLogger("CobbleRaids");
 
     private RaidCatchService() {}
 
@@ -50,7 +48,7 @@ public final class RaidCatchService {
 
         boolean caught = ThreadLocalRandom.current().nextDouble() < chance;
         if (CobbleRaidsConfigManager.get().debugLogging()) {
-            LOGGER.info("[CobbleRaids] Catch roll for {} on {}: chance={}, caught={}",
+            RaidLog.info("Catch roll for {} on {}: chance={}, caught={}",
                     player.getGameProfile().getName(), definition.id(), chance, caught);
         }
         if (!caught) {
@@ -89,7 +87,7 @@ public final class RaidCatchService {
             return true;
         } catch (RuntimeException ex) {
             // A failed award must not take the reward screen or the raid's finalization with it.
-            LOGGER.error("[CobbleRaids] Failed to award caught boss {} to {}",
+            RaidLog.error("Failed to award caught boss {} to {}",
                     definition.id(), player.getGameProfile().getName(), ex);
             player.sendSystemMessage(Component.literal(
                             "You caught the boss, but it could not be added. Tell an administrator.")

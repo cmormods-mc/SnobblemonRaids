@@ -1,5 +1,6 @@
 package com.cobbleraids.config;
 
+import com.cobbleraids.RaidLog;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -8,8 +9,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.Reader;
 import java.util.ArrayList;
@@ -23,7 +22,6 @@ import java.util.stream.Collectors;
 /** Server-authoritative raid definitions loaded from data/cobbleraids/raids/*.json. */
 public final class RaidDefinitionRegistry extends SimplePreparableReloadListener<Map<ResourceLocation, RaidDefinition>> implements IdentifiableResourceReloadListener {
     public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath("cobbleraids", "raid_definitions");
-    private static final Logger LOGGER = LoggerFactory.getLogger("CobbleRaids");
     private static final Gson GSON = new Gson();
     private static volatile Map<ResourceLocation, RaidDefinition> DEFINITIONS = Map.of();
 
@@ -83,13 +81,13 @@ public final class RaidDefinitionRegistry extends SimplePreparableReloadListener
                 // start -- so one malformed json in any third-party datapack, in a namespace anyone
                 // can write to, would take the server down rather than take itself out of the pool.
                 rejected.add(id);
-                LOGGER.error("Skipping malformed raid definition {}; the other definitions still load.", id, ex);
+                RaidLog.error("Skipping malformed raid definition {}; the other definitions still load.", id, ex);
             }
         });
         if (!rejected.isEmpty()) {
             // One summary line as well: the per-file errors above are easy to scroll past, and an
             // operator whose raid never spawns needs to find out here rather than in-game.
-            LOGGER.error("{} raid definition(s) were skipped as malformed and will not spawn: {}", rejected.size(),
+            RaidLog.error("{} raid definition(s) were skipped as malformed and will not spawn: {}", rejected.size(),
                     rejected.stream().map(ResourceLocation::toString).sorted().collect(Collectors.joining(", ")));
         }
         return Map.copyOf(loaded);

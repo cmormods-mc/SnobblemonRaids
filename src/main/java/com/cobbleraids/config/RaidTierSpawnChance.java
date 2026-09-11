@@ -1,5 +1,7 @@
 package com.cobbleraids.config;
 
+import com.cobbleraids.RaidLog;
+
 /**
  * Per-tier probability that a selected natural spawn actually happens. This is a <em>rate</em>
  * control, which {@link RaidTierWeights} deliberately is not.
@@ -25,7 +27,7 @@ public record RaidTierSpawnChance(double starter, double powerhouse, double lege
         if (starter <= 0.0 && powerhouse <= 0.0 && legendary <= 0.0 && mythical <= 0.0) {
             // Not fatal: "0 for every tier" is a coherent way to say "no wild raids", and admin
             // spawns still work. Loud, though, because it is far more likely to be a mistake.
-            System.out.println("[CobbleRaids] WARNING: every natural_spawning.tier_spawn_chance is 0,"
+            RaidLog.warn("every natural_spawning.tier_spawn_chance is 0,"
                     + " so no wild raid will ever spawn. Set natural_spawning.enabled to false if that"
                     + " is intended, or raise a tier's chance.");
         }

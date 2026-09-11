@@ -1,8 +1,7 @@
 package com.cobbleraids.fault;
 
+import com.cobbleraids.RaidLog;
 import net.minecraft.server.MinecraftServer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Keeps a CobbleRaids failure inside CobbleRaids.
@@ -18,7 +17,6 @@ import org.slf4j.LoggerFactory;
  * and there is nothing left worth protecting at that point, so those still surface.
  */
 public final class RaidFaultBarrier {
-    private static final Logger LOGGER = LoggerFactory.getLogger("CobbleRaids");
     private static final FaultLogThrottle THROTTLE = new FaultLogThrottle();
 
     /** A subsystem's per-tick entry point. Pass a static method reference so no lambda is allocated. */
@@ -52,10 +50,10 @@ public final class RaidFaultBarrier {
         long suppressed = THROTTLE.record(context, System.currentTimeMillis());
         if (suppressed == FaultLogThrottle.SUPPRESS) return;
         if (suppressed > 0L) {
-            LOGGER.error("[{}] contained a failure; {} further failure(s) were suppressed since the last report."
+            RaidLog.error("[{}] contained a failure; {} further failure(s) were suppressed since the last report."
                     + " Raids in this subsystem may be misbehaving; the server is still running.", context, suppressed, thrown);
         } else {
-            LOGGER.error("[{}] contained a failure. Raids in this subsystem may be misbehaving;"
+            RaidLog.error("[{}] contained a failure. Raids in this subsystem may be misbehaving;"
                     + " the server is still running.", context, thrown);
         }
     }

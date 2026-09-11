@@ -1,5 +1,6 @@
 package com.cobbleraids.spawn;
 
+import com.cobbleraids.RaidLog;
 import com.cobbleraids.config.CobbleRaidsConfig;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.config.RaidDefinition;
@@ -176,7 +177,7 @@ public final class RaidSpawnScheduler {
         RaidSpawnAnnouncementService.naturalSpawn(
                 level.getServer(), entity, biomeId, dimensionId, pos, selected.rarityTier());
         if (CobbleRaidsConfigManager.get().debugLogging()) {
-            System.out.println("[CobbleRaids] Natural raid spawned: " + selected.id() + " at " + pos
+            RaidLog.info("Natural raid spawned: " + selected.id() + " at " + pos
                     + " in " + dimensionId + " biome=" + biomeId + " tier="
                     + selected.rarityTier().serializedName() + " active=" + TRACKER.size());
         }
@@ -238,7 +239,7 @@ public final class RaidSpawnScheduler {
                 boss.discard();
             }
             if (CobbleRaidsConfigManager.get().debugLogging()) {
-                System.out.println("[CobbleRaids] Wild raid " + spawn.definitionId()
+                RaidLog.info("Wild raid " + spawn.definitionId()
                         + " hit its " + spawn.maxLifetimeSeconds() + "s lifetime cap"
                         + (boss == null ? " (deferred: chunk not loaded)" : ""));
             }
@@ -247,7 +248,7 @@ public final class RaidSpawnScheduler {
         @Override
         public void onIdleDespawn(UUID bossId, TrackedRaidSpawn spawn, PokemonEntity boss) {
             if (CobbleRaidsConfigManager.get().debugLogging()) {
-                System.out.println("[CobbleRaids] Despawning unattended wild raid " + spawn.definitionId()
+                RaidLog.info("Despawning unattended wild raid " + spawn.definitionId()
                         + (boss == null ? " (deferred: chunk not loaded)" : ""));
             }
             if (boss != null) boss.discard();
@@ -285,7 +286,7 @@ public final class RaidSpawnScheduler {
         if (pokemon.isBattling() || RaidLobbyManager.hasActiveLobby(pokemon)) return;
 
         if (CobbleRaidsConfigManager.get().debugLogging()) {
-            System.out.println("[CobbleRaids] Removed untracked natural raid boss " + pokemon.getUUID()
+            RaidLog.info("Removed untracked natural raid boss " + pokemon.getUUID()
                     + " on load in " + level.dimension().location());
         }
         pokemon.discard();
@@ -323,7 +324,7 @@ public final class RaidSpawnScheduler {
         if (!TRACKER.forget(pokemon.getUUID())) return;
 
         if (CobbleRaidsConfigManager.get().debugLogging()) {
-            System.out.println("[CobbleRaids] Released raid slot for destroyed boss " + pokemon.getUUID()
+            RaidLog.info("Released raid slot for destroyed boss " + pokemon.getUUID()
                     + " (" + reason + ") in " + level.dimension().location() + ", active=" + TRACKER.size());
         }
     }
@@ -364,7 +365,7 @@ public final class RaidSpawnScheduler {
         ResourceLocation dimensionId = level.dimension().location();
         boolean removedAny = TRACKER.forgetDimension(dimensionId);
         if (removedAny && CobbleRaidsConfigManager.get().debugLogging()) {
-            System.out.println("[CobbleRaids] Forgot natural raid boss(es) tracked in closed dimension " + dimensionId);
+            RaidLog.info("Forgot natural raid boss(es) tracked in closed dimension " + dimensionId);
         }
     }
 
@@ -385,7 +386,7 @@ public final class RaidSpawnScheduler {
             }
         }
         if (purged > 0) {
-            System.out.println("[CobbleRaids] Removed " + purged
+            RaidLog.info("Removed " + purged
                     + " stale natural raid boss(es) from a prior server session.");
         }
     }

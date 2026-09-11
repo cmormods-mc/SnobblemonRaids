@@ -1,5 +1,6 @@
 package com.cobbleraids.lifecycle;
 
+import com.cobbleraids.RaidLog;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.raid.RaidSession;
 import com.cobblemon.mod.common.Cobblemon;
@@ -16,8 +17,6 @@ import java.util.Map;
 import java.util.UUID;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Awards a won raid's experience and EVs to the participants' real Pokemon.
@@ -55,7 +54,6 @@ import org.slf4j.LoggerFactory;
  * class's to make.
  */
 public final class RaidProgressionTransfer {
-    private static final Logger LOGGER = LoggerFactory.getLogger("CobbleRaids");
 
     /**
      * No experience-share modelling: a raid grants to the Pokemon that actually fought the boss, at
@@ -73,7 +71,7 @@ public final class RaidProgressionTransfer {
 
         BattlePokemon boss = bossPokemon(battle, raid);
         if (boss == null) {
-            LOGGER.warn("[CobbleRaids] Raid ended with no resolvable boss Pokemon; no progression granted.");
+            RaidLog.warn("Raid ended with no resolvable boss Pokemon; no progression granted.");
             return;
         }
 
@@ -92,7 +90,7 @@ public final class RaidProgressionTransfer {
                 } catch (RuntimeException ex) {
                     // One Pokemon failing must not cost the rest of the party its experience, and
                     // must never stop the raid finalizing -- the reward screen is queued after this.
-                    LOGGER.error("[CobbleRaids] Failed to grant raid progression for {}",
+                    RaidLog.error("Failed to grant raid progression for {}",
                             battlePokemon.getOriginalPokemon().getSpecies().getName(), ex);
                 }
             }
@@ -132,7 +130,7 @@ public final class RaidProgressionTransfer {
         }
 
         if (CobbleRaidsConfigManager.get().debugLogging()) {
-            LOGGER.info("[CobbleRaids] Raid progression: {} (lv {}) +{} exp, evs {}",
+            RaidLog.info("Raid progression: {} (lv {}) +{} exp, evs {}",
                     original.getSpecies().getName(), original.getLevel(), experience, evs);
         }
     }

@@ -52,6 +52,9 @@ jobs:
       - name: Validate tier loot wiring
         run: python3 validation/validate_phase41.py
 
+      - name: Validate logging discipline
+        run: python3 validation/validate_logging.py
+
       - name: Compile and remap
         run: gradle --no-daemon clean build --stacktrace --warning-mode all
 

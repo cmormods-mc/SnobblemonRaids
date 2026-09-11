@@ -1,5 +1,6 @@
 package com.cobbleraids.reward;
 
+import com.cobbleraids.RaidLog;
 import com.cobbleraids.config.RaidDefinition;
 import java.util.ArrayList;
 import java.util.List;
@@ -67,7 +68,7 @@ public final class RaidRewardGrantEngine {
     private static boolean give(ServerPlayer player, RaidDefinition.RewardItem reward, ResourceLocation definitionId) {
         Item item = BuiltInRegistries.ITEM.get(reward.item());
         if (!BuiltInRegistries.ITEM.getKey(item).equals(reward.item())) {
-            System.err.println("[CobbleRaids] " + definitionId + " reward item '" + reward.item()
+            RaidLog.error("" + definitionId + " reward item '" + reward.item()
                     + "' is not registered; skipping it. Is the mod that owns it installed?");
             return false;
         }

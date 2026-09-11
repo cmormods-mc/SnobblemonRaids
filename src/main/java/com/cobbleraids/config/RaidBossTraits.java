@@ -1,5 +1,6 @@
 package com.cobbleraids.config;
 
+import com.cobbleraids.RaidLog;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.util.LinkedHashMap;
@@ -189,6 +190,6 @@ public record RaidBossTraits(
     }
 
     private static void warn(String definitionId, String message) {
-        System.err.println("[CobbleRaids] " + definitionId + " traits: " + message);
+        RaidLog.error("" + definitionId + " traits: " + message);
     }
 }

@@ -1,5 +1,6 @@
 package com.cobbleraids.reward;
 
+import com.cobbleraids.RaidLog;
 import com.cobbleraids.config.RaidDefinition;
 import java.util.ArrayList;
 import java.util.List;
@@ -92,6 +93,6 @@ public final class RaidLootRoller {
     }
 
     private static void warn(Object context, ResourceLocation tableId, String problem) {
-        System.err.println("[CobbleRaids] " + context + " reward loot table '" + tableId + "' " + problem);
+        RaidLog.error("" + context + " reward loot table '" + tableId + "' " + problem);
     }
 }
