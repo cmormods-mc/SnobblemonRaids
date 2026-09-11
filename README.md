@@ -20,7 +20,6 @@ wears the boss down.
 rewards are claimed from chat with `/cobbleraids reward claim`, and a SkiesGUIs that
 fails to load degrades to that fallback rather than aborting server start.
 `CobbleRaids-BiomeCompat` and `CobbleRaids-AddonRewards` are optional data-only JARs.
-CobbleBoss and Raid Dens are reference implementations, not dependencies.
 
 ## Content
 
