@@ -33,6 +33,10 @@ final class Json {
         return root.has(key) ? root.get(key).getAsInt() : fallback;
     }
 
+    static long integer64(JsonObject root, String key, long fallback) {
+        return root.has(key) ? root.get(key).getAsLong() : fallback;
+    }
+
     static double decimal(JsonObject root, String key, double fallback) {
         return root.has(key) ? root.get(key).getAsDouble() : fallback;
     }

@@ -12,6 +12,7 @@ public record CobbleRaidsConfig(
         BattleCarryover battleCarryover,
         BossTraits bossTraits,
         Catching catching,
+        Currency currency,
         TierScaling tierScaling,
         BossGlow bossGlow,
         BossMovement bossMovement,
@@ -198,6 +199,56 @@ public record CobbleRaidsConfig(
         }
     }
 
+    /**
+     * Currency paid alongside a claimed raid reward, when a supported economy mod is installed.
+     *
+     * <p>Off, and zero everywhere, by default, for the same reason {@link Catching} is: the wiring
+     * exists so the seam can be proven end to end, and the amounts are a balance decision nobody
+     * has made yet. Pricing a raid means pricing it against a particular server's shops, so a
+     * plausible-looking default here would quietly become the balance by accident. Zero grants
+     * nothing at all, which is the only honest placeholder.
+     *
+     * <p>{@code scale_with_contribution} chooses between paying every eligible victor the tier's
+     * full amount and splitting it by damage share; {@code minimum_share_percentage} withholds the
+     * payout entirely below a threshold, so a player who tagged the boss once does not get paid.
+     * See RaidCurrencyPolicy for the arithmetic, and RaidCurrencyBackends for who moves the money.
+     */
+    public record Currency(boolean enabled, long starter, long powerhouse, long legendary, long mythical,
+                           boolean scaleWithContribution, double minimumSharePercentage) {
+        /** Well beyond any sane payout, and far enough from overflow that scaling cannot wrap. */
+        private static final long MAX_AMOUNT = 1_000_000_000L;
+
+        public Currency {
+            validate("starter", starter);
+            validate("powerhouse", powerhouse);
+            validate("legendary", legendary);
+            validate("mythical", mythical);
+            if (!(minimumSharePercentage >= 0.0) || minimumSharePercentage > 100.0)
+                throw new IllegalArgumentException("currency.minimum_share_percentage must be 0..100");
+        }
+
+        public static Currency defaults() { return new Currency(false, 0L, 0L, 0L, 0L, false, 0.0); }
+
+        public long amountFor(RaidRarityTier tier) {
+            return switch (tier) {
+                case STARTER -> starter;
+                case POWERHOUSE -> powerhouse;
+                case LEGENDARY -> legendary;
+                case MYTHICAL -> mythical;
+            };
+        }
+
+        /** True when no tier can ever pay out, so the claim path can skip the backend entirely. */
+        public boolean isNoOp() {
+            return starter <= 0L && powerhouse <= 0L && legendary <= 0L && mythical <= 0L;
+        }
+
+        private static void validate(String name, long amount) {
+            if (amount < 0L || amount > MAX_AMOUNT)
+                throw new IllegalArgumentException("currency." + name + " must be 0.." + MAX_AMOUNT);
+        }
+    }
+
     public record BattleCarryover(boolean health, boolean pp, boolean status) {
         public static BattleCarryover defaults() { return new BattleCarryover(true, true, false); }
 
@@ -319,6 +370,7 @@ public record CobbleRaidsConfig(
                 BattleCarryover.defaults(),
                 BossTraits.defaults(),
                 Catching.defaults(),
+                Currency.defaults(),
                 TierScaling.defaults(),
                 BossGlow.defaults(),
                 BossMovement.defaults(),
@@ -410,6 +462,18 @@ public record CobbleRaidsConfig(
                 Json.decimal(catchingObject, "mythical", cat.mythical())
         );
 
+        JsonObject currencyObject = Json.object(root, "currency");
+        Currency cur = defaults.currency();
+        Currency currency = new Currency(
+                Json.bool(currencyObject, "enabled", cur.enabled()),
+                Json.integer64(currencyObject, "starter", cur.starter()),
+                Json.integer64(currencyObject, "powerhouse", cur.powerhouse()),
+                Json.integer64(currencyObject, "legendary", cur.legendary()),
+                Json.integer64(currencyObject, "mythical", cur.mythical()),
+                Json.bool(currencyObject, "scale_with_contribution", cur.scaleWithContribution()),
+                Json.decimal(currencyObject, "minimum_share_percentage", cur.minimumSharePercentage())
+        );
+
         JsonObject tierScalingObject = Json.object(root, "tier_scaling");
         TierScaling ts = defaults.tierScaling();
         TierScaling tierScaling = new TierScaling(
@@ -435,7 +499,7 @@ public record CobbleRaidsConfig(
                 Json.bool(bossMovementObject, "prevent_knockback", bm.preventKnockback()));
 
         return new CobbleRaidsConfig(naturalSpawning, recruitmentDefaults, combatDefaults, battleCarryover,
-                bossTraits, catching, tierScaling, bossGlow, bossMovement,
+                bossTraits, catching, currency, tierScaling, bossGlow, bossMovement,
                 Json.bool(root, "debug_logging", defaults.debugLogging()));
     }
 
@@ -510,6 +574,16 @@ public record CobbleRaidsConfig(
         catchingJson.addProperty("legendary", catching.legendary());
         catchingJson.addProperty("mythical", catching.mythical());
         root.add("catching", catchingJson);
+
+        JsonObject currencyJson = new JsonObject();
+        currencyJson.addProperty("enabled", currency.enabled());
+        currencyJson.addProperty("starter", currency.starter());
+        currencyJson.addProperty("powerhouse", currency.powerhouse());
+        currencyJson.addProperty("legendary", currency.legendary());
+        currencyJson.addProperty("mythical", currency.mythical());
+        currencyJson.addProperty("scale_with_contribution", currency.scaleWithContribution());
+        currencyJson.addProperty("minimum_share_percentage", currency.minimumSharePercentage());
+        root.add("currency", currencyJson);
 
         JsonObject tierScalingObject = new JsonObject();
         tierScalingObject.addProperty("enabled", tierScaling.enabled());

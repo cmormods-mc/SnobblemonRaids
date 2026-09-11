@@ -245,12 +245,16 @@ public final class RaidRewardService {
                 RaidLog.info("" + player.getGameProfile().getName() + " claimed '" + choiceId
                         + "' for raid " + pending.definitionId() + ": base=" + summarize(result.baseItems())
                         + " chance=" + summarize(result.chanceItemsGranted())
-                        + " bonus=" + summarize(result.contributionBonusItems()));
+                        + " bonus=" + summarize(result.contributionBonusItems())
+                        + " currency=" + result.currencyGranted());
             }
             player.sendSystemMessage(Component.literal(String.format(Locale.ROOT,
-                    "Raid reward claimed. Contribution %.1f%% awarded %d bonus roll%s. Granted: %s",
+                    "Raid reward claimed. Contribution %.1f%% awarded %d bonus roll%s. Granted: %s%s",
                     pending.contributionPercentage(), pending.contributionBonusRolls(),
-                    pending.contributionBonusRolls() == 1 ? "" : "s", describeAll(result))));
+                    pending.contributionBonusRolls() == 1 ? "" : "s", describeAll(result),
+                    // Left out entirely rather than shown as zero: with no economy mod, or no
+                    // amounts configured, there is nothing to tell the player about.
+                    result.paidCurrency() ? " (+" + result.currencyGranted() + " CobbleDollars)" : "")));
             if (hasPending(player.getUUID())) OPEN_DELAY.put(player.getUUID(), GUI_OPEN_DELAY_TICKS);
             return result;
         } catch (RuntimeException ex) {

@@ -1,7 +1,12 @@
 package com.cobbleraids.reward;
 
 import com.cobbleraids.RaidLog;
+import com.cobbleraids.config.CobbleRaidsConfig;
+import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.config.RaidDefinition;
+import com.cobbleraids.reward.currency.RaidCurrencyBackends;
+import com.cobbleraids.reward.currency.RaidCurrencyPolicy;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -40,7 +45,34 @@ public final class RaidRewardGrantEngine {
                 if (give(player, rolled, definitionId)) bonusGranted.add(rolled);
             }
         }
-        return new RewardGrantResult(base, chanceGranted, bonusGranted);
+        return new RewardGrantResult(base, chanceGranted, bonusGranted, payCurrency(player, pending));
+    }
+
+    /**
+     * Credits the claim's currency, if any is configured and an economy backend can move it.
+     *
+     * <p>Runs last and cannot throw. RaidRewardService restores the whole claim when granting
+     * throws, so a failure here after the items were placed would return a claim the player has
+     * already been paid for -- the same duplication hazard give() documents. The backend contract
+     * is to report false rather than throw; this guard is the belt to that braces, because the
+     * backend is the one place in this path that calls into another mod.
+     */
+    private static BigInteger payCurrency(ServerPlayer player, PendingRaidReward pending) {
+        CobbleRaidsConfig.Currency config = CobbleRaidsConfigManager.get().currency();
+        if (!config.enabled() || config.isNoOp()) return BigInteger.ZERO;
+        try {
+            BigInteger amount = RaidCurrencyPolicy.payout(config, pending.rarityTier(), pending.contributionPercentage());
+            if (amount.signum() <= 0) return BigInteger.ZERO;
+            if (RaidCurrencyBackends.active().grant(player, amount)) return amount;
+            RaidLog.warn("Raid currency payout of " + amount + " for " + pending.definitionId()
+                    + " was not credited by backend '" + RaidCurrencyBackends.active().name()
+                    + "'; the item rewards were granted normally.");
+            return BigInteger.ZERO;
+        } catch (RuntimeException ex) {
+            RaidLog.error("Raid currency payout failed for " + pending.definitionId()
+                    + "; the item rewards were granted normally.", ex);
+            return BigInteger.ZERO;
+        }
     }
 
     static RaidDefinition.RewardItem weighted(List<RaidDefinition.RewardItem> pool) {
