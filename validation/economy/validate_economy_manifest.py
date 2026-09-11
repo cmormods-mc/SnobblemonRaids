@@ -189,6 +189,42 @@ def main():
             check(item_id in resolved,
                   "reward item " + item_id + " does not exist in the pack -- seen in " + where)
 
+    # --- every definition is on the policy path -------------------------------------------------
+    # This replaces validate_phase41's data assertions, which said the opposite: that every
+    # definition names its tier bundle. That was the legacy wiring, and it is gone.
+    legacy = []
+    for boss, definition in sorted(definitions.items()):
+        rewards = definition.get("rewards", {})
+        own = list(rewards.get("loot_tables", []))
+        for choice in rewards.get("choices", {}).values():
+            own.extend(choice.get("items", []))
+            own.extend(choice.get("chance_items", []))
+            own.extend(choice.get("loot_tables", []))
+        bonus = rewards.get("contribution_bonus", {})
+        if bonus.get("enabled") and bonus.get("pool"):
+            own.append("contribution_bonus.pool")
+        if own:
+            legacy.append(boss)
+    check(not legacy,
+          "these shipped definitions still name rewards of their own, so they stay on the legacy"
+          " path and ignore the reward policy: " + ", ".join(legacy[:8])
+          + (" (+%d more)" % (len(legacy) - 8) if len(legacy) > 8 else ""))
+
+    # A boss-specific specialty table must exist for exactly the bosses that have a Mega Stone.
+    # One missing means that boss silently drops its stone; one spare means a table nothing reaches.
+    boss_table_dir = os.path.join(COMPAT_DIR, "addonrewards", "src", "main", "resources", "data",
+                                  "cobbleraids", "loot_table", "specialty", "boss")
+    present = set()
+    if os.path.isdir(boss_table_dir):
+        present = {name[:-5] for name in os.listdir(boss_table_dir) if name.endswith(".json")}
+    expected = set(manifest.get("mega", {}))
+    for boss in sorted(expected - present):
+        failures.append("boss " + boss + " has a mega stone but no specialty/boss table, so it can"
+                        " never drop one")
+    for boss in sorted(present - expected):
+        failures.append("specialty/boss/" + boss + " exists but that boss has no mega stone, so"
+                        " nothing reaches it")
+
     # --- tags and table references --------------------------------------------------------------
     known_tags = manifest.get("item_tags", {})
     for tag_id, sources in sorted(tag_references.items()):

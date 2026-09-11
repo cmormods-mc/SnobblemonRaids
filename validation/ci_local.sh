@@ -28,7 +28,7 @@ step() { printf '\n\033[1m== %s\033[0m\n' "$1"; }
 step "Validate core source and resources"
 bash validation/validate_phase31.sh
 
-for n in 32 36 37 38 39 40 41; do
+for n in 32 36 37 38 39 40; do
   step "Validate phase $n (sources)"
   "$py" "validation/validate_phase$n.py"
 done
@@ -62,7 +62,7 @@ if [ ! -f "$jar" ]; then
   exit 1
 fi
 
-for n in 31 32 36 37 38 39 40 41; do
+for n in 31 32 36 37 38 39 40; do
   step "Validate phase $n (jar)"
   "$py" "validation/validate_phase$n.py" "$jar"
 done

@@ -90,6 +90,15 @@ class RewardPlanResolverTest {
     }
 
     @Test
+    @DisplayName("classification works without a choice, which is how the registry asks at load")
+    void classificationToleratesNoChoice() {
+        assertFalse(RewardPlanResolver.isSelfDescribing(rewards(List.of(), noBonus()), null));
+        assertTrue(RewardPlanResolver.isSelfDescribing(
+                rewards(List.of(ResourceLocation.parse("cobbleraids:tier/starter")), noBonus()), null));
+        assertFalse(RewardPlanResolver.isSelfDescribing(null, null));
+    }
+
+    @Test
     @DisplayName("a contribution block that is present but switched off does not make it legacy")
     void disabledBonusDoesNotCount() {
         RaidDefinition.ContributionBonus off = new RaidDefinition.ContributionBonus(

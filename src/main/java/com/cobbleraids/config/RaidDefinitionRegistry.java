@@ -1,6 +1,7 @@
 package com.cobbleraids.config;
 
 import com.cobbleraids.RaidLog;
+import com.cobbleraids.reward.plan.RewardPlanResolver;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -104,5 +105,39 @@ public final class RaidDefinitionRegistry extends SimplePreparableReloadListener
         SORTED_IDS = prepared.keySet().stream()
                 .sorted(Comparator.comparing(ResourceLocation::toString))
                 .toList();
+        reportRewardPaths(prepared);
+    }
+
+    /**
+     * One line saying how many definitions the reward policy actually governs.
+     *
+     * <p>A definition that still names rewards of its own quietly ignores the policy, which is the
+     * shape an unfinished migration leaves behind: nothing is broken, nothing is logged, and the
+     * boss simply keeps handing out its old loot. Counting them at load turns that into something
+     * an operator can see, and RaidConsistencyAudit names the stragglers individually.
+     */
+    private static void reportRewardPaths(Map<ResourceLocation, RaidDefinition> prepared) {
+        List<String> legacy = prepared.entrySet().stream()
+                .filter(entry -> isSelfDescribing(entry.getValue()))
+                .map(entry -> entry.getKey().toString())
+                .sorted()
+                .toList();
+        if (legacy.isEmpty()) {
+            RaidLog.info("{} raid definition(s) loaded, all governed by the reward policy.", prepared.size());
+        } else {
+            RaidLog.warn("{} of {} raid definition(s) name rewards of their own and ignore the reward"
+                    + " policy: {}", legacy.size(), prepared.size(), String.join(", ", legacy));
+        }
+    }
+
+    /** True when this definition describes its own rewards; see RewardPlanResolver for the rule. */
+    public static boolean isSelfDescribing(RaidDefinition definition) {
+        RaidDefinition.Rewards rewards = definition.rewards();
+        if (rewards == null) return false;
+        if (RewardPlanResolver.isSelfDescribing(rewards, null)) return true;
+        for (RaidDefinition.RewardChoice choice : rewards.choices().values()) {
+            if (RewardPlanResolver.isSelfDescribing(rewards, choice)) return true;
+        }
+        return false;
     }
 }
