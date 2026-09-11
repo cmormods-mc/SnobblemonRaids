@@ -85,3 +85,42 @@ screen all require real players, and driving those with mineflayer is the flaky 
 its world model of a Cobblemon entity is unreliable enough that a failure does not distinguish "the
 mod is broken" from "the bot lost the entity". Those stay manual for now. Everything here is
 server-authoritative state, which RCON reaches directly and repeatably.
+
+## economy_test.py
+
+Drives a real reward claim end to end: queues one through the same `RaidRewardService.grant` the
+victory path calls, claims it as a connected player via `execute as`, and reads the result out of
+the player's own chat.
+
+```sh
+python validation/smoke/economy_test.py --server-dir <rig> --java <jdk21>/bin/java.exe
+```
+
+Two things only this can catch, both of which it has already caught.
+
+**A loot table that does not load.** Minecraft rejects an entire table when any entry names an
+unregistered item -- it does not skip the entry. With seven of the ten provider mods absent from
+this rig, all four `specialty/<tier>` tables and all 21 boss tables failed to parse, so every
+claim silently lost its specialty selection: no crash, no in-game symptom, one boot-time ERROR.
+The fix put optional items behind their own tables; the check here asserts by name that no
+*selection* table failed, because per-provider leaves failing on this rig is expected and their
+failure costs only their own row.
+
+**Contribution thresholds not firing.** They live in the reward policy while the claim is built at
+victory, and the two were briefly wired to different things -- every player got zero bonus rolls
+while the config, the tables and the logs all looked right. A solo victor has a 100% share, so the
+claim must say three bonus rolls.
+
+The claim message is printed, because what a player actually receives is the point:
+
+```text
+claim: Raid reward claimed. Contribution 100.0% awarded 3 bonus rolls.
+       Granted: Great Ball x2, Potion x2, Potion x2, Great Ball x2, Super Potion x1
+```
+
+Five of six selections produced an item there; the sixth hit a leaf whose mod this rig does not
+have. On a complete server all six produce.
+
+`bot.js` echoes system messages for this. The claim result is sent to the player, not written to
+the server log, so reading the log cannot tell a claim that granted six selections from one that
+granted none.

@@ -25,6 +25,10 @@ const bot = mineflayer.createBot({
 
 const tag = `[${username}]`;
 bot.on('spawn', () => console.log(`${tag} READY`));
+// System messages are echoed because some server-authoritative results are only ever told to the
+// player -- a reward claim reports itself in chat, not in the server log. Harmless to the load
+// test, which reads only READY/KICKED/END.
+bot.on('message', (message) => console.log(`${tag} MSG ${message.toString().split(String.fromCharCode(10)).join(' ')}`));
 bot.on('kicked', (reason) => console.log(`${tag} KICKED ${reason}`));
 bot.on('end', (reason) => console.log(`${tag} END ${reason}`));
 bot.on('error', (err) => console.log(`${tag} ERROR ${err.message}`));
