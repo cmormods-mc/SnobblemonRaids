@@ -61,6 +61,13 @@ separately.
 - **Catching** — off by default. `catching.enabled` plus a per-tier chance
   (`starter`/`powerhouse`/`legendary`/`mythical`, each `0.0`–`1.0`) rolls once per victor
   for a copy of the boss. Leaving every tier at `0.0` skips the roll entirely.
+- **Dynamic level** — when recruitment locks, a boss is raised to the average level of the
+  battle-ready Pokémon the group actually brought. **Upward only**: a definition's level is a
+  floor, never a ceiling, because loot is decided by rarity tier and not by level — a boss that
+  could scale down would hand a low-level group a mythical's drop rates off a trivial fight.
+  `dynamic_level.level_offset` shifts the target either way and still cannot breach the floor;
+  `enabled: false` restores fixed levels. Raid HP is unaffected, so a scaled boss hits harder
+  rather than taking longer to kill.
 - **Durability** — an unclaimed reward is fixed when the raid is won, not when it is claimed:
   the claim stores a seed and regenerates the same bundle, so logging off does not reroll what
   you earned. Nothing serialises an ItemStack. Edit a loot table between the win and the claim

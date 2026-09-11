@@ -2,12 +2,17 @@ package com.cobbleraids.lobby;
 
 import com.cobbleraids.presentation.RaidBroadcast;
 import com.cobbleraids.RaidLog;
+import com.cobbleraids.config.CobbleRaidsConfig;
+import com.cobbleraids.config.CobbleRaidsConfigManager;
+import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.config.RaidDefinitionRegistry;
 import com.cobbleraids.raid.RaidFactory;
+import com.cobbleraids.raid.RaidLevelPolicy;
 import com.cobbleraids.raid.RaidScalingPolicy;
 import com.cobbleraids.spawn.RaidBossEntityMarker;
 import com.cobbleraids.spawn.RaidSpawnScheduler;
+import com.cobblemon.mod.common.battles.pokemon.BattlePokemon;
 import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import java.util.ArrayList;
@@ -131,6 +136,7 @@ public final class RaidLobbyManager {
         }
 
         long scaledHealth = RaidScalingPolicy.maxHealth(definition, eligible.size());
+        applyDynamicLevel(boss, definition, eligible);
         try {
             RaidFactory.startFromWildBoss(eligible, definition, boss, scaledHealth);
             lobby.started();
@@ -141,6 +147,44 @@ public final class RaidLobbyManager {
             broadcastNearby(lobby, Component.literal("Raid could not start; the boss remains available.").withStyle(ChatFormatting.RED));
             RaidLog.error("Failed to start raid {}", definition.id(), ex);
         }
+    }
+
+    /**
+     * Raises the boss to meet the group, once, at the moment recruitment locks.
+     *
+     * <p>Here rather than at spawn because the boss appears before anybody joins: the scheduler
+     * picks one nearby player and the lobby then recruits up to four, so a spawn-time reading is
+     * not the group that fights. This is also where max HP has always been decided, for the same
+     * reason.
+     *
+     * <p>Guarded and silent on failure. A level that cannot be read must not stop a raid starting
+     * -- the boss simply fights at the level its definition asks for, which is what it did before
+     * any of this existed.
+     */
+    private static void applyDynamicLevel(PokemonEntity boss, RaidDefinition definition,
+                                          List<ServerPlayer> eligible) {
+        RaidFaultBarrier.guard("lobby:dynamic-level", () -> {
+            CobbleRaidsConfig.DynamicLevel config = CobbleRaidsConfigManager.get().dynamicLevel();
+            if (!config.enabled()) return;
+
+            List<Integer> levels = new ArrayList<>();
+            for (ServerPlayer player : eligible) {
+                for (BattlePokemon member : Cobblemon.INSTANCE.getStorage().getParty(player).toBattleTeam(true, false)) {
+                    levels.add(member.getEffectedPokemon().getLevel());
+                }
+            }
+
+            int level = RaidLevelPolicy.bossLevel(definition.level(), RaidLevelPolicy.average(levels), config);
+            if (level == boss.getPokemon().getLevel()) return;
+
+            boss.getPokemon().setLevel(level);
+            // Level changes max HP, and a boss left on its old current health would enter the
+            // battle already damaged -- the same ordering RaidBossSpawner documents.
+            boss.getPokemon().setCurrentHealth(boss.getPokemon().getMaxHealth());
+            RaidLog.info("{} scaled to level {} for {} player(s) averaging {}",
+                    definition.id(), level, eligible.size(),
+                    String.format(java.util.Locale.ROOT, "%.1f", RaidLevelPolicy.average(levels)));
+        });
     }
 
     private static boolean isEligibleAtLock(ServerPlayer player, PokemonEntity boss, RaidDefinition definition) {

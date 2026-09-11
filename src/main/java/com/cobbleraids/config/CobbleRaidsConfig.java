@@ -13,6 +13,7 @@ public record CobbleRaidsConfig(
         BossTraits bossTraits,
         Catching catching,
         Currency currency,
+        DynamicLevel dynamicLevel,
         TierScaling tierScaling,
         BossGlow bossGlow,
         BossMovement bossMovement,
@@ -263,6 +264,28 @@ public record CobbleRaidsConfig(
         }
     }
 
+    /**
+     * Raises a boss to meet the group that recruited it, when they outclass its definition.
+     *
+     * <p>Upward only. A definition's level is a floor and never a ceiling, because loot is decided
+     * by rarity tier rather than by level -- a boss that could scale down would let a low-level
+     * group farm a mythical's Mega Stone odds off a trivial fight. See RaidLevelPolicy.
+     *
+     * <p>{@code level_offset} shifts the target off the party average: negative makes a raid a
+     * step below the group's own level, positive a step above. It cannot pull a boss below its
+     * definition either way.
+     */
+    public record DynamicLevel(boolean enabled, int levelOffset, int maxLevel) {
+        public DynamicLevel {
+            if (levelOffset < -50 || levelOffset > 50)
+                throw new IllegalArgumentException("dynamic_level.level_offset must be -50..50");
+            if (maxLevel < 1 || maxLevel > 100)
+                throw new IllegalArgumentException("dynamic_level.max_level must be 1..100");
+        }
+
+        public static DynamicLevel defaults() { return new DynamicLevel(true, 0, 100); }
+    }
+
     public record BattleCarryover(boolean health, boolean pp, boolean status) {
         public static BattleCarryover defaults() { return new BattleCarryover(true, true, false); }
 
@@ -392,6 +415,7 @@ public record CobbleRaidsConfig(
                 BossTraits.defaults(),
                 Catching.defaults(),
                 Currency.defaults(),
+                DynamicLevel.defaults(),
                 TierScaling.defaults(),
                 BossGlow.defaults(),
                 BossMovement.defaults(),
@@ -495,6 +519,13 @@ public record CobbleRaidsConfig(
                 Json.decimal(currencyObject, "minimum_share_percentage", cur.minimumSharePercentage())
         );
 
+        JsonObject dynamicLevelObject = Json.object(root, "dynamic_level");
+        DynamicLevel dl = defaults.dynamicLevel();
+        DynamicLevel dynamicLevel = new DynamicLevel(
+                Json.bool(dynamicLevelObject, "enabled", dl.enabled()),
+                Json.integer(dynamicLevelObject, "level_offset", dl.levelOffset()),
+                Json.integer(dynamicLevelObject, "max_level", dl.maxLevel()));
+
         JsonObject tierScalingObject = Json.object(root, "tier_scaling");
         TierScaling ts = defaults.tierScaling();
         TierScaling tierScaling = new TierScaling(
@@ -520,7 +551,7 @@ public record CobbleRaidsConfig(
                 Json.bool(bossMovementObject, "prevent_knockback", bm.preventKnockback()));
 
         return new CobbleRaidsConfig(naturalSpawning, recruitmentDefaults, combatDefaults, battleCarryover,
-                bossTraits, catching, currency, tierScaling, bossGlow, bossMovement,
+                bossTraits, catching, currency, dynamicLevel, tierScaling, bossGlow, bossMovement,
                 Json.bool(root, "debug_logging", defaults.debugLogging()));
     }
 
@@ -605,6 +636,12 @@ public record CobbleRaidsConfig(
         currencyJson.addProperty("scale_with_contribution", currency.scaleWithContribution());
         currencyJson.addProperty("minimum_share_percentage", currency.minimumSharePercentage());
         root.add("currency", currencyJson);
+
+        JsonObject dynamicLevelJson = new JsonObject();
+        dynamicLevelJson.addProperty("enabled", dynamicLevel.enabled());
+        dynamicLevelJson.addProperty("level_offset", dynamicLevel.levelOffset());
+        dynamicLevelJson.addProperty("max_level", dynamicLevel.maxLevel());
+        root.add("dynamic_level", dynamicLevelJson);
 
         JsonObject tierScalingObject = new JsonObject();
         tierScalingObject.addProperty("enabled", tierScaling.enabled());
