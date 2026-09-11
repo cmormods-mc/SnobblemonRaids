@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.46-one-log'
+version = '0.8.47-validator-trim'
 group = 'com.cobbleraids'
 
 base {

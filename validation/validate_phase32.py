@@ -20,48 +20,40 @@ def read(path: Path) -> str:
 
 
 def validate_despawn_integrity() -> None:
-    # Tracking moved out of RaidSpawnScheduler into ActiveRaidSpawnTracker/TrackedRaidSpawn, so the
-    # invariants below are asserted against their new homes. The decision rules themselves are now
-    # covered properly by ActiveRaidSpawnTrackerTest, which can reproduce them without a server;
-    # these string checks remain as the cheap guard that the wiring is still in place.
-    scheduler = read(JAVA / "spawn/RaidSpawnScheduler.java")
-    tracker = read(JAVA / "spawn/ActiveRaidSpawnTracker.java")
-    entry = read(JAVA / "spawn/TrackedRaidSpawn.java")
+    """Boss-tracking wiring only. The rules themselves are tested properly now.
 
-    # An entity unloaded with its chunk reports isRemoved() == true while still existing, so a
-    # cached PokemonEntity reference cannot be the tracking key.
-    # TrackedRaidSpawn is a class rather than a record on purpose: the maintenance pass mutates a
-    # timer on it every second, and a record meant allocating a replacement each time.
+    This block used to assert the despawn logic by matching exact source text -- the shape of the
+    maintenance loop, the idle-timer expression, the name of the tracking field. It went stale twice
+    (once when ActiveSpawn became a class, once when it moved into ActiveRaidSpawnTracker) and both
+    times it failed CI on a change that broke nothing, which is the worst thing a check can do: it
+    trains people to edit the check rather than believe it.
+
+    Those rules are now covered by ActiveRaidSpawnTrackerTest, which exercises them directly and
+    fails when the behaviour is wrong rather than when the spelling changes -- including the
+    re-entrant discard that caused f261da0. What is left here is what a unit test cannot see: that
+    the pieces are actually connected to the game, and that the tracking key is not an entity
+    reference.
+    """
+    entry = read(JAVA / "spawn/TrackedRaidSpawn.java")
+    initializer = read(JAVA / "CobbleRaids.java")
+
+    # The one structural rule worth pinning in the source. An entity unloaded with its chunk reports
+    # isRemoved() == true while still existing, so a cached PokemonEntity reference cannot be the
+    # tracking key -- a regression here would look correct in every unit test, because the test
+    # supplies its own boss handle.
     assert "final class TrackedRaidSpawn {" in entry
     fields = entry.split("final class TrackedRaidSpawn {", 1)[1].split("TrackedRaidSpawn(", 1)[0]
     assert "PokemonEntity" not in fields, fields
     assert "BlockPos position" in fields, fields
 
-    # Bosses are resolved on demand, and "does not resolve" must never be read as "is gone".
-    assert "private static PokemonEntity resolveBoss(" in scheduler
-    assert "level.getEntity(bossId)" in scheduler
-    assert "boss != null && boss.isRemoved()" in scheduler
-    assert "releaseProvablyGone" in tracker
-
-    # Idle time has to keep accruing while the boss is unloaded, which is precisely when no
-    # player can be near it: the tracker only consults presence when the boss actually resolved.
-    assert "if (presence != null) {" in tracker
-    assert "idleLongEnoughToDespawn" in tracker
-    assert "nowTick - lastNearbyPlayerTick >= despawnSeconds * 20L" in entry
-
-    # The maintenance pass must never walk the live map. A discard() re-enters the tracker through
-    # ENTITY_UNLOAD, which threw ConcurrentModificationException onto the server thread (f261da0).
-    assert "for (Map.Entry<UUID, TrackedRaidSpawn> entry : snapshot()) {" in tracker
-    assert "if (!active.containsKey(bossId)) continue;" in tracker
-
-    # The orphan sweep, and the guard that keeps it from eating a boss we are mid-spawn.
-    assert "public static void onNaturalBossLoaded(" in scheduler
-    assert "if (spawningTrackedBoss) return;" in scheduler
-    assert "spawningTrackedBoss = true;" in scheduler
-    assert "TRACKER.isTracked(pokemon.getUUID())" in scheduler
-
-    initializer = read(JAVA / "CobbleRaids.java")
-    assert "ServerEntityEvents.ENTITY_LOAD.register(RaidSpawnScheduler::onNaturalBossLoaded)" in initializer
+    # Wiring. Nothing below is reachable from a unit test: these are the callbacks that connect the
+    # tracker to the running server, and losing one is silent.
+    for hook in (
+        "ServerEntityEvents.ENTITY_LOAD.register(RaidSpawnScheduler::onNaturalBossLoaded)",
+        "ServerEntityEvents.ENTITY_UNLOAD.register(RaidSpawnScheduler::onEntityUnloaded)",
+        "ServerWorldEvents.UNLOAD.register(RaidSpawnScheduler::onLevelUnloaded)",
+    ):
+        assert hook in initializer, f"lost the boss-lifecycle hook: {hook}"
 
     config = read(JAVA / "config/CobbleRaidsConfig.java")
     assert "despawnPlayerRadius >= maxDistanceFromPlayer" in config, "missing keep-alive radius warning"
