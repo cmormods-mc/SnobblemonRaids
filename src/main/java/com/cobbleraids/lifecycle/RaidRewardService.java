@@ -248,7 +248,10 @@ public final class RaidRewardService {
             RewardGrantResult result = RaidRewardGrantEngine.grantChoice(player, pending, choice);
             if (CobbleRaidsConfigManager.get().debugLogging()) {
                 RaidLog.info("" + player.getGameProfile().getName() + " claimed '" + choiceId
-                        + "' for raid " + pending.definitionId() + ": base=" + summarize(result.baseItems())
+                        + "' for raid " + pending.definitionId()
+                        + String.format(Locale.ROOT, " (contribution %.1f%%, %d bonus roll(s))",
+                                pending.contributionPercentage(), pending.contributionBonusRolls())
+                        + ": base=" + summarize(result.baseItems())
                         + " chance=" + summarize(result.chanceItemsGranted())
                         + " bonus=" + summarize(result.contributionBonusItems())
                         + " currency=" + result.currencyGranted());
