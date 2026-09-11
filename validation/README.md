@@ -22,6 +22,37 @@ That hook is currently the only gate: GitHub Actions is disabled account-wide, s
 remote run in this repo's history is from 2026-09-10. `git push --no-verify` or
 `SKIP_LOCAL_CI=1 git push` bypasses it for one push.
 
+## The reward-economy manifest
+
+`economy/manifest.json` is the answer to "does `cobblemoncharms:bug_charm` actually exist",
+generated from the modpack rather than asserted here:
+
+```sh
+python validation/economy/build_manifest.py --pack <modpack.zip or mods/ dir>   # by hand, needs the pack
+python validation/economy/validate_economy_manifest.py                          # in CI, needs nothing
+```
+
+The split is the point. Generating needs a 658 MB zip nobody wants in CI; checking needs only
+the committed manifest and the tree, so it runs in the ordinary sequence and fails a push the
+moment the reward data names something the pack does not have. Regenerating is deterministic --
+two runs against one pack produce byte-identical output -- so a mod update shows up as a diff
+rather than as a mystery.
+
+Two decisions inside it worth keeping:
+
+- **Item model paths, not language files.** The charms mod ships a single
+  `item.cobblemoncharms.type_charm` key covering eighteen separate items, so a lang-based check
+  reports eighteen items missing that are all present. `assets/<ns>/models/item/*.json` tracks
+  the registry; lang does not.
+- **Mega Stone ids are derived by rule, not listed.** Four of the twenty-three (`charizarditex`
+  and friends) register as `charizardite_x`. The generator tries the id, then the X/Y
+  normalisation, then **fails** if neither resolves -- so the next renamed pair breaks the build
+  instead of shipping a broken reward.
+
+The detector has been proven to bite on all five of its failure modes: an item that does not
+exist, a banned Utilities+ item becoming reachable, a hand-edited manifest, a stale boss count,
+and an unknown namespace.
+
 The steps individually, if you want to run just one:
 
 ```sh

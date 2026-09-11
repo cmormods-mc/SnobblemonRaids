@@ -39,6 +39,9 @@ step "Validate logging discipline"
 step "Validate callback fault barriers"
 "$py" validation/validate_callback_guards.py
 
+step "Validate reward-economy manifest"
+"$py" validation/economy/validate_economy_manifest.py
+
 step "Compile, test and remap"
 ./gradlew clean build --stacktrace --warning-mode all
 

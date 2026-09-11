@@ -58,6 +58,9 @@ jobs:
       - name: Validate callback fault barriers
         run: python3 validation/validate_callback_guards.py
 
+      - name: Validate reward-economy manifest
+        run: python3 validation/economy/validate_economy_manifest.py
+
       - name: Compile and remap
         run: gradle --no-daemon clean build --stacktrace --warning-mode all
 
