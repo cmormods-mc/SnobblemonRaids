@@ -55,6 +55,10 @@ CLAIM_LOGGED = re.compile(
 # The payout, when an economy mod is installed. Charizard is starter tier and a solo victor takes
 # the whole tier amount, so this is the shipped starter figure exactly.
 PAID = re.compile(r"\(\+([\d,]+) CobbleDollars\)")
+
+# The roster names online players and falls back to UUIDs for offline ones, so the count is what
+# travels across a restart, not a name.
+ROSTER_COUNT = re.compile(r"Players with unclaimed rewards \((\d+)\)")
 STARTER_PAYOUT = 2000
 
 # A selection table failing to parse is the catastrophic case: one missing mod taking out a whole
@@ -92,6 +96,12 @@ class ChattyBot(Bot):
 
 def run_checks(rcon, server, bot, results: list[Result]) -> None:
     """Everything that needs a live server, with the socket already open."""
+    # The rig keeps its world between runs, and the queue is FIFO and persistent -- so a reward
+    # left unclaimed by the previous run sits in front of the one this run grants, and the claim
+    # pays for that instead. It cost two failures that looked like payout bugs before this line
+    # existed. Clearing first is what makes a run mean anything on its own.
+    rcon.command(f"cobbleraids reward clear {BOT}")
+
     # --- the tables the economy actually rolls ----------------------------------------------
     for table in ("cobbleraids:specialty/legendary", "cobbleraids:general/legendary",
                   "cobbleraids:base/legendary", "cobbleraids:specialty/boss/charizard"):
@@ -187,6 +197,15 @@ def run_checks(rcon, server, bot, results: list[Result]) -> None:
           "a definition still names rewards of its own")
     check(results, "no reward grant failed", "Raid reward grant failed" not in log)
 
+    # Left deliberately unclaimed: main() restarts the server and looks for it afterwards. Queued
+    # while a player is still connected, because granting needs one and the client on this modset
+    # does not stay long.
+    survivor = rcon.command(f"cobbleraids reward grant {BOT} cobbleraids:mewtwo")
+    check(results, "a second reward can be queued for the restart check",
+          "Queued" in survivor, survivor.strip()[:160])
+    roster = ROSTER_COUNT.search(rcon.command("cobbleraids reward list"))
+    results.append(Result("__roster_before__", True, roster.group(1) if roster else "0"))
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__,
@@ -222,6 +241,30 @@ def main() -> None:
             if not online:
                 raise RuntimeError("bot never joined")
             run_checks(rcon, server, bot, results)
+
+        # --- does an unclaimed reward survive a restart? -------------------------------------
+        # The claim's contents are never written to disk -- only the seed and the scalars are, and
+        # the bundle is regenerated. This is the check that the regeneration has something to work
+        # from, and that a player who logs off after a win still has their reward tomorrow.
+        if bot is not None:
+            bot.stop()
+            bot = None
+        print("Restarting to check an unclaimed reward survives")
+        server.stop()
+        server.start()
+        server.wait_until_ready()
+        with Rcon("127.0.0.1", 25575, read_password(server_dir)) as rcon:
+            restored = rcon.command("cobbleraids reward list")
+            after = ROSTER_COUNT.search(restored)
+            before = next((int(r.detail) for r in results if r.name == "__roster_before__"), 0)
+            results[:] = [r for r in results if r.name != "__roster_before__"]
+            check(results, "an unclaimed reward survives a server restart",
+                  after is not None and int(after.group(1)) >= before > 0,
+                  f"held {before} before the restart, {after.group(1) if after else 'none'} after")
+        log = server.read_log()
+        check(results, "the restore is reported at startup",
+              "Restored" in log and "unclaimed raid reward" in log,
+              "no restore line after restart")
 
     except Exception as exc:  # noqa: BLE001
         check(results, "economy end-to-end run", False, str(exc))

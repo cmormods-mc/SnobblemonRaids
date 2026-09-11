@@ -10,6 +10,7 @@ import com.cobbleraids.reward.PendingRewardStore;
 import com.cobbleraids.reward.NativeRewardScreenGateway;
 import com.cobbleraids.reward.RaidRewardGrantEngine;
 import com.cobbleraids.config.RaidRewardPolicyManager;
+import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobbleraids.reward.RewardGuiBackends;
 import com.cobbleraids.reward.plan.RewardPlanResolver;
 import com.cobbleraids.reward.RewardGrantResult;
@@ -79,6 +80,30 @@ public final class RaidRewardService {
      */
     private static void persist(MinecraftServer server) {
         if (server != null) PendingRewardStore.get(server).update(PENDING);
+    }
+
+    /**
+     * Persists the queue and writes it to disk now, rather than at the next world save.
+     *
+     * <p>Used when a claim is consumed, and the reason is a duplication window. {@link #persist}
+     * only marks the SavedData dirty; Minecraft flushes it on the autosave, minutes away. A
+     * player's inventory, however, reaches disk the moment they log out. So: claim, receive the
+     * items, log out -- inventory written -- then a hard crash before the next autosave, and the
+     * server comes back with the claim still queued and the player still holding the items. One
+     * reward, twice.
+     *
+     * <p>Flushing here makes the claim durable before the items can be. The reverse window it
+     * opens -- crash between this write and the grant a few microseconds later, losing one reward
+     * -- is smaller by minutes, and on a server with an economy losing a reward is a complaint
+     * while duplicating one is an exploit.
+     *
+     * <p>Cheap enough to do unconditionally: a claim happens once per player per raid, not per
+     * tick, and save() writes only what is dirty.
+     */
+    private static void persistNow(MinecraftServer server) {
+        if (server == null) return;
+        persist(server);
+        RaidFaultBarrier.guard("reward-claim-flush", () -> server.overworld().getDataStorage().save());
     }
 
     /** Admin view of one player's queue, front of queue first. */
@@ -243,7 +268,7 @@ public final class RaidRewardService {
             // monitor, and there is no longer a queue for two callers to race over.
             CLAIM_LOCKS.remove(player.getUUID());
         }
-        persist(player.getServer());
+        persistNow(player.getServer());
         try {
             RewardGrantResult result = RaidRewardGrantEngine.grantChoice(player, pending, choice);
             if (CobbleRaidsConfigManager.get().debugLogging()) {
@@ -268,7 +293,7 @@ public final class RaidRewardService {
         } catch (RuntimeException ex) {
             // Restore the exact claim at the front if granting fails before completion.
             PENDING.computeIfAbsent(player.getUUID(), ignored -> new ArrayDeque<>()).addFirst(pending);
-            persist(player.getServer());
+            persistNow(player.getServer());
             player.sendSystemMessage(Component.literal("Raid reward grant failed; your claim was preserved. Contact an administrator."));
             throw ex;
         }

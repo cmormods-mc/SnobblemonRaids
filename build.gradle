@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.64-claim-button-label'
+version = '0.8.65-durable-claim-consumption'
 group = 'com.cobbleraids'
 
 base {
