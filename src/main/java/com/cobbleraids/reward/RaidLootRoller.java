@@ -92,6 +92,21 @@ public final class RaidLootRoller {
         return rolled;
     }
 
+    /**
+     * Whether a loot table is loaded. Used to ask "does this boss have its own specialty table?"
+     * without anything having to hold a list of which bosses do -- adding one becomes a datapack
+     * change and nothing in the code has to learn about it.
+     *
+     * <p>Silent by design: a boss with no table of its own is the normal case for 109 of the 130,
+     * not a problem to report.
+     */
+    public static boolean exists(ServerPlayer player, ResourceLocation tableId) {
+        if (tableId == null) return false;
+        LootTable table = player.serverLevel().getServer().reloadableRegistries()
+                .getLootTable(ResourceKey.create(Registries.LOOT_TABLE, tableId));
+        return table != LootTable.EMPTY;
+    }
+
     private static void warn(Object context, ResourceLocation tableId, String problem) {
         RaidLog.error("" + context + " reward loot table '" + tableId + "' " + problem);
     }

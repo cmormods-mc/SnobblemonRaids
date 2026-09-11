@@ -4,6 +4,7 @@ import com.cobbleraids.fault.RaidThreadGuard;
 import com.cobbleraids.catching.RaidPlayerRecords;
 import com.cobbleraids.command.RaidAdminCommand;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
+import com.cobbleraids.config.RaidRewardPolicyManager;
 import com.cobbleraids.config.RaidDefinitionRegistry;
 import com.cobbleraids.fault.RaidConsistencyAuditScheduler;
 import com.cobbleraids.fault.RaidFaultBarrier;
@@ -44,6 +45,7 @@ public final class CobbleRaids implements ModInitializer {
         // Load operator defaults before datapack raid definitions are prepared, because omitted
         // per-raid fields inherit values from config/cobbleraids/server.json.
         CobbleRaidsConfigManager.load();
+        RaidRewardPolicyManager.load();
 
         RaidRewardPayloads.registerPayloadTypes();
         ServerPlayNetworking.registerGlobalReceiver(RewardChoicePayload.TYPE, (payload, context) ->
@@ -73,6 +75,10 @@ public final class CobbleRaids implements ModInitializer {
         // mod's own definition loading, which registers later.
         ServerLifecycleEvents.START_DATA_PACK_RELOAD.register((server, resources) ->
                 RaidFaultBarrier.guard("config-reload", CobbleRaidsConfigManager::reload));
+        // Same barrier, same reason: a malformed reward policy keeps the last good one rather than
+        // aborting the reload that also brings in this mod's raid definitions.
+        ServerLifecycleEvents.START_DATA_PACK_RELOAD.register((server, resources) ->
+                RaidFaultBarrier.guard("reward-policy-reload", RaidRewardPolicyManager::reload));
         ServerLifecycleEvents.SERVER_STARTING.register(server ->
                 RaidFaultBarrier.guard("startup:reward-gui", RewardGuiBackends::ensureReady));
         ServerLifecycleEvents.SERVER_STARTING.register(server ->
