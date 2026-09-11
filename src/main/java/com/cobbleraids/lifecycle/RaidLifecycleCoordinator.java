@@ -28,7 +28,7 @@ import net.minecraft.server.level.ServerPlayer;
 
 /** Single authority for raid terminal transitions, cleanup, withdrawal, and reward finalization. */
 public final class RaidLifecycleCoordinator {
-    private static final Set<UUID> FINALIZED = ConcurrentHashMap.newKeySet();
+    private static final RaidFinalizationGuard FINALIZATION = new RaidFinalizationGuard();
     private static final Set<UUID> VICTORY_REQUESTED = ConcurrentHashMap.newKeySet();
     private RaidLifecycleCoordinator() {}
 
@@ -173,22 +173,23 @@ public final class RaidLifecycleCoordinator {
     }
 
     private static void finalizeVictory(RaidSession raid) {
-        if (!FINALIZED.add(raid.getId())) return;
         RaidCombatRuleService.forget(raid.getId());
         MinecraftServer server = ((net.minecraft.server.level.ServerLevel) raid.getBossEntity().level()).getServer();
-        // Before the reward screen is queued, so a level-up and its evolution offer reach the chat
-        // ahead of the screen rather than arriving behind it. Victory paths only: a lost, timed-out
-        // or aborted raid pays nothing, exactly as it pays no items.
-        RaidProgressionTransfer.grant(raid, server);
-        RaidBattleStateCarryover.apply(raid);
-        // Both need the boss's Pokemon, which cleanupBossEntity is about to discard, and both read
-        // the same per-player history, so they run together and before it.
-        recordAndOfferCatch(raid, server);
-        RaidRewardEligibility eligibility = RaidRewardEligibility.victory(raid);
-        RaidRewardService.grant(eligibility, server);
-        RaidRegistry.remove(raid.getBattle());
-        cleanupBossEntity(raid);
-        forgetFinalizationState(raid.getId());
+        FINALIZATION.finalizeOnce(raid.getId(), () -> {
+            // Before the reward screen is queued, so a level-up and its evolution offer reach the
+            // chat ahead of the screen rather than arriving behind it. Victory paths only: a lost,
+            // timed-out or aborted raid pays nothing, exactly as it pays no items.
+            RaidProgressionTransfer.grant(raid, server);
+            RaidBattleStateCarryover.apply(raid);
+            // Both need the boss's Pokemon, which the cleanup below is about to discard, and both
+            // read the same per-player history, so they run together and before it.
+            recordAndOfferCatch(raid, server);
+            RaidRewardService.grant(RaidRewardEligibility.victory(raid), server);
+        }, () -> {
+            RaidRegistry.remove(raid.getBattle());
+            cleanupBossEntity(raid);
+            VICTORY_REQUESTED.remove(raid.getId());
+        });
     }
 
     /**
@@ -222,12 +223,14 @@ public final class RaidLifecycleCoordinator {
 
     /** Used when Cobblemon/Showdown already ended the battle and then emitted BATTLE_VICTORY. */
     private static void finalizeAfterBattleEnded(RaidSession raid) {
-        if (!FINALIZED.add(raid.getId())) return;
         RaidCombatRuleService.forget(raid.getId());
-        RaidBattleStateCarryover.apply(raid);
-        RaidRegistry.remove(raid.getBattle());
-        releaseBossAfterFailure(raid);
-        forgetFinalizationState(raid.getId());
+        FINALIZATION.finalizeOnce(raid.getId(),
+                () -> RaidBattleStateCarryover.apply(raid),
+                () -> {
+                    RaidRegistry.remove(raid.getBattle());
+                    releaseBossAfterFailure(raid);
+                    VICTORY_REQUESTED.remove(raid.getId());
+                });
     }
 
     /** Every ordinary way a raid is lost: the players failed, so the boss records the attempt. */
@@ -237,19 +240,22 @@ public final class RaidLifecycleCoordinator {
 
     /** Used for timeout/flee/abort paths where no normal Showdown win packet is guaranteed. */
     private static void finalizeNonVictory(RaidSession raid, boolean countsAsFailedAttempt) {
-        if (!FINALIZED.add(raid.getId())) return;
         RaidCombatRuleService.forget(raid.getId());
         PokemonBattle battle = raid.getBattle();
-        // Read the clones before end(), which retires the actors this walks.
-        RaidBattleStateCarryover.apply(raid);
-        if (!battle.getEnded()) {
-            // PokemonBattle.end() sends BattleEndPacket, lets entity-backed actors clear battleId,
-            // and calls BattleRegistry.closeBattle(this). Do not close the registry first.
-            battle.end();
-        }
-        RaidRegistry.remove(battle);
-        if (countsAsFailedAttempt) releaseBossAfterFailure(raid); else cleanupBossEntity(raid);
-        forgetFinalizationState(raid.getId());
+        FINALIZATION.finalizeOnce(raid.getId(),
+                // Read the clones before end(), which retires the actors this walks.
+                () -> RaidBattleStateCarryover.apply(raid),
+                () -> {
+                    // Ending the battle is cleanup, not a side effect: skipping it strands
+                    // Cobblemon's actors and leaves every player sitting in a battle UI they cannot
+                    // leave. PokemonBattle.end() sends BattleEndPacket, lets entity-backed actors
+                    // clear battleId, and calls BattleRegistry.closeBattle(this) -- so it must run
+                    // before RaidRegistry.remove, and the registry must not be closed first.
+                    if (!battle.getEnded()) battle.end();
+                    RaidRegistry.remove(battle);
+                    if (countsAsFailedAttempt) releaseBossAfterFailure(raid); else cleanupBossEntity(raid);
+                    VICTORY_REQUESTED.remove(raid.getId());
+                });
     }
 
     /**
@@ -319,24 +325,13 @@ public final class RaidLifecycleCoordinator {
     }
 
     /**
-     * FINALIZED/VICTORY_REQUESTED exist only to make re-entrant finalize- and requestVictory calls
-     * idempotent while a raid is still reachable through RaidRegistry. RaidRegistry.remove(battle)
-     * has already run by the time this is called, so the battle can no longer resolve back to this
-     * raid and these guards can never be consulted for its id again -- keeping the entries forever
-     * would just grow both sets by one UUID per raid for the life of the server.
-     */
-    private static void forgetFinalizationState(UUID raidId) {
-        FINALIZED.remove(raidId);
-        VICTORY_REQUESTED.remove(raidId);
-    }
-
-    /**
-     * Both sets are emptied per raid by forgetFinalizationState, but only along a path that reaches
-     * a terminal transition. A server that stops with raids still in flight leaves their ids behind,
-     * and an integrated (single-player) client reuses this JVM for every world it opens.
+     * Both guards are released per raid inside the must-run cleanup of every terminal path, so
+     * neither grows with the number of raids played. This covers the remaining case: a server that
+     * stops with raids still in flight never reaches a terminal path at all, and an integrated
+     * (single-player) client reuses this JVM for every world it opens.
      */
     public static void onServerStopped() {
-        FINALIZED.clear();
+        FINALIZATION.clear();
         VICTORY_REQUESTED.clear();
     }
 }

@@ -138,6 +138,12 @@ public final class CobbleRaids implements ModInitializer {
         // slot against max_active_raids for the rest of the boss's despawn_seconds.
         ServerEntityEvents.ENTITY_UNLOAD.register(
                 RaidFaultBarrier.entityUnload("entity-unload", RaidSpawnScheduler::onEntityUnloaded));
+        // The glow service tracks the same bosses and needs the same signal: a boss that merely
+        // unloaded has to stay tracked so it glows again when its chunk returns, so destruction is
+        // the only thing that may untrack it -- and untracking is also what takes it back out of its
+        // scoreboard team, which is saved into the world.
+        ServerEntityEvents.ENTITY_UNLOAD.register(
+                RaidFaultBarrier.entityUnload("entity-unload:glow", RaidBossGlowService::onEntityUnloaded));
         // A dimension-managing mod can close a ServerLevel outright (not just unload its chunks),
         // which would otherwise leave a tracked boss there occupying a raid slot until its despawn
         // timer expires, since it can never resolve again.
