@@ -33,6 +33,9 @@ import net.minecraft.world.level.saveddata.SavedData;
  * registry on load; a claim saved across a restart therefore uses the definition as it stands when
  * the server comes back, which is also what an operator editing a datapack between sessions expects.
  * An entry whose definition no longer exists is dropped with a warning rather than failing the load.
+ *
+ * <p>What IS stored is the seed every roll derives from, which is how a claim survives a restart as
+ * the same reward without a single ItemStack ever reaching disk.
  */
 public final class PendingRewardStore extends SavedData {
     private static final String FILE_ID = "cobbleraids_pending_rewards";
@@ -101,6 +104,10 @@ public final class PendingRewardStore extends SavedData {
         } catch (IllegalArgumentException ex) {
             tier = definition.rarityTier();
         }
+        // A claim written before seeds existed has none. Deriving one from the raid id rather than
+        // drawing a fresh random keeps it stable across every subsequent load: an old claim settles
+        // on one reward instead of rerolling on each restart until someone finally claims it.
+        long seed = tag.contains("seed") ? tag.getLong("seed") : tag.getUUID("raid").hashCode();
         return new PendingRaidReward(
                 tag.getUUID("raid"),
                 definitionId,
@@ -109,7 +116,8 @@ public final class PendingRewardStore extends SavedData {
                 tag.getDouble("contribution"),
                 tag.getInt("bonus_rolls"),
                 tag.getInt("elapsed_ticks"),
-                tag.getInt("participants"));
+                tag.getInt("participants"),
+                seed);
     }
 
     @Override
@@ -136,6 +144,7 @@ public final class PendingRewardStore extends SavedData {
         tag.putInt("bonus_rolls", pending.contributionBonusRolls());
         tag.putInt("elapsed_ticks", pending.elapsedCombatTicks());
         tag.putInt("participants", pending.participantCount());
+        tag.putLong("seed", pending.rewardSeed());
         return tag;
     }
 

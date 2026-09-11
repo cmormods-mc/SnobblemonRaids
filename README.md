@@ -61,6 +61,10 @@ separately.
 - **Catching** — off by default. `catching.enabled` plus a per-tier chance
   (`starter`/`powerhouse`/`legendary`/`mythical`, each `0.0`–`1.0`) rolls once per victor
   for a copy of the boss. Leaving every tier at `0.0` skips the roll entirely.
+- **Durability** — an unclaimed reward is fixed when the raid is won, not when it is claimed:
+  the claim stores a seed and regenerates the same bundle, so logging off does not reroll what
+  you earned. Nothing serialises an ItemStack. Edit a loot table between the win and the claim
+  and the same seed yields something else, which is the trade against freezing contents outright.
 - **Currency** — with CobbleDollars installed, a claimed reward also pays
   `currency.<tier>` (2000 / 5000 / 12000 / 25000 by default), split by damage share
   and withheld below `currency.minimum_share_percentage` (10%). This is on top of the

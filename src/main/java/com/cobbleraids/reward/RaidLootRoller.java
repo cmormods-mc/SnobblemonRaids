@@ -40,11 +40,23 @@ public final class RaidLootRoller {
      */
     public static List<RaidDefinition.RewardItem> rollAll(
             ServerPlayer player, List<ResourceLocation> tables, Object context) {
+        return rollAll(player, tables, context, LootTable.RANDOMIZE_SEED);
+    }
+
+    /**
+     * As {@link #rollAll(ServerPlayer, List, Object)}, but with the roll fixed by a seed.
+     *
+     * <p>{@link LootTable#RANDOMIZE_SEED} means "pick your own", which is the unseeded behaviour.
+     * Any other value makes the roll reproducible, which is how an unclaimed reward comes back as
+     * the same reward after a restart.
+     */
+    public static List<RaidDefinition.RewardItem> rollAll(
+            ServerPlayer player, List<ResourceLocation> tables, Object context, long seed) {
         if (tables.isEmpty()) return List.of();
         List<RaidDefinition.RewardItem> granted = new ArrayList<>();
         for (ResourceLocation tableId : tables) {
             try {
-                for (ItemStack stack : roll(player, tableId, context)) {
+                for (ItemStack stack : roll(player, tableId, context, seed)) {
                     // Read the line before granting: placeItemBackInInventory consumes the stack, so
                     // one inspected afterwards reports minecraft:air and a count of zero.
                     granted.add(new RaidDefinition.RewardItem(
@@ -67,6 +79,11 @@ public final class RaidLootRoller {
      * preview that works is a reward that will work.
      */
     public static List<ItemStack> roll(ServerPlayer player, ResourceLocation tableId, Object context) {
+        return roll(player, tableId, context, LootTable.RANDOMIZE_SEED);
+    }
+
+    /** As {@link #roll(ServerPlayer, ResourceLocation, Object)}, with the roll fixed by a seed. */
+    public static List<ItemStack> roll(ServerPlayer player, ResourceLocation tableId, Object context, long seed) {
         ServerLevel level = player.serverLevel();
         LootTable table = level.getServer().reloadableRegistries()
                 .getLootTable(ResourceKey.create(Registries.LOOT_TABLE, tableId));
@@ -86,7 +103,7 @@ public final class RaidLootRoller {
                 .create(LootContextParamSets.CHEST);
 
         List<ItemStack> rolled = new ArrayList<>();
-        table.getRandomItems(params, stack -> {
+        table.getRandomItems(params, seed, stack -> {
             if (!stack.isEmpty()) rolled.add(stack);
         });
         return rolled;
