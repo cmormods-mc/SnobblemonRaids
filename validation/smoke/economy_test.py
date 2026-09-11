@@ -45,6 +45,18 @@ BOT = "EconomyBot"
 # The claim message the server sends the player. The bonus-roll count is the load-bearing part.
 CLAIMED = re.compile(r"Raid reward claimed\. Contribution ([\d.]+)% awarded (\d+) bonus roll")
 
+# The same facts from the server's own debug log, which needs no client to survive. A mineflayer
+# client on a heavy modset is dropped on a keep-alive timeout often enough that hanging the whole
+# verification off its chat made this test fail for reasons that had nothing to do with the mod.
+CLAIM_LOGGED = re.compile(
+    r"claimed '(\w+)' for raid ([\w:/]+) \(contribution ([\d.]+)%, (\d+) bonus roll\(s\)\)"
+    r".*?currency=(\d+)")
+
+# The payout, when an economy mod is installed. Charizard is starter tier and a solo victor takes
+# the whole tier amount, so this is the shipped starter figure exactly.
+PAID = re.compile(r"\(\+([\d,]+) CobbleDollars\)")
+STARTER_PAYOUT = 2000
+
 # A selection table failing to parse is the catastrophic case: one missing mod taking out a whole
 # tier. Per-provider leaves failing is expected on a rig that has seven of the ten providers absent.
 SELECTION_TABLE_FAILED = re.compile(
@@ -102,25 +114,59 @@ def run_checks(rcon, server, bot, results: list[Result]) -> None:
     time.sleep(3)
     log = server.read_log()
 
+    logged = None
+    for line in log.splitlines():
+        found = CLAIM_LOGGED.search(line)
+        if found:
+            logged = found
+    check(results, "the claim completes and the server records it", logged is not None,
+          "no claim line in the server log (is debug_logging on?)")
+
     match = None
     for line in bot.messages:
         found = CLAIMED.search(line)
         if found:
             match = found
-    check(results, "the claim completes and reports itself to the player", match is not None,
-          "no claim message reached the client; saw: " + " | ".join(bot.messages[-3:])[:200])
+    if logged:
+        print("  claim: " + logged.group(0)[:220])
+        check(results, "a solo victor is credited the whole raid",
+              abs(float(logged.group(3)) - 100.0) < 0.05, "share was " + logged.group(3) + "%")
+        # The regression: thresholds living in the reward policy while the victory site read the
+        # inline block, which migrated definitions no longer have.
+        check(results, "contribution thresholds award a solo victor three bonus rolls",
+              int(logged.group(4)) == 3, "awarded " + logged.group(4) + ", expected 3")
 
     if match:
         # Printed because the interesting part of this test is what a player actually receives,
         # and a PASS line does not show it.
         print("  claim: " + match.string.strip()[:220])
-        share, bonus = float(match.group(1)), int(match.group(2))
-        check(results, "a solo victor is credited the whole raid", abs(share - 100.0) < 0.05,
-              f"share was {share}%")
-        # The regression: thresholds living in the policy while the victory site read the
-        # inline block, which migrated definitions no longer have.
-        check(results, "contribution thresholds award a solo victor three bonus rolls",
-              bonus == 3, f"awarded {bonus}, expected 3")
+        # The player's own view, when the client survived long enough to receive it.
+        check(results, "the player is told the same thing the server logged",
+              logged is not None and match.group(2) == logged.group(4),
+              "client and server disagree about the bonus rolls")
+
+    # --- currency, when there is an economy mod to pay it -------------------------------------
+    # Conditional on purpose: this rig is run both with and without CobbleDollars, and a payout
+    # appearing on a server that has no economy mod would be as wrong as one going missing.
+    status = rcon.command("cobbleraids debug status")
+    has_economy = "currency cobbledollars" in status and "disabled after failure" not in status
+    check(results, "the currency backend reports itself in debug status",
+          "currency " in status, status.strip()[:160])
+
+    paid_amount = int(logged.group(5)) if logged else 0
+    if has_economy:
+        # The backend reaches CobbleDollars by reflection into a Kotlin file facade, so nothing
+        # short of running it proves the handle resolves and the money actually arrives.
+        check(results, "an installed economy mod is paid through to the player", paid_amount > 0,
+              "the claim paid nothing despite backend " + status.strip()[:80])
+        check(results, "a solo starter claim pays the shipped starter figure",
+              paid_amount == STARTER_PAYOUT, f"paid {paid_amount}, expected {STARTER_PAYOUT}")
+        balance = rcon.command(f"execute as {BOT} run cobbledollars balance")
+        check(results, "the payout is visible in the player's balance",
+              "Unknown or incomplete command" not in balance, balance.strip()[:120])
+    else:
+        check(results, "no payout is reported when no economy mod is installed", paid_amount == 0,
+              "a claim paid " + str(paid_amount) + " with no backend to pay it")
 
     after = rcon.command(f"cobbleraids reward list {BOT}")
     check(results, "claiming consumes the claim", "no unclaimed" in after.lower(),
@@ -161,13 +207,20 @@ def main() -> None:
         server.wait_until_ready()
         port = server_port(server_dir)
         bot = ChattyBot(BOT, port)
-        check(results, "a client connects and stays connected", bot.wait_ready(),
-              bot.lost or "")
-        if bot.lost:
-            raise RuntimeError("bot never connected: " + str(bot.lost))
-        time.sleep(2)
-
         with Rcon("127.0.0.1", 25575, read_password(server_dir)) as rcon:
+            # The server's view, not mineflayer's. A client on this modset is often dropped on a
+            # keep-alive timeout ~30s after joining, so waiting on its spawn event meant the player
+            # was already gone by the time the claim ran -- and the failure looked like the mod.
+            online = False
+            for _ in range(60):
+                if BOT in rcon.command("list"):
+                    online = True
+                    break
+                time.sleep(1)
+            check(results, "a client joins and the server sees it", online,
+                  bot.lost or "the server never listed the player")
+            if not online:
+                raise RuntimeError("bot never joined")
             run_checks(rcon, server, bot, results)
 
     except Exception as exc:  # noqa: BLE001

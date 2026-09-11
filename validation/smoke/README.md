@@ -111,16 +111,26 @@ victory, and the two were briefly wired to different things -- every player got 
 while the config, the tables and the logs all looked right. A solo victor has a 100% share, so the
 claim must say three bonus rolls.
 
-The claim message is printed, because what a player actually receives is the point:
+The claim is read out of the server's own debug log, which is why the rig needs
+`debug_logging: true` in `config/cobbleraids/server.json`:
 
 ```text
-claim: Raid reward claimed. Contribution 100.0% awarded 3 bonus rolls.
-       Granted: Great Ball x2, Potion x2, Potion x2, Great Ball x2, Super Potion x1
+claim: claimed 'all' for raid cobbleraids:charizard (contribution 100.0%, 3 bonus roll(s)):
+       base=cobblemon:exp_candy_s x2, cobblemon:poke_ball x4  chance=none
+       bonus=cobblemon:revive x1, cobblemon:potion x2         currency=2000
 ```
 
-Five of six selections produced an item there; the sixth hit a leaf whose mod this rig does not
-have. On a complete server all six produce.
+It used to read the player's chat instead, and that was a mistake worth recording. A mineflayer
+client on this modset is dropped on a keep-alive timeout roughly thirty seconds after joining --
+the server logs it in, then loses it -- so the test spent sixty seconds waiting for a spawn event
+that never arrived, and by the time it ran the claim there was no player to run it as. Every
+player-dependent check failed, and the failure looked exactly like a broken mod. The test now
+waits on the server's own player list, acts immediately, and reads the result from the log.
+`bot.js` still echoes chat, and the one check that uses it compares the player's view to the
+server's when the client lives long enough to have one.
 
-`bot.js` echoes system messages for this. The claim result is sent to the player, not written to
-the server log, so reading the log cannot tell a claim that granted six selections from one that
-granted none.
+**Install CobbleDollars and fabric-language-kotlin in the rig to exercise the payout.** The
+currency backend reaches CobbleDollars by reflection into a Kotlin file facade, so nothing short
+of running it proves the handle resolves and the money arrives. With them installed the checks
+assert the shipped starter figure exactly (`currency=2000` for a solo starter claim); without
+them they assert the opposite -- that no payout is reported when there is no backend to pay it.
