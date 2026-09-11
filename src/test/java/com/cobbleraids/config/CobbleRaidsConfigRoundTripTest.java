@@ -49,6 +49,7 @@ class CobbleRaidsConfigRoundTripTest {
                 new CobbleRaidsConfig.BattleCarryover(false, true, true),
                 new CobbleRaidsConfig.BossTraits(5, 0.25),
                 new CobbleRaidsConfig.Catching(true, 0.5, 0.25, 0.1, 0.0),
+                new CobbleRaidsConfig.Currency(true, 25L, 100L, 400L, 1_000L, true, 20.0),
                 CobbleRaidsConfig.defaults().tierScaling(),
                 CobbleRaidsConfig.defaults().bossGlow(),
                 CobbleRaidsConfig.defaults().bossMovement(),
@@ -65,6 +66,11 @@ class CobbleRaidsConfigRoundTripTest {
         assertTrue(reparsed.catching().enabled());
         assertEquals(0.5, reparsed.catching().chanceFor(RaidRarityTier.STARTER), 0.0);
         assertEquals(0.0, reparsed.catching().chanceFor(RaidRarityTier.MYTHICAL), 0.0);
+        assertTrue(reparsed.currency().enabled());
+        assertEquals(25L, reparsed.currency().amountFor(RaidRarityTier.STARTER));
+        assertEquals(1_000L, reparsed.currency().amountFor(RaidRarityTier.MYTHICAL));
+        assertTrue(reparsed.currency().scaleWithContribution());
+        assertEquals(20.0, reparsed.currency().minimumSharePercentage(), 0.0);
     }
 
     @Test
@@ -77,6 +83,7 @@ class CobbleRaidsConfigRoundTripTest {
         old.remove("battle_carryover");
         old.remove("boss_traits");
         old.remove("catching");
+        old.remove("currency");
         old.getAsJsonObject("combat_defaults").remove("max_failed_attempts");
 
         CobbleRaidsConfig loaded = CobbleRaidsConfig.fromJson(old);
@@ -86,6 +93,7 @@ class CobbleRaidsConfigRoundTripTest {
                 loaded.combatDefaults().maxFailedAttempts());
         assertEquals(CobbleRaidsConfig.defaults().bossTraits(), loaded.bossTraits());
         assertEquals(CobbleRaidsConfig.defaults().catching(), loaded.catching());
+        assertEquals(CobbleRaidsConfig.defaults().currency(), loaded.currency());
     }
 
     @Test

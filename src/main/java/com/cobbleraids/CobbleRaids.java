@@ -20,6 +20,7 @@ import com.cobbleraids.raid.RaidRegistry;
 import com.cobbleraids.reward.NativeRewardScreenGateway;
 import com.cobbleraids.reward.RaidRewardCommand;
 import com.cobbleraids.reward.RewardGuiBackends;
+import com.cobbleraids.reward.currency.RaidCurrencyBackends;
 import com.cobbleraids.showdown.RaidInstructionRegistrar;
 import com.cobbleraids.showdown.ShowdownIntegrationInstaller;
 import com.cobbleraids.spawn.RaidSpawnHistory;
@@ -74,6 +75,8 @@ public final class CobbleRaids implements ModInitializer {
                 RaidFaultBarrier.guard("config-reload", CobbleRaidsConfigManager::reload));
         ServerLifecycleEvents.SERVER_STARTING.register(server ->
                 RaidFaultBarrier.guard("startup:reward-gui", RewardGuiBackends::ensureReady));
+        ServerLifecycleEvents.SERVER_STARTING.register(server ->
+                RaidFaultBarrier.guard("startup:reward-currency", RaidCurrencyBackends::ensureReady));
         // First SERVER_STARTED listener on purpose: everything after it is worth checking against.
         ServerLifecycleEvents.SERVER_STARTED.register(server ->
                 RaidFaultBarrier.guard("startup:thread-guard", () -> RaidThreadGuard.onServerStarted(server)));
