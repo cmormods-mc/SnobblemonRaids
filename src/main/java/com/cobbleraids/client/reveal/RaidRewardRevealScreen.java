@@ -392,13 +392,32 @@ public final class RaidRewardRevealScreen extends Screen {
     }
 
     private void renderResult(GuiGraphics graphics, Rect chamber) {
-        if (result == null) return;
+        if (result == null || resultLines.isEmpty()) return;
         int color = result.success() ? 0xFFFFFFFF : 0xFFFF5555;
-        int y = chamber.centerY() + Math.round(chamber.width() * 0.1f);
-        for (Component line : resultLines) {
-            graphics.drawCenteredString(this.font, line, chamber.centerX(), y, color);
-            y += 12;
+        ResultTextLayout text = ResultTextLayout.of(
+                chamber.y(), chamber.height(), chamber.width(), resultLines.size());
+
+        if (text.unscaled()) {
+            int y = text.top();
+            for (Component line : resultLines) {
+                graphics.drawCenteredString(this.font, line, chamber.centerX(), y, color);
+                y += text.step();
+            }
+            return;
         }
+
+        // Six selections plus a currency line is seven rows, and at small window sizes that is
+        // taller than the chamber. Scaling the block is the last resort after ResultTextLayout has
+        // already slid it up towards the centre; the alternative was drawing past the art.
+        graphics.pose().pushPose();
+        graphics.pose().translate(chamber.centerX(), text.top(), 0);
+        graphics.pose().scale(text.scale(), text.scale(), 1.0f);
+        int y = 0;
+        for (Component line : resultLines) {
+            graphics.drawCenteredString(this.font, line, 0, y, color);
+            y += text.step();
+        }
+        graphics.pose().popPose();
     }
 
     @Override
