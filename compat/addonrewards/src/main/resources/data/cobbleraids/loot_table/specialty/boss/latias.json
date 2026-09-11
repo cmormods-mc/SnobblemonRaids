@@ -1,0 +1,155 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:specialty/mega/latias",
+          "weight": 500
+        },
+        {
+          "type": "minecraft:item",
+          "name": "daycareplus:diamond_incubator",
+          "weight": 30
+        },
+        {
+          "type": "minecraft:item",
+          "name": "daycareplus:daycare_spark",
+          "weight": 100
+        },
+        {
+          "type": "minecraft:item",
+          "name": "daycareplus:shiny_booster",
+          "weight": 100
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblecapsule:pokemon_capsule_shiny",
+          "weight": 10
+        },
+        {
+          "type": "minecraft:item",
+          "name": "daycareplus:daycare_booster",
+          "weight": 75
+        },
+        {
+          "type": "minecraft:item",
+          "name": "daycareplus:fertility_candy",
+          "weight": 50
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:specialty/leaf/tm_tr",
+          "weight": 400
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:specialty/leaf/capsule_basic",
+          "weight": 150
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:specialty/leaf/capsule_rare",
+          "weight": 100
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblecapsule:capsule_core_epic",
+          "weight": 10
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblecapsule:pokemon_capsule",
+          "weight": 30
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:specialty/leaf/bonds_pair",
+          "weight": 60
+        },
+        {
+          "type": "minecraft:item",
+          "name": "companion_bonds:shiny_leaf",
+          "weight": 20
+        },
+        {
+          "type": "minecraft:item",
+          "name": "companion_bonds:shiny_crown",
+          "weight": 5
+        },
+        {
+          "type": "minecraft:item",
+          "name": "ridetraining:training_reader",
+          "weight": 30
+        },
+        {
+          "type": "minecraft:item",
+          "name": "ridetraining:riding_upgrade",
+          "weight": 20
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:specialty/leaf/type_charms",
+          "weight": 150
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:specialty/leaf/catch_exp_charms",
+          "weight": 50
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemoncharms:multi_charm",
+          "weight": 10
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemoncharms:gold_bottle_cap",
+          "weight": 10
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemoncharms:shiny_charm",
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblesafari:auspicious_pokeball",
+          "weight": 40
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblesafari:union_room_pokeball",
+          "weight": 20
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblesafari:redchain_random_ball",
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblesafari:auspiciouspokeball_gold",
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemon:rare_candy",
+          "weight": 300
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemon:exp_candy_l",
+          "weight": 800
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:base/legendary",
+          "weight": 6924
+        }
+      ]
+    }
+  ]
+}

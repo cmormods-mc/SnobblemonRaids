@@ -1,0 +1,35 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:base/powerhouse",
+          "weight": 60
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:general/leaf/cards",
+          "weight": 12
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:general/leaf/capsule_materials",
+          "weight": 12
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:general/leaf/safari_consumables",
+          "weight": 10
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:general/leaf/riding_consumables",
+          "weight": 6
+        }
+      ]
+    }
+  ]
+}

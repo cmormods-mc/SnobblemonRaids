@@ -59,6 +59,8 @@ def referenced_item_ids():
     and raid-definition reward lines (`{"item": ...}`).
     """
     found = {}
+    tag_refs = {}
+    table_refs = {}
 
     def walk(node, source):
         if isinstance(node, dict):
@@ -66,6 +68,10 @@ def referenced_item_ids():
                 found.setdefault(node["name"], set()).add(source)
             if isinstance(node.get("item"), str):
                 found.setdefault(node["item"], set()).add(source)
+            if node.get("type") == "minecraft:tag" and isinstance(node.get("name"), str):
+                tag_refs.setdefault(node["name"], set()).add(source)
+            if node.get("type") == "minecraft:loot_table" and isinstance(node.get("value"), str):
+                table_refs.setdefault(node["value"], set()).add(source)
             for value in node.values():
                 walk(value, source)
         elif isinstance(node, list):
@@ -79,7 +85,7 @@ def referenced_item_ids():
                     continue
                 path = os.path.join(directory, filename)
                 walk(load_json(path), os.path.relpath(path, REPO_ROOT).replace(os.sep, "/"))
-    return found
+    return found, tag_refs, table_refs
 
 
 def main():
@@ -165,7 +171,7 @@ def main():
         check(shard in resolved, "tera shard " + shard + " is not a registered item")
 
     # --- what the reward data actually names ---------------------------------------------------
-    references = referenced_item_ids()
+    references, tag_references, table_references = referenced_item_ids()
     for item_id, sources in sorted(references.items()):
         namespace = item_id.split(":")[0]
         if namespace in ALWAYS_AVAILABLE:
@@ -182,6 +188,55 @@ def main():
         if namespace in items:
             check(item_id in resolved,
                   "reward item " + item_id + " does not exist in the pack -- seen in " + where)
+
+    # --- tags and table references --------------------------------------------------------------
+    known_tags = manifest.get("item_tags", {})
+    for tag_id, sources in sorted(tag_references.items()):
+        where = ", ".join(sorted(sources)[:3])
+        check(tag_id in known_tags,
+              "reward data selects through item tag " + tag_id + " which the pack does not"
+              " define -- seen in " + where)
+        if known_tags.get(tag_id) == 0:
+            failures.append("item tag " + tag_id + " is empty in the pack, so that row would grant"
+                            " nothing -- seen in " + where)
+
+    # A cobbleraids: table reference that resolves to no file is a reward that silently rolls
+    # nothing. RaidLootRoller warns and returns empty rather than throwing, so this would never
+    # surface as an error at runtime -- only as a player wondering where their drop went.
+    available = set()
+    for root in (COMPAT_DIR, os.path.join(REPO_ROOT, "src", "main", "resources")):
+        for directory, _unused, filenames in os.walk(root):
+            marker = os.sep + "data" + os.sep + "cobbleraids" + os.sep + "loot_table" + os.sep
+            if marker not in directory + os.sep:
+                continue
+            for filename in filenames:
+                if not filename.endswith(".json"):
+                    continue
+                full = os.path.join(directory, filename)
+                relative = full.split(marker, 1)[1].replace(os.sep, "/")[:-len(".json")]
+                available.add("cobbleraids:" + relative)
+    for table_id, sources in sorted(table_references.items()):
+        if not table_id.startswith("cobbleraids:"):
+            continue
+        check(table_id in available,
+              "reward data references loot table " + table_id + " which does not exist -- seen in "
+              + ", ".join(sorted(sources)[:3]))
+
+    # --- specialty pools must total exactly 10000 ------------------------------------------------
+    specialty_root = os.path.join(COMPAT_DIR, "addonrewards", "src", "main", "resources", "data",
+                                  "cobbleraids", "loot_table", "specialty")
+    if os.path.isdir(specialty_root):
+        for directory, _unused, filenames in os.walk(specialty_root):
+            if os.path.basename(directory) in ("leaf", "mega"):
+                continue
+            for filename in sorted(filenames):
+                if not filename.endswith(".json"):
+                    continue
+                table = load_json(os.path.join(directory, filename))
+                for pool in table.get("pools", []):
+                    total = sum(entry.get("weight", 1) for entry in pool.get("entries", []))
+                    check(total == 10000,
+                          "specialty pool in " + filename + " totals " + str(total) + ", not 10000")
 
     if failures:
         print("Economy manifest validation: FAIL", file=sys.stderr)
