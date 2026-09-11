@@ -10,23 +10,23 @@
           "weight": 1500
         },
         {
-          "type": "minecraft:item",
-          "name": "mega_showdown:stellar_tera_shard",
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:specialty/opt/mega_showdown/stellar_tera_shard",
           "weight": 20
         },
         {
-          "type": "minecraft:item",
-          "name": "daycareplus:copper_incubator",
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:specialty/opt/daycareplus/copper_incubator",
           "weight": 150
         },
         {
-          "type": "minecraft:item",
-          "name": "daycareplus:iron_incubator",
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:specialty/opt/daycareplus/iron_incubator",
           "weight": 60
         },
         {
-          "type": "minecraft:item",
-          "name": "daycareplus:gold_incubator",
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:specialty/opt/daycareplus/gold_incubator",
           "weight": 20
         },
         {
@@ -45,18 +45,18 @@
           "weight": 20
         },
         {
-          "type": "minecraft:item",
-          "name": "ridetraining:training_reader",
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:specialty/opt/ridetraining/training_reader",
           "weight": 10
         },
         {
-          "type": "minecraft:item",
-          "name": "ridetraining:riding_upgrade",
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:specialty/opt/ridetraining/riding_upgrade",
           "weight": 5
         },
         {
-          "type": "minecraft:item",
-          "name": "cobblesafari:auspicious_pokeball",
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:specialty/opt/cobblesafari/auspicious_pokeball",
           "weight": 20
         },
         {

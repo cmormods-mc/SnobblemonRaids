@@ -45,6 +45,9 @@ step "Validate reward-economy manifest"
 step "Validate generated reward tables"
 "$py" validation/economy/build_tables.py --check
 
+step "Validate exact reward probabilities"
+"$py" validation/economy/validate_economy_probabilities.py
+
 step "Compile, test and remap"
 ./gradlew clean build --stacktrace --warning-mode all
 
