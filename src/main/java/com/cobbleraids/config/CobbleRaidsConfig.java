@@ -358,15 +358,20 @@ public record CobbleRaidsConfig(
                 new NaturalSpawning(
                         true,           // enabled
                         1200,           // check_interval_ticks
-                        0.25,           // spawn_attempt_chance
+                        // One check a minute, 8% of which proceed: a raid roughly every twelve
+                        // minutes. It was 0.25, which is one every four, and on a populated server
+                        // that reads as constant -- an announcement lands before the previous raid
+                        // has finished, and the standing population sits at the cap all day.
+                        0.08,           // spawn_attempt_chance
                         1,              // attempts_per_check
-                        // Raised from 3/2. At three global slots a handful of players sitting on
-                        // bosses could stop wild raids for everyone, and each held boss also blocks
-                        // a 128-block radius via min_distance_between_raids. Enough supply that
-                        // holding one is not worth doing is half of the fix; max_lifetime_seconds
-                        // below is the other half.
-                        10,             // max_active_raids
-                        4,              // max_active_raids_per_dimension
+                        // Was 10/4, itself raised from 3/2 because at three global slots a handful
+                        // of players sitting on bosses could stop wild raids for everyone -- each
+                        // held boss also blocks a 128-block radius via min_distance_between_raids.
+                        // Ten turned out to be over-corrected: supply was never the constraint once
+                        // max_lifetime_seconds capped a camped boss at 30 minutes. Five leaves room
+                        // for a group to hold one or two without starving anybody.
+                        5,              // max_active_raids
+                        2,              // max_active_raids_per_dimension
                         24.0,           // min_distance_from_player
                         64.0,           // max_distance_from_player
                         128.0,          // min_distance_between_raids
