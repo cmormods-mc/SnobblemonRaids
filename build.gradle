@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.62-currency-proven'
+version = '0.8.63-reveal-fits-a-full-bundle'
 group = 'com.cobbleraids'
 
 base {
