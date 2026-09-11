@@ -6,6 +6,11 @@ gradlew     text eol=lf
 # The git hooks have no extension, and the pre-push one is the gate itself.
 validation/hooks/* text eol=lf
 
+# The economy manifest is generated and compared byte for byte against its canonical form.
+# The validator normalises line endings before that comparison, but there is no reason for this
+# file to differ between clones in the first place.
+validation/economy/manifest.json text eol=lf
+
 # Windows batch files are the mirror case.
 *.bat       text eol=crlf
 gradlew.bat text eol=crlf
