@@ -164,8 +164,21 @@ Structural checks over the 130 definitions, tier membership, biome-compat separa
 optional-mod manifests, the mixin registry, the shared-HP packet path, and the tier loot
 table each definition rolls — plus three property checks that re-derive their subject from
 the tree each run: every Fabric callback and every mixin injection is wrapped in a fault
-barrier, and all logging goes through `RaidLog`. CI runs them against both the source tree
-and the built JAR.
+barrier, and all logging goes through `RaidLog`. They run against both the source tree and
+the built JAR.
+
+The whole sequence — validators, `gradlew clean build` with the unit suite, then the
+validators again over the produced JAR — is one script, which is exactly what
+`.github/workflows/build.yml` does:
+
+```text
+bash validation/ci_local.sh          # ~40s
+bash validation/hooks/install.sh     # once per clone: gate `git push` on it
+```
+
+The pre-push hook is the real gate right now: GitHub Actions is disabled account-wide for
+this repo's owner, so no push has been checked remotely since 2026-09-10. Bypass a single
+push with `git push --no-verify` or `SKIP_LOCAL_CI=1 git push`.
 
 A live server harness covers what static checks cannot:
 
