@@ -107,8 +107,11 @@ public record RaidDefinition(
             items = List.copyOf(items);
             chanceItems = List.copyOf(chanceItems);
             lootTables = List.copyOf(lootTables);
-            if (items.isEmpty() && chanceItems.isEmpty() && lootTables.isEmpty())
-                throw new IllegalArgumentException("reward choice " + id + " has no rewards");
+            // A choice that names nothing used to be rejected, on the reasoning that it could only
+            // be a mistake. It is now the normal shape: a policy-driven definition deliberately
+            // names no rewards of its own, and the server-wide reward policy supplies its tables.
+            // RewardPlanResolver is what tells the two apart, and an empty choice under a
+            // definition that is legacy for some other reason still grants exactly what it did.
         }
     }
 

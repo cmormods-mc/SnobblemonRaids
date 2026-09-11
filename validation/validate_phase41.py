@@ -6,6 +6,18 @@ per-add-on tables they draw from, but a raid only rolls a loot table it names in
 block. When the 130 bundled definitions shipped with "loot_tables": [] none of that content
 could ever drop. This locks the wiring in place: each definition must name exactly its own
 tier bundle, every bundle must exist, and no bundle may point at a missing sub-table.
+
+This describes the LEGACY wiring, which is still what the 130 definitions use. When they are
+migrated to the policy-driven path they will name no tables at all and these assertions become
+false by design -- at which point this file goes, rather than being loosened until it asserts
+nothing.
+
+It used to also assert two exact source strings in RaidRewardGrantEngine. Those were deleted
+when the engine stopped composing table lists itself: the strings named an implementation the
+resolver replaced, and a check that breaks on a refactor which breaks nothing is the kind this
+repo has twice paid for (see validation/README.md). The invariant they were reaching for --
+that a claim rolls one list of tables from one owner -- is asserted behaviourally by
+RewardPlanResolverTest, which is where it belongs.
 """
 import json
 import sys
@@ -58,12 +70,6 @@ def validate_bundles() -> None:
         assert [entry for pool in table["pools"] for entry in pool["entries"]], f"{path.name} is empty"
 
 
-def validate_java_wiring() -> None:
-    engine = (ROOT / "src/main/java/com/cobbleraids/reward/RaidRewardGrantEngine.java").read_text(encoding="utf-8")
-    assert "RaidLootRoller.rollAll(player, choice.lootTables(), definitionId)" in engine
-    assert "rewards().lootTables()" in engine
-
-
 def validate_jar(path: Path) -> None:
     with zipfile.ZipFile(path) as archive:
         names = set(archive.namelist())
@@ -82,7 +88,6 @@ def validate_jar(path: Path) -> None:
 def main() -> None:
     validate_definitions()
     validate_bundles()
-    validate_java_wiring()
     for argument in sys.argv[1:]:
         validate_jar(Path(argument))
     print("Phase 41 tier loot wiring validation: PASS")
