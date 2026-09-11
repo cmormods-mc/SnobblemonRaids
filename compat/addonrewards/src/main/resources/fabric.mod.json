@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "cobbleraids_addon_rewards",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "name": "CobbleRaids Add-on Rewards",
   "description": "Optional raid-reward loot tables for common Cobblemon add-ons. Data only; safe to remove.",
   "authors": ["CMor"],
