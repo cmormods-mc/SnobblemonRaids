@@ -12,9 +12,14 @@ weight is invisible in a diff. Edit the matrix, re-run, commit what changes.
 `--check` is what runs in CI: it regenerates in memory and compares, so a hand-edited table is
 caught in the same breath as a stale one.
 
-This phase is data only. Nothing reads these tables yet -- the grant path still rolls the legacy
-`tier/<tier>` tables, and `addons/vitamins.json` stays where it is because those legacy tables
-still reference it. Both go when the resolver lands.
+These tables are live: every bundled definition is policy-driven and rolls them.
+
+One structural rule, learned from the rig rather than from the documentation. An item from an
+optional mod is NEVER named directly in a selection pool, because Minecraft rejects an entire
+loot table when any entry names an unregistered id -- with seven provider mods absent, that took
+out all four specialty/<tier> tables and all 21 boss tables at once, and every claim silently lost
+its specialty selection. Optional items sit behind their own table, so a missing mod costs only
+its own rows. validate_economy_probabilities enforces it.
 
 Weights are in units of 0.01 percentage point, so a specialty pool totals 10000. Sourced from the
 economy prompt's sections 7 and 8; its own stated fallback weights (7345 / 7920 / 6894 / 6020)
@@ -117,6 +122,10 @@ SPECIALTY_ROWS = [
 
 MEGA_WEIGHT = 500  # 5.00%, and only on a boss that has a stone
 
+# Namespaces guaranteed present. Everything else is an optional mod, and an item from one can
+# never be named directly in a pool -- see optional_item_table().
+ALWAYS_PRESENT = ("minecraft", "cobblemon")
+
 
 # --- loot table construction -------------------------------------------------------------------
 
@@ -149,6 +158,26 @@ def tag_entry(tag_id):
 
 def single_pool(entries):
     return {"type": "minecraft:chest", "pools": [{"rolls": 1, "entries": entries}]}
+
+
+def optional_item_table(tables, item_id, count=None):
+    """Puts one optional mod's item behind its own table, and returns that table's id.
+
+    This is not tidiness. Minecraft rejects an ENTIRE loot table when any minecraft:item entry
+    names an unregistered id -- it does not skip the entry -- so a single missing mod took out all
+    four specialty/<tier> tables and all 21 boss tables at once, proven on the live rig: 41 tables
+    failed to parse and every claim silently lost its specialty selection. Behind its own table, a
+    missing mod costs only its own rows: the parent still parses, and picking a dead child yields
+    nothing for that one selection, which RaidLootRoller reports by name.
+
+    That is still not the "weight falls back to base" the source matrix assumed. Data cannot
+    express "use this item if its mod is installed", so the weight is lost rather than reassigned.
+    Losing one row beats losing the tier.
+    """
+    namespace, path = item_id.split(":", 1)
+    relative = "specialty/opt/%s/%s.json" % (namespace, path)
+    tables[relative] = single_pool([item_entry(item_id, None, count)])
+    return "cobbleraids:" + relative[:-len(".json")]
 
 
 def build_tables(manifest):
@@ -220,15 +249,15 @@ def build_tables(manifest):
 
     # specialty/<tier> and specialty/boss/<boss>
     for index, tier in enumerate(TIERS):
-        tables["specialty/%s.json" % tier] = single_pool(specialty_entries(index, tier, None))
+        tables["specialty/%s.json" % tier] = single_pool(specialty_entries(tables, index, tier, None))
     for boss, entry in sorted(manifest["mega"].items()):
         tier_index = TIERS.index(entry["tier"])
         tables["specialty/boss/%s.json" % boss] = single_pool(
-            specialty_entries(tier_index, entry["tier"], boss))
+            specialty_entries(tables, tier_index, entry["tier"], boss))
     return tables
 
 
-def specialty_entries(index, tier, boss):
+def specialty_entries(tables, index, tier, boss):
     """One specialty pool: the premium rows, then whatever is left over falls to base."""
     entries = []
     spent = 0
@@ -242,8 +271,10 @@ def specialty_entries(index, tier, boss):
         spent += weight
         if isinstance(target, dict):
             entries.append(table_entry(target["table"], weight))
-        else:
+        elif target.split(":", 1)[0] in ALWAYS_PRESENT:
             entries.append(item_entry(target, weight, 1))
+        else:
+            entries.append(table_entry(optional_item_table(tables, target), weight))
     fallback = POOL_TOTAL - spent
     if fallback <= 0:
         raise SystemExit("specialty pool for %s overflows 10000 (spent %d)" % (tier, spent))

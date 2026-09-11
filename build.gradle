@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.60-claim-seed'
+version = '0.8.61-missing-mod-containment'
 group = 'com.cobbleraids'
 
 base {

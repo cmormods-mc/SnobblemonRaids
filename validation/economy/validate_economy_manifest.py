@@ -32,6 +32,8 @@ COMPAT_DIR = os.path.join(REPO_ROOT, "compat")
 # Vanilla is always present; it needs no manifest entry to be a legitimate reward.
 ALWAYS_AVAILABLE = ("minecraft",)
 
+TIERS = ("starter", "powerhouse", "legendary", "mythical")
+
 failures = []
 
 
@@ -261,18 +263,25 @@ def main():
     # --- specialty pools must total exactly 10000 ------------------------------------------------
     specialty_root = os.path.join(COMPAT_DIR, "addonrewards", "src", "main", "resources", "data",
                                   "cobbleraids", "loot_table", "specialty")
-    if os.path.isdir(specialty_root):
-        for directory, _unused, filenames in os.walk(specialty_root):
-            if os.path.basename(directory) in ("leaf", "mega"):
-                continue
-            for filename in sorted(filenames):
-                if not filename.endswith(".json"):
-                    continue
-                table = load_json(os.path.join(directory, filename))
-                for pool in table.get("pools", []):
-                    total = sum(entry.get("weight", 1) for entry in pool.get("entries", []))
-                    check(total == 10000,
-                          "specialty pool in " + filename + " totals " + str(total) + ", not 10000")
+    # Only the pools that ARE a specialty selection: the four tier tables and the 21 boss ones.
+    # Everything below them -- grouped leaves, mega splits, the per-item wrappers that keep a
+    # missing mod from taking a whole table down -- is a child whose own weights are relative.
+    selection_tables = []
+    for tier in TIERS:
+        selection_tables.append(os.path.join(specialty_root, tier + ".json"))
+    boss_dir = os.path.join(specialty_root, "boss")
+    if os.path.isdir(boss_dir):
+        selection_tables.extend(os.path.join(boss_dir, name) for name in sorted(os.listdir(boss_dir))
+                                if name.endswith(".json"))
+    for path in selection_tables:
+        if not os.path.exists(path):
+            failures.append("missing specialty selection table " + os.path.basename(path))
+            continue
+        table = load_json(path)
+        for pool in table.get("pools", []):
+            total = sum(entry.get("weight", 1) for entry in pool.get("entries", []))
+            check(total == 10000, "specialty pool in " + os.path.basename(path)
+                  + " totals " + str(total) + ", not 10000")
 
     if failures:
         print("Economy manifest validation: FAIL", file=sys.stderr)
