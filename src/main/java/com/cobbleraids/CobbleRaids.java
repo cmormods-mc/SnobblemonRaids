@@ -4,6 +4,7 @@ import com.cobbleraids.catching.RaidPlayerRecords;
 import com.cobbleraids.command.RaidAdminCommand;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.config.RaidDefinitionRegistry;
+import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobbleraids.interaction.RaidBossInteractionListener;
 import com.cobbleraids.lifecycle.RaidBattleEventCoordinator;
 import com.cobbleraids.lifecycle.RaidCombatRuleService;
@@ -50,12 +51,15 @@ public final class CobbleRaids implements ModInitializer {
         RaidRewardCommand.register();
         RaidAdminCommand.register();
         RaidBossInteractionListener.register();
+        // Each subsystem gets its own barrier rather than one around the whole block: a lobby that
+        // throws must not also cost that tick's spawn check, combat clock and glow refresh. The
+        // method references are non-capturing, so this allocates nothing 20 times a second.
         ServerTickEvents.END_SERVER_TICK.register(server -> {
-            RaidLobbyManager.tick(server);
-            RaidSpawnScheduler.tick(server);
-            RaidRewardService.tick(server);
-            RaidCombatRuleService.tick(server);
-            RaidBossGlowService.tick(server);
+            RaidFaultBarrier.safeTick("lobby", server, RaidLobbyManager::tick);
+            RaidFaultBarrier.safeTick("spawning", server, RaidSpawnScheduler::tick);
+            RaidFaultBarrier.safeTick("rewards", server, RaidRewardService::tick);
+            RaidFaultBarrier.safeTick("combat-timer", server, RaidCombatRuleService::tick);
+            RaidFaultBarrier.safeTick("boss-glow", server, RaidBossGlowService::tick);
         });
         ServerLifecycleEvents.START_DATA_PACK_RELOAD.register((server, resources) -> CobbleRaidsConfigManager.reload());
         ServerLifecycleEvents.SERVER_STARTING.register(server -> RewardGuiBackends.ensureReady());
@@ -94,6 +98,7 @@ public final class CobbleRaids implements ModInitializer {
             RaidRewardService.onServerStopped();
             RaidSpawnHistory.onServerStopped();
             RaidPlayerRecords.onServerStopped();
+            RaidFaultBarrier.onServerStopped();
             // Only these two mean somebody lost progress, so only these two are worth a line on an
             // otherwise clean shutdown. Unclaimed rewards are not listed: those survive on disk.
             if (raids > 0 || lobbies > 0) {

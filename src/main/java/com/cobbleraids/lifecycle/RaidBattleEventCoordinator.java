@@ -1,5 +1,6 @@
 package com.cobbleraids.lifecycle;
 
+import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobbleraids.raid.RaidRegistry;
 import com.cobbleraids.raid.RaidSession;
 import com.cobblemon.mod.common.api.events.CobblemonEvents;
@@ -20,14 +21,33 @@ public final class RaidBattleEventCoordinator {
         registered = true;
     }
 
-    private static void onVictory(BattleVictoryEvent event) { RaidLifecycleCoordinator.onBattleVictory(event); }
+    // Cobblemon emits these from its own battle update loop on the server thread, so an exception
+    // thrown back into it does not merely lose the raid -- it unwinds through Cobblemon's event
+    // dispatch and onto the tick. Every raid terminal path arrives through one of these three, and
+    // they are the paths with the most edge cases (simultaneous faints, a fled host, a battle that
+    // Showdown already ended), which is exactly why they are also the ones worth containing.
+    private static void onVictory(BattleVictoryEvent event) {
+        try {
+            RaidLifecycleCoordinator.onBattleVictory(event);
+        } catch (Exception ex) {
+            RaidFaultBarrier.report("battle-victory", ex);
+        }
+    }
 
     private static void onFainted(BattleFaintedEvent event) {
-        if (RaidRegistry.get(event.getBattle()) != null) RaidLifecycleCoordinator.onBattleFainted(event.getBattle());
+        try {
+            if (RaidRegistry.get(event.getBattle()) != null) RaidLifecycleCoordinator.onBattleFainted(event.getBattle());
+        } catch (Exception ex) {
+            RaidFaultBarrier.report("battle-fainted", ex);
+        }
     }
 
     private static void onFled(BattleFledEvent event) {
-        RaidSession raid = RaidRegistry.get(event.getBattle());
-        if (raid != null) RaidLifecycleCoordinator.onPlayerFled(event.getBattle(), event.getPlayer().getUuid());
+        try {
+            RaidSession raid = RaidRegistry.get(event.getBattle());
+            if (raid != null) RaidLifecycleCoordinator.onPlayerFled(event.getBattle(), event.getPlayer().getUuid());
+        } catch (Exception ex) {
+            RaidFaultBarrier.report("battle-fled", ex);
+        }
     }
 }

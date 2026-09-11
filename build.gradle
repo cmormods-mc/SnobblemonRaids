@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.39-catch-infrastructure'
+version = '0.8.40-fault-containment'
 group = 'com.cobbleraids'
 
 base {
