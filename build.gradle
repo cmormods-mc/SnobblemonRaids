@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.44-live-smoke'
+version = '0.8.45-testable-state'
 group = 'com.cobbleraids'
 
 base {

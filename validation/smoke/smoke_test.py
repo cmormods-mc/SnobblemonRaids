@@ -112,6 +112,10 @@ class Server:
         self.log = self.directory / "logs" / "smoke.log"
 
     def start(self) -> None:
+        # Back-to-back runs race the previous server's listening socket out of TIME_WAIT. Without
+        # this the second run dies on "FAILED TO BIND TO PORT" and reports the useless "server
+        # exited with code 0", which reads like a mod bug and is not one.
+        wait_for_free_port(server_port(self.directory))
         self.log.parent.mkdir(parents=True, exist_ok=True)
         if self.log.exists():
             self.log.unlink()
@@ -162,6 +166,63 @@ class Server:
                 self.process.wait(timeout=30)
             except subprocess.TimeoutExpired:
                 self.process.kill()
+
+
+def server_port(directory: Path) -> int:
+    for line in (directory / "server.properties").read_text(encoding="utf-8").splitlines():
+        if line.startswith("server-port="):
+            value = line.split("=", 1)[1].strip()
+            if value:
+                return int(value)
+    return 25565
+
+
+def wait_for_free_port(port: int, timeout: float = 150.0) -> None:
+    """Block until the game port can actually be bound.
+
+    Probing with connect() is the obvious thing and the wrong thing. A socket left in TIME_WAIT by a
+    previous run refuses connections -- so it looks free -- while still blocking bind; and the port
+    can equally be held as the *local* end of someone else's outbound connection, which also refuses
+    connections on loopback. Both were observed here. Binding is the only probe that asks the
+    question the server is about to ask.
+    """
+    import socket as _socket
+
+    def bindable() -> OSError | None:
+        # Minecraft binds "*", which on a dual-stack host is IPv6 with V6ONLY off. Probing IPv4 alone
+        # reports free while an IPv6 conflict is exactly what stops the server -- observed here, where
+        # an unrelated outbound HTTPS connection had been assigned 25565 as its local IPv6 port.
+        for family, address in ((_socket.AF_INET6, "::"), (_socket.AF_INET, "0.0.0.0")):
+            probe = _socket.socket(family, _socket.SOCK_STREAM)
+            try:
+                if family == _socket.AF_INET6:
+                    probe.setsockopt(_socket.IPPROTO_IPV6, _socket.IPV6_V6ONLY, 0)
+                probe.bind((address, port))
+            except OSError as exc:
+                return exc
+            finally:
+                probe.close()
+        return None
+
+    deadline = time.time() + timeout
+    announced = False
+    while True:
+        last = bindable()
+        if last is None:
+            if announced:
+                print(f"  port {port} is free")
+            return
+
+        if time.time() >= deadline:
+            raise TimeoutError(
+                f"cannot bind port {port} after {timeout:.0f}s ({last}). Another Minecraft server may"
+                f" be running, a previous run's socket may still be in TIME_WAIT, or an unrelated"
+                f" process may hold it -- check with: netstat -ano | findstr :{port}"
+            )
+        if not announced:
+            print(f"  waiting for port {port} to become bindable")
+            announced = True
+        time.sleep(3)
 
 
 def read_password(directory: Path) -> str:
