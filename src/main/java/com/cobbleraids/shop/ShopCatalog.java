@@ -31,8 +31,8 @@ public record ShopCatalog(int version, int perPage, ShopLimits limits, List<Shop
     /** Bumped when the schema changes in a way an older file cannot be read as. */
     public static final int CURRENT_VERSION = 2;
 
-    /** The grid is nine by eight, so a page can never usefully hold more than this. */
-    public static final int MAX_PER_PAGE = 72;
+    /** The sliced art's grid is eight by eight, so a page can never usefully hold more. */
+    public static final int MAX_PER_PAGE = 64;
 
     public ShopCatalog {
         if (perPage < 1 || perPage > MAX_PER_PAGE) {

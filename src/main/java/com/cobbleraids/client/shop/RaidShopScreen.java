@@ -1,5 +1,7 @@
 package com.cobbleraids.client.shop;
 
+import com.cobbleraids.client.gui.RaidGuiLayout;
+import com.cobbleraids.client.gui.RaidGuiSkin;
 import com.cobbleraids.network.ShopActionPayload;
 import com.cobbleraids.network.ShopEntryPayload;
 import com.cobbleraids.network.ShopPagePayload;
@@ -10,6 +12,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -20,49 +23,29 @@ import net.minecraft.world.item.ItemStack;
  * The raid shop.
  *
  * <p>A plain {@link Screen}, not an AbstractContainerScreen. A shop is a catalogue, not an
- * inventory: there is nothing here to pick up, drag or shift-click, and seventy-two real slots
- * holding real stacks would be seventy-two things a player could try to take. Cells are drawn, and
+ * inventory: there is nothing here to pick up, drag or shift-click, and sixty-four real slots
+ * holding real stacks would be sixty-four things a player could try to take. Cells are drawn, and
  * a click sends an id.
  *
- * <p>Laid out at the frame art's native 1160x1176 and scaled uniformly to the window, the same way
- * the reward reveal is. The cell grid comes from {@link ShopGridLayout}, which is unit-tested and
- * was checked by rendering it offline before this class existed.
+ * <p>Everything is in Minecraft's logical GUI pixels, which is the point of the sliced art: the
+ * window is 203x223 to 235x255 depending on the room available, and the game applies the GUI Scale
+ * afterwards. Nothing here multiplies a coordinate, a mouse position or a hitbox by that scale, and
+ * nothing stretches one large texture over the screen -- which is what the previous version did,
+ * and why its pixels softened at every size but one.
+ *
+ * <p>A cell is 18 to 22 pixels, which holds an icon and about two characters. So the price lives in
+ * the tooltip and is carried in the grid by dimming what the player cannot afford; the number in
+ * the corner is stock remaining, because that is the figure that changes while the screen is open.
  */
 public final class RaidShopScreen extends Screen {
 
-    private static final ResourceLocation FRAME =
-            ResourceLocation.fromNamespaceAndPath("cobbleraids", "textures/gui/raid_shop/shop_frame.png");
-
-    private static final float NATIVE_WIDTH = 1160f;
-    private static final float NATIVE_HEIGHT = 1176f;
-    /** Measured out of the art: the flat area left where the drawn grid used to be. */
-    private static final NativeRect PANEL = new NativeRect(141, 189, 879, 790);
-    private static final NativeRect LEFT_ARROW = new NativeRect(352, 93, 68, 59);
-    private static final NativeRect RIGHT_ARROW = new NativeRect(739, 93, 68, 59);
-    private static final NativeRect HEADING = new NativeRect(420, 93, 320, 59);
-    private static final NativeRect BALANCE_PILL = new NativeRect(348, 1040, 464, 56);
-
-    private static final int COLUMNS = 9;
-    private static final int ROWS = 8;
-
-    private record NativeRect(int x, int y, int width, int height) {}
-
-    private record Rect(int x, int y, int width, int height) {
-        boolean contains(double pointX, double pointY) {
-            return pointX >= x && pointX < x + width && pointY >= y && pointY < y + height;
-        }
-    }
+    private static final ResourceLocation FALLBACK_ICON =
+            ResourceLocation.fromNamespaceAndPath("cobblemon", "poke_ball");
 
     private static RaidShopScreen open;
 
     private ShopPagePayload page;
-    private ShopGridLayout grid;
-    private Rect frame = new Rect(0, 0, 0, 0);
-    private Rect leftArrow = new Rect(0, 0, 0, 0);
-    private Rect rightArrow = new Rect(0, 0, 0, 0);
-    private Rect balancePill = new Rect(0, 0, 0, 0);
-    private Rect heading = new Rect(0, 0, 0, 0);
-    private float scale = 1f;
+    private RaidGuiLayout.Layout layout;
 
     private RaidShopScreen(ShopPagePayload page) {
         super(Component.literal("Raid Shop"));
@@ -91,144 +74,113 @@ public final class RaidShopScreen extends Screen {
 
     @Override
     protected void init() {
-        layout();
-    }
-
-    private void layout() {
-        float ratio = NATIVE_WIDTH / NATIVE_HEIGHT;
-        int height = Math.min(this.height - 20, Math.max(260, this.height - 40));
-        int width = Math.round(height * ratio);
-        if (width > this.width - 20) {
-            width = this.width - 20;
-            height = Math.round(width / ratio);
-        }
-        int x = (this.width - width) / 2;
-        int y = (this.height - height) / 2;
-        scale = width / NATIVE_WIDTH;
-
-        frame = new Rect(x, y, width, height);
-        leftArrow = toScreen(LEFT_ARROW);
-        rightArrow = toScreen(RIGHT_ARROW);
-        heading = toScreen(HEADING);
-        balancePill = toScreen(BALANCE_PILL);
-        Rect panel = toScreen(PANEL);
-        grid = ShopGridLayout.of(panel.x(), panel.y(), panel.width(), panel.height(), COLUMNS, ROWS);
-    }
-
-    private Rect toScreen(NativeRect rect) {
-        return new Rect(frameX(rect.x()), frameY(rect.y()),
-                Math.round(rect.width() * scale), Math.round(rect.height() * scale));
-    }
-
-    private int frameX(int nativeX) {
-        return frame.x() + Math.round(nativeX * scale);
-    }
-
-    private int frameY(int nativeY) {
-        return frame.y() + Math.round(nativeY * scale);
+        // Recomputed on every init, which is what a resize and a GUI Scale change both trigger.
+        layout = RaidGuiLayout.fit(width, height).orElse(null);
     }
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         super.render(graphics, mouseX, mouseY, partialTicks);
-        graphics.blit(FRAME, frame.x(), frame.y(), frame.width(), frame.height(),
-                0, 0, (int) NATIVE_WIDTH, (int) NATIVE_HEIGHT, (int) NATIVE_WIDTH, (int) NATIVE_HEIGHT);
+        if (layout == null) {
+            // Smaller than the smallest window the art assembles into. Saying so beats drawing a
+            // clipped grid whose last row cannot be clicked.
+            graphics.drawCenteredString(font, "Not enough room to show the shop.",
+                    width / 2, height / 2, 0xFFFF8A8A);
+            return;
+        }
+        RaidGuiSkin.renderChrome(graphics, layout);
+        if (page.pageCount() > 1) RaidGuiSkin.renderArrows(graphics, layout);
 
         drawHeading(graphics);
         drawBalance(graphics);
-        if (grid != null) drawCells(graphics, mouseX, mouseY, partialTicks);
+        drawCells(graphics, mouseX, mouseY, partialTicks);
     }
 
     private void drawHeading(GuiGraphics graphics) {
+        RaidGuiLayout.Rect frame = layout.frame();
         String text = page.pageCount() > 1
-                ? page.heading() + "  " + (page.pageIndex() + 1) + "/" + page.pageCount()
+                ? page.heading() + " " + (page.pageIndex() + 1) + "/" + page.pageCount()
                 : page.heading();
-        graphics.drawCenteredString(font, text,
-                heading.x() + heading.width() / 2,
-                heading.y() + (heading.height() - font.lineHeight) / 2, 0xFFB8F0FF);
+        // The strip between the two arrows is about fifty pixels wide. A section name that does not
+        // fit is trimmed rather than allowed to run underneath them.
+        graphics.drawCenteredString(font, trimTo(text, 50),
+                frame.x() + frame.width() / 2, frame.y() + 24, 0xFFAFFFFF);
     }
 
     private void drawBalance(GuiGraphics graphics) {
-        graphics.drawCenteredString(font, "RAID POINTS: " + page.balance(),
-                balancePill.x() + balancePill.width() / 2,
-                balancePill.y() + (balancePill.height() - font.lineHeight) / 2, 0xFFEAF8FF);
+        RaidGuiLayout.Rect button = layout.button();
+        graphics.drawCenteredString(font, trimTo(page.balance() + " RP", button.width() - 6),
+                button.x() + button.width() / 2,
+                button.y() + (button.height() - font.lineHeight) / 2 + 1, 0xFF06263F);
+    }
+
+    private String trimTo(String text, int pixels) {
+        if (font.width(text) <= pixels) return text;
+        StringBuilder trimmed = new StringBuilder(text);
+        while (trimmed.length() > 1 && font.width(trimmed + "...") > pixels) {
+            trimmed.deleteCharAt(trimmed.length() - 1);
+        }
+        return trimmed + "...";
     }
 
     private void drawCells(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        int hovered = grid.slotAt(mouseX, mouseY);
+        int hovered = layout.slotAt(mouseX, mouseY);
         List<ShopEntryPayload> entries = page.entries();
+        List<RaidGuiLayout.Rect> slots = layout.slots();
 
-        for (int slot = 0; slot < grid.slotCount(); slot++) {
-            int x = grid.cellX(slot);
-            int y = grid.cellY(slot);
-            int cell = grid.cell();
-            ShopEntryPayload entry = slot < entries.size() ? entries.get(slot) : null;
-
-            if (entry == null) {
-                graphics.fill(x, y, x + cell, y + cell, 0xDD0E1620);
-                continue;
-            }
+        for (int slot = 0; slot < slots.size() && slot < entries.size(); slot++) {
+            RaidGuiLayout.Rect rect = slots.get(slot);
+            ShopEntryPayload entry = entries.get(slot);
             boolean affordable = page.balance() >= entry.cost() && !entry.soldOut();
-            graphics.fill(x, y, x + cell, y + cell, 0xFF12243A);
-            graphics.renderOutline(x, y, cell, cell,
-                    slot == hovered ? 0xFF5ADCFF : (affordable ? 0xFF2678B4 : 0xFF23384B));
 
-            drawContents(graphics, entry, x, y, cell, partialTicks);
-            // Dim enough to read as unavailable, light enough to still see what it is. At the
-            // 0x88 this started on, the item disappeared entirely and the cell looked broken.
-            if (!affordable) graphics.fill(x + 1, y + 1, x + cell - 1, y + cell - 1, 0x55070A10);
-            drawPrice(graphics, entry, x, y, cell, affordable);
-            drawStock(graphics, entry, x, y, cell);
+            drawContents(graphics, entry, rect, partialTicks);
+            if (!affordable) {
+                graphics.fill(rect.x(), rect.y(), rect.x() + rect.width(),
+                        rect.y() + rect.height(), 0x99070A10);
+            }
+            drawStock(graphics, entry, rect);
+            if (slot == hovered) {
+                graphics.fill(rect.x(), rect.y(), rect.x() + rect.width(),
+                        rect.y() + rect.height(), 0x40FFFFFF);
+            }
         }
-        if (hovered >= 0 && hovered < entries.size()) drawTooltip(graphics, entries.get(hovered), mouseX, mouseY);
+        if (hovered >= 0 && hovered < entries.size()) {
+            drawTooltip(graphics, entries.get(hovered), mouseX, mouseY);
+        }
     }
 
-    private void drawContents(GuiGraphics graphics, ShopEntryPayload entry, int x, int y, int cell,
-                              float partialTicks) {
+    private void drawContents(GuiGraphics graphics, ShopEntryPayload entry,
+                              RaidGuiLayout.Rect rect, float partialTicks) {
         if (entry.pokemon()) {
-            if (ShopPokemonPortraits.draw(graphics, entry.species(), entry.shiny(), x, y, cell, partialTicks)) {
+            if (ShopPokemonPortraits.draw(graphics, entry.species(), entry.shiny(),
+                    rect.x(), rect.y(), rect.width(), partialTicks)) {
                 return;
             }
-            // The fallback exists because a mistyped species must leave a readable cell rather than
-            // an empty one an operator cannot diagnose.
-            graphics.drawCenteredString(font, entry.species(), x + cell / 2,
-                    y + (cell - font.lineHeight) / 2, 0xFF8FB6D6);
+            // A species name does not fit in a twenty-pixel cell, so a model that will not resolve
+            // falls back to a Poke Ball: it still reads as "a Pokemon", and the tooltip names it.
+            graphics.renderItem(new ItemStack(BuiltInRegistries.ITEM.get(FALLBACK_ICON)),
+                    RaidGuiSkin.itemX(rect), RaidGuiSkin.itemY(rect));
             return;
         }
         ItemStack stack = new ItemStack(BuiltInRegistries.ITEM.get(entry.itemId()), entry.count());
-        // Items draw at a fixed 16x16, so the stack is scaled into the cell rather than left small.
-        float itemScale = grid.itemScale();
-        graphics.pose().pushPose();
-        graphics.pose().translate(x + (cell - ShopGridLayout.ITEM_PIXELS * itemScale) / 2f,
-                y + cell * 0.16f, 0f);
-        graphics.pose().scale(itemScale, itemScale, 1f);
-        graphics.renderItem(stack, 0, 0);
-        graphics.pose().popPose();
-        if (entry.count() > 1) {
-            graphics.drawString(font, "x" + entry.count(), x + 3, y + 3, 0xFFCFE6F5, true);
-        }
-    }
-
-    private void drawPrice(GuiGraphics graphics, ShopEntryPayload entry, int x, int y, int cell,
-                           boolean affordable) {
-        String price = entry.soldOut() ? "OUT" : String.valueOf(entry.cost());
-        int colour = entry.soldOut() ? 0xFF9AE6A0 : (affordable ? 0xFF82EBFF : 0xFFFF8A8A);
-        graphics.drawString(font, price, x + cell - font.width(price) - 3,
-                y + cell - font.lineHeight - 2, colour, true);
+        int x = RaidGuiSkin.itemX(rect);
+        int y = RaidGuiSkin.itemY(rect);
+        graphics.renderItem(stack, x, y);
+        // Vanilla's own decoration, so a stack count sits exactly where a player expects it.
+        graphics.renderItemDecorations(font, stack, x, y);
     }
 
     /**
-     * The "3/5" in the corner of a limited cell.
+     * How many of a limited entry are left, in the cell's top-left corner.
      *
-     * <p>Drawn as what is left over what was allowed, not as a bare number, because "3" alone reads
-     * as a stack count. Unlimited entries show nothing at all -- a counter on everything would make
-     * the limited ones invisible.
+     * <p>The remaining count alone, not "3/5": at this size a slash costs a third of the width, and
+     * the figure a player acts on is how many they can still buy. The limit is in the tooltip.
      */
-    private void drawStock(GuiGraphics graphics, ShopEntryPayload entry, int x, int y, int cell) {
+    private void drawStock(GuiGraphics graphics, ShopEntryPayload entry, RaidGuiLayout.Rect rect) {
         if (!entry.isLimited()) return;
-        String stock = Math.max(0, entry.remaining()) + "/" + entry.limit();
-        graphics.drawString(font, stock, x + 3, y + cell - font.lineHeight - 2,
-                entry.soldOut() ? 0xFF6F8497 : 0xFFB8D8EA, true);
+        graphics.drawString(font, String.valueOf(Math.max(0, entry.remaining())),
+                rect.x() + 1, rect.y() + 1,
+                entry.soldOut() ? 0xFFFF8A8A : 0xFFB8D8EA, true);
     }
 
     private void drawTooltip(GuiGraphics graphics, ShopEntryPayload entry, int mouseX, int mouseY) {
@@ -244,8 +196,7 @@ public final class RaidShopScreen extends Screen {
         }
         if (entry.soldOut()) {
             lines.add(Component.literal(entry.limit() == 1
-                            ? "Already purchased"
-                            : "All " + entry.limit() + " bought")
+                            ? "Already purchased" : "All " + entry.limit() + " bought")
                     .withStyle(ChatFormatting.GREEN));
             lines.add(Component.literal("Resets daily").withStyle(ChatFormatting.DARK_GRAY));
         } else {
@@ -265,25 +216,23 @@ public final class RaidShopScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button == 0) {
-            if (page.pageCount() > 1 && leftArrow.contains(mouseX, mouseY)) {
+        if (button == 0 && layout != null) {
+            if (page.pageCount() > 1 && layout.previous().contains(mouseX, mouseY)) {
                 turn(-1);
                 return true;
             }
-            if (page.pageCount() > 1 && rightArrow.contains(mouseX, mouseY)) {
+            if (page.pageCount() > 1 && layout.next().contains(mouseX, mouseY)) {
                 turn(1);
                 return true;
             }
-            if (grid != null) {
-                int slot = grid.slotAt(mouseX, mouseY);
-                if (slot >= 0 && slot < page.entries().size()) {
-                    ShopEntryPayload entry = page.entries().get(slot);
-                    // The click carries the id and the page it was clicked on. The server re-reads
-                    // everything else, so a stale page or a hostile client buys nothing unusual.
-                    ClientPlayNetworking.send(ShopActionPayload.buy(page.pageIndex(), entry.id()));
-                    click();
-                    return true;
-                }
+            int slot = layout.slotAt(mouseX, mouseY);
+            if (slot >= 0 && slot < page.entries().size()) {
+                // The click carries the id and the page it was clicked on. The server re-reads
+                // everything else, so a stale page or a hostile client buys nothing unusual.
+                ClientPlayNetworking.send(
+                        ShopActionPayload.buy(page.pageIndex(), page.entries().get(slot).id()));
+                click();
+                return true;
             }
         }
         return super.mouseClicked(mouseX, mouseY, button);
@@ -297,8 +246,7 @@ public final class RaidShopScreen extends Screen {
 
     private void click() {
         Minecraft.getInstance().getSoundManager().play(
-                net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
-                        SoundEvents.UI_BUTTON_CLICK.value(), 1.0F));
+                SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK.value(), 1.0F));
     }
 
     @Override

@@ -47,13 +47,33 @@ def validate_sound_and_particles_survived() -> None:
     assert "RevealParticles.renderAndCull(" in screen
 
 
-def validate_nine_slice_renderer_exists() -> None:
-    renderer = CLIENT / "gui" / "NineSliceRenderer.java"
-    assert renderer.is_file()
-    text = read(renderer)
-    assert "GuiGraphics" in text and "ResourceLocation" in text, "must be ported to Mojang mappings, not Yarn"
-    assert "DrawContext" not in text and "Identifier" not in text and "drawTexture" not in text, \
-        "leftover Yarn-mapped names from the reference snippet"
+def validate_gui_code_is_mojang_mapped() -> None:
+    """No Yarn names anywhere in client GUI code, whoever wrote it.
+
+    This used to assert that one particular file, NineSliceRenderer.java, existed and was
+    Mojang-mapped. That file was replaced by RaidGuiSkin when real sliced art arrived, and a check
+    pinned to a filename cannot survive a correct replacement -- so it is asserted as the property
+    it was always about instead. The property matters more now, not less: GUI code arriving from
+    outside this project is exactly where a Yarn drawTexture or Identifier gets pasted in.
+    """
+    gui = list((CLIENT / "gui").rglob("*.java")) + list((CLIENT / "shop").rglob("*.java"))
+    assert gui, "no client GUI sources found; did the package move?"
+    for path in gui:
+        text = strip_comments(read(path))
+        for yarn in ("DrawContext", "Identifier", "drawTexture"):
+            assert yarn not in text, f"{path.name} uses the Yarn name {yarn}"
+
+
+def validate_nine_slicing_survives() -> None:
+    """Something still draws nine-slices, and the atlas it names is actually shipped."""
+    skin = CLIENT / "gui" / "RaidGuiSkin.java"
+    assert skin.is_file(), "the sliced GUI renderer is gone"
+    text = strip_comments(read(skin))
+    assert "GuiGraphics" in text and "ResourceLocation" in text
+    # A texture the renderer names but the jar does not carry is a screen of pink and black.
+    atlas = RESOURCES / "assets/cobbleraids/textures/gui/raid_slices/atlas.png"
+    assert atlas.is_file(), "RaidGuiSkin references an atlas that is not in resources"
+    assert (atlas.parent / "atlas.png.mcmeta").is_file(), "the atlas needs its mcmeta"
 
 
 def validate_new_stats_threaded_through() -> None:
@@ -111,7 +131,12 @@ def validate_no_new_gradle_dependency() -> None:
 def validate_jar(path: Path) -> None:
     with zipfile.ZipFile(path) as archive:
         names = set(archive.namelist())
-        assert "com/cobbleraids/client/gui/NineSliceRenderer.class" in names
+        # Named by class rather than by whichever file happens to hold it today: what has to be
+        # true is that the jar can draw the sliced GUI and carries the art it names.
+        assert "com/cobbleraids/client/gui/RaidGuiSkin.class" in names
+        assert "com/cobbleraids/client/gui/RaidGuiLayout.class" in names
+        assert "assets/cobbleraids/textures/gui/raid_slices/atlas.png" in names
+        assert "assets/cobbleraids/textures/gui/raid_slices/atlas.png.mcmeta" in names
         assert "com/cobbleraids/client/reveal/PokeBallMesh.class" not in names
         manifest = json.loads(archive.read("fabric.mod.json"))
         assert manifest["entrypoints"]["client"] == ["com.cobbleraids.client.CobbleRaidsClient"]
@@ -120,7 +145,8 @@ def validate_jar(path: Path) -> None:
 def main() -> None:
     validate_mesh_retired()
     validate_sound_and_particles_survived()
-    validate_nine_slice_renderer_exists()
+    validate_gui_code_is_mojang_mapped()
+    validate_nine_slicing_survives()
     validate_new_stats_threaded_through()
     validate_physical_side_boundary()
     validate_server_side_untouched()

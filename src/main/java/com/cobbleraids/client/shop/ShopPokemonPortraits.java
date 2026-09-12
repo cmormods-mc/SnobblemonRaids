@@ -24,8 +24,12 @@ import org.joml.Quaternionf;
  * aspect rather than per cell, and the caller only draws the cells that hold Pokemon.
  *
  * <p>Everything is looked up lazily and failures are swallowed. A species id an operator mistyped
- * must leave an empty cell, not a crash screen: the rest of the shop still works, and the purchase
- * path refuses the same id server-side anyway.
+ * must leave a fallback icon, not a crash screen: the rest of the shop still works, and the
+ * purchase path refuses the same id server-side anyway.
+ *
+ * <p>Sizes here are Minecraft's logical GUI pixels, so a cell is eighteen to twenty-two rather than
+ * the ninety the earlier full-texture screen had. The model is scaled from the cell, so it follows
+ * whatever size the layout picked, and the game's GUI Scale multiplies the result afterwards.
  */
 final class ShopPokemonPortraits {
 
@@ -41,7 +45,7 @@ final class ShopPokemonPortraits {
     /**
      * Draws {@code species} centred in the given cell.
      *
-     * @return false when there is nothing to draw, so the caller can fall back to a label
+     * @return false when there is nothing to draw, so the caller can fall back to an icon
      */
     static boolean draw(GuiGraphics graphics, String species, boolean shiny,
                         int cellX, int cellY, int cell, float partialTicks) {
@@ -53,7 +57,7 @@ final class ShopPokemonPortraits {
             // Cobblemon draws a profile around the origin, so the origin goes to the cell's centre.
             // Pushed slightly below centre because a model's feet sit near its origin and the head
             // is what should be framed.
-            graphics.pose().translate(cellX + cell / 2.0, cellY + cell * 0.78, 0.0);
+            graphics.pose().translate(cellX + cell / 2.0, cellY + cell * 0.80, 0.0);
             PokemonGuiUtilsKt.drawProfilePokemon(
                     entry.pokemon(),
                     graphics.pose(),
@@ -61,7 +65,7 @@ final class ShopPokemonPortraits {
                     PoseType.PROFILE,
                     entry.state(),
                     partialTicks,
-                    cell * 0.34F,
+                    cell * 0.62F,
                     true,
                     true,
                     1.0F, 1.0F, 1.0F, 1.0F,
@@ -72,7 +76,7 @@ final class ShopPokemonPortraits {
             // One bad model must not take the screen with it, and must not retry every frame.
             MISSING.add(key(species, shiny));
             CACHE.remove(key(species, shiny));
-            RaidLog.error("Shop could not render " + species + "; drawing a label instead ("
+            RaidLog.error("Shop could not render " + species + "; drawing a fallback icon instead ("
                     + ex.getMessage() + ")");
             return false;
         }

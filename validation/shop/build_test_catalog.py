@@ -177,7 +177,7 @@ def build(manifest, species):
 
     return {
         "version": 2,
-        "per_page": 72,
+        "per_page": 64,
         # Stated explicitly rather than left to the defaults, so the file documents the rule it is
         # testing: one Pokemon a day, five of an item a day, both resetting at 00:00 UTC.
         "limits": {"pokemon": 1, "item": 5, "reset": "daily"},
