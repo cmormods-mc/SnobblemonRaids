@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.86-pokemon-grid'
+version = '0.8.87-key-combine-fix'
 group = 'com.cobbleraids'
 
 base {

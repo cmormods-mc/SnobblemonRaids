@@ -73,9 +73,19 @@ public class RaidKeyFragmentItem extends Item {
             return InteractionResultHolder.fail(held);
         }
         take(player, keys * RaidKeyItems.FRAGMENTS_PER_KEY);
-        give(player, made);
+        // Before the branch below, so combining sounds the same however the key is delivered.
         level.playSound(null, player.blockPosition(), SoundEvents.AMETHYST_BLOCK_CHIME,
                 SoundSource.PLAYERS, 0.7F, 1.0F);
+        if (held.isEmpty()) {
+            // The hand slot is the one we just emptied, and vanilla ends a use by overwriting the
+            // hand with ItemStack.EMPTY whenever the stack we return is empty --
+            // ServerPlayerGameMode.useItem does setItemInHand(hand, EMPTY) after us. Inventory.add
+            // frequently picks that same freshly-empty slot for the key, and vanilla then deletes
+            // it: the fragments are spent and nothing comes back. Handing the key over as the
+            // result puts it in the hand instead, which is also where the player expects it.
+            return InteractionResultHolder.consume(made);
+        }
+        give(player, made);
         return InteractionResultHolder.consume(held);
     }
 
@@ -109,9 +119,17 @@ public class RaidKeyFragmentItem extends Item {
         }
     }
 
-    /** Keys that do not fit are dropped rather than voided; add() mutates the remainder in place. */
+    /**
+     * Keys that do not fit are dropped rather than voided.
+     *
+     * <p>The return value of add() is deliberately ignored. It reports whether <em>any</em> of the
+     * stack was placed, not all of it, so a partial insert into a nearly full inventory returned
+     * true and the remainder -- which add() has already mutated the stack down to -- was silently
+     * thrown away. What is left in the stack afterwards is the only thing worth asking about.
+     */
     private static void give(Player player, ItemStack keys) {
-        if (!player.getInventory().add(keys) && !keys.isEmpty()) {
+        player.getInventory().add(keys);
+        if (!keys.isEmpty()) {
             player.drop(keys, false);
         }
     }
