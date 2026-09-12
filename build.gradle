@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.71-show-scaled-level'
+version = '0.8.72-tiered-entry-levels'
 group = 'com.cobbleraids'
 
 base {

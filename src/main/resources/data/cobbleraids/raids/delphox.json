@@ -1,7 +1,7 @@
 {
   "species": "cobblemon:delphox",
-  "level": 75,
-  "base_health": 2000,
+  "level": 25,
+  "base_health": 550,
   "spawn": {
     "enabled": true,
     "weight": 5,

@@ -61,13 +61,18 @@ separately.
 - **Catching** — off by default. `catching.enabled` plus a per-tier chance
   (`starter`/`powerhouse`/`legendary`/`mythical`, each `0.0`–`1.0`) rolls once per victor
   for a copy of the boss. Leaving every tier at `0.0` skips the roll entirely.
+- **Tiers are progression** — starter raids are level 25 with a 550 HP base, powerhouse level 50
+  at 1100, and legendary and mythical stay level 100 at 3500. A new player can clear a starter
+  raid; a legendary is endgame. Starter is also 70% of natural spawns, so the tier a low-level
+  player meets is the one built for them.
 - **Dynamic level** — when recruitment locks, a boss is raised to the average level of the
   battle-ready Pokémon the group actually brought. **Upward only**: a definition's level is a
   floor, never a ceiling, because loot is decided by rarity tier and not by level — a boss that
   could scale down would hand a low-level group a mythical's drop rates off a trivial fight.
   `dynamic_level.level_offset` shifts the target either way and still cannot breach the floor;
-  `enabled: false` restores fixed levels. Raid HP is unaffected, so a scaled boss hits harder
-  rather than taking longer to kill.
+  `enabled: false` restores fixed levels. The health pool scales with the applied level too, so a
+  geared party raising a starter boss to 100 also faces four times the health — without that, a
+  low-tier raid would be over in eight turns for anyone strong enough to trivialise it.
 - **Durability** — an unclaimed reward is fixed when the raid is won, not when it is claimed:
   the claim stores a seed and regenerates the same bundle, so logging off does not reroll what
   you earned. Nothing serialises an ItemStack. Edit a loot table between the win and the claim
