@@ -1,0 +1,14 @@
+{
+  "item.cobbleraids.legendary_raid_key": "Legendary Raid Key",
+  "item.cobbleraids.legendary_raid_key_fragment": "Legendary Raid Key Fragment",
+  "item.cobbleraids.mythical_raid_key": "Mythical Raid Key",
+  "item.cobbleraids.mythical_raid_key_fragment": "Mythical Raid Key Fragment",
+  "item.cobbleraids.powerhouse_raid_key": "Powerhouse Raid Key",
+  "item.cobbleraids.powerhouse_raid_key_fragment": "Powerhouse Raid Key Fragment",
+  "item.cobbleraids.raid_key_fragment.need_more": "%s more fragments needed",
+  "item.cobbleraids.raid_key_fragment.tier": "Opens %s crates",
+  "item.cobbleraids.raid_key_fragment.tooltip": "Right-click to combine %s into a key",
+  "item.cobbleraids.starter_raid_key": "Starter Raid Key",
+  "item.cobbleraids.starter_raid_key_fragment": "Starter Raid Key Fragment",
+  "itemGroup.cobbleraids.raid_keys": "CobbleRaids"
+}

@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "#cobbleraids:raid_key_fragments/starter",
+    "#cobbleraids:raid_key_fragments/powerhouse",
+    "#cobbleraids:raid_key_fragments/legendary",
+    "#cobbleraids:raid_key_fragments/mythical"
+  ]
+}

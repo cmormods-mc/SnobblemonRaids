@@ -11,6 +11,7 @@ import com.cobbleraids.config.RaidDefinitionRegistry;
 import com.cobbleraids.fault.RaidConsistencyAuditScheduler;
 import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobbleraids.interaction.RaidBossInteractionListener;
+import com.cobbleraids.item.RaidKeyItems;
 import com.cobbleraids.lifecycle.RaidBattleEventCoordinator;
 import com.cobbleraids.lifecycle.RaidCombatRuleService;
 import com.cobbleraids.lifecycle.RaidLifecycleCoordinator;
@@ -53,6 +54,10 @@ public final class CobbleRaids implements ModInitializer {
         CobbleRaidsConfigManager.load();
         RaidRewardPolicyManager.load();
         ShopCatalogManager.load();
+
+        // Before anything that could look an item up by id, and before the reward policy is used:
+        // a loot table naming an unregistered id costs the whole table, not just the entry.
+        RaidKeyItems.register();
 
         RaidRewardPayloads.registerPayloadTypes();
         ServerPlayNetworking.registerGlobalReceiver(RewardChoicePayload.TYPE, (payload, context) ->

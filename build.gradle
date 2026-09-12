@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.82-shop-screen-fixes'
+version = '0.8.83-raid-key-fragments'
 group = 'com.cobbleraids'
 
 base {
@@ -110,7 +110,10 @@ tasks.register('addonRewardsJar', Jar) {
     // 2.2.0-no-filler: the capsule-materials, safari and riding leaves are gone -- two, two and one
     // entry respectively, and between them 40-54% of every general selection. General is now base
     // plus card packs. Also drops eight dead addons/* tables the 2.0.0 rebuild left behind.
-    archiveVersion = '2.2.0-no-filler'
+    //
+    // 2.3.0-key-fragments: adds keys/<tier>, the one-outcome tables the reward policy points at
+    // for guaranteed raid key fragments.
+    archiveVersion = '2.3.0-key-fragments'
     archiveClassifier = ''
     from sourceSets.addonRewards.output
 }

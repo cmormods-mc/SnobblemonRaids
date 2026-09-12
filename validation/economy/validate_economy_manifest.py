@@ -22,6 +22,7 @@ Run: python validation/economy/validate_economy_manifest.py
 import io
 import json
 import os
+import os
 import sys
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -31,6 +32,26 @@ COMPAT_DIR = os.path.join(REPO_ROOT, "compat")
 
 # Vanilla is always present; it needs no manifest entry to be a legitimate reward.
 ALWAYS_AVAILABLE = ("minecraft",)
+
+# CobbleRaids' own items are not in the pack manifest -- that manifest is built from the modpack
+# zip, and this mod is not in it. They are still checked, against what the mod actually ships: an
+# item the game can render needs both a model and a texture under assets/cobbleraids/item, so a
+# mistyped fragment id in a generated table has neither and is caught here. Whitelisting the
+# namespace instead would have made every cobbleraids id unverifiable, including the typo.
+OWN_ITEM_MODELS = os.path.join(REPO_ROOT, "src", "main", "resources", "assets", "cobbleraids",
+                               "models", "item")
+OWN_ITEM_TEXTURES = os.path.join(REPO_ROOT, "src", "main", "resources", "assets", "cobbleraids",
+                                 "textures", "item")
+
+
+def own_items():
+    """Ids this mod ships as a renderable item: a model and a texture of the same name."""
+    def stems(directory, suffix):
+        if not os.path.isdir(directory):
+            return set()
+        return {name[:-len(suffix)] for name in os.listdir(directory) if name.endswith(suffix)}
+    return {"cobbleraids:" + stem
+            for stem in stems(OWN_ITEM_MODELS, ".json") & stems(OWN_ITEM_TEXTURES, ".png")}
 
 TIERS = ("starter", "powerhouse", "legendary", "mythical")
 
@@ -174,11 +195,17 @@ def main():
 
     # --- what the reward data actually names ---------------------------------------------------
     references, tag_references, table_references = referenced_item_ids()
+    mine = own_items()
     for item_id, sources in sorted(references.items()):
         namespace = item_id.split(":")[0]
         if namespace in ALWAYS_AVAILABLE:
             continue
         where = ", ".join(sorted(sources)[:3])
+        if namespace == "cobbleraids":
+            check(item_id in mine,
+                  "reward data names " + item_id + ", which this mod does not ship as an item"
+                  " (no model and texture pair under assets/cobbleraids) -- seen in " + where)
+            continue
         # Banned first: a banned item is also, by construction, from a namespace the manifest does
         # not stock, and "you are handing out a mod we removed" is the useful half of that.
         if item_id in banned:
