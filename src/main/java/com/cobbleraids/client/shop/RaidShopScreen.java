@@ -147,10 +147,19 @@ public final class RaidShopScreen extends Screen {
                 frame.x() + frame.width() / 2, frame.y() + 24, 0xFFAFFFFF);
     }
 
+    /**
+     * The balance, on the button plate at the foot of the frame.
+     *
+     * <p>White, because the plate underneath is not dark. Sampling the kit's own BUTTON_CENTER
+     * slice gives a mean of (0, 127, 249) -- a bright, saturated blue at roughly 0.22 relative
+     * luminance -- and the near-black this used to be sat at 4.0:1 against it, which the drop
+     * shadow then muddied further. White reaches 3.9:1 against the plate on its own and 10:1
+     * against its own shadow, and it is the shadow that carries a one-pixel glyph.
+     */
     private void drawBalance(GuiGraphics graphics) {
         RaidGuiLayout.Rect button = layout.button();
         graphics.drawCenteredString(font, balanceText, button.x() + button.width() / 2,
-                button.y() + (button.height() - font.lineHeight) / 2 + 1, 0xFF06263F);
+                button.y() + (button.height() - font.lineHeight) / 2 + 1, 0xFFFFFFFF);
     }
 
     private String trimTo(String text, int pixels) {

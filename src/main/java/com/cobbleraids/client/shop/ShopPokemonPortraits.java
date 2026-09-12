@@ -7,6 +7,7 @@ import com.cobblemon.mod.common.client.render.models.blockbench.PosableState;
 import com.cobblemon.mod.common.entity.PoseType;
 import com.cobblemon.mod.common.pokemon.RenderablePokemon;
 import com.cobblemon.mod.common.pokemon.Species;
+import com.cobblemon.mod.common.util.math.QuaternionUtilsKt;
 import com.cobbleraids.RaidLog;
 import java.util.HashMap;
 import java.util.Map;
@@ -14,6 +15,7 @@ import java.util.Set;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.world.item.ItemStack;
 import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
 /**
  * Drawing a live Cobblemon model inside a shop cell.
@@ -40,8 +42,26 @@ import org.joml.Quaternionf;
  */
 final class ShopPokemonPortraits {
 
-    /** Identity, and shared: rotating by nothing still allocated a quaternion every frame. */
-    private static final Quaternionf NO_ROTATION = new Quaternionf();
+    /**
+     * The framing Cobblemon uses for its own grid slots, read out of PC StorageSlot and the pasture
+     * list: both anchor a 25-pixel cell at its top plus one, scale the pose stack by 2.5, and pass
+     * 4.5 as the profile scale. Expressed here per cell pixel so the same framing holds at each of
+     * the layout's three sizes.
+     */
+    private static final float ANCHOR_BELOW_TOP = 1.0F / 25.0F;
+    private static final float STACK_SCALE = 2.5F / 25.0F;
+    private static final float PROFILE_SCALE = 4.5F;
+
+    /** Cobblemon's own slot angle: a three-quarter view, not the flat side-on identity gives. */
+    private static final Vector3f ANGLE = new Vector3f(13.0F, 35.0F, 0.0F);
+
+    /**
+     * Scratch, and reset before every call, because drawProfilePokemon conjugates the quaternion it
+     * is handed -- in place, discarding the result -- and hands the same object to the entity render
+     * dispatcher. Cobblemon gets away with allocating a fresh one per slot per frame; reusing one
+     * without the reset would flip every model's orientation on alternate frames.
+     */
+    private static final Quaternionf ROTATION = new Quaternionf();
 
     private static final Map<String, Entry> PLAIN = new HashMap<>();
     private static final Map<String, Entry> SHINY = new HashMap<>();
@@ -63,26 +83,33 @@ final class ShopPokemonPortraits {
         Map<String, Entry> cache = shiny ? SHINY : PLAIN;
         Entry entry = resolve(cache, species, shiny);
         if (entry == null) return false;
+        // Clipped to its own cell. A model is sized to fill the cell but its silhouette is not a
+        // square, and the grid packs cells a single pixel apart, so any overhang lands on a
+        // neighbour's artwork rather than on padding. Cobblemon scissors its PC slots for the same
+        // reason.
+        graphics.enableScissor(cellX, cellY, cellX + cell, cellY + cell);
+        graphics.pose().pushPose();
         try {
             entry.state().updatePartialTicks(partialTicks);
-            graphics.pose().pushPose();
-            // Cobblemon draws a profile around the origin, so the origin goes to the cell's centre.
-            // Pushed below centre because a model's feet sit near its origin and the head is what
-            // should be framed.
-            graphics.pose().translate(cellX + cell / 2.0, cellY + cell * 0.80, 0.0);
+            // Anchored at the top of the cell, not the middle: drawProfilePokemon applies its own
+            // profile translation, which carries the body down from the anchor. Anchoring lower
+            // pushed every model clear of its cell.
+            graphics.pose().translate(cellX + cell / 2.0, cellY + cell * ANCHOR_BELOW_TOP, 0.0);
+            graphics.pose().scale(cell * STACK_SCALE, cell * STACK_SCALE, 1.0F);
             PokemonGuiUtilsKt.drawProfilePokemon(
                     entry.pokemon(),
                     graphics.pose(),
-                    NO_ROTATION,
+                    QuaternionUtilsKt.fromEulerXYZDegrees(ROTATION.identity(), ANGLE),
                     PoseType.PROFILE,
                     entry.state(),
                     partialTicks,
-                    cell * 0.62F,
+                    PROFILE_SCALE,
                     true,
-                    true,
+                    // Ignored while the profile transform is on, and false is what Cobblemon's own
+                    // callers leave it at; passing true implied it was doing something.
+                    false,
                     1.0F, 1.0F, 1.0F, 1.0F,
                     0.0F, 0.0F);
-            graphics.pose().popPose();
             return true;
         } catch (RuntimeException | LinkageError ex) {
             // One bad model must not take the screen with it, and must not retry every frame.
@@ -90,6 +117,12 @@ final class ShopPokemonPortraits {
             RaidLog.error("Shop could not render " + species + "; drawing a fallback icon instead ("
                     + ex.getMessage() + ")");
             return false;
+        } finally {
+            // Must run. A barrier that swallows the throw but leaks a pushed pose and an enabled
+            // scissor trades one bad cell for a screen clipped to twenty pixels for the rest of the
+            // session.
+            graphics.pose().popPose();
+            graphics.disableScissor();
         }
     }
 
