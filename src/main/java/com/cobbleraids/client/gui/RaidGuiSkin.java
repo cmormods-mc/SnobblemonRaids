@@ -1,7 +1,6 @@
 package com.cobbleraids.client.gui;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
 import com.cobbleraids.client.gui.RaidGuiLayout.Layout;
@@ -53,14 +52,12 @@ public final class RaidGuiSkin {
     private static final Sprite GRID_OUTLINE_BOTTOM_LEFT = new Sprite(1343, 1085, 4, 4);
     private static final Sprite GRID_OUTLINE_BOTTOM = new Sprite(2, 1098, 870, 4);
     private static final Sprite GRID_OUTLINE_BOTTOM_RIGHT = new Sprite(876, 1098, 4, 4);
-    private static final Sprite SLOT_HD = new Sprite(1059, 850, 98, 95);
     private static final Sprite SLOT = new Sprite(918, 1056, 22, 22);
     private static final Sprite HEADER_LEFT = new Sprite(1241, 850, 242, 49);
     private static final Sprite HEADER_CENTER = new Sprite(1487, 850, 1, 49);
     private static final Sprite HEADER_RIGHT = new Sprite(1492, 850, 240, 49);
     private static final Sprite PREVIOUS = new Sprite(453, 1009, 40, 42);
     private static final Sprite NEXT = new Sprite(497, 1009, 40, 42);
-    private static final Sprite PAGE_LABEL_REFERENCE = new Sprite(541, 1009, 148, 42);
     private static final Sprite TOP_NOTCH = new Sprite(1161, 850, 76, 61);
     private static final Sprite TOP_HIGHLIGHT = new Sprite(944, 1056, 408, 10);
     private static final Sprite BOTTOM_NOTCH = new Sprite(1736, 850, 76, 46);

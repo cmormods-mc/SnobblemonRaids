@@ -393,4 +393,18 @@ class ShopCatalogTest {
 
         assertEquals(ShopResetPeriod.DAILY, catalog.byId().get("typo").reset());
     }
+
+    @Test
+    @DisplayName("the entry index keeps catalogue order, which is what tab-completion offers")
+    void indexKeepsCatalogueOrder() {
+        // Map.copyOf would satisfy every other assertion here and still scramble this.
+        ShopCatalog catalog = ShopCatalog.defaults();
+
+        List<String> fromSections = catalog.sections().stream()
+                .flatMap(section -> section.entries().stream())
+                .map(ShopEntry::id)
+                .collect(Collectors.toList());
+
+        assertEquals(fromSections, List.copyOf(catalog.byId().keySet()));
+    }
 }

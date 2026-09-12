@@ -20,12 +20,19 @@ import org.joml.Quaternionf;
  *
  * <p>Cobblemon ships no 2D sprite for a species -- the only sprites in the jar are vanilla's -- so
  * a Pokemon in the grid is a real 3D model with a real animation state. That is expensive, and the
- * cost is per cell per frame, so two things keep it bounded: the state is cached per species-and-
- * aspect rather than per cell, and the caller only draws the cells that hold Pokemon.
+ * cost is per cell per frame, so three things keep it bounded: the state is cached per species and
+ * aspect rather than per cell, so nine Charizards animate as one; the caller only draws the cells
+ * that hold Pokemon; and nothing on this path allocates.
  *
- * <p>Everything is looked up lazily and failures are swallowed. A species id an operator mistyped
- * must leave a fallback icon, not a crash screen: the rest of the shop still works, and the
- * purchase path refuses the same id server-side anyway.
+ * <p>That last one is why there are two maps rather than one keyed by a composed string. A key
+ * built per cell per frame is a small allocation sixty times a second for as long as the screen is
+ * open, and it buys nothing. A species that cannot be resolved is stored in the same map as
+ * {@link #UNRESOLVABLE}, so a typo is looked up once instead of retried every frame -- and that
+ * needs no separate set and no key either.
+ *
+ * <p>Failures are swallowed. A species id an operator mistyped must leave a fallback icon, not a
+ * crash screen: the rest of the shop still works, and the purchase path refuses the same id
+ * server-side anyway.
  *
  * <p>Sizes here are Minecraft's logical GUI pixels, so a cell is eighteen to twenty-two rather than
  * the ninety the earlier full-texture screen had. The model is scaled from the cell, so it follows
@@ -33,10 +40,14 @@ import org.joml.Quaternionf;
  */
 final class ShopPokemonPortraits {
 
-    /** One state per species-and-aspect. Sixty-four cells of Charizard animate as one. */
-    private static final Map<String, Entry> CACHE = new HashMap<>();
-    /** Species that failed to resolve, so a typo is looked up once rather than every frame. */
-    private static final Set<String> MISSING = new java.util.HashSet<>();
+    /** Identity, and shared: rotating by nothing still allocated a quaternion every frame. */
+    private static final Quaternionf NO_ROTATION = new Quaternionf();
+
+    private static final Map<String, Entry> PLAIN = new HashMap<>();
+    private static final Map<String, Entry> SHINY = new HashMap<>();
+
+    /** Marks a species this client cannot render, so it is never looked up twice. */
+    private static final Entry UNRESOLVABLE = new Entry(null, null);
 
     private record Entry(RenderablePokemon pokemon, PosableState state) {}
 
@@ -49,19 +60,20 @@ final class ShopPokemonPortraits {
      */
     static boolean draw(GuiGraphics graphics, String species, boolean shiny,
                         int cellX, int cellY, int cell, float partialTicks) {
-        Entry entry = resolve(species, shiny);
+        Map<String, Entry> cache = shiny ? SHINY : PLAIN;
+        Entry entry = resolve(cache, species, shiny);
         if (entry == null) return false;
         try {
             entry.state().updatePartialTicks(partialTicks);
             graphics.pose().pushPose();
             // Cobblemon draws a profile around the origin, so the origin goes to the cell's centre.
-            // Pushed slightly below centre because a model's feet sit near its origin and the head
-            // is what should be framed.
+            // Pushed below centre because a model's feet sit near its origin and the head is what
+            // should be framed.
             graphics.pose().translate(cellX + cell / 2.0, cellY + cell * 0.80, 0.0);
             PokemonGuiUtilsKt.drawProfilePokemon(
                     entry.pokemon(),
                     graphics.pose(),
-                    new Quaternionf().rotateXYZ(0.0F, 0.0F, 0.0F),
+                    NO_ROTATION,
                     PoseType.PROFILE,
                     entry.state(),
                     partialTicks,
@@ -74,43 +86,40 @@ final class ShopPokemonPortraits {
             return true;
         } catch (RuntimeException | LinkageError ex) {
             // One bad model must not take the screen with it, and must not retry every frame.
-            MISSING.add(key(species, shiny));
-            CACHE.remove(key(species, shiny));
+            cache.put(species, UNRESOLVABLE);
             RaidLog.error("Shop could not render " + species + "; drawing a fallback icon instead ("
                     + ex.getMessage() + ")");
             return false;
         }
     }
 
-    private static Entry resolve(String species, boolean shiny) {
-        String key = key(species, shiny);
-        if (MISSING.contains(key)) return null;
-        Entry cached = CACHE.get(key);
+    private static Entry resolve(Map<String, Entry> cache, String species, boolean shiny) {
+        Entry cached = cache.get(species);
+        if (cached == UNRESOLVABLE) return null;
         if (cached != null) return cached;
         try {
             Species resolved = PokemonSpecies.INSTANCE.getByName(species);
             if (resolved == null) {
-                MISSING.add(key);
+                cache.put(species, UNRESOLVABLE);
                 return null;
             }
             Entry entry = new Entry(
                     new RenderablePokemon(resolved, shiny ? Set.of("shiny") : Set.of(), ItemStack.EMPTY),
                     new FloatingState());
-            CACHE.put(key, entry);
+            cache.put(species, entry);
             return entry;
         } catch (RuntimeException | LinkageError ex) {
-            MISSING.add(key);
+            cache.put(species, UNRESOLVABLE);
             return null;
         }
     }
 
-    private static String key(String species, boolean shiny) {
-        return shiny ? species + "#shiny" : species;
-    }
-
-    /** Dropped when the screen closes: these hold Cobblemon render state, not just data. */
+    /**
+     * Dropped when the screen goes away: these hold Cobblemon render state, and a Species from the
+     * client's registry, which does not survive a world change.
+     */
     static void clear() {
-        CACHE.clear();
-        MISSING.clear();
+        PLAIN.clear();
+        SHINY.clear();
     }
 }

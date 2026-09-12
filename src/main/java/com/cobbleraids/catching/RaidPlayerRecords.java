@@ -147,6 +147,17 @@ public final class RaidPlayerRecords extends SavedData {
                 (existing == null ? RaidPlayerRecord.EMPTY : existing)
                         .prunePurchases(window)
                         .withPurchase(entryId, window));
+        persist(server);
+    }
+
+    /**
+     * Forces everything written so far to disk.
+     *
+     * <p>Separate from the writers so a caller making several changes at once pays for one write
+     * rather than one each. Used by the shop, where the points spent and the purchase counted are
+     * two writes that must land together or not at all.
+     */
+    public static void flush(MinecraftServer server) {
         persistNow(server);
     }
 

@@ -5,6 +5,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -174,7 +175,10 @@ public record ShopCatalog(int version, int perPage, ShopLimits limits, List<Shop
     public Map<String, ShopEntry> byId() {
         Map<String, ShopEntry> index = new LinkedHashMap<>();
         sections.forEach(section -> section.entries().forEach(entry -> index.putIfAbsent(entry.id(), entry)));
-        return Map.copyOf(index);
+        // Wrapped rather than Map.copyOf, whose iteration order is unspecified: this map's key set
+        // is what tab-completion offers, and catalogue order is the order an operator wrote and the
+        // only one a player can predict.
+        return Collections.unmodifiableMap(index);
     }
 
     public int totalEntries() {

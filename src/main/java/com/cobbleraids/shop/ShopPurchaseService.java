@@ -36,7 +36,7 @@ public final class ShopPurchaseService {
     private ShopPurchaseService() {}
 
     public static ShopPurchaseResult purchase(ServerPlayer player, String entryId) {
-        ShopEntry entry = ShopCatalogManager.get().byId().get(entryId);
+        ShopEntry entry = ShopCatalogManager.index().get(entryId);
         Instant now = Instant.now();
         ShopPurchaseResult blocked = ShopPurchaseRules.check(
                 entry,
@@ -111,6 +111,11 @@ public final class ShopPurchaseService {
             RaidPlayerRecords.recordPurchase(player.getServer(), player.getUUID(), entry.id(),
                     ShopPurchaseRules.windowOf(entry, now));
         }
+        // One flush, after both writes rather than inside each, and for every purchase rather than
+        // only the limited ones. Points and tallies share a SavedData, so a single write covers
+        // both -- and an unlimited entry used to spend points with nothing forcing them to disk,
+        // which meant a crash before the next autosave handed back the points and kept the item.
+        RaidPlayerRecords.flush(player.getServer());
         RaidLog.info("Shop: " + player.getGameProfile().getName() + " bought " + entry.id()
                 + " for " + entry.cost() + " RP");
     }
