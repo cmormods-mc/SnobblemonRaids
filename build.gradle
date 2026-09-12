@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.89-key-art'
+version = '0.8.90-key-art-interim'
 group = 'com.cobbleraids'
 
 base {
