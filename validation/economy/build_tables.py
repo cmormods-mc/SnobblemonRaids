@@ -41,28 +41,97 @@ REPORT_PATH = os.path.join(REPO_ROOT, "validation", "economy", "probability_repo
 TIERS = ["starter", "powerhouse", "legendary", "mythical"]
 POOL_TOTAL = 10000
 
-# --- section 7: the curated base catalog -------------------------------------------------------
-# item, weight, then the quantity for each tier in TIERS order.
-BASE_CATALOG = [
-    ("cobblemon:poke_ball", 24, [4, 4, 4, 4]),
-    ("cobblemon:great_ball", 20, [2, 3, 3, 4]),
-    ("cobblemon:ultra_ball", 6, [1, 1, 2, 2]),
-    ("cobblemon:potion", 16, [2, 2, 2, 2]),
-    ("cobblemon:super_potion", 10, [1, 2, 2, 2]),
-    ("cobblemon:hyper_potion", 2, [1, 1, 1, 1]),
-    ("cobblemon:revive", 4, [1, 1, 1, 1]),
-    ("cobblemon:full_heal", 4, [1, 1, 1, 1]),
-    ("cobblemon:exp_candy_s", 10, [2, 2, 3, 3]),
-    ("cobblemon:exp_candy_m", 4, [1, 1, 2, 2]),
+# --- the curated base catalog ------------------------------------------------------------------
+# item, weight per tier, then the quantity per tier, both in TIERS order.
+#
+# Rebuilt 2026-09-12. It used to be ten rows of Poke Balls, Great Balls and Potions at one weight
+# shared by every tier, and because base is the fallback of BOTH pools that made 44-55%% of every
+# reward a player saw a basic ball or a potion. The categories below are what a raid should pay
+# out: balls worth using, EV items, a thin slice of upgraded medicine, and held items that change
+# how a Pokemon fights.
+#
+# Weights are per tier now, not shared, which is what lets a row exist at one tier and not another
+# -- Beast and Dream Balls from legendary up, the Master Ball at mythical alone. Each tier totals
+# BASE_POOL_TOTAL; build_base_pool asserts it rather than trusting the arithmetic below.
+#
+# The scale is 1000 rather than 100 so a row can be rarer than one part in a hundred. The Master
+# Ball needs that: at weight 2 it is 0.31%% of a mythical bundle, about one per 320 mythical raids.
+BASE_POOL_TOTAL = 1000
+
+# Balls: utility over quantity. No Poke Ball, no Great Ball -- those are what made the old pool
+# feel like a consolation prize, and the shop sells them for anyone who wants a bulk supply.
+BASE_BALLS = [
+    ("cobblemon:ultra_ball",   [80, 60, 50, 40], [2, 3, 3, 4]),
+    ("cobblemon:dusk_ball",    [50, 50, 40, 30], [1, 2, 2, 3]),
+    ("cobblemon:quick_ball",   [50, 50, 40, 30], [1, 2, 2, 3]),
+    ("cobblemon:timer_ball",   [40, 40, 30, 20], [1, 2, 2, 3]),
+    ("cobblemon:net_ball",     [30, 30, 20, 20], [1, 1, 2, 2]),
+    ("cobblemon:repeat_ball",  [30, 30, 20, 20], [1, 1, 2, 2]),
+    ("cobblemon:nest_ball",    [30, 10, 10, 10], [1, 1, 2, 2]),
+    ("cobblemon:heal_ball",    [30, 20, 20, 10], [1, 2, 2, 2]),
+    ("cobblemon:dive_ball",    [20, 20, 20, 10], [1, 1, 2, 2]),
+    ("cobblemon:luxury_ball",  [20, 20, 10, 10], [1, 1, 1, 2]),
+    ("cobblemon:level_ball",   [10, 10, 10, 10], [1, 1, 1, 2]),
+    ("cobblemon:moon_ball",    [10, 10, 10, 10], [1, 1, 1, 2]),
+    ("cobblemon:beast_ball",   [0,  0,  12, 20], [1, 1, 1, 1]),
+    ("cobblemon:dream_ball",   [0,  0,  8,  18], [1, 1, 1, 1]),
+    ("cobblemon:master_ball",  [0,  0,  0,  2],  [1, 1, 1, 1]),
 ]
 
+# Stat items: the six EV vitamins and the six Power training items. Vitamins are consumed, so they
+# are the common half and scale in quantity; a Power item is permanent gear and always lands as one.
+BASE_VITAMINS = ["protein", "iron", "calcium", "zinc", "carbos", "hp_up"]
+BASE_POWER_ITEMS = ["power_weight", "power_bracer", "power_belt", "power_lens", "power_band",
+                    "power_anklet"]
+VITAMIN_WEIGHTS = [30, 32, 34, 36]
+POWER_WEIGHTS = [10, 14, 16, 18]
+VITAMIN_QUANTITIES = [1, 2, 2, 3]
+
+# Medicine: a thin slice, and only the grades worth receiving. Ether and Max Elixir are here
+# because PP carries between raids (RaidBattleStateCarryover), so restoring it is a real need and
+# nothing else in the reward economy covers it.
+BASE_MEDICINE = [
+    ("cobblemon:revive",       [40, 32, 24, 16], [1, 1, 2, 2]),
+    ("cobblemon:max_potion",   [40, 32, 24, 18], [1, 2, 2, 2]),
+    ("cobblemon:ether",        [30, 24, 18, 14], [1, 2, 2, 2]),
+    ("cobblemon:max_revive",   [20, 20, 20, 18], [1, 1, 1, 2]),
+    ("cobblemon:full_restore", [16, 16, 16, 16], [1, 1, 2, 2]),
+    ("cobblemon:max_elixir",   [10, 10, 10, 10], [1, 1, 1, 2]),
+]
+
+# Held items: twelve, deliberately the second tier rather than the marquee one. Each is one item
+# at one weight, equal within the tier, so the category reads as "a held item" rather than as a
+# lottery with an obvious jackpot.
+BASE_HELD_ITEMS = ["eviolite", "expert_belt", "weakness_policy", "heavy_duty_boots", "loaded_dice",
+                   "covert_cloak", "air_balloon", "scope_lens", "razor_claw", "muscle_band",
+                   "wise_glasses", "light_clay"]
+HELD_ITEM_WEIGHTS = [17, 20, 24, 27]
+
+
+def base_catalog():
+    """Every base row as (item, weights per tier, quantities per tier)."""
+    rows = list(BASE_BALLS)
+    rows += [("cobblemon:" + name, list(VITAMIN_WEIGHTS), list(VITAMIN_QUANTITIES))
+             for name in BASE_VITAMINS]
+    rows += [("cobblemon:" + name, list(POWER_WEIGHTS), [1, 1, 1, 1])
+             for name in BASE_POWER_ITEMS]
+    rows += list(BASE_MEDICINE)
+    rows += [("cobblemon:" + name, list(HELD_ITEM_WEIGHTS), [1, 1, 1, 1])
+             for name in BASE_HELD_ITEMS]
+    return rows
+
+
 # --- section 7: general-roll categories, per tier, totalling 100 -------------------------------
+# Base's share drops from 70/60/60/55 because it is the fallback of both pools: even a good base
+# pool seen on three quarters of every bundle is the thing a player stops reading. The freed weight
+# goes to the four existing leaves rather than to new ones. That is a deliberate trade -- those are
+# all optional-mod tables, so a server running without them sees more empty selections than before.
 GENERAL_CATEGORIES = [
-    ("cobbleraids:base/{tier}", [70, 60, 60, 55]),
-    ("cobbleraids:general/leaf/cards", [10, 12, 10, 10]),
-    ("cobbleraids:general/leaf/capsule_materials", [8, 12, 15, 20]),
-    ("cobbleraids:general/leaf/safari_consumables", [7, 10, 10, 10]),
-    ("cobbleraids:general/leaf/riding_consumables", [5, 6, 5, 5]),
+    ("cobbleraids:base/{tier}", [40, 35, 33, 30]),
+    ("cobbleraids:general/leaf/cards", [20, 20, 17, 16]),
+    ("cobbleraids:general/leaf/capsule_materials", [16, 20, 25, 31]),
+    ("cobbleraids:general/leaf/safari_consumables", [14, 16, 17, 16]),
+    ("cobbleraids:general/leaf/riding_consumables", [10, 9, 8, 7]),
 ]
 
 CARD_PACKS = ["booster_pack"] + [
@@ -188,15 +257,29 @@ def optional_item_table(tables, item_id, count=None):
     return "cobbleraids:" + relative[:-len(".json")]
 
 
+def build_base_pool(index, tier):
+    """The base entries for one tier, with the rows that tier does not carry left out."""
+    entries = []
+    total = 0
+    for item, weights, quantities in base_catalog():
+        weight = weights[index]
+        if weight <= 0:
+            continue
+        total += weight
+        entries.append(item_entry(item, weight, quantities[index]))
+    if total != BASE_POOL_TOTAL:
+        raise SystemExit("base pool for %s totals %d, not %d -- the category budgets no longer add up"
+                         % (tier, total, BASE_POOL_TOTAL))
+    return entries
+
+
 def build_tables(manifest):
     """Every generated table, keyed by path relative to the loot_table root."""
     tables = {}
 
-    # base/<tier> -- the curated catalog, same weights everywhere, quantities by tier
+    # base/<tier> -- the curated catalog, weights and quantities both by tier
     for index, tier in enumerate(TIERS):
-        entries = [item_entry(item, weight, quantities[index])
-                   for item, weight, quantities in BASE_CATALOG]
-        tables["base/%s.json" % tier] = single_pool(entries)
+        tables["base/%s.json" % tier] = single_pool(build_base_pool(index, tier))
 
     # general leaves -- one result each
     tables["general/leaf/cards.json"] = single_pool(
@@ -375,13 +458,54 @@ def write_report(manifest):
 
     lines.append("## Base catalog")
     lines.append("")
-    lines.append("The fallback of both the general and specialty pools. Weights total 100 and are"
-                 " identical across tiers; only the quantities differ.")
+    lines.append("The fallback of both the general and specialty pools. Each tier's weights total"
+                 " %d; a row at weight 0 is not in that tier's pool at all. Cells read"
+                 " *weight (quantity)*." % BASE_POOL_TOTAL)
     lines.append("")
-    lines.append("| Item | Weight | " + " | ".join(TIERS) + " |")
-    lines.append("|---|---:|" + "---:|" * len(TIERS))
-    for item, weight, quantities in BASE_CATALOG:
-        lines.append("| %s | %d | %s |" % (item, weight, " | ".join(str(q) for q in quantities)))
+    lines.append("| Item | " + " | ".join(TIERS) + " |")
+    lines.append("|---|" + "---:|" * len(TIERS))
+    for item, weights, quantities in base_catalog():
+        cells = ["%d (x%d)" % (w, q) if w else "--" for w, q in zip(weights, quantities)]
+        lines.append("| %s | %s |" % (item, " | ".join(cells)))
+    lines.append("")
+    lines.append("### Category budgets")
+    lines.append("")
+    lines.append("| Category | " + " | ".join(TIERS) + " |")
+    lines.append("|---|" + "---:|" * len(TIERS))
+    groups = [
+        ("balls", BASE_BALLS),
+        ("stat items (vitamins + power)",
+         [(n, VITAMIN_WEIGHTS, None) for n in BASE_VITAMINS]
+         + [(n, POWER_WEIGHTS, None) for n in BASE_POWER_ITEMS]),
+        ("medicine", BASE_MEDICINE),
+        ("held items", [(n, HELD_ITEM_WEIGHTS, None) for n in BASE_HELD_ITEMS]),
+    ]
+    for label, rows in groups:
+        totals = [sum(r[1][i] for r in rows) for i in range(len(TIERS))]
+        lines.append("| %s | %s |" % (label, " | ".join(
+            "%d (%.1f%%)" % (t, t * 100.0 / BASE_POOL_TOTAL) for t in totals)))
+    lines.append("")
+    lines.append("### What a bundle actually contains")
+    lines.append("")
+    lines.append("Base is reached from a general selection at its category weight and from the"
+                 " specialty selection through the fallback, so its share of a bundle is higher"
+                 " than either figure alone. At B=1 (three general selections plus one specialty),"
+                 " on a boss with no Mega Stone:")
+    lines.append("")
+    lines.append("| Tier | base per bundle | share | Master Ball per bundle |")
+    lines.append("|---|---:|---:|---:|")
+    general_base = dict(GENERAL_CATEGORIES)["cobbleraids:base/{tier}"]
+    for index, tier in enumerate(TIERS):
+        fallback = dict(specialty_breakdown(index, False))["base fallback"] / float(POOL_TOTAL)
+        selections = 3
+        base_hits = selections * general_base[index] / 100.0 + fallback
+        master = next((w[index] for item, w, _q in BASE_BALLS
+                       if item == "cobblemon:master_ball"), 0) / float(BASE_POOL_TOTAL)
+        rate = base_hits * master
+        lines.append("| %s | %.2f of %d | %.0f%% | %s |"
+                     % (tier, base_hits, selections + 1,
+                        base_hits / (selections + 1) * 100.0,
+                        ("%.3f%% (1 in %d)" % (rate * 100.0, round(1 / rate))) if rate else "--"))
     lines.append("")
     lines.append("## Resolved against the pack")
     lines.append("")

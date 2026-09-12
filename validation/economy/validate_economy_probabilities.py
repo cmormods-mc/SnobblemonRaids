@@ -214,10 +214,26 @@ def main():
             reachable = sorted(set(outcomes) & banned)
             check(not reachable,
                   "cobbleraids:%s/%s can drop banned items: %s" % (family, tier, ", ".join(reachable)))
-        for name in ("master_ball",):
-            outcomes = distribution("cobbleraids:specialty/%s" % tier, tags)
-            check("cobblemon:" + name not in outcomes,
-                  "the " + tier + " specialty table can drop " + name)
+    # --- the Master Ball is mythical-only, and tiny ---------------------------------------------
+    # It used to be barred from every table. It is now a deliberate jackpot at mythical, which the
+    # specialty pool reaches through its base fallback, so "never" no longer states the intent.
+    # What matters is that no lower tier can produce one and that the mythical rate stays a
+    # jackpot: at base weight 2 in 1000 a single selection is 0.06% through general and 0.13%
+    # through the specialty fallback, so a ceiling of 0.25% still fails if the weight is fattened
+    # by an order of magnitude, which is the edit worth catching.
+    master = "cobblemon:master_ball"
+    for tier in TIERS:
+        for family in ("base", "general", "specialty"):
+            rate = distribution("cobbleraids:%s/%s" % (family, tier), tags).get(master, 0)
+            if tier == "mythical":
+                check(rate > 0,
+                      "mythical " + family + " can no longer drop a Master Ball; it is meant to")
+                check(rate <= Fraction(25, 10000),
+                      "mythical " + family + " drops a Master Ball at "
+                      + str(float(rate) * 100) + "% of a selection, over the 0.25% ceiling")
+            else:
+                check(not rate,
+                      tier + " " + family + " can drop a Master Ball; only mythical may")
 
     if failures:
         print("Economy probability validation: FAIL", file=sys.stderr)
