@@ -64,7 +64,7 @@ class ShopCatalogTest {
         ShopPokemonGift gift = new ShopPokemonGift("dratini", 15, true, "adamant", "shed-skin",
                 "male", "normal", "dragon", "cobblemon:life_orb",
                 Map.of("hp", 31, "speed", 30), Map.of("attack", 252));
-        ShopCatalog catalog = new ShopCatalog(1, 72, ShopLimits.DEFAULTS, List.of(
+        ShopCatalog catalog = new ShopCatalog(1, ShopCatalog.MAX_PER_PAGE, ShopLimits.DEFAULTS, List.of(
                 new ShopSection("mons", "Pokemon", List.of(
                         ShopEntry.ofPokemon("d", 100, gift, 1, ShopResetPeriod.NEVER)))));
 
@@ -86,7 +86,7 @@ class ShopCatalogTest {
         ShopPokemonGift gift = new ShopPokemonGift("dratini", 50, false, null, null, null, null, null,
                 "cobblemon:focus_sash", Map.of(), Map.of());
 
-        ShopCatalog catalog = ShopCatalog.fromJson(new ShopCatalog(1, 72, ShopLimits.DEFAULTS, List.of(
+        ShopCatalog catalog = ShopCatalog.fromJson(new ShopCatalog(1, ShopCatalog.MAX_PER_PAGE, ShopLimits.DEFAULTS, List.of(
                 new ShopSection("mons", "Pokemon", List.of(ShopEntry.ofPokemon("d", 100, gift)))))
                 .toJson());
 
@@ -99,7 +99,7 @@ class ShopCatalogTest {
         ShopCatalog catalog = ShopCatalog.fromJson(parse("""
                 {
                   "version": 1,
-                  "per_page": 72,
+                  "per_page": 64,
                   "sections": [{
                     "id": "misc", "title": "Misc",
                     "entries": [
@@ -163,8 +163,8 @@ class ShopCatalogTest {
     @Test
     @DisplayName("an out-of-range page size falls back rather than throwing the file away")
     void perPageIsClamped() {
-        assertEquals(72, ShopCatalog.fromJson(parse("{\"per_page\": 500}")).perPage());
-        assertEquals(72, ShopCatalog.fromJson(parse("{\"per_page\": 0}")).perPage());
+        assertEquals(ShopCatalog.MAX_PER_PAGE, ShopCatalog.fromJson(parse("{\"per_page\": 500}")).perPage());
+        assertEquals(ShopCatalog.MAX_PER_PAGE, ShopCatalog.fromJson(parse("{\"per_page\": 0}")).perPage());
         assertEquals(9, ShopCatalog.fromJson(parse("{\"per_page\": 9}")).perPage());
     }
 
@@ -202,7 +202,7 @@ class ShopCatalogTest {
     @Test
     @DisplayName("an empty section still gets a page, so an unstocked shelf is visible")
     void emptySectionStillHasAPage() {
-        ShopCatalog catalog = new ShopCatalog(1, 72, ShopLimits.DEFAULTS, List.of(new ShopSection("a", "A", List.of())));
+        ShopCatalog catalog = new ShopCatalog(1, ShopCatalog.MAX_PER_PAGE, ShopLimits.DEFAULTS, List.of(new ShopSection("a", "A", List.of())));
 
         assertEquals(1, catalog.pages().size());
         assertEquals(0, catalog.pages().get(0).entries().size());
@@ -226,7 +226,7 @@ class ShopCatalogTest {
     @Test
     @DisplayName("a click past the end of a page buys nothing")
     void slotsPastTheEndAreEmpty() {
-        ShopCatalog catalog = new ShopCatalog(1, 72, ShopLimits.DEFAULTS, List.of(
+        ShopCatalog catalog = new ShopCatalog(1, ShopCatalog.MAX_PER_PAGE, ShopLimits.DEFAULTS, List.of(
                 new ShopSection("a", "A", entries("a", 3))));
         ShopPageView page = catalog.pages().get(0);
 

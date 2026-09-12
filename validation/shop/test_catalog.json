@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "per_page": 72,
+  "per_page": 64,
   "limits": {
     "pokemon": 1,
     "item": 5,
