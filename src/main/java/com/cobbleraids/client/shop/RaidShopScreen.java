@@ -208,6 +208,10 @@ public final class RaidShopScreen extends Screen {
     private void drawContents(GuiGraphics graphics, ShopEntryPayload entry, ItemStack icon,
                               RaidGuiLayout.Rect rect, float partialTicks) {
         if (entry.pokemon()) {
+            // Three routes, best first. A drawn icon beats a rendered model here for more than
+            // taste: it is one blit against a full posed model with its own animation state, and
+            // hand-drawn art reads at twenty pixels where a scaled-down model turns to mush.
+            if (drawSpeciesIcon(graphics, entry, rect)) return;
             if (ShopPokemonPortraits.draw(graphics, entry.species(), entry.shiny(),
                     rect.x(), rect.y(), rect.width(), partialTicks)) {
                 return;
@@ -223,6 +227,30 @@ public final class RaidShopScreen extends Screen {
         graphics.renderItem(stack, x, y);
         // Vanilla's own decoration, so a stack count sits exactly where a player expects it.
         graphics.renderItemDecorations(font, stack, x, y);
+    }
+
+    /**
+     * The species' card icon, scaled into the cell and centred.
+     *
+     * <p>Fitted by the narrower of the two ratios rather than stretched to the cell: the art is
+     * 48x32 and a square cell would squash it, which is more obvious on a Pokemon than on anything
+     * else in the grid.
+     */
+    private boolean drawSpeciesIcon(GuiGraphics graphics, ShopEntryPayload entry,
+                                    RaidGuiLayout.Rect rect) {
+        ResourceLocation texture = ShopSpeciesIcons.texture(entry.species(), entry.shiny());
+        if (texture == null) return false;
+        int cell = rect.width();
+        float scale = Math.min(cell / (float) ShopSpeciesIcons.WIDTH,
+                               cell / (float) ShopSpeciesIcons.HEIGHT);
+        int width = Math.max(1, Math.round(ShopSpeciesIcons.WIDTH * scale));
+        int height = Math.max(1, Math.round(ShopSpeciesIcons.HEIGHT * scale));
+        graphics.blit(texture,
+                rect.x() + (cell - width) / 2, rect.y() + (cell - height) / 2,
+                width, height, 0.0F, 0.0F,
+                ShopSpeciesIcons.WIDTH, ShopSpeciesIcons.HEIGHT,
+                ShopSpeciesIcons.WIDTH, ShopSpeciesIcons.HEIGHT);
+        return true;
     }
 
     /**

@@ -39,6 +39,11 @@ step "Validate logging discipline"
 step "Validate callback fault barriers"
 "$py" validation/validate_callback_guards.py
 
+step "Validate shop species icons"
+# No cobblemon-cards jar in CI, so this checks the committed manifest against the raid roster:
+# adding a boss whose species has no icon is the regression worth catching, and it is silent.
+"$py" validation/sprites/build_icon_manifest.py --check
+
 step "Validate reward-economy manifest"
 "$py" validation/economy/validate_economy_manifest.py
 
