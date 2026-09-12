@@ -1,7 +1,6 @@
 package com.cobbleraids.shop;
 
 import java.time.Instant;
-import java.time.ZoneOffset;
 import java.util.Locale;
 
 /**
@@ -22,9 +21,20 @@ public enum ShopResetPeriod {
     /** The limit refills at 00:00 UTC. */
     DAILY;
 
-    /** Which window {@code instant} falls in. Always 0 for a limit that never resets. */
+    /** Seconds in a day. UTC has no daylight saving, so every day is exactly this long. */
+    private static final long SECONDS_PER_DAY = 86_400L;
+
+    /**
+     * Which window {@code instant} falls in. Always 0 for a limit that never resets.
+     *
+     * <p>Arithmetic rather than {@code atOffset(UTC).toLocalDate().toEpochDay()}, which allocates an
+     * OffsetDateTime and a LocalDate each time. That is charged once per cell every time a page is
+     * sent, so sixty-four of each per click, for a number that is a division. The two agree exactly
+     * -- an epoch day in UTC is defined as this division -- and ShopResetPeriodTest holds them to
+     * it across a span of years rather than taking it on trust.
+     */
     public long windowOf(Instant instant) {
-        return this == DAILY ? instant.atOffset(ZoneOffset.UTC).toLocalDate().toEpochDay() : 0L;
+        return this == DAILY ? Math.floorDiv(instant.getEpochSecond(), SECONDS_PER_DAY) : 0L;
     }
 
     public boolean resets() {

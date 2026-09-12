@@ -47,35 +47,80 @@ public final class RaidShopScreen extends Screen {
     private ShopPagePayload page;
     private RaidGuiLayout.Layout layout;
 
+    /**
+     * One stack per cell, built when a page arrives rather than on every frame.
+     *
+     * <p>This was an ItemStack allocated per cell inside render(), which at sixty-four cells and
+     * sixty frames a second is nearly four thousand short-lived objects a second, for a page whose
+     * contents do not change between server updates. Null where a cell holds a Pokemon.
+     */
+    private final List<ItemStack> icons = new ArrayList<>();
+    private ItemStack fallbackIcon = ItemStack.EMPTY;
+    private String headingText = "";
+    private String balanceText = "";
+    private int tooltipSlot = -1;
+    private List<Component> tooltipLines = List.of();
+
     private RaidShopScreen(ShopPagePayload page) {
         super(Component.literal("Raid Shop"));
-        this.page = page;
+        setPage(page);
+    }
+
+    /** Rebuilds everything derived from a page. Runs once per server update, never per frame. */
+    private void setPage(ShopPagePayload payload) {
+        this.page = payload;
+        this.tooltipSlot = -1;
+        icons.clear();
+        for (ShopEntryPayload entry : payload.entries()) {
+            icons.add(entry.pokemon() ? null
+                    : new ItemStack(BuiltInRegistries.ITEM.get(entry.itemId()), entry.count()));
+        }
+        if (fallbackIcon.isEmpty()) {
+            fallbackIcon = new ItemStack(BuiltInRegistries.ITEM.get(FALLBACK_ICON));
+        }
+        cacheChrome();
+    }
+
+    /** The two trimmed strings, which only change when the page or the balance does. */
+    private void cacheChrome() {
+        if (font == null || layout == null) return;
+        String heading = page.pageCount() > 1
+                ? page.heading() + " " + (page.pageIndex() + 1) + "/" + page.pageCount()
+                : page.heading();
+        headingText = trimTo(heading, 50);
+        balanceText = trimTo(page.balance() + " RP", layout.button().width() - 6);
     }
 
     /** Opens the screen, or refreshes the one already open. Called from the payload receiver. */
     public static void show(ShopPagePayload payload) {
         Minecraft client = Minecraft.getInstance();
         if (open != null && client.screen == open) {
-            open.page = payload;
+            open.setPage(payload);
             return;
         }
         open = new RaidShopScreen(payload);
         client.setScreen(open);
     }
 
+    /**
+     * Cleanup lives here rather than in onClose(), which only runs when the screen closes itself.
+     * removed() runs whenever the screen is replaced, so switching away or being disconnected
+     * cannot leave a static reference to a dead screen, or Cobblemon render state alive behind it.
+     */
     @Override
-    public void onClose() {
-        open = null;
-        // These hold Cobblemon animation state, not just data; a shop nobody has open should not
-        // be keeping models alive.
+    public void removed() {
+        if (open == this) open = null;
+        icons.clear();
+        tooltipLines = List.of();
         ShopPokemonPortraits.clear();
-        super.onClose();
+        super.removed();
     }
 
     @Override
     protected void init() {
         // Recomputed on every init, which is what a resize and a GUI Scale change both trigger.
         layout = RaidGuiLayout.fit(width, height).orElse(null);
+        cacheChrome();
     }
 
     @Override
@@ -98,19 +143,13 @@ public final class RaidShopScreen extends Screen {
 
     private void drawHeading(GuiGraphics graphics) {
         RaidGuiLayout.Rect frame = layout.frame();
-        String text = page.pageCount() > 1
-                ? page.heading() + " " + (page.pageIndex() + 1) + "/" + page.pageCount()
-                : page.heading();
-        // The strip between the two arrows is about fifty pixels wide. A section name that does not
-        // fit is trimmed rather than allowed to run underneath them.
-        graphics.drawCenteredString(font, trimTo(text, 50),
+        graphics.drawCenteredString(font, headingText,
                 frame.x() + frame.width() / 2, frame.y() + 24, 0xFFAFFFFF);
     }
 
     private void drawBalance(GuiGraphics graphics) {
         RaidGuiLayout.Rect button = layout.button();
-        graphics.drawCenteredString(font, trimTo(page.balance() + " RP", button.width() - 6),
-                button.x() + button.width() / 2,
+        graphics.drawCenteredString(font, balanceText, button.x() + button.width() / 2,
                 button.y() + (button.height() - font.lineHeight) / 2 + 1, 0xFF06263F);
     }
 
@@ -133,7 +172,7 @@ public final class RaidShopScreen extends Screen {
             ShopEntryPayload entry = entries.get(slot);
             boolean affordable = page.balance() >= entry.cost() && !entry.soldOut();
 
-            drawContents(graphics, entry, rect, partialTicks);
+            drawContents(graphics, entry, icons.get(slot), rect, partialTicks);
             if (!affordable) {
                 graphics.fill(rect.x(), rect.y(), rect.x() + rect.width(),
                         rect.y() + rect.height(), 0x99070A10);
@@ -145,11 +184,19 @@ public final class RaidShopScreen extends Screen {
             }
         }
         if (hovered >= 0 && hovered < entries.size()) {
-            drawTooltip(graphics, entries.get(hovered), mouseX, mouseY);
+            // Rebuilt only when the cursor moves to a different cell, not on every frame it rests
+            // on the same one.
+            if (hovered != tooltipSlot) {
+                tooltipSlot = hovered;
+                tooltipLines = tooltipFor(entries.get(hovered), icons.get(hovered));
+            }
+            graphics.renderComponentTooltip(font, tooltipLines, mouseX, mouseY);
+        } else {
+            tooltipSlot = -1;
         }
     }
 
-    private void drawContents(GuiGraphics graphics, ShopEntryPayload entry,
+    private void drawContents(GuiGraphics graphics, ShopEntryPayload entry, ItemStack icon,
                               RaidGuiLayout.Rect rect, float partialTicks) {
         if (entry.pokemon()) {
             if (ShopPokemonPortraits.draw(graphics, entry.species(), entry.shiny(),
@@ -158,11 +205,10 @@ public final class RaidShopScreen extends Screen {
             }
             // A species name does not fit in a twenty-pixel cell, so a model that will not resolve
             // falls back to a Poke Ball: it still reads as "a Pokemon", and the tooltip names it.
-            graphics.renderItem(new ItemStack(BuiltInRegistries.ITEM.get(FALLBACK_ICON)),
-                    RaidGuiSkin.itemX(rect), RaidGuiSkin.itemY(rect));
+            graphics.renderItem(fallbackIcon, RaidGuiSkin.itemX(rect), RaidGuiSkin.itemY(rect));
             return;
         }
-        ItemStack stack = new ItemStack(BuiltInRegistries.ITEM.get(entry.itemId()), entry.count());
+        ItemStack stack = icon;
         int x = RaidGuiSkin.itemX(rect);
         int y = RaidGuiSkin.itemY(rect);
         graphics.renderItem(stack, x, y);
@@ -183,15 +229,14 @@ public final class RaidShopScreen extends Screen {
                 entry.soldOut() ? 0xFFFF8A8A : 0xFFB8D8EA, true);
     }
 
-    private void drawTooltip(GuiGraphics graphics, ShopEntryPayload entry, int mouseX, int mouseY) {
+    private List<Component> tooltipFor(ShopEntryPayload entry, ItemStack icon) {
         List<Component> lines = new ArrayList<>();
         if (entry.pokemon()) {
             lines.add(Component.literal((entry.shiny() ? "Shiny " : "") + capitalise(entry.species()))
                     .withStyle(ChatFormatting.WHITE));
             lines.add(Component.literal("Level " + entry.level()).withStyle(ChatFormatting.GRAY));
         } else {
-            ItemStack stack = new ItemStack(BuiltInRegistries.ITEM.get(entry.itemId()), entry.count());
-            lines.add(stack.getHoverName());
+            lines.add(icon.getHoverName());
             lines.add(Component.literal("x" + entry.count()).withStyle(ChatFormatting.GRAY));
         }
         if (entry.soldOut()) {
@@ -211,7 +256,7 @@ public final class RaidShopScreen extends Screen {
                         .withStyle(ChatFormatting.GRAY));
             }
         }
-        graphics.renderComponentTooltip(font, lines, mouseX, mouseY);
+        return List.copyOf(lines);
     }
 
     @Override

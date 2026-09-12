@@ -42,7 +42,7 @@ public final class RaidShopGateway {
             sendPage(player, action.pageIndex());
             return;
         }
-        ShopEntry attempted = ShopCatalogManager.get().byId().get(action.entryId());
+        ShopEntry attempted = ShopCatalogManager.index().get(action.entryId());
         ShopPurchaseResult result = ShopPurchaseService.purchase(player, action.entryId());
         String message = result == ShopPurchaseResult.LIMIT_REACHED
                 ? ShopPurchaseRules.limitMessage(attempted)
@@ -55,7 +55,7 @@ public final class RaidShopGateway {
     }
 
     private static void sendPage(ServerPlayer player, int requestedPage) {
-        List<ShopPageView> pages = ShopCatalogManager.get().pages();
+        List<ShopPageView> pages = ShopCatalogManager.pages();
         if (pages.isEmpty()) {
             ServerPlayNetworking.send(player,
                     new ShopPagePayload("Raid Shop", 0, 1, RaidPointsStore.balance(player.getUUID()), List.of()));

@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.80-sliced-gui'
+version = '0.8.81-shop-audit'
 group = 'com.cobbleraids'
 
 base {

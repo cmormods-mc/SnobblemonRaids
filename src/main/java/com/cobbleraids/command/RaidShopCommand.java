@@ -1,5 +1,6 @@
 package com.cobbleraids.command;
 
+import com.cobbleraids.catching.RaidPlayerRecord;
 import com.cobbleraids.catching.RaidPlayerRecords;
 import com.cobbleraids.presentation.CommandFormat;
 import com.cobbleraids.reward.points.RaidPointsStore;
@@ -34,7 +35,7 @@ public final class RaidShopCommand {
     private RaidShopCommand() {}
 
     private static final SuggestionProvider<CommandSourceStack> ENTRY_IDS = (context, builder) ->
-            SharedSuggestionProvider.suggest(ShopCatalogManager.get().byId().keySet(), builder);
+            SharedSuggestionProvider.suggest(ShopCatalogManager.index().keySet(), builder);
 
     public static void register() {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(
@@ -59,6 +60,7 @@ public final class RaidShopCommand {
         ShopCatalog catalog = ShopCatalogManager.get();
         int balance = RaidPointsStore.balance(player.getUUID());
         java.time.Instant now = java.time.Instant.now();
+        RaidPlayerRecord record = RaidPlayerRecords.get(player.getUUID());
 
         source.sendSuccess(() -> CommandFormat.header("Raid Shop")
                 .append(Component.literal("  " + balance + " RP").withStyle(ChatFormatting.AQUA)), false);
@@ -66,7 +68,7 @@ public final class RaidShopCommand {
             source.sendSuccess(() -> CommandFormat.row("Nothing is for sale yet."), false);
             return 0;
         }
-        for (ShopPageView page : catalog.pages()) {
+        for (ShopPageView page : ShopCatalogManager.pages()) {
             source.sendSuccess(() -> CommandFormat.row(page.heading())
                     .withStyle(ChatFormatting.GOLD), false);
             for (ShopEntry entry : page.entries()) {
@@ -78,7 +80,7 @@ public final class RaidShopCommand {
                         : entry.item().count() + "x " + entry.item().itemId();
                 String label = entry.isLimited()
                         ? base + "  (" + ShopPurchaseRules.remaining(entry,
-                                RaidPlayerRecords.get(player.getUUID()).purchasesOf(entry.id()), now)
+                                record.purchasesOf(entry.id()), now)
                                 + "/" + entry.limit() + " left)"
                         : base;
                 source.sendSuccess(() -> CommandFormat.row("  " + CommandFormat.pad(entry.id(), 20)
@@ -90,7 +92,7 @@ public final class RaidShopCommand {
 
     private static int buy(CommandSourceStack source, String entryId) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
         ServerPlayer player = source.getPlayerOrException();
-        ShopEntry entry = ShopCatalogManager.get().byId().get(entryId);
+        ShopEntry entry = ShopCatalogManager.index().get(entryId);
 
         ShopPurchaseResult result = ShopPurchaseService.purchase(player, entryId);
         if (result.success()) {
