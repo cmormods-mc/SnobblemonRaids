@@ -4,7 +4,9 @@ import com.cobbleraids.config.RaidRarityTier;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
 
 /**
@@ -25,10 +27,11 @@ public record RaidPlayerRecord(
         double totalContribution,
         int bossesCaught,
         int raidsSinceMegaStone,
-        int raidPoints
+        int raidPoints,
+        Set<String> purchases
 ) {
     public static final RaidPlayerRecord EMPTY =
-            new RaidPlayerRecord(0, Map.of(), Map.of(), 0.0, 0, 0, 0);
+            new RaidPlayerRecord(0, Map.of(), Map.of(), 0.0, 0, 0, 0, Set.of());
 
     public RaidPlayerRecord {
         // Built key-first rather than with EnumMap's copy constructor: that one throws
@@ -39,6 +42,10 @@ public record RaidPlayerRecord(
         tiers.putAll(winsByTier);
         winsByTier = Collections.unmodifiableMap(tiers);
         defeatsBySpecies = Collections.unmodifiableMap(new LinkedHashMap<>(defeatsBySpecies));
+        // Insertion-ordered so that saving a record nobody changed produces the same bytes, which
+        // keeps the world save from churning on every autosave.
+        purchases = Collections.unmodifiableSet(
+                new LinkedHashSet<>(purchases == null ? Set.of() : purchases));
     }
 
     public int winsIn(RaidRarityTier tier) {
@@ -66,12 +73,12 @@ public record RaidPlayerRecord(
         LinkedHashMap<ResourceLocation, Integer> species = new LinkedHashMap<>(defeatsBySpecies);
         species.merge(definitionId, 1, Integer::sum);
         return new RaidPlayerRecord(raidsWon + 1, tiers, species,
-                totalContribution + contribution, bossesCaught, raidsSinceMegaStone, raidPoints);
+                totalContribution + contribution, bossesCaught, raidsSinceMegaStone, raidPoints, purchases);
     }
 
     public RaidPlayerRecord withCatch() {
         return new RaidPlayerRecord(raidsWon, winsByTier, defeatsBySpecies, totalContribution,
-                bossesCaught + 1, raidsSinceMegaStone, raidPoints);
+                bossesCaught + 1, raidsSinceMegaStone, raidPoints, purchases);
     }
 
     /**
@@ -85,6 +92,26 @@ public record RaidPlayerRecord(
         long updated = (long) raidPoints + delta;
         int clamped = (int) Math.max(0L, Math.min(Integer.MAX_VALUE, updated));
         return new RaidPlayerRecord(raidsWon, winsByTier, defeatsBySpecies, totalContribution,
-                bossesCaught, raidsSinceMegaStone, clamped);
+                bossesCaught, raidsSinceMegaStone, clamped, purchases);
+    }
+
+    /** Whether a once-per-player shop entry has already been bought. */
+    public boolean hasPurchased(String entryId) {
+        return purchases.contains(entryId);
+    }
+
+    /**
+     * The same record with a once-per-player purchase remembered.
+     *
+     * <p>Only entries marked once_per_player are recorded. Remembering every purchase would grow
+     * this set without bound for a player who buys Poke Balls every evening, and it is written into
+     * the world save.
+     */
+    public RaidPlayerRecord withPurchase(String entryId) {
+        if (purchases.contains(entryId)) return this;
+        LinkedHashSet<String> updated = new LinkedHashSet<>(purchases);
+        updated.add(entryId);
+        return new RaidPlayerRecord(raidsWon, winsByTier, defeatsBySpecies, totalContribution,
+                bossesCaught, raidsSinceMegaStone, raidPoints, updated);
     }
 }

@@ -4,6 +4,7 @@ import com.cobbleraids.RaidLog;
 import com.cobbleraids.config.CobbleRaidsConfig;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.config.RaidBossTraits;
+import com.cobbleraids.pokemon.PokemonStatNames;
 import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.presentation.RaidBossGlowService;
 import com.cobbleraids.presentation.RaidTierPresentation;
@@ -142,13 +143,13 @@ public final class RaidBossSpawner {
             // Jitter is applied only to values a definition actually pinned. An unset stat stays on
             // Cobblemon's own random roll, which is what keeps an empty traits block a no-op.
             traits.ivs().forEach((stat, value) ->
-                    ivs.set(statFor(stat), RaidBossTraits.jitterIv(value, config.ivJitter(), ThreadLocalRandom.current())));
+                    ivs.set(PokemonStatNames.statFor(stat), RaidBossTraits.jitterIv(value, config.ivJitter(), ThreadLocalRandom.current())));
             properties.setIvs(ivs);
             any = true;
         }
         if (!traits.evs().isEmpty()) {
             EVs evs = new EVs();
-            traits.evs().forEach((stat, value) -> evs.set(statFor(stat), value));
+            traits.evs().forEach((stat, value) -> evs.set(PokemonStatNames.statFor(stat), value));
             properties.setEvs(evs);
             any = true;
         }
@@ -159,17 +160,6 @@ public final class RaidBossSpawner {
         }
 
         if (any) properties.apply(pokemon);
-    }
-
-    private static Stat statFor(String name) {
-        return switch (name) {
-            case "hp" -> Stats.HP;
-            case "attack" -> Stats.ATTACK;
-            case "defence" -> Stats.DEFENCE;
-            case "special_attack" -> Stats.SPECIAL_ATTACK;
-            case "special_defence" -> Stats.SPECIAL_DEFENCE;
-            default -> Stats.SPEED;
-        };
     }
 
     private static Gender parseGender(String value, RaidDefinition definition) {
