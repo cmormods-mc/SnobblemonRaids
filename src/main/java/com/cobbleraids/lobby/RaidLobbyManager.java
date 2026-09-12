@@ -8,6 +8,7 @@ import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.config.RaidDefinitionRegistry;
 import com.cobbleraids.raid.RaidFactory;
+import com.cobbleraids.presentation.RaidTierPresentation;
 import com.cobbleraids.raid.RaidLevelPolicy;
 import com.cobbleraids.raid.RaidScalingPolicy;
 import com.cobbleraids.spawn.RaidBossEntityMarker;
@@ -174,16 +175,35 @@ public final class RaidLobbyManager {
                 }
             }
 
-            int level = RaidLevelPolicy.bossLevel(definition.level(), RaidLevelPolicy.average(levels), config);
-            if (level == boss.getPokemon().getLevel()) return;
+            double average = RaidLevelPolicy.average(levels);
+            int level = RaidLevelPolicy.bossLevel(definition.level(), average, config);
+            String party = String.format(java.util.Locale.ROOT, "%.1f", average);
+
+            if (level == boss.getPokemon().getLevel()) {
+                // Logged too. Without this there is no way to tell "decided not to scale" from
+                // "never ran": the common case is a party averaging below the definition, where
+                // the floor wins and nothing visibly happens, and that is exactly the case an
+                // operator wonders about after enabling the feature.
+                RaidLog.info("{} stays at level {}: {} player(s) averaging {} across {} Pokemon",
+                        definition.id(), level, eligible.size(), party, levels.size());
+                return;
+            }
 
             boss.getPokemon().setLevel(level);
             // Level changes max HP, and a boss left on its old current health would enter the
             // battle already damaged -- the same ordering RaidBossSpawner documents.
             boss.getPokemon().setCurrentHealth(boss.getPokemon().getMaxHealth());
-            RaidLog.info("{} scaled to level {} for {} player(s) averaging {}",
-                    definition.id(), level, eligible.size(),
-                    String.format(java.util.Locale.ROOT, "%.1f", RaidLevelPolicy.average(levels)));
+            // Put the level on the nameplate, but only now that it is not the one the definition
+            // advertises. Cobblemon already draws a level on its own entity label, so saying it
+            // again on an unscaled boss would be pure duplication -- whereas a boss that has been
+            // raised to meet the party is the one case where the number is worth stating outright.
+            boss.setCustomName(RaidTierPresentation.styledName(definition.rarityTier(),
+                    Component.literal(boss.getPokemon().getSpecies().getTranslatedName().getString()
+                            + " Lv. " + level)));
+            boss.setCustomNameVisible(true);
+
+            RaidLog.info("{} scaled from level {} to {}: {} player(s) averaging {} across {} Pokemon",
+                    definition.id(), definition.level(), level, eligible.size(), party, levels.size());
         });
     }
 

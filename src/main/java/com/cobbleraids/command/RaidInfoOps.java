@@ -1,5 +1,6 @@
 package com.cobbleraids.command;
 
+import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.config.RaidDefinitionRegistry;
 import com.cobbleraids.presentation.CommandFormat;
@@ -32,7 +33,12 @@ final class RaidInfoOps {
                 .append(Component.literal("  " + definition.rarityTier().displayName())
                         .withStyle(RaidTierPresentation.color(definition.rarityTier()))), false);
 
-        source.sendSuccess(() -> CommandFormat.row("Level " + definition.level()
+        // "75+" rather than "75" when dynamic levels are on: the definition's level is a floor
+        // that a strong party raises, so stating it bare would be wrong for half the raids run.
+        String level = CobbleRaidsConfigManager.get().dynamicLevel().enabled()
+                ? definition.level() + "+"
+                : String.valueOf(definition.level());
+        source.sendSuccess(() -> CommandFormat.row("Level " + level
                 + " · up to " + definition.recruitment().maxPlayers() + " players"
                 + " · " + definition.recruitment().durationSeconds() + "s to join"), false);
 
