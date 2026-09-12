@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.75-raid-points'
+version = '0.8.76-points-placeholder'
 group = 'com.cobbleraids'
 
 base {
@@ -33,6 +33,9 @@ dependencies {
     // Exact public releases used by the live-tested runtime builds.
     modImplementation 'maven.modrinth:MdwFAVRL:kF7CvxTo' // Cobblemon 1.7.3
     modImplementation 'maven.modrinth:eTmjDQ2A:azTJ3S8C' // SkiesGUIs 1.8.1
+    // Compile-only: the %cobbleraids:points% token is published when this is installed and
+    // skipped when it is not, so it must never be pulled in as a hard dependency.
+    modCompileOnly 'maven.modrinth:eXts2L7r:U5bhVym2' // Text Placeholder API 2.4.2+1.21
 
     compileOnly 'org.jetbrains.kotlin:kotlin-stdlib:2.2.20'
 
