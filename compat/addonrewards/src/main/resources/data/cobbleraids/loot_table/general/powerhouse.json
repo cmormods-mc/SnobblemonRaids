@@ -7,27 +7,12 @@
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:base/powerhouse",
-          "weight": 35
+          "weight": 53
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:general/leaf/cards",
-          "weight": 20
-        },
-        {
-          "type": "minecraft:loot_table",
-          "value": "cobbleraids:general/leaf/capsule_materials",
-          "weight": 20
-        },
-        {
-          "type": "minecraft:loot_table",
-          "value": "cobbleraids:general/leaf/safari_consumables",
-          "weight": 16
-        },
-        {
-          "type": "minecraft:loot_table",
-          "value": "cobbleraids:general/leaf/riding_consumables",
-          "weight": 9
+          "weight": 47
         }
       ]
     }

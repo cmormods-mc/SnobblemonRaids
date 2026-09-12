@@ -106,7 +106,11 @@ tasks.register('addonRewardsJar', Jar) {
     // forty-five rows of balls, EV items, upgraded medicine and held items, and base's share of a
     // bundle fell from 58-73% to 39-50%. The graph shape is unchanged, so this is a minor bump --
     // but the payouts are not comparable, which is why the filename has to differ.
-    archiveVersion = '2.1.0-curated-base'
+    //
+    // 2.2.0-no-filler: the capsule-materials, safari and riding leaves are gone -- two, two and one
+    // entry respectively, and between them 40-54% of every general selection. General is now base
+    // plus card packs. Also drops eight dead addons/* tables the 2.0.0 rebuild left behind.
+    archiveVersion = '2.2.0-no-filler'
     archiveClassifier = ''
     from sourceSets.addonRewards.output
 }

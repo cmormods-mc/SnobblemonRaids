@@ -7,27 +7,12 @@
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:base/starter",
-          "weight": 40
+          "weight": 58
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:general/leaf/cards",
-          "weight": 20
-        },
-        {
-          "type": "minecraft:loot_table",
-          "value": "cobbleraids:general/leaf/capsule_materials",
-          "weight": 16
-        },
-        {
-          "type": "minecraft:loot_table",
-          "value": "cobbleraids:general/leaf/safari_consumables",
-          "weight": 14
-        },
-        {
-          "type": "minecraft:loot_table",
-          "value": "cobbleraids:general/leaf/riding_consumables",
-          "weight": 10
+          "weight": 42
         }
       ]
     }
