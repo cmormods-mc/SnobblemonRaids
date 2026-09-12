@@ -3,6 +3,7 @@ package com.cobbleraids.command;
 import com.cobbleraids.presentation.CommandFormat;
 import com.cobbleraids.reward.points.RaidPointsStore;
 import com.cobbleraids.shop.ShopCatalog;
+import com.cobbleraids.shop.RaidShopGateway;
 import com.cobbleraids.shop.ShopCatalogManager;
 import com.cobbleraids.shop.ShopEntry;
 import com.cobbleraids.shop.ShopPageView;
@@ -44,6 +45,8 @@ public final class RaidShopCommand {
                                                 .suggests(ENTRY_IDS)
                                                 .executes(context -> buy(context.getSource(),
                                                         StringArgumentType.getString(context, "entry")))))
+                                .then(Commands.literal("open")
+                                        .executes(context -> open(context.getSource())))
                                 .then(Commands.literal("reload")
                                         .requires(source -> source.hasPermission(2))
                                         .executes(context -> reload(context.getSource()))))
@@ -96,6 +99,11 @@ public final class RaidShopCommand {
         }
         source.sendFailure(Component.literal(result.message()));
         return 0;
+    }
+
+    private static int open(CommandSourceStack source) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        RaidShopGateway.open(source.getPlayerOrException());
+        return 1;
     }
 
     private static int reload(CommandSourceStack source) {

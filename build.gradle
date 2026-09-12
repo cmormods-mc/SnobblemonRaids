@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.77-raid-shop'
+version = '0.8.78-shop-screen'
 group = 'com.cobbleraids'
 
 base {
