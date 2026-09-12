@@ -80,30 +80,85 @@ Category weights total 100 per tier and apply to every general selection, standa
 
 | Category | starter | powerhouse | legendary | mythical |
 |---|---:|---:|---:|---:|
-| base/<tier> | 70% | 60% | 60% | 55% |
-| general/leaf/cards | 10% | 12% | 10% | 10% |
-| general/leaf/capsule_materials | 8% | 12% | 15% | 20% |
-| general/leaf/safari_consumables | 7% | 10% | 10% | 10% |
-| general/leaf/riding_consumables | 5% | 6% | 5% | 5% |
+| base/<tier> | 40% | 35% | 33% | 30% |
+| general/leaf/cards | 20% | 20% | 17% | 16% |
+| general/leaf/capsule_materials | 16% | 20% | 25% | 31% |
+| general/leaf/safari_consumables | 14% | 16% | 17% | 16% |
+| general/leaf/riding_consumables | 10% | 9% | 8% | 7% |
 
 A category at weight *w* appears at least once in a bundle with probability `1 - (1 - w/100)^(2+B)`. For the 10%% card category: 19.00%% at B=0, 27.10%% at B=1, 34.39%% at B=2, 40.95%% at B=3.
 
 ## Base catalog
 
-The fallback of both the general and specialty pools. Weights total 100 and are identical across tiers; only the quantities differ.
+The fallback of both the general and specialty pools. Each tier's weights total 1000; a row at weight 0 is not in that tier's pool at all. Cells read *weight (quantity)*.
 
-| Item | Weight | starter | powerhouse | legendary | mythical |
-|---|---:|---:|---:|---:|---:|
-| cobblemon:poke_ball | 24 | 4 | 4 | 4 | 4 |
-| cobblemon:great_ball | 20 | 2 | 3 | 3 | 4 |
-| cobblemon:ultra_ball | 6 | 1 | 1 | 2 | 2 |
-| cobblemon:potion | 16 | 2 | 2 | 2 | 2 |
-| cobblemon:super_potion | 10 | 1 | 2 | 2 | 2 |
-| cobblemon:hyper_potion | 2 | 1 | 1 | 1 | 1 |
-| cobblemon:revive | 4 | 1 | 1 | 1 | 1 |
-| cobblemon:full_heal | 4 | 1 | 1 | 1 | 1 |
-| cobblemon:exp_candy_s | 10 | 2 | 2 | 3 | 3 |
-| cobblemon:exp_candy_m | 4 | 1 | 1 | 2 | 2 |
+| Item | starter | powerhouse | legendary | mythical |
+|---|---:|---:|---:|---:|
+| cobblemon:ultra_ball | 80 (x2) | 60 (x3) | 50 (x3) | 40 (x4) |
+| cobblemon:dusk_ball | 50 (x1) | 50 (x2) | 40 (x2) | 30 (x3) |
+| cobblemon:quick_ball | 50 (x1) | 50 (x2) | 40 (x2) | 30 (x3) |
+| cobblemon:timer_ball | 40 (x1) | 40 (x2) | 30 (x2) | 20 (x3) |
+| cobblemon:net_ball | 30 (x1) | 30 (x1) | 20 (x2) | 20 (x2) |
+| cobblemon:repeat_ball | 30 (x1) | 30 (x1) | 20 (x2) | 20 (x2) |
+| cobblemon:nest_ball | 30 (x1) | 10 (x1) | 10 (x2) | 10 (x2) |
+| cobblemon:heal_ball | 30 (x1) | 20 (x2) | 20 (x2) | 10 (x2) |
+| cobblemon:dive_ball | 20 (x1) | 20 (x1) | 20 (x2) | 10 (x2) |
+| cobblemon:luxury_ball | 20 (x1) | 20 (x1) | 10 (x1) | 10 (x2) |
+| cobblemon:level_ball | 10 (x1) | 10 (x1) | 10 (x1) | 10 (x2) |
+| cobblemon:moon_ball | 10 (x1) | 10 (x1) | 10 (x1) | 10 (x2) |
+| cobblemon:beast_ball | -- | -- | 12 (x1) | 20 (x1) |
+| cobblemon:dream_ball | -- | -- | 8 (x1) | 18 (x1) |
+| cobblemon:master_ball | -- | -- | -- | 2 (x1) |
+| cobblemon:protein | 30 (x1) | 32 (x2) | 34 (x2) | 36 (x3) |
+| cobblemon:iron | 30 (x1) | 32 (x2) | 34 (x2) | 36 (x3) |
+| cobblemon:calcium | 30 (x1) | 32 (x2) | 34 (x2) | 36 (x3) |
+| cobblemon:zinc | 30 (x1) | 32 (x2) | 34 (x2) | 36 (x3) |
+| cobblemon:carbos | 30 (x1) | 32 (x2) | 34 (x2) | 36 (x3) |
+| cobblemon:hp_up | 30 (x1) | 32 (x2) | 34 (x2) | 36 (x3) |
+| cobblemon:power_weight | 10 (x1) | 14 (x1) | 16 (x1) | 18 (x1) |
+| cobblemon:power_bracer | 10 (x1) | 14 (x1) | 16 (x1) | 18 (x1) |
+| cobblemon:power_belt | 10 (x1) | 14 (x1) | 16 (x1) | 18 (x1) |
+| cobblemon:power_lens | 10 (x1) | 14 (x1) | 16 (x1) | 18 (x1) |
+| cobblemon:power_band | 10 (x1) | 14 (x1) | 16 (x1) | 18 (x1) |
+| cobblemon:power_anklet | 10 (x1) | 14 (x1) | 16 (x1) | 18 (x1) |
+| cobblemon:revive | 40 (x1) | 32 (x1) | 24 (x2) | 16 (x2) |
+| cobblemon:max_potion | 40 (x1) | 32 (x2) | 24 (x2) | 18 (x2) |
+| cobblemon:ether | 30 (x1) | 24 (x2) | 18 (x2) | 14 (x2) |
+| cobblemon:max_revive | 20 (x1) | 20 (x1) | 20 (x1) | 18 (x2) |
+| cobblemon:full_restore | 16 (x1) | 16 (x1) | 16 (x2) | 16 (x2) |
+| cobblemon:max_elixir | 10 (x1) | 10 (x1) | 10 (x1) | 10 (x2) |
+| cobblemon:eviolite | 17 (x1) | 20 (x1) | 24 (x1) | 27 (x1) |
+| cobblemon:expert_belt | 17 (x1) | 20 (x1) | 24 (x1) | 27 (x1) |
+| cobblemon:weakness_policy | 17 (x1) | 20 (x1) | 24 (x1) | 27 (x1) |
+| cobblemon:heavy_duty_boots | 17 (x1) | 20 (x1) | 24 (x1) | 27 (x1) |
+| cobblemon:loaded_dice | 17 (x1) | 20 (x1) | 24 (x1) | 27 (x1) |
+| cobblemon:covert_cloak | 17 (x1) | 20 (x1) | 24 (x1) | 27 (x1) |
+| cobblemon:air_balloon | 17 (x1) | 20 (x1) | 24 (x1) | 27 (x1) |
+| cobblemon:scope_lens | 17 (x1) | 20 (x1) | 24 (x1) | 27 (x1) |
+| cobblemon:razor_claw | 17 (x1) | 20 (x1) | 24 (x1) | 27 (x1) |
+| cobblemon:muscle_band | 17 (x1) | 20 (x1) | 24 (x1) | 27 (x1) |
+| cobblemon:wise_glasses | 17 (x1) | 20 (x1) | 24 (x1) | 27 (x1) |
+| cobblemon:light_clay | 17 (x1) | 20 (x1) | 24 (x1) | 27 (x1) |
+
+### Category budgets
+
+| Category | starter | powerhouse | legendary | mythical |
+|---|---:|---:|---:|---:|
+| balls | 400 (40.0%) | 350 (35.0%) | 300 (30.0%) | 260 (26.0%) |
+| stat items (vitamins + power) | 240 (24.0%) | 276 (27.6%) | 300 (30.0%) | 324 (32.4%) |
+| medicine | 156 (15.6%) | 134 (13.4%) | 112 (11.2%) | 92 (9.2%) |
+| held items | 204 (20.4%) | 240 (24.0%) | 288 (28.8%) | 324 (32.4%) |
+
+### What a bundle actually contains
+
+Base is reached from a general selection at its category weight and from the specialty selection through the fallback, so its share of a bundle is higher than either figure alone. At B=1 (three general selections plus one specialty), on a boss with no Mega Stone:
+
+| Tier | base per bundle | share | Master Ball per bundle |
+|---|---:|---:|---:|
+| starter | 2.02 of 4 | 50% | -- |
+| powerhouse | 1.89 of 4 | 47% | -- |
+| legendary | 1.73 of 4 | 43% | -- |
+| mythical | 1.56 of 4 | 39% | 0.311% (1 in 321) |
 
 ## Resolved against the pack
 

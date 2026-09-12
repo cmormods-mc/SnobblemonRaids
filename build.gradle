@@ -101,7 +101,12 @@ tasks.register('addonRewardsJar', Jar) {
     // vitamins leaf are gone, and the policy economy's base/general/specialty graph replaced them.
     // Shipping that under the old filename would leave two jars nobody can tell apart, which is
     // the same trap identically named core builds caused.
-    archiveVersion = '2.0.0'
+    //
+    // 2.1.0-curated-base: the base catalog was rebuilt. Ten rows of Poke Balls and Potions became
+    // forty-five rows of balls, EV items, upgraded medicine and held items, and base's share of a
+    // bundle fell from 58-73% to 39-50%. The graph shape is unchanged, so this is a minor bump --
+    // but the payouts are not comparable, which is why the filename has to differ.
+    archiveVersion = '2.1.0-curated-base'
     archiveClassifier = ''
     from sourceSets.addonRewards.output
 }
