@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.90-key-art-interim'
+version = '0.8.91-key-shadow-floor'
 group = 'com.cobbleraids'
 
 base {
