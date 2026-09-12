@@ -1,5 +1,6 @@
 package com.cobbleraids.command;
 
+import com.cobbleraids.catching.RaidPlayerRecords;
 import com.cobbleraids.presentation.CommandFormat;
 import com.cobbleraids.reward.points.RaidPointsStore;
 import com.cobbleraids.shop.ShopCatalog;
@@ -57,6 +58,7 @@ public final class RaidShopCommand {
         ServerPlayer player = source.getPlayerOrException();
         ShopCatalog catalog = ShopCatalogManager.get();
         int balance = RaidPointsStore.balance(player.getUUID());
+        java.time.Instant now = java.time.Instant.now();
 
         source.sendSuccess(() -> CommandFormat.header("Raid Shop")
                 .append(Component.literal("  " + balance + " RP").withStyle(ChatFormatting.AQUA)), false);
@@ -71,9 +73,14 @@ public final class RaidShopCommand {
                 // Coloured by what the player can actually do with it right now, so a long list
                 // reads as a shortlist.
                 ChatFormatting colour = balance >= entry.cost() ? ChatFormatting.WHITE : ChatFormatting.DARK_GRAY;
-                String label = entry.isPokemon()
+                String base = entry.isPokemon()
                         ? entry.pokemon().displayName() + " Lv." + entry.pokemon().level()
                         : entry.item().count() + "x " + entry.item().itemId();
+                String label = entry.isLimited()
+                        ? base + "  (" + ShopPurchaseRules.remaining(entry,
+                                RaidPlayerRecords.get(player.getUUID()).purchasesOf(entry.id()), now)
+                                + "/" + entry.limit() + " left)"
+                        : base;
                 source.sendSuccess(() -> CommandFormat.row("  " + CommandFormat.pad(entry.id(), 20)
                         + CommandFormat.pad(entry.cost() + " RP", 10) + label).withStyle(colour), false);
             }
@@ -91,6 +98,10 @@ public final class RaidShopCommand {
             source.sendSuccess(() -> Component.literal("Balance: "
                     + RaidPointsStore.balance(player.getUUID()) + " RP").withStyle(ChatFormatting.AQUA), false);
             return 1;
+        }
+        if (result == ShopPurchaseResult.LIMIT_REACHED) {
+            source.sendFailure(Component.literal(ShopPurchaseRules.limitMessage(entry)));
+            return 0;
         }
         if (result == ShopPurchaseResult.NOT_ENOUGH_POINTS) {
             int shortfall = ShopPurchaseRules.shortfall(entry, RaidPointsStore.balance(player.getUUID()));

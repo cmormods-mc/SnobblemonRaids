@@ -168,7 +168,7 @@ public final class RaidShopScreen extends Screen {
                 graphics.fill(x, y, x + cell, y + cell, 0xDD0E1620);
                 continue;
             }
-            boolean affordable = page.balance() >= entry.cost() && !entry.owned();
+            boolean affordable = page.balance() >= entry.cost() && !entry.soldOut();
             graphics.fill(x, y, x + cell, y + cell, 0xFF12243A);
             graphics.renderOutline(x, y, cell, cell,
                     slot == hovered ? 0xFF5ADCFF : (affordable ? 0xFF2678B4 : 0xFF23384B));
@@ -178,6 +178,7 @@ public final class RaidShopScreen extends Screen {
             // 0x88 this started on, the item disappeared entirely and the cell looked broken.
             if (!affordable) graphics.fill(x + 1, y + 1, x + cell - 1, y + cell - 1, 0x55070A10);
             drawPrice(graphics, entry, x, y, cell, affordable);
+            drawStock(graphics, entry, x, y, cell);
         }
         if (hovered >= 0 && hovered < entries.size()) drawTooltip(graphics, entries.get(hovered), mouseX, mouseY);
     }
@@ -210,10 +211,24 @@ public final class RaidShopScreen extends Screen {
 
     private void drawPrice(GuiGraphics graphics, ShopEntryPayload entry, int x, int y, int cell,
                            boolean affordable) {
-        String price = entry.owned() ? "OWNED" : String.valueOf(entry.cost());
-        int colour = entry.owned() ? 0xFF9AE6A0 : (affordable ? 0xFF82EBFF : 0xFFFF8A8A);
+        String price = entry.soldOut() ? "OUT" : String.valueOf(entry.cost());
+        int colour = entry.soldOut() ? 0xFF9AE6A0 : (affordable ? 0xFF82EBFF : 0xFFFF8A8A);
         graphics.drawString(font, price, x + cell - font.width(price) - 3,
                 y + cell - font.lineHeight - 2, colour, true);
+    }
+
+    /**
+     * The "3/5" in the corner of a limited cell.
+     *
+     * <p>Drawn as what is left over what was allowed, not as a bare number, because "3" alone reads
+     * as a stack count. Unlimited entries show nothing at all -- a counter on everything would make
+     * the limited ones invisible.
+     */
+    private void drawStock(GuiGraphics graphics, ShopEntryPayload entry, int x, int y, int cell) {
+        if (!entry.isLimited()) return;
+        String stock = Math.max(0, entry.remaining()) + "/" + entry.limit();
+        graphics.drawString(font, stock, x + 3, y + cell - font.lineHeight - 2,
+                entry.soldOut() ? 0xFF6F8497 : 0xFFB8D8EA, true);
     }
 
     private void drawTooltip(GuiGraphics graphics, ShopEntryPayload entry, int mouseX, int mouseY) {
@@ -227,14 +242,22 @@ public final class RaidShopScreen extends Screen {
             lines.add(stack.getHoverName());
             lines.add(Component.literal("x" + entry.count()).withStyle(ChatFormatting.GRAY));
         }
-        if (entry.owned()) {
-            lines.add(Component.literal("Already purchased").withStyle(ChatFormatting.GREEN));
+        if (entry.soldOut()) {
+            lines.add(Component.literal(entry.limit() == 1
+                            ? "Already purchased"
+                            : "All " + entry.limit() + " bought")
+                    .withStyle(ChatFormatting.GREEN));
+            lines.add(Component.literal("Resets daily").withStyle(ChatFormatting.DARK_GRAY));
         } else {
             lines.add(Component.literal(entry.cost() + " RP").withStyle(
                     page.balance() >= entry.cost() ? ChatFormatting.AQUA : ChatFormatting.RED));
             if (page.balance() < entry.cost()) {
                 lines.add(Component.literal((entry.cost() - page.balance()) + " RP short")
                         .withStyle(ChatFormatting.DARK_RED));
+            }
+            if (entry.isLimited()) {
+                lines.add(Component.literal(entry.remaining() + " of " + entry.limit() + " left")
+                        .withStyle(ChatFormatting.GRAY));
             }
         }
         graphics.renderComponentTooltip(font, lines, mouseX, mouseY);

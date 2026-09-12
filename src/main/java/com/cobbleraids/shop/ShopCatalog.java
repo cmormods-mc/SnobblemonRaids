@@ -26,10 +26,10 @@ import java.util.Set;
  * <p>Free of Minecraft types, so the whole catalogue -- parsing, paging and validation -- is
  * testable without a server.
  */
-public record ShopCatalog(int version, int perPage, List<ShopSection> sections) {
+public record ShopCatalog(int version, int perPage, ShopLimits limits, List<ShopSection> sections) {
 
     /** Bumped when the schema changes in a way an older file cannot be read as. */
-    public static final int CURRENT_VERSION = 1;
+    public static final int CURRENT_VERSION = 2;
 
     /** The grid is nine by eight, so a page can never usefully hold more than this. */
     public static final int MAX_PER_PAGE = 72;
@@ -38,6 +38,7 @@ public record ShopCatalog(int version, int perPage, List<ShopSection> sections) 
         if (perPage < 1 || perPage > MAX_PER_PAGE) {
             throw new IllegalArgumentException("per_page " + perPage + " is outside 1.." + MAX_PER_PAGE);
         }
+        if (limits == null) limits = ShopLimits.DEFAULTS;
         sections = List.copyOf(sections == null ? List.of() : sections);
     }
 
@@ -84,9 +85,8 @@ public record ShopCatalog(int version, int perPage, List<ShopSection> sections) 
                                 new ShopPokemonGift("dratini", 15, false, "adamant", null, null, null, null,
                                         null,
                                         Map.of("hp", 31, "attack", 31, "speed", 31),
-                                        Map.of()),
-                                true))));
-        return new ShopCatalog(CURRENT_VERSION, MAX_PER_PAGE, sections);
+                                        Map.of())))));
+        return new ShopCatalog(CURRENT_VERSION, MAX_PER_PAGE, ShopLimits.DEFAULTS, sections);
     }
 
     /**
@@ -97,6 +97,7 @@ public record ShopCatalog(int version, int perPage, List<ShopSection> sections) 
      */
     public static ShopCatalog fromJson(JsonObject root) {
         int version = root.has("version") ? root.get("version").getAsInt() : CURRENT_VERSION;
+        ShopLimits limits = ShopLimits.fromJson(root);
         int perPage = root.has("per_page") ? root.get("per_page").getAsInt() : MAX_PER_PAGE;
         if (perPage < 1 || perPage > MAX_PER_PAGE) {
             RaidLog.error("shop catalogue: per_page " + perPage + " is outside 1.." + MAX_PER_PAGE
@@ -115,7 +116,7 @@ public record ShopCatalog(int version, int perPage, List<ShopSection> sections) 
                 RaidLog.error("shop catalogue: dropping a section that is not an object");
                 continue;
             }
-            ShopSection section = ShopSection.fromJson(element.getAsJsonObject());
+            ShopSection section = ShopSection.fromJson(element.getAsJsonObject(), limits);
             if (section == null) continue;
             if (!seenSections.add(section.id())) {
                 RaidLog.error("shop catalogue: dropping a second section called " + section.id());
@@ -135,13 +136,14 @@ public record ShopCatalog(int version, int perPage, List<ShopSection> sections) 
             }
             sections.add(new ShopSection(section.id(), section.title(), kept));
         }
-        return new ShopCatalog(version, perPage, sections);
+        return new ShopCatalog(version, perPage, limits, sections);
     }
 
     public JsonObject toJson() {
         JsonObject root = new JsonObject();
         root.addProperty("version", version);
         root.addProperty("per_page", perPage);
+        root.add("limits", limits.toJson());
         JsonArray array = new JsonArray();
         sections.forEach(section -> array.add(section.toJson()));
         root.add("sections", array);

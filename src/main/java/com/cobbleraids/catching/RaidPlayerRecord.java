@@ -4,9 +4,7 @@ import com.cobbleraids.config.RaidRarityTier;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
 
 /**
@@ -28,10 +26,10 @@ public record RaidPlayerRecord(
         int bossesCaught,
         int raidsSinceMegaStone,
         int raidPoints,
-        Set<String> purchases
+        Map<String, RaidPurchaseTally> purchases
 ) {
     public static final RaidPlayerRecord EMPTY =
-            new RaidPlayerRecord(0, Map.of(), Map.of(), 0.0, 0, 0, 0, Set.of());
+            new RaidPlayerRecord(0, Map.of(), Map.of(), 0.0, 0, 0, 0, Map.of());
 
     public RaidPlayerRecord {
         // Built key-first rather than with EnumMap's copy constructor: that one throws
@@ -44,8 +42,8 @@ public record RaidPlayerRecord(
         defeatsBySpecies = Collections.unmodifiableMap(new LinkedHashMap<>(defeatsBySpecies));
         // Insertion-ordered so that saving a record nobody changed produces the same bytes, which
         // keeps the world save from churning on every autosave.
-        purchases = Collections.unmodifiableSet(
-                new LinkedHashSet<>(purchases == null ? Set.of() : purchases));
+        purchases = Collections.unmodifiableMap(
+                new LinkedHashMap<>(purchases == null ? Map.of() : purchases));
     }
 
     public int winsIn(RaidRarityTier tier) {
@@ -95,23 +93,38 @@ public record RaidPlayerRecord(
                 bossesCaught, raidsSinceMegaStone, clamped, purchases);
     }
 
-    /** Whether a once-per-player shop entry has already been bought. */
-    public boolean hasPurchased(String entryId) {
-        return purchases.contains(entryId);
+    /** How many times a limited entry has been bought, and on which day. Never null. */
+    public RaidPurchaseTally purchasesOf(String entryId) {
+        return purchases.getOrDefault(entryId, RaidPurchaseTally.NONE);
     }
 
     /**
-     * The same record with a once-per-player purchase remembered.
+     * The same record with one more purchase of {@code entryId} counted against {@code window}.
      *
-     * <p>Only entries marked once_per_player are recorded. Remembering every purchase would grow
-     * this set without bound for a player who buys Poke Balls every evening, and it is written into
-     * the world save.
+     * <p>Only limited entries are recorded. Counting an unlimited one would grow this map without
+     * bound for a player who buys Poke Balls every evening, and it is written into the world save.
      */
-    public RaidPlayerRecord withPurchase(String entryId) {
-        if (purchases.contains(entryId)) return this;
-        LinkedHashSet<String> updated = new LinkedHashSet<>(purchases);
-        updated.add(entryId);
+    public RaidPlayerRecord withPurchase(String entryId, long window) {
+        LinkedHashMap<String, RaidPurchaseTally> updated = new LinkedHashMap<>(purchases);
+        updated.put(entryId, purchasesOf(entryId).increment(window));
         return new RaidPlayerRecord(raidsWon, winsByTier, defeatsBySpecies, totalContribution,
                 bossesCaught, raidsSinceMegaStone, raidPoints, updated);
+    }
+
+    /**
+     * Drops tallies whose window has passed, so a long-lived record does not accumulate a row for
+     * every daily entry a player has ever touched.
+     *
+     * <p>Purely housekeeping: {@link RaidPurchaseTally#countOn} already reads a stale tally as zero,
+     * so this changes what is stored and never what is allowed.
+     */
+    public RaidPlayerRecord prunePurchases(long window) {
+        LinkedHashMap<String, RaidPurchaseTally> kept = new LinkedHashMap<>();
+        purchases.forEach((id, tally) -> {
+            if (tally.day() == window || tally.day() == 0L) kept.put(id, tally);
+        });
+        return kept.size() == purchases.size() ? this
+                : new RaidPlayerRecord(raidsWon, winsByTier, defeatsBySpecies, totalContribution,
+                        bossesCaught, raidsSinceMegaStone, raidPoints, kept);
     }
 }

@@ -64,14 +64,16 @@ class ShopCatalogTest {
         ShopPokemonGift gift = new ShopPokemonGift("dratini", 15, true, "adamant", "shed-skin",
                 "male", "normal", "dragon", "cobblemon:life_orb",
                 Map.of("hp", 31, "speed", 30), Map.of("attack", 252));
-        ShopCatalog catalog = new ShopCatalog(1, 72, List.of(
-                new ShopSection("mons", "Pokemon", List.of(ShopEntry.ofPokemon("d", 100, gift, true)))));
+        ShopCatalog catalog = new ShopCatalog(1, 72, ShopLimits.DEFAULTS, List.of(
+                new ShopSection("mons", "Pokemon", List.of(
+                        ShopEntry.ofPokemon("d", 100, gift, 1, ShopResetPeriod.NEVER)))));
 
         ShopCatalog reloaded = ShopCatalog.fromJson(catalog.toJson());
         ShopPokemonGift back = reloaded.byId().get("d").pokemon();
 
         assertEquals(gift, back);
-        assertTrue(reloaded.byId().get("d").oncePerPlayer());
+        assertEquals(1, reloaded.byId().get("d").limit());
+        assertEquals(ShopResetPeriod.NEVER, reloaded.byId().get("d").reset());
         assertEquals("Shiny Dratini", back.displayName());
     }
 
@@ -84,8 +86,8 @@ class ShopCatalogTest {
         ShopPokemonGift gift = new ShopPokemonGift("dratini", 50, false, null, null, null, null, null,
                 "cobblemon:focus_sash", Map.of(), Map.of());
 
-        ShopCatalog catalog = ShopCatalog.fromJson(new ShopCatalog(1, 72, List.of(
-                new ShopSection("mons", "Pokemon", List.of(ShopEntry.ofPokemon("d", 100, gift, false)))))
+        ShopCatalog catalog = ShopCatalog.fromJson(new ShopCatalog(1, 72, ShopLimits.DEFAULTS, List.of(
+                new ShopSection("mons", "Pokemon", List.of(ShopEntry.ofPokemon("d", 100, gift)))))
                 .toJson());
 
         assertEquals("cobblemon:focus_sash", catalog.byId().get("d").pokemon().heldItem());
@@ -181,7 +183,7 @@ class ShopCatalogTest {
     void sectionsStartNewPages() {
         // So that adding one item to the first shelf does not shift every later page along and
         // change what a player's remembered page number lands on.
-        ShopCatalog catalog = new ShopCatalog(1, 4, List.of(
+        ShopCatalog catalog = new ShopCatalog(1, 4, ShopLimits.DEFAULTS, List.of(
                 new ShopSection("a", "A", entries("a", 5)),
                 new ShopSection("b", "B", entries("b", 2))));
 
@@ -200,7 +202,7 @@ class ShopCatalogTest {
     @Test
     @DisplayName("an empty section still gets a page, so an unstocked shelf is visible")
     void emptySectionStillHasAPage() {
-        ShopCatalog catalog = new ShopCatalog(1, 72, List.of(new ShopSection("a", "A", List.of())));
+        ShopCatalog catalog = new ShopCatalog(1, 72, ShopLimits.DEFAULTS, List.of(new ShopSection("a", "A", List.of())));
 
         assertEquals(1, catalog.pages().size());
         assertEquals(0, catalog.pages().get(0).entries().size());
@@ -224,7 +226,7 @@ class ShopCatalogTest {
     @Test
     @DisplayName("a click past the end of a page buys nothing")
     void slotsPastTheEndAreEmpty() {
-        ShopCatalog catalog = new ShopCatalog(1, 72, List.of(
+        ShopCatalog catalog = new ShopCatalog(1, 72, ShopLimits.DEFAULTS, List.of(
                 new ShopSection("a", "A", entries("a", 3))));
         ShopPageView page = catalog.pages().get(0);
 
@@ -241,10 +243,16 @@ class ShopCatalogTest {
                 null, Map.of(), Map.of());
 
         assertThrows(IllegalArgumentException.class,
-                () -> new ShopEntry("x", 10, false, new ShopItemGift("cobblemon:poke_ball", 1), gift));
-        assertThrows(IllegalArgumentException.class, () -> new ShopEntry("x", 10, false, null, null));
-        assertThrows(IllegalArgumentException.class, () -> new ShopEntry("Bad Id", 10, false, null, gift));
-        assertThrows(IllegalArgumentException.class, () -> new ShopEntry("x", -1, false, null, gift));
+                () -> new ShopEntry("x", 10, 1, ShopResetPeriod.DAILY,
+                        new ShopItemGift("cobblemon:poke_ball", 1), gift));
+        assertThrows(IllegalArgumentException.class,
+                () -> new ShopEntry("x", 10, 1, ShopResetPeriod.DAILY, null, null));
+        assertThrows(IllegalArgumentException.class,
+                () -> new ShopEntry("Bad Id", 10, 1, ShopResetPeriod.DAILY, null, gift));
+        assertThrows(IllegalArgumentException.class,
+                () -> new ShopEntry("x", -1, 1, ShopResetPeriod.DAILY, null, gift));
+        assertThrows(IllegalArgumentException.class,
+                () -> new ShopEntry("x", 10, -1, ShopResetPeriod.DAILY, null, gift));
     }
 
     @Test
@@ -278,5 +286,111 @@ class ShopCatalogTest {
         return java.util.stream.IntStream.range(0, count)
                 .mapToObj(index -> ShopEntry.ofItem(prefix + "_" + index, 10, "cobblemon:poke_ball", 1))
                 .collect(Collectors.toList());
+    }
+
+    @Test
+    @DisplayName("limits default by payload type: one Pokemon, five items, resetting daily")
+    void limitDefaultsDifferByType() {
+        ShopCatalog catalog = ShopCatalog.fromJson(parse("""
+                {
+                  "sections": [{"id": "a", "title": "A", "entries": [
+                    {"id": "ball", "cost": 10, "item": "cobblemon:poke_ball"},
+                    {"id": "mon", "cost": 500, "species": "dratini", "level": 5}
+                  ]}]
+                }
+                """));
+
+        assertEquals(5, catalog.byId().get("ball").limit());
+        assertEquals(1, catalog.byId().get("mon").limit());
+        assertEquals(ShopResetPeriod.DAILY, catalog.byId().get("ball").reset());
+        assertEquals(ShopResetPeriod.DAILY, catalog.byId().get("mon").reset());
+    }
+
+    @Test
+    @DisplayName("an entry overrides the catalogue defaults, and the catalogue overrides the shipped ones")
+    void limitsOverrideInOrder() {
+        ShopCatalog catalog = ShopCatalog.fromJson(parse("""
+                {
+                  "limits": {"pokemon": 2, "item": 10, "reset": "never"},
+                  "sections": [{"id": "a", "title": "A", "entries": [
+                    {"id": "inherits", "cost": 10, "item": "cobblemon:poke_ball"},
+                    {"id": "overrides", "cost": 10, "item": "cobblemon:great_ball",
+                     "limit": 3, "reset": "daily"},
+                    {"id": "mon", "cost": 500, "species": "dratini", "level": 5}
+                  ]}]
+                }
+                """));
+
+        assertEquals(10, catalog.byId().get("inherits").limit());
+        assertEquals(ShopResetPeriod.NEVER, catalog.byId().get("inherits").reset());
+        assertEquals(3, catalog.byId().get("overrides").limit());
+        assertEquals(ShopResetPeriod.DAILY, catalog.byId().get("overrides").reset());
+        assertEquals(2, catalog.byId().get("mon").limit());
+    }
+
+    @Test
+    @DisplayName("a catalogue written before limits existed keeps meaning what it meant")
+    void legacyOncePerPlayerStillMeansOnceEver() {
+        // once_per_player meant one for ever. Reading it as one a day would quietly hand every
+        // player an unlimited supply of what an operator had marked unique.
+        ShopCatalog catalog = ShopCatalog.fromJson(parse("""
+                {
+                  "sections": [{"id": "a", "title": "A", "entries": [
+                    {"id": "unique", "cost": 9000, "species": "arceus", "level": 100,
+                     "once_per_player": true}
+                  ]}]
+                }
+                """));
+
+        assertEquals(1, catalog.byId().get("unique").limit());
+        assertEquals(ShopResetPeriod.NEVER, catalog.byId().get("unique").reset());
+    }
+
+    @Test
+    @DisplayName("zero means unlimited, and says so")
+    void zeroLimitIsUnlimited() {
+        ShopCatalog catalog = ShopCatalog.fromJson(parse("""
+                {
+                  "sections": [{"id": "a", "title": "A", "entries": [
+                    {"id": "endless", "cost": 1, "item": "cobblemon:poke_ball", "limit": 0}
+                  ]}]
+                }
+                """));
+
+        assertFalse(catalog.byId().get("endless").isLimited());
+        assertEquals(Integer.MAX_VALUE, catalog.byId().get("endless")
+                .remaining(new com.cobbleraids.catching.RaidPurchaseTally(500, 0L), 0L));
+    }
+
+    @Test
+    @DisplayName("an unusable limit drops the entry rather than guessing at a number")
+    void badLimitDropsTheEntry() {
+        ShopCatalog catalog = ShopCatalog.fromJson(parse("""
+                {
+                  "sections": [{"id": "a", "title": "A", "entries": [
+                    {"id": "bad", "cost": 10, "item": "cobblemon:poke_ball", "limit": -4},
+                    {"id": "huge", "cost": 10, "item": "cobblemon:great_ball", "limit": 99999},
+                    {"id": "fine", "cost": 10, "item": "cobblemon:ultra_ball", "limit": 3}
+                  ]}]
+                }
+                """));
+
+        assertEquals(Set.of("fine"), catalog.byId().keySet());
+    }
+
+    @Test
+    @DisplayName("an unrecognised reset period falls back instead of dropping the entry")
+    void unknownResetFallsBack() {
+        // A typo in a word is not worth losing a listing over, and daily is the safe reading:
+        // it grants less over time than never would.
+        ShopCatalog catalog = ShopCatalog.fromJson(parse("""
+                {
+                  "sections": [{"id": "a", "title": "A", "entries": [
+                    {"id": "typo", "cost": 10, "item": "cobblemon:poke_ball", "reset": "weekly"}
+                  ]}]
+                }
+                """));
+
+        assertEquals(ShopResetPeriod.DAILY, catalog.byId().get("typo").reset());
     }
 }
