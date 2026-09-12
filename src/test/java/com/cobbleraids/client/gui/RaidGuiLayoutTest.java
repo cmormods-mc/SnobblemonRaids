@@ -203,4 +203,75 @@ class RaidGuiLayoutTest {
         assertNotNull(null, "no viewport produced a " + slot + " pixel cell");
         return null;
     }
+
+    // --- the Pokemon grid ----------------------------------------------------------------------
+
+    private static RaidGuiLayout.Layout fitPokemon(int width, int height) {
+        Optional<RaidGuiLayout.Layout> layout = RaidGuiLayout.fit(
+                width, height, RaidGuiLayout.POKEMON_COLUMNS, RaidGuiLayout.POKEMON_ROWS);
+        assertTrue(layout.isPresent(), "no Pokemon layout for " + width + "x" + height);
+        return layout.get();
+    }
+
+    @Test
+    @DisplayName("the Pokemon grid changes the cells and never the window")
+    void pokemonGridKeepsTheWindow() {
+        // The frame moving when a player pages from items to Pokemon would be worse than either
+        // cell size, so this is the property that matters most about the second grid.
+        for (int[] viewport : new int[][] {{640, 480}, {320, 300}, {320, 256}, {320, 240}}) {
+            RaidGuiLayout.Layout items = fit(viewport[0], viewport[1]);
+            RaidGuiLayout.Layout pokemon = fitPokemon(viewport[0], viewport[1]);
+
+            assertEquals(items.frame(), pokemon.frame(), "frame at " + viewport[0] + "x" + viewport[1]);
+            assertEquals(items.grid(), pokemon.grid(), "grid rect");
+            assertEquals(items.panel(), pokemon.panel(), "panel");
+            assertEquals(items.button(), pokemon.button(), "button");
+        }
+    }
+
+    @Test
+    @DisplayName("a Pokemon cell is big enough for 48x32 art to stay legible")
+    void pokemonCellsAreLargeEnough() {
+        for (int[] viewport : new int[][] {{640, 480}, {320, 300}, {320, 256}, {320, 240}}) {
+            RaidGuiLayout.Layout pokemon = fitPokemon(viewport[0], viewport[1]);
+            assertEquals(16, pokemon.slots().size());
+            // 32 is where the card art stops being a smear; the smallest window must still clear
+            // the 22 that demonstrably does not work.
+            assertTrue(pokemon.slotSize() >= 32,
+                    "cell " + pokemon.slotSize() + " at " + viewport[0] + "x" + viewport[1]);
+            assertTrue(pokemon.slotSize() > fit(viewport[0], viewport[1]).slotSize());
+        }
+    }
+
+    @Test
+    @DisplayName("Pokemon cells tile their grid exactly, with no slack at the edge")
+    void pokemonCellsFillTheGrid() {
+        RaidGuiLayout.Layout layout = fitPokemon(640, 480);
+        int cell = layout.slotSize();
+        int span = RaidGuiLayout.POKEMON_COLUMNS * cell
+                 + RaidGuiLayout.GAP * (RaidGuiLayout.POKEMON_COLUMNS - 1);
+        assertEquals(layout.grid().width(), span, "cells plus gaps must fill the grid rect");
+        for (RaidGuiLayout.Rect slot : layout.slots()) {
+            assertTrue(slot.x() >= layout.grid().x()
+                    && slot.x() + slot.width() <= layout.grid().x() + layout.grid().width());
+            assertTrue(slot.y() >= layout.grid().y()
+                    && slot.y() + slot.height() <= layout.grid().y() + layout.grid().height());
+        }
+    }
+
+    @Test
+    @DisplayName("every Pokemon cell hit-tests back to itself, and the gaps still swallow clicks")
+    void pokemonHitTesting() {
+        RaidGuiLayout.Layout layout = fitPokemon(640, 480);
+        int cell = layout.slotSize();
+        for (int index = 0; index < layout.slots().size(); index++) {
+            RaidGuiLayout.Rect slot = layout.slots().get(index);
+            assertEquals(index, layout.slotAt(slot.x() + cell / 2.0, slot.y() + cell / 2.0));
+            assertEquals(index, layout.slotAt(slot.x(), slot.y()), "top-left of " + index);
+            assertEquals(index, layout.slotAt(slot.x() + cell - 1, slot.y() + cell - 1));
+        }
+        // The gap to the right of the first cell belongs to nothing, exactly as in the item grid.
+        RaidGuiLayout.Rect first = layout.slots().get(0);
+        assertEquals(-1, layout.slotAt(first.x() + cell, first.y() + cell / 2.0));
+    }
 }

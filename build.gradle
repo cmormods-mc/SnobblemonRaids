@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.85-shop-species-icons'
+version = '0.8.86-pokemon-grid'
 group = 'com.cobbleraids'
 
 base {

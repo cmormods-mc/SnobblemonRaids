@@ -70,6 +70,7 @@ public final class RaidShopScreen extends Screen {
     private void setPage(ShopPagePayload payload) {
         this.page = payload;
         this.tooltipSlot = -1;
+        relayout();
         icons.clear();
         for (ShopEntryPayload entry : payload.entries()) {
             icons.add(entry.pokemon() ? null
@@ -119,8 +120,27 @@ public final class RaidShopScreen extends Screen {
     @Override
     protected void init() {
         // Recomputed on every init, which is what a resize and a GUI Scale change both trigger.
-        layout = RaidGuiLayout.fit(width, height).orElse(null);
+        relayout();
         cacheChrome();
+    }
+
+    /**
+     * Picks the grid from what the page holds: sixteen big cells for Pokemon, sixty-four small
+     * ones for anything else.
+     *
+     * <p>Decided from the entries rather than from a flag on the payload, so the server does not
+     * have to know or agree about a client-side presentation choice -- and a mixed section, which
+     * the catalogue format allows, still gets cells its items fit in.
+     *
+     * <p>The window is the same size either way, so this can run whenever a page arrives without
+     * the frame moving under the cursor.
+     */
+    private void relayout() {
+        boolean pokemon = page != null && !page.entries().isEmpty()
+                && page.entries().stream().allMatch(ShopEntryPayload::pokemon);
+        layout = (pokemon
+                ? RaidGuiLayout.fit(width, height, RaidGuiLayout.POKEMON_COLUMNS, RaidGuiLayout.POKEMON_ROWS)
+                : RaidGuiLayout.fit(width, height)).orElse(null);
     }
 
     @Override
