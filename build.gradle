@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.70-fix-multiplayer-raid-targeting'
+version = '0.8.71-show-scaled-level'
 group = 'com.cobbleraids'
 
 base {
