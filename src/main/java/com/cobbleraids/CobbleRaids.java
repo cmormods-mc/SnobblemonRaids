@@ -17,6 +17,7 @@ import com.cobbleraids.lifecycle.RaidRewardService;
 import com.cobbleraids.lobby.RaidLobbyManager;
 import com.cobbleraids.network.RaidRewardPayloads;
 import com.cobbleraids.network.RewardChoicePayload;
+import com.cobbleraids.placeholder.RaidPlaceholders;
 import com.cobbleraids.presentation.RaidBossGlowService;
 import com.cobbleraids.raid.RaidRegistry;
 import com.cobbleraids.reward.NativeRewardScreenGateway;
@@ -59,6 +60,7 @@ public final class CobbleRaids implements ModInitializer {
         RaidPointsCommand.register();
         RaidAdminCommand.register();
         RaidBossInteractionListener.register();
+        RaidPlaceholders.registerIfPresent();
         // Each subsystem gets its own barrier rather than one around the whole block: a lobby that
         // throws must not also cost that tick's spawn check, combat clock and glow refresh. The
         // method references are non-capturing, so this allocates nothing 20 times a second.
