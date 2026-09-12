@@ -1,6 +1,7 @@
 package com.cobbleraids.catching;
 
 import com.cobbleraids.RaidLog;
+import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobbleraids.config.RaidRarityTier;
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -71,6 +72,20 @@ public final class RaidPlayerRecords extends SavedData {
         get(server).update(LIVE);
     }
 
+    /**
+     * Marks dirty <em>and</em> writes, for the few changes that must not be lost to a crash.
+     *
+     * <p>update() only sets the dirty flag, which SavedData honours at the next autosave. That is
+     * fine for a win count. It is not fine for anything paired with an item already in a player's
+     * inventory, because inventories reach disk on logout and this does not -- the same gap that
+     * let a consumed reward claim come back.
+     */
+    private static void persistNow(MinecraftServer server) {
+        if (server == null) return;
+        persist(server);
+        RaidFaultBarrier.guard("player-records-flush", () -> server.overworld().getDataStorage().save());
+    }
+
     // ---------------------------------------------------------------- lifecycle
 
     public static void onServerStarted(MinecraftServer server) {
@@ -100,7 +115,8 @@ public final class RaidPlayerRecords extends SavedData {
             RaidPlayerRecord current = existing == null ? RaidPlayerRecord.EMPTY : existing;
             return new RaidPlayerRecord(current.raidsWon(), current.winsByTier(),
                     current.defeatsBySpecies(), current.totalContribution(), current.bossesCaught(),
-                    gotStone ? 0 : current.raidsSinceMegaStone() + 1, current.raidPoints());
+                    gotStone ? 0 : current.raidsSinceMegaStone() + 1, current.raidPoints(),
+                    current.purchases());
         });
         persist(server);
     }
@@ -116,6 +132,20 @@ public final class RaidPlayerRecords extends SavedData {
                 (existing == null ? RaidPlayerRecord.EMPTY : existing).withPoints(delta));
         persist(server);
         return updated.raidPoints();
+    }
+
+    /**
+     * Remembers a once-per-player purchase, and flushes immediately.
+     *
+     * <p>Flushed rather than merely marked dirty, for the reason consuming a reward claim is: a
+     * player's inventory reaches disk when they log out, but SavedData waits for an autosave. Buy,
+     * log out, crash the server, and the item is in the inventory while the record that says it was
+     * bought is not -- which is a once-per-player entry bought twice.
+     */
+    public static void recordPurchase(MinecraftServer server, UUID playerId, String entryId) {
+        LIVE.compute(playerId, (ignored, existing) ->
+                (existing == null ? RaidPlayerRecord.EMPTY : existing).withPurchase(entryId));
+        persistNow(server);
     }
 
     public static SavedData.Factory<RaidPlayerRecords> factory() {
@@ -159,10 +189,13 @@ public final class RaidPlayerRecords extends SavedData {
                 ResourceLocation id = ResourceLocation.tryParse(key);
                 if (id != null) species.put(id, speciesTag.getInt(key));
             }
+            java.util.LinkedHashSet<String> purchases = new java.util.LinkedHashSet<>();
+            ListTag purchaseTag = playerTag.getList("purchases", Tag.TAG_STRING);
+            for (int p = 0; p < purchaseTag.size(); p++) purchases.add(purchaseTag.getString(p));
             store.loaded.put(playerTag.getUUID("player"), new RaidPlayerRecord(
                     playerTag.getInt("wins"), tiers, species,
                     playerTag.getDouble("contribution"), playerTag.getInt("caught"),
-                    playerTag.getInt("since_mega"), playerTag.getInt("points")));
+                    playerTag.getInt("since_mega"), playerTag.getInt("points"), purchases));
         }
         return store;
     }
@@ -186,6 +219,11 @@ public final class RaidPlayerRecords extends SavedData {
             CompoundTag species = new CompoundTag();
             record.defeatsBySpecies().forEach((id, count) -> species.putInt(id.toString(), count));
             playerTag.put("species", species);
+            if (!record.purchases().isEmpty()) {
+                ListTag purchases = new ListTag();
+                record.purchases().forEach(id -> purchases.add(net.minecraft.nbt.StringTag.valueOf(id)));
+                playerTag.put("purchases", purchases);
+            }
             players.add(playerTag);
         }
         tag.put("players", players);

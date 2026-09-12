@@ -4,6 +4,7 @@ import com.cobbleraids.fault.RaidThreadGuard;
 import com.cobbleraids.catching.RaidPlayerRecords;
 import com.cobbleraids.command.RaidAdminCommand;
 import com.cobbleraids.command.RaidPointsCommand;
+import com.cobbleraids.command.RaidShopCommand;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.config.RaidRewardPolicyManager;
 import com.cobbleraids.config.RaidDefinitionRegistry;
@@ -60,6 +61,7 @@ public final class CobbleRaids implements ModInitializer {
         RaidBattleEventCoordinator.register();
         RaidRewardCommand.register();
         RaidPointsCommand.register();
+        RaidShopCommand.register();
         RaidAdminCommand.register();
         RaidBossInteractionListener.register();
         RaidPlaceholders.registerIfPresent();
