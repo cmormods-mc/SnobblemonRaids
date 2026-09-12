@@ -6,6 +6,7 @@ import com.cobbleraids.network.ShopActionPayload;
 import com.cobbleraids.network.ShopEntryPayload;
 import com.cobbleraids.network.ShopPagePayload;
 import com.cobbleraids.reward.points.RaidPointsStore;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -41,11 +42,15 @@ public final class RaidShopGateway {
             sendPage(player, action.pageIndex());
             return;
         }
+        ShopEntry attempted = ShopCatalogManager.get().byId().get(action.entryId());
         ShopPurchaseResult result = ShopPurchaseService.purchase(player, action.entryId());
-        player.sendSystemMessage(Component.literal(result.message())
+        String message = result == ShopPurchaseResult.LIMIT_REACHED
+                ? ShopPurchaseRules.limitMessage(attempted)
+                : result.message();
+        player.sendSystemMessage(Component.literal(message)
                 .withStyle(result.success() ? ChatFormatting.GREEN : ChatFormatting.RED));
         // Re-sent whether it worked or not: a refusal still has to leave the screen showing the
-        // truth, and ALREADY_OWNED in particular changes what the cell should look like.
+        // truth, and a limit being reached is exactly what changes how a cell should look.
         sendPage(player, action.pageIndex());
     }
 
@@ -61,19 +66,23 @@ public final class RaidShopGateway {
         int index = Math.max(0, Math.min(requestedPage, pages.size() - 1));
         ShopPageView page = pages.get(index);
         RaidPlayerRecord record = RaidPlayerRecords.get(player.getUUID());
+        Instant now = Instant.now();
 
         List<ShopEntryPayload> entries = new ArrayList<>(page.entries().size());
         for (ShopEntry entry : page.entries()) {
-            boolean owned = entry.oncePerPlayer() && record.hasPurchased(entry.id());
+            // Sent as a count rather than a boolean so the cell can say "3 left" instead of only
+            // "gone". A limit the player cannot see coming is a limit that reads as a bug.
+            int remaining = ShopPurchaseRules.remaining(entry, record.purchasesOf(entry.id()), now);
+            int limit = entry.isLimited() ? entry.limit() : 0;
             if (entry.isPokemon()) {
                 entries.add(ShopEntryPayload.pokemon(entry.id(), entry.cost(),
                         entry.pokemon().species(), entry.pokemon().level(),
-                        entry.pokemon().shiny(), owned));
+                        entry.pokemon().shiny(), remaining, limit));
             } else {
                 ResourceLocation itemId = ResourceLocation.tryParse(entry.item().itemId());
                 if (itemId == null) continue;
-                entries.add(ShopEntryPayload.item(entry.id(), entry.cost(), itemId, entry.item().count())
-                        .withOwned(owned));
+                entries.add(ShopEntryPayload.item(entry.id(), entry.cost(), itemId,
+                        entry.item().count(), remaining, limit));
             }
         }
         ServerPlayNetworking.send(player, new ShopPagePayload(page.heading(), index, pages.size(),

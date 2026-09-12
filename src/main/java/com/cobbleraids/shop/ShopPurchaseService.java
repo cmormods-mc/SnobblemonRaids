@@ -10,6 +10,7 @@ import com.cobbleraids.RaidLog;
 import com.cobbleraids.catching.RaidPlayerRecords;
 import com.cobbleraids.pokemon.PokemonStatNames;
 import com.cobbleraids.reward.points.RaidPointsStore;
+import java.time.Instant;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -36,14 +37,16 @@ public final class ShopPurchaseService {
 
     public static ShopPurchaseResult purchase(ServerPlayer player, String entryId) {
         ShopEntry entry = ShopCatalogManager.get().byId().get(entryId);
+        Instant now = Instant.now();
         ShopPurchaseResult blocked = ShopPurchaseRules.check(
                 entry,
                 RaidPointsStore.balance(player.getUUID()),
-                entry != null && RaidPlayerRecords.get(player.getUUID()).hasPurchased(entry.id()));
+                entry == null ? null : RaidPlayerRecords.get(player.getUUID()).purchasesOf(entry.id()),
+                now);
         if (blocked != null) return blocked;
 
         try {
-            return entry.isPokemon() ? givePokemon(player, entry) : giveItem(player, entry);
+            return entry.isPokemon() ? givePokemon(player, entry, now) : giveItem(player, entry, now);
         } catch (RuntimeException ex) {
             RaidLog.error("Shop purchase of " + entry.id() + " by "
                     + player.getGameProfile().getName() + " failed", ex);
@@ -51,7 +54,7 @@ public final class ShopPurchaseService {
         }
     }
 
-    private static ShopPurchaseResult giveItem(ServerPlayer player, ShopEntry entry) {
+    private static ShopPurchaseResult giveItem(ServerPlayer player, ShopEntry entry, Instant now) {
         ResourceLocation itemId = ResourceLocation.tryParse(entry.item().itemId());
         if (itemId == null) return ShopPurchaseResult.UNRESOLVED;
         Item item = BuiltInRegistries.ITEM.get(itemId);
@@ -63,7 +66,7 @@ public final class ShopPurchaseService {
             return ShopPurchaseResult.UNRESOLVED;
         }
 
-        settle(player, entry);
+        settle(player, entry, now);
         // placeItemBackInInventory drops what will not fit at the player's feet rather than
         // destroying it, so a full inventory is never a reason to refuse the sale.
         int remaining = entry.item().count();
@@ -77,7 +80,7 @@ public final class ShopPurchaseService {
         return ShopPurchaseResult.BOUGHT;
     }
 
-    private static ShopPurchaseResult givePokemon(ServerPlayer player, ShopEntry entry) {
+    private static ShopPurchaseResult givePokemon(ServerPlayer player, ShopEntry entry, Instant now) {
         Pokemon pokemon = build(entry.pokemon());
         if (pokemon == null) {
             RaidLog.error("Shop entry " + entry.id() + " could not build "
@@ -93,7 +96,7 @@ public final class ShopPurchaseService {
             return ShopPurchaseResult.NO_ROOM;
         }
 
-        settle(player, entry);
+        settle(player, entry, now);
         if (partyHasRoom && party.add(pokemon)) {
             return ShopPurchaseResult.BOUGHT;
         }
@@ -102,10 +105,11 @@ public final class ShopPurchaseService {
     }
 
     /** Takes the points and remembers the purchase. Called only once nothing can still fail. */
-    private static void settle(ServerPlayer player, ShopEntry entry) {
+    private static void settle(ServerPlayer player, ShopEntry entry, Instant now) {
         RaidPointsStore.spend(player.getServer(), player.getUUID(), entry.cost());
-        if (entry.oncePerPlayer()) {
-            RaidPlayerRecords.recordPurchase(player.getServer(), player.getUUID(), entry.id());
+        if (entry.isLimited()) {
+            RaidPlayerRecords.recordPurchase(player.getServer(), player.getUUID(), entry.id(),
+                    ShopPurchaseRules.windowOf(entry, now));
         }
         RaidLog.info("Shop: " + player.getGameProfile().getName() + " bought " + entry.id()
                 + " for " + entry.cost() + " RP");

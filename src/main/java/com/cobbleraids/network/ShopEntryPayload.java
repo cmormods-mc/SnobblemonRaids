@@ -23,22 +23,30 @@ public record ShopEntryPayload(
         String species,
         int level,
         boolean shiny,
-        boolean owned
+        int remaining,
+        int limit
 ) {
     /** Stands in for the item field on a Pokemon entry, which has no item to name. */
     private static final ResourceLocation NONE = ResourceLocation.withDefaultNamespace("air");
 
-    public static ShopEntryPayload item(String id, int cost, ResourceLocation itemId, int count) {
-        return new ShopEntryPayload(id, cost, false, itemId, count, "", 0, false, false);
+    public static ShopEntryPayload item(String id, int cost, ResourceLocation itemId, int count,
+                                        int remaining, int limit) {
+        return new ShopEntryPayload(id, cost, false, itemId, count, "", 0, false, remaining, limit);
     }
 
     public static ShopEntryPayload pokemon(String id, int cost, String species, int level,
-                                           boolean shiny, boolean owned) {
-        return new ShopEntryPayload(id, cost, true, NONE, 1, species, level, shiny, owned);
+                                           boolean shiny, int remaining, int limit) {
+        return new ShopEntryPayload(id, cost, true, NONE, 1, species, level, shiny, remaining, limit);
     }
 
-    public ShopEntryPayload withOwned(boolean value) {
-        return new ShopEntryPayload(id, cost, pokemon, itemId, count, species, level, shiny, value);
+    /** A limit of zero means the entry is unlimited, and the cell shows no counter at all. */
+    public boolean isLimited() {
+        return limit > 0;
+    }
+
+    /** True once the player has used the entry up for this window. */
+    public boolean soldOut() {
+        return isLimited() && remaining <= 0;
     }
 
     public static final StreamCodec<ByteBuf, ShopEntryPayload> STREAM_CODEC =
@@ -54,7 +62,8 @@ public record ShopEntryPayload(
                             ByteBufCodecs.STRING_UTF8.decode(buffer),
                             ByteBufCodecs.VAR_INT.decode(buffer),
                             ByteBufCodecs.BOOL.decode(buffer),
-                            ByteBufCodecs.BOOL.decode(buffer));
+                            ByteBufCodecs.VAR_INT.decode(buffer),
+                            ByteBufCodecs.VAR_INT.decode(buffer));
                 }
 
                 @Override
@@ -67,7 +76,8 @@ public record ShopEntryPayload(
                     ByteBufCodecs.STRING_UTF8.encode(buffer, value.species());
                     ByteBufCodecs.VAR_INT.encode(buffer, value.level());
                     ByteBufCodecs.BOOL.encode(buffer, value.shiny());
-                    ByteBufCodecs.BOOL.encode(buffer, value.owned());
+                    ByteBufCodecs.VAR_INT.encode(buffer, value.remaining());
+                    ByteBufCodecs.VAR_INT.encode(buffer, value.limit());
                 }
             };
 }

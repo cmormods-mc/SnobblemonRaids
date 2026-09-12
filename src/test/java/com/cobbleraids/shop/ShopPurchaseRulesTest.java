@@ -5,118 +5,214 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.cobbleraids.catching.RaidPlayerRecord;
+import com.cobbleraids.catching.RaidPurchaseTally;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * Who may buy what, and why a purchase was refused.
+ * Who may buy what, how often, and when that refills.
  *
- * <p>The service around this needs a world; the decision does not, and the decision is where the
- * mistakes would be. Refusal ordering is tested explicitly because a wrong order is not a crash --
- * it is a player being told to go and earn points for something they already own.
+ * <p>The clock is passed in rather than read from the machine, because a daily limit whose rollover
+ * cannot be tested is a daily limit nobody can trust -- and the interesting cases all live either
+ * side of a midnight nobody is going to sit and wait for.
  */
 class ShopPurchaseRulesTest {
 
-    private static final ShopEntry BALL = ShopEntry.ofItem("ball", 25, "cobblemon:poke_ball", 8);
-    private static final ShopEntry ONCE = ShopEntry.ofPokemon("starter", 500,
-            new ShopPokemonGift("dratini", 15, false, null, null, null, null, null, null,
-                    Map.of(), Map.of()),
-            true);
+    /** Mid-afternoon, so nothing here is accidentally sitting on a boundary. */
+    private static final Instant NOON = Instant.parse("2026-09-12T12:00:00Z");
+    private static final Instant LATE = Instant.parse("2026-09-12T23:59:59Z");
+    private static final Instant NEXT_DAY = Instant.parse("2026-09-13T00:00:01Z");
 
-    @Test
-    @DisplayName("an affordable entry passes with nothing blocking it")
-    void affordablePasses() {
-        assertNull(ShopPurchaseRules.check(BALL, 25, false));
-        assertNull(ShopPurchaseRules.check(BALL, 10_000, false));
+    private static final ShopEntry BALLS =
+            ShopEntry.ofItem("balls", 25, "cobblemon:poke_ball", 8, 5, ShopResetPeriod.DAILY);
+    private static final ShopEntry MON = ShopEntry.ofPokemon("starter", 500, gift(), 1, ShopResetPeriod.DAILY);
+    private static final ShopEntry UNIQUE = ShopEntry.ofPokemon("unique", 9000, gift(), 1, ShopResetPeriod.NEVER);
+    private static final ShopEntry UNLIMITED =
+            ShopEntry.ofItem("free_flow", 5, "cobblemon:poke_ball", 1, 0, ShopResetPeriod.DAILY);
+
+    private static ShopPokemonGift gift() {
+        return new ShopPokemonGift("dratini", 15, false, null, null, null, null, null, null,
+                Map.of(), Map.of());
+    }
+
+    private static RaidPurchaseTally boughtToday(int count, Instant when) {
+        return new RaidPurchaseTally(count, ShopResetPeriod.DAILY.windowOf(when));
     }
 
     @Test
-    @DisplayName("exactly enough points is enough")
-    void exactBalanceIsEnough() {
-        // Off-by-one here is a listing that can never be bought at its own advertised price.
-        assertNull(ShopPurchaseRules.check(BALL, BALL.cost(), false));
-        assertEquals(ShopPurchaseResult.NOT_ENOUGH_POINTS,
-                ShopPurchaseRules.check(BALL, BALL.cost() - 1, false));
+    @DisplayName("a fresh player may buy up to the limit and no further")
+    void countsDownToTheLimit() {
+        RaidPurchaseTally none = RaidPurchaseTally.NONE;
+
+        assertEquals(5, ShopPurchaseRules.remaining(BALLS, none, NOON));
+        assertEquals(2, ShopPurchaseRules.remaining(BALLS, boughtToday(3, NOON), NOON));
+        assertEquals(0, ShopPurchaseRules.remaining(BALLS, boughtToday(5, NOON), NOON));
+        assertNull(ShopPurchaseRules.check(BALLS, 10_000, boughtToday(4, NOON), NOON));
+        assertEquals(ShopPurchaseResult.LIMIT_REACHED,
+                ShopPurchaseRules.check(BALLS, 10_000, boughtToday(5, NOON), NOON));
+    }
+
+    @Test
+    @DisplayName("a count beyond the limit still reads as none left, never as a negative")
+    void overshootDoesNotGoNegative() {
+        // An operator lowering a limit from 10 to 5 leaves players holding counts above it.
+        assertEquals(0, ShopPurchaseRules.remaining(BALLS, boughtToday(40, NOON), NOON));
+    }
+
+    @Test
+    @DisplayName("a daily limit refills at midnight UTC")
+    void dailyResets() {
+        RaidPurchaseTally spent = boughtToday(5, LATE);
+
+        assertEquals(0, ShopPurchaseRules.remaining(BALLS, spent, LATE));
+        assertEquals(5, ShopPurchaseRules.remaining(BALLS, spent, NEXT_DAY));
+        assertNull(ShopPurchaseRules.check(BALLS, 10_000, spent, NEXT_DAY));
+    }
+
+    @Test
+    @DisplayName("one second before midnight is still yesterday")
+    void theBoundaryIsExact() {
+        // Off by an hour here and a server in the wrong timezone resets at the wrong moment; off by
+        // a second and a player loses or gains a purchase at the boundary.
+        RaidPurchaseTally spent = boughtToday(5, NOON);
+
+        assertEquals(0, ShopPurchaseRules.remaining(BALLS, spent, LATE));
+        assertEquals(0, ShopPurchaseRules.remaining(BALLS, spent,
+                LATE.plus(500, ChronoUnit.MILLIS)));
+        assertEquals(5, ShopPurchaseRules.remaining(BALLS, spent,
+                Instant.parse("2026-09-13T00:00:00Z")));
+    }
+
+    @Test
+    @DisplayName("a never-resetting limit is not refilled by the calendar")
+    void neverMeansNever() {
+        // Stored against window 0, and it has to stay spent however far the clock moves.
+        RaidPurchaseTally spent = new RaidPurchaseTally(1, ShopResetPeriod.NEVER.windowOf(NOON));
+
+        assertEquals(0, ShopPurchaseRules.remaining(UNIQUE, spent, NOON));
+        assertEquals(0, ShopPurchaseRules.remaining(UNIQUE, spent, NEXT_DAY));
+        assertEquals(0, ShopPurchaseRules.remaining(UNIQUE, spent,
+                NEXT_DAY.plus(3650, ChronoUnit.DAYS)));
+    }
+
+    @Test
+    @DisplayName("a Pokemon is one a day, which is the shipped intent")
+    void pokemonAreOnePerDay() {
+        assertEquals(1, ShopPurchaseRules.remaining(MON, RaidPurchaseTally.NONE, NOON));
+        assertEquals(ShopPurchaseResult.LIMIT_REACHED,
+                ShopPurchaseRules.check(MON, 10_000, boughtToday(1, NOON), NOON));
+        assertNull(ShopPurchaseRules.check(MON, 10_000, boughtToday(1, NOON), NEXT_DAY));
+    }
+
+    @Test
+    @DisplayName("an unlimited entry is never refused for stock and never counted")
+    void unlimitedIsUnlimited() {
+        assertEquals(Integer.MAX_VALUE,
+                ShopPurchaseRules.remaining(UNLIMITED, boughtToday(9999, NOON), NOON));
+        assertNull(ShopPurchaseRules.check(UNLIMITED, 10, boughtToday(9999, NOON), NOON));
+    }
+
+    @Test
+    @DisplayName("the limit is checked before the price")
+    void limitIsCheckedBeforeAffordability() {
+        // A player with nothing who has already hit their cap must hear about the cap. Telling them
+        // they cannot afford it sends them off to earn points for a refusal.
+        assertEquals(ShopPurchaseResult.LIMIT_REACHED,
+                ShopPurchaseRules.check(BALLS, 0, boughtToday(5, NOON), NOON));
     }
 
     @Test
     @DisplayName("an unknown id is refused before anything else is considered")
     void unknownEntry() {
-        assertEquals(ShopPurchaseResult.UNKNOWN_ENTRY, ShopPurchaseRules.check(null, 10_000, false));
-        assertEquals(ShopPurchaseResult.UNKNOWN_ENTRY, ShopPurchaseRules.check(null, 0, true));
+        assertEquals(ShopPurchaseResult.UNKNOWN_ENTRY,
+                ShopPurchaseRules.check(null, 10_000, RaidPurchaseTally.NONE, NOON));
     }
 
     @Test
-    @DisplayName("something already owned says so, rather than complaining about the price")
-    void ownershipIsCheckedBeforeAffordability() {
-        // A player with 0 points who already owns the entry must hear ALREADY_OWNED. Telling them
-        // they cannot afford it sends them off to earn 500 points for a purchase that will still
-        // be refused.
-        assertEquals(ShopPurchaseResult.ALREADY_OWNED, ShopPurchaseRules.check(ONCE, 0, true));
-        assertEquals(ShopPurchaseResult.ALREADY_OWNED, ShopPurchaseRules.check(ONCE, 10_000, true));
+    @DisplayName("exactly enough points is enough")
+    void exactBalanceIsEnough() {
+        assertNull(ShopPurchaseRules.check(BALLS, BALLS.cost(), RaidPurchaseTally.NONE, NOON));
+        assertEquals(ShopPurchaseResult.NOT_ENOUGH_POINTS,
+                ShopPurchaseRules.check(BALLS, BALLS.cost() - 1, RaidPurchaseTally.NONE, NOON));
+        assertEquals(15, ShopPurchaseRules.shortfall(BALLS, 10));
+        assertEquals(0, ShopPurchaseRules.shortfall(BALLS, 25));
     }
 
     @Test
-    @DisplayName("ownership only restricts entries marked once per player")
-    void repeatableEntriesIgnoreOwnership() {
-        assertNull(ShopPurchaseRules.check(BALL, 100, true));
+    @DisplayName("the refusal says something specific to the entry that caused it")
+    void refusalsReadWell() {
+        assertEquals("You have already bought that.", ShopPurchaseRules.limitMessage(UNIQUE));
+        assertEquals("You have already bought that today.", ShopPurchaseRules.limitMessage(MON));
+        assertEquals("You have bought all 5 of those today.", ShopPurchaseRules.limitMessage(BALLS));
     }
 
     @Test
-    @DisplayName("the shortfall is what the player is actually missing")
-    void shortfallIsUseful() {
-        assertEquals(15, ShopPurchaseRules.shortfall(BALL, 10));
-        assertEquals(0, ShopPurchaseRules.shortfall(BALL, 25));
-        assertEquals(0, ShopPurchaseRules.shortfall(BALL, 900), "a rich player is never short");
-        assertEquals(0, ShopPurchaseRules.shortfall(null, 0));
+    @DisplayName("a tally counts up within a window and starts over across one")
+    void tallyArithmetic() {
+        long today = ShopResetPeriod.DAILY.windowOf(NOON);
+        long tomorrow = ShopResetPeriod.DAILY.windowOf(NEXT_DAY);
+
+        RaidPurchaseTally tally = RaidPurchaseTally.NONE.increment(today).increment(today);
+        assertEquals(2, tally.count());
+        assertEquals(1, tally.increment(tomorrow).count(), "a new day starts the count again");
+        assertEquals(tomorrow, tally.increment(tomorrow).day());
     }
 
     @Test
-    @DisplayName("a free entry is buyable at zero points")
-    void freeEntriesAreBuyable() {
-        ShopEntry free = ShopEntry.ofItem("free", 0, "cobblemon:poke_ball", 1);
+    @DisplayName("the record counts purchases per entry, and keeps them apart")
+    void recordCountsPerEntry() {
+        long today = ShopResetPeriod.DAILY.windowOf(NOON);
+        RaidPlayerRecord record = RaidPlayerRecord.EMPTY
+                .withPurchase("balls", today)
+                .withPurchase("balls", today)
+                .withPurchase("starter", today);
 
-        assertNull(ShopPurchaseRules.check(free, 0, false));
+        assertEquals(2, record.purchasesOf("balls").count());
+        assertEquals(1, record.purchasesOf("starter").count());
+        assertEquals(0, record.purchasesOf("never_bought").count());
     }
 
     @Test
-    @DisplayName("a once-per-player purchase is remembered, and remembered only once")
-    void purchasesAreRemembered() {
-        RaidPlayerRecord record = RaidPlayerRecord.EMPTY;
+    @DisplayName("pruning drops yesterday's tallies and keeps the permanent ones")
+    void pruningIsHousekeepingOnly() {
+        long today = ShopResetPeriod.DAILY.windowOf(NOON);
+        long tomorrow = ShopResetPeriod.DAILY.windowOf(NEXT_DAY);
+        RaidPlayerRecord record = RaidPlayerRecord.EMPTY
+                .withPurchase("balls", today)
+                .withPurchase("unique", 0L);
 
-        assertTrue(record.purchases().isEmpty());
-        record = record.withPurchase("starter");
-        assertTrue(record.hasPurchased("starter"));
-        assertEquals(1, record.withPurchase("starter").purchases().size());
-        assertEquals(2, record.withPurchase("other").purchases().size());
+        RaidPlayerRecord pruned = record.prunePurchases(tomorrow);
+
+        assertEquals(0, pruned.purchasesOf("balls").count(), "yesterday's daily tally is gone");
+        assertEquals(1, pruned.purchasesOf("unique").count(), "a permanent tally must survive");
+        // And it changes nothing about what is allowed, which is the point of calling it safe.
+        assertEquals(5, ShopPurchaseRules.remaining(BALLS, record.purchasesOf("balls"), NEXT_DAY));
+        assertEquals(5, ShopPurchaseRules.remaining(BALLS, pruned.purchasesOf("balls"), NEXT_DAY));
     }
 
     @Test
-    @DisplayName("a remembered purchase survives every other update to the record")
-    void purchasesSurviveOtherWrites() {
-        // Winning a raid, catching a boss and earning points all rebuild the record. A purchase
-        // dropped by any of them is a once-per-player entry quietly becoming buyable again.
-        RaidPlayerRecord record = RaidPlayerRecord.EMPTY.withPurchase("starter");
+    @DisplayName("purchase tallies survive every other update to the record")
+    void talliesSurviveOtherWrites() {
+        long today = ShopResetPeriod.DAILY.windowOf(NOON);
+        RaidPlayerRecord record = RaidPlayerRecord.EMPTY.withPurchase("balls", today);
 
-        assertTrue(record.withCatch().hasPurchased("starter"));
-        assertTrue(record.withPoints(250).hasPurchased("starter"));
-        assertTrue(record.withWin(com.cobbleraids.config.RaidRarityTier.LEGENDARY,
+        assertEquals(1, record.withCatch().purchasesOf("balls").count());
+        assertEquals(1, record.withPoints(250).purchasesOf("balls").count());
+        assertEquals(1, record.withWin(com.cobbleraids.config.RaidRarityTier.LEGENDARY,
                 net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("cobbleraids", "mewtwo"),
-                50.0).hasPurchased("starter"));
+                50.0).purchasesOf("balls").count());
     }
 
     @Test
-    @DisplayName("every refusal reason means nothing was taken")
-    void onlySuccessesTakeAnything() {
-        // The invariant the purchase path is built around: no outcome charges a player and leaves
-        // them empty-handed, so there is no refund path to get wrong.
+    @DisplayName("every refusal reason still has something to say")
+    void everyResultSpeaks() {
         for (ShopPurchaseResult result : ShopPurchaseResult.values()) {
             assertTrue(result.message() != null && !result.message().isBlank(),
                     result + " has nothing to say to the player");
         }
-        assertTrue(ShopPurchaseResult.BOUGHT.success());
-        assertTrue(ShopPurchaseResult.BOUGHT_TO_PC.success());
         assertEquals(2, java.util.Arrays.stream(ShopPurchaseResult.values())
                 .filter(ShopPurchaseResult::success).count());
     }

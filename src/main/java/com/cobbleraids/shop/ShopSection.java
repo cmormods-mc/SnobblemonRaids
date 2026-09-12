@@ -25,7 +25,7 @@ public record ShopSection(String id, String title, List<ShopEntry> entries) {
     }
 
     /** Null when the section is unusable. Entries that fail are dropped individually. */
-    static ShopSection fromJson(JsonObject root) {
+    static ShopSection fromJson(JsonObject root, ShopLimits defaults) {
         String id = root.has("id") ? root.get("id").getAsString().trim().toLowerCase(Locale.ROOT) : null;
         if (id == null || id.isBlank()) {
             RaidLog.error("shop catalogue: dropping a section with no id");
@@ -43,7 +43,7 @@ public record ShopSection(String id, String title, List<ShopEntry> entries) {
                 RaidLog.error("shop section " + id + ": dropping an entry that is not an object");
                 continue;
             }
-            ShopEntry entry = ShopEntry.fromJson(element.getAsJsonObject());
+            ShopEntry entry = ShopEntry.fromJson(element.getAsJsonObject(), defaults);
             if (entry != null) entries.add(entry);
         }
         return new ShopSection(id, title, entries);

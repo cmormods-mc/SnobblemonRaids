@@ -13,8 +13,9 @@ What it covers, and why each is here:
   * a full top row of nine Pokemon, so the model rendering is exercised at the width it will
     actually be drawn at rather than one cell at a time
   * shiny variants, which take a different aspect set and therefore a different cached state
-  * once_per_player entries, which are the only way to see the OWNED cell and the ALREADY_OWNED
-    refusal
+  * a mix of purchase limits -- unlimited, five a day, one a day, and one for ever -- which is
+    the only way to see the stock counter, the sold-out cell, and each of the three different
+    refusal sentences a limit produces
   * items from an optional mod (mega_showdown), which the shipped defaults must never use and a
     test catalogue absolutely should, because that is the path where an id that does not resolve
     turns into a player paying for nothing
@@ -75,19 +76,23 @@ def known_species():
     return names
 
 
-def item_entry(entry_id, cost, item, count=1, once=False):
+def item_entry(entry_id, cost, item, count=1, limit=None, reset=None):
     row = {"id": entry_id, "cost": cost, "item": item, "count": count}
-    if once:
-        row["once_per_player"] = True
+    if limit is not None:
+        row["limit"] = limit
+    if reset is not None:
+        row["reset"] = reset
     return row
 
 
-def pokemon_entry(entry_id, cost, species, level, shiny=False, once=False, traits=None):
+def pokemon_entry(entry_id, cost, species, level, shiny=False, limit=None, reset=None, traits=None):
     row = {"id": entry_id, "cost": cost, "species": species, "level": level}
     if shiny:
         row["shiny"] = True
-    if once:
-        row["once_per_player"] = True
+    if limit is not None:
+        row["limit"] = limit
+    if reset is not None:
+        row["reset"] = reset
     if traits:
         row["traits"] = traits
     return row
@@ -105,11 +110,13 @@ def build(manifest, species):
                     for index, name in enumerate(SHOWCASE)],
     })
 
-    # Shiny aspects, once-per-player, and one fully pinned example so the traits block is proven
-    # end to end rather than only in a unit test.
-    vault = [pokemon_entry("shiny_" + name, 2500, name, 50, shiny=True, once=True)
+    # Shiny aspects, limits that never refill, and one fully pinned example so the traits block
+    # is proven end to end rather than only in a unit test.
+    vault = [pokemon_entry("shiny_" + name, 2500, name, 50, shiny=True,
+                           limit=1, reset="never")
              for name in SHINY_VAULT]
-    vault.append(pokemon_entry("perfect_garchomp", 5000, "garchomp", 100, once=True, traits={
+    vault.append(pokemon_entry("perfect_garchomp", 5000, "garchomp", 100,
+                               limit=1, reset="never", traits={
         "nature": "jolly",
         "ability": "rough-skin",
         "held_item": "cobblemon:life_orb",
@@ -135,18 +142,23 @@ def build(manifest, species):
     for boss in sorted(mega):
         for stone in mega[boss]["stones"]:
             path = stone["item"].split(":")[1]
-            stones.append(item_entry(path, 1200, stone["item"], 1))
+            # One a day, so the counter reads 1/1 and the rollover is easy to watch.
+            stones.append(item_entry(path, 1200, stone["item"], 1, limit=1))
     sections.append({"id": "mega", "title": "Mega Stones", "entries": stones})
     sections.append({
         "id": "tera", "title": "Tera Shards",
-        "entries": [item_entry(item.split(":")[1], 400, item, 1) for item in sorted(tera)],
+        "entries": [item_entry(item.split(":")[1], 400, item, 1, limit=3)
+                    for item in sorted(tera)],
     })
 
     # 80 entries in one section, so the section paginates and its heading numbers itself.
     bulk = []
     for index in range(80):
         name, cost, count = CONSUMABLES[index % len(CONSUMABLES)]
-        bulk.append(item_entry("bulk_%02d" % index, 5 + index, "cobblemon:" + name, 1 + index % 16))
+        # Unlimited on purpose: the cell must show no counter at all, which is the only way
+        # to tell that a limited cell's counter means something.
+        bulk.append(item_entry("bulk_%02d" % index, 5 + index, "cobblemon:" + name,
+                               1 + index % 16, limit=0))
     sections.append({"id": "bulk", "title": "Overflow Test", "entries": bulk})
 
     # Deliberately unreachable prices, so the dim state and the red price are visible at a glance.
@@ -159,10 +171,18 @@ def build(manifest, species):
     # Exactly one entry: its heading must not gain a "(1/1)".
     sections.append({
         "id": "single", "title": "One Of A Kind",
-        "entries": [pokemon_entry("the_only_one", 10000, "arceus", 100, shiny=True, once=True)],
+        "entries": [pokemon_entry("the_only_one", 10000, "arceus", 100, shiny=True,
+                                  limit=1, reset="never")],
     })
 
-    return {"version": 1, "per_page": 72, "sections": sections}
+    return {
+        "version": 2,
+        "per_page": 72,
+        # Stated explicitly rather than left to the defaults, so the file documents the rule it is
+        # testing: one Pokemon a day, five of an item a day, both resetting at 00:00 UTC.
+        "limits": {"pokemon": 1, "item": 5, "reset": "daily"},
+        "sections": sections,
+    }
 
 
 def verify(catalog, manifest, species):

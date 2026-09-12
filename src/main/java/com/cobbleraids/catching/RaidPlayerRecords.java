@@ -142,9 +142,11 @@ public final class RaidPlayerRecords extends SavedData {
      * log out, crash the server, and the item is in the inventory while the record that says it was
      * bought is not -- which is a once-per-player entry bought twice.
      */
-    public static void recordPurchase(MinecraftServer server, UUID playerId, String entryId) {
+    public static void recordPurchase(MinecraftServer server, UUID playerId, String entryId, long window) {
         LIVE.compute(playerId, (ignored, existing) ->
-                (existing == null ? RaidPlayerRecord.EMPTY : existing).withPurchase(entryId));
+                (existing == null ? RaidPlayerRecord.EMPTY : existing)
+                        .prunePurchases(window)
+                        .withPurchase(entryId, window));
         persistNow(server);
     }
 
@@ -189,9 +191,16 @@ public final class RaidPlayerRecords extends SavedData {
                 ResourceLocation id = ResourceLocation.tryParse(key);
                 if (id != null) species.put(id, speciesTag.getInt(key));
             }
-            java.util.LinkedHashSet<String> purchases = new java.util.LinkedHashSet<>();
-            ListTag purchaseTag = playerTag.getList("purchases", Tag.TAG_STRING);
-            for (int p = 0; p < purchaseTag.size(); p++) purchases.add(purchaseTag.getString(p));
+            Map<String, RaidPurchaseTally> purchases = new LinkedHashMap<>();
+            ListTag purchaseTag = playerTag.getList("purchases", Tag.TAG_COMPOUND);
+            for (int p = 0; p < purchaseTag.size(); p++) {
+                CompoundTag row = purchaseTag.getCompound(p);
+                String entryId = row.getString("id");
+                if (!entryId.isEmpty()) {
+                    purchases.put(entryId, new RaidPurchaseTally(
+                            Math.max(0, row.getInt("count")), row.getLong("day")));
+                }
+            }
             store.loaded.put(playerTag.getUUID("player"), new RaidPlayerRecord(
                     playerTag.getInt("wins"), tiers, species,
                     playerTag.getDouble("contribution"), playerTag.getInt("caught"),
@@ -221,7 +230,13 @@ public final class RaidPlayerRecords extends SavedData {
             playerTag.put("species", species);
             if (!record.purchases().isEmpty()) {
                 ListTag purchases = new ListTag();
-                record.purchases().forEach(id -> purchases.add(net.minecraft.nbt.StringTag.valueOf(id)));
+                record.purchases().forEach((id, tally) -> {
+                    CompoundTag row = new CompoundTag();
+                    row.putString("id", id);
+                    row.putInt("count", tally.count());
+                    row.putLong("day", tally.day());
+                    purchases.add(row);
+                });
                 playerTag.put("purchases", purchases);
             }
             players.add(playerTag);
