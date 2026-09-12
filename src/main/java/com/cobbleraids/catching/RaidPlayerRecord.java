@@ -24,10 +24,11 @@ public record RaidPlayerRecord(
         Map<ResourceLocation, Integer> defeatsBySpecies,
         double totalContribution,
         int bossesCaught,
-        int raidsSinceMegaStone
+        int raidsSinceMegaStone,
+        int raidPoints
 ) {
     public static final RaidPlayerRecord EMPTY =
-            new RaidPlayerRecord(0, Map.of(), Map.of(), 0.0, 0, 0);
+            new RaidPlayerRecord(0, Map.of(), Map.of(), 0.0, 0, 0, 0);
 
     public RaidPlayerRecord {
         // Built key-first rather than with EnumMap's copy constructor: that one throws
@@ -65,11 +66,25 @@ public record RaidPlayerRecord(
         LinkedHashMap<ResourceLocation, Integer> species = new LinkedHashMap<>(defeatsBySpecies);
         species.merge(definitionId, 1, Integer::sum);
         return new RaidPlayerRecord(raidsWon + 1, tiers, species,
-                totalContribution + contribution, bossesCaught, raidsSinceMegaStone);
+                totalContribution + contribution, bossesCaught, raidsSinceMegaStone, raidPoints);
     }
 
     public RaidPlayerRecord withCatch() {
         return new RaidPlayerRecord(raidsWon, winsByTier, defeatsBySpecies, totalContribution,
-                bossesCaught + 1, raidsSinceMegaStone);
+                bossesCaught + 1, raidsSinceMegaStone, raidPoints);
+    }
+
+    /**
+     * The same record with {@code delta} added to its Raid Points, floored at zero.
+     *
+     * <p>Floored rather than allowed negative: a balance is a thing players spend, and a debt is
+     * not a state this mod has any way to resolve. A spend that would overdraw is refused by
+     * RaidPointsStore before it reaches here.
+     */
+    public RaidPlayerRecord withPoints(int delta) {
+        long updated = (long) raidPoints + delta;
+        int clamped = (int) Math.max(0L, Math.min(Integer.MAX_VALUE, updated));
+        return new RaidPlayerRecord(raidsWon, winsByTier, defeatsBySpecies, totalContribution,
+                bossesCaught, raidsSinceMegaStone, clamped);
     }
 }

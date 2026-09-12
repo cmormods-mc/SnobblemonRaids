@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.74-balanced-stone-economy'
+version = '0.8.75-raid-points'
 group = 'com.cobbleraids'
 
 base {

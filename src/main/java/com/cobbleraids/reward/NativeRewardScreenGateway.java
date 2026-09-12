@@ -46,8 +46,9 @@ public final class NativeRewardScreenGateway {
         // longValue() is safe: Currency caps a tier amount at a billion, and the policy only ever
         // scales that down. A failed claim reports zero rather than what the policy would have paid.
         long currency = success ? result.currencyGranted().longValue() : 0L;
+        int points = success ? result.raidPointsGranted() : 0;
         ServerPlayNetworking.send(player,
-                new RewardResultPayload(payload.raidId(), success, granted, currency, hasMoreQueued));
+                new RewardResultPayload(payload.raidId(), success, granted, currency, points, hasMoreQueued));
     }
 
     private static String speciesDisplayName(RaidDefinition definition) {

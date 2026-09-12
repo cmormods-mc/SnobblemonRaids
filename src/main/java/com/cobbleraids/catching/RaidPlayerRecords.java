@@ -100,9 +100,22 @@ public final class RaidPlayerRecords extends SavedData {
             RaidPlayerRecord current = existing == null ? RaidPlayerRecord.EMPTY : existing;
             return new RaidPlayerRecord(current.raidsWon(), current.winsByTier(),
                     current.defeatsBySpecies(), current.totalContribution(), current.bossesCaught(),
-                    gotStone ? 0 : current.raidsSinceMegaStone() + 1);
+                    gotStone ? 0 : current.raidsSinceMegaStone() + 1, current.raidPoints());
         });
         persist(server);
+    }
+
+    /**
+     * Credits Raid Points and persists. Returns the new balance.
+     *
+     * <p>Public because the shop will need the other half of this, and a currency with no spend
+     * path is not a currency -- see RaidPointsStore, which is the surface both sides use.
+     */
+    public static int addPoints(MinecraftServer server, UUID playerId, int delta) {
+        RaidPlayerRecord updated = LIVE.compute(playerId, (ignored, existing) ->
+                (existing == null ? RaidPlayerRecord.EMPTY : existing).withPoints(delta));
+        persist(server);
+        return updated.raidPoints();
     }
 
     public static SavedData.Factory<RaidPlayerRecords> factory() {
@@ -149,7 +162,7 @@ public final class RaidPlayerRecords extends SavedData {
             store.loaded.put(playerTag.getUUID("player"), new RaidPlayerRecord(
                     playerTag.getInt("wins"), tiers, species,
                     playerTag.getDouble("contribution"), playerTag.getInt("caught"),
-                    playerTag.getInt("since_mega")));
+                    playerTag.getInt("since_mega"), playerTag.getInt("points")));
         }
         return store;
     }
@@ -165,6 +178,7 @@ public final class RaidPlayerRecords extends SavedData {
             playerTag.putDouble("contribution", record.totalContribution());
             playerTag.putInt("caught", record.bossesCaught());
             playerTag.putInt("since_mega", record.raidsSinceMegaStone());
+            playerTag.putInt("points", record.raidPoints());
             CompoundTag tiers = new CompoundTag();
             record.winsByTier().forEach((tier, count) ->
                     tiers.putInt(tier.serializedName().toLowerCase(Locale.ROOT), count));

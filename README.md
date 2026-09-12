@@ -77,7 +77,12 @@ separately.
   the claim stores a seed and regenerates the same bundle, so logging off does not reroll what
   you earned. Nothing serialises an ItemStack. Edit a loot table between the win and the claim
   and the same seed yields something else, which is the trade against freezing contents outright.
-- **Currency** — with CobbleDollars installed, a claimed reward also pays
+- **Raid Points** — a won raid pays RP: 25 starter, 50 powerhouse, 75 legendary, 100 mythical,
+  flat per claim. A currency this mod owns and the raid shop will spend, earnable nowhere else,
+  so what a raid is worth does not depend on another mod's price list. `/cobbleraids points`
+  shows a balance and what each tier pays; operators have `points give|take|set <player>`.
+- **Currency** — *off by default, replaced by Raid Points.* With CobbleDollars installed and
+  `currency.enabled: true`, a claimed reward also pays
   `currency.<tier>` (2000 / 5000 / 12000 / 25000 by default), split by damage share
   and withheld below `currency.minimum_share_percentage` (10%). This is on top of the
   income CobbleDollars already pays every winner of a wild battle, which a raid is.

@@ -3,6 +3,7 @@ package com.cobbleraids;
 import com.cobbleraids.fault.RaidThreadGuard;
 import com.cobbleraids.catching.RaidPlayerRecords;
 import com.cobbleraids.command.RaidAdminCommand;
+import com.cobbleraids.command.RaidPointsCommand;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.config.RaidRewardPolicyManager;
 import com.cobbleraids.config.RaidDefinitionRegistry;
@@ -55,6 +56,7 @@ public final class CobbleRaids implements ModInitializer {
         RaidInstructionRegistrar.register();
         RaidBattleEventCoordinator.register();
         RaidRewardCommand.register();
+        RaidPointsCommand.register();
         RaidAdminCommand.register();
         RaidBossInteractionListener.register();
         // Each subsystem gets its own barrier rather than one around the whole block: a lobby that

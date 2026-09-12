@@ -18,7 +18,8 @@ public record RewardGrantResult(
         List<RewardItem> baseItems,
         List<RewardItem> chanceItemsGranted,
         List<RewardItem> contributionBonusItems,
-        BigInteger currencyGranted
+        BigInteger currencyGranted,
+        int raidPointsGranted
 ) {
     public RewardGrantResult {
         baseItems = List.copyOf(baseItems);
@@ -30,6 +31,17 @@ public record RewardGrantResult(
     /** True when this claim paid currency, so callers can leave it out of a message entirely. */
     public boolean paidCurrency() {
         return currencyGranted.signum() > 0;
+    }
+
+    /** True when this claim paid Raid Points. */
+    public boolean paidPoints() {
+        return raidPointsGranted > 0;
+    }
+
+    /** The same result with its Raid Points set, awarded after the items are safely in hand. */
+    public RewardGrantResult withPoints(int points) {
+        return new RewardGrantResult(baseItems, chanceItemsGranted, contributionBonusItems,
+                currencyGranted, Math.max(0, points));
     }
 
     public List<RewardItem> allGranted() {
