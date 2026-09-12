@@ -27,36 +27,43 @@ class RaidCurrencyPolicyTest {
     }
 
     @Test
-    @DisplayName("the shipped figures rise with tier and are priced against the default shop")
-    void shippedFiguresRiseWithTier() {
+    @DisplayName("CobbleDollars ships off, because Raid Points replaced it")
+    void shipsDisabled() {
         CobbleRaidsConfig.Currency defaults = CobbleRaidsConfig.Currency.defaults();
 
-        assertTrue(defaults.enabled());
-        assertFalse(defaults.isNoOp());
-        // A solo victor takes the whole tier amount, so 100% is the figure itself.
-        assertEquals(BigInteger.valueOf(2_000L), RaidCurrencyPolicy.payout(defaults, RaidRarityTier.STARTER, 100.0));
-        assertEquals(BigInteger.valueOf(5_000L), RaidCurrencyPolicy.payout(defaults, RaidRarityTier.POWERHOUSE, 100.0));
-        assertEquals(BigInteger.valueOf(12_000L), RaidCurrencyPolicy.payout(defaults, RaidRarityTier.LEGENDARY, 100.0));
-        assertEquals(BigInteger.valueOf(25_000L), RaidCurrencyPolicy.payout(defaults, RaidRarityTier.MYTHICAL, 100.0));
-
-        // Strictly increasing, which is the only relationship between the four that is a rule
-        // rather than a tuning choice: a rarer boss is never worth less than a commoner one.
-        long previous = 0L;
+        // Raid Points became what a raid pays: a currency this mod owns, spendable only in the
+        // raid shop, so what a raid is worth does not depend on another mod's price list. The
+        // figures below are kept so a server that would rather pay CobbleDollars can flip one flag.
+        assertFalse(defaults.enabled());
         for (RaidRarityTier tier : RaidRarityTier.values()) {
-            long amount = defaults.amountFor(tier);
-            assertTrue(amount > previous, tier + " pays " + amount + ", not more than the tier below");
-            previous = amount;
+            assertEquals(BigInteger.ZERO, RaidCurrencyPolicy.payout(defaults, tier, 100.0));
         }
     }
 
     @Test
-    @DisplayName("the shipped figures withhold from a tag-along and split among a group")
-    void shippedFiguresRewardParticipation() {
+    @DisplayName("the kept figures still rise with tier, and still pay if switched back on")
+    void keptFiguresStillWork() {
         CobbleRaidsConfig.Currency defaults = CobbleRaidsConfig.Currency.defaults();
+        CobbleRaidsConfig.Currency reenabled = new CobbleRaidsConfig.Currency(true,
+                defaults.starter(), defaults.powerhouse(), defaults.legendary(), defaults.mythical(),
+                defaults.scaleWithContribution(), defaults.minimumSharePercentage());
 
-        assertEquals(BigInteger.ZERO, RaidCurrencyPolicy.payout(defaults, RaidRarityTier.LEGENDARY, 9.99));
-        assertEquals(BigInteger.valueOf(1_200L), RaidCurrencyPolicy.payout(defaults, RaidRarityTier.LEGENDARY, 10.0));
-        assertEquals(BigInteger.valueOf(6_000L), RaidCurrencyPolicy.payout(defaults, RaidRarityTier.LEGENDARY, 50.0));
+        assertEquals(BigInteger.valueOf(2_000L),
+                RaidCurrencyPolicy.payout(reenabled, RaidRarityTier.STARTER, 100.0));
+        assertEquals(BigInteger.valueOf(25_000L),
+                RaidCurrencyPolicy.payout(reenabled, RaidRarityTier.MYTHICAL, 100.0));
+
+        long previous = 0L;
+        for (RaidRarityTier tier : RaidRarityTier.values()) {
+            long amount = reenabled.amountFor(tier);
+            assertTrue(amount > previous, tier + " pays " + amount + ", not more than the tier below");
+            previous = amount;
+        }
+
+        // And the contribution rules it was built with survive being switched back on.
+        assertEquals(BigInteger.ZERO, RaidCurrencyPolicy.payout(reenabled, RaidRarityTier.LEGENDARY, 9.99));
+        assertEquals(BigInteger.valueOf(6_000L),
+                RaidCurrencyPolicy.payout(reenabled, RaidRarityTier.LEGENDARY, 50.0));
     }
 
     @Test

@@ -7,7 +7,9 @@ import com.cobbleraids.config.RaidDefinitionRegistry;
 import com.cobbleraids.catching.RaidPlayerRecords;
 import com.cobbleraids.config.RaidRewardPolicyManager;
 import com.cobbleraids.fault.RaidFaultBarrier;
+import com.cobbleraids.config.CobbleRaidsConfig;
 import com.cobbleraids.reward.currency.RaidCurrencyBackends;
+import com.cobbleraids.reward.points.RaidPointsStore;
 import com.cobbleraids.reward.plan.RewardPlan;
 import com.cobbleraids.reward.plan.RewardPlanResolver;
 import java.math.BigInteger;
@@ -50,10 +52,12 @@ public final class RaidRewardGrantEngine {
         // selection. Reusing the claim seed directly for every roll would make all of a bundle's
         // general selections identical -- reproducible, and useless.
         Random claimRandom = new Random(pending.rewardSeed());
-        RewardGrantResult result = switch (plan) {
+        RewardGrantResult result;
+        result = switch (plan) {
             case RewardPlan.Policy policy -> grantPolicy(player, definitionId, policy, claimRandom);
             case RewardPlan.Legacy legacy -> grantLegacy(player, definitionId, legacy, claimRandom);
         };
+        result = result.withPoints(awardPoints(player, pending));
         if (plan instanceof RewardPlan.Policy policy && policy.megaCapable()) {
             recordMegaCapableClaim(player, result, sinceStone);
         }
@@ -62,6 +66,28 @@ public final class RaidRewardGrantEngine {
                     + plan.lootTables().size() + " table roll(s)");
         }
         return result;
+    }
+
+    /**
+     * Credits the claim's Raid Points.
+     *
+     * <p>Flat per tier and per claim: every eligible participant fought the same raid, and the
+     * reward for contributing more is the extra loot selections, which already scale. Awarded
+     * after the items are in hand and guarded, because a currency this mod invented must never be
+     * the reason a player loses loot they won.
+     */
+    private static int awardPoints(ServerPlayer player, PendingRaidReward pending) {
+        CobbleRaidsConfig.RaidPoints config = CobbleRaidsConfigManager.get().raidPoints();
+        if (!config.enabled() || config.isNoOp()) return 0;
+        int amount = config.pointsFor(pending.rarityTier());
+        if (amount <= 0) return 0;
+
+        int[] awarded = { 0 };
+        RaidFaultBarrier.guard("reward:raid-points", () -> {
+            RaidPointsStore.award(player.getServer(), player.getUUID(), amount);
+            awarded[0] = amount;
+        });
+        return awarded[0];
     }
 
     /**
@@ -99,7 +125,8 @@ public final class RaidRewardGrantEngine {
                     player, List.of(tableId), definitionId, nextSeed(claimRandom));
             (index >= firstBonusIndex ? bonus : standard).addAll(rolled);
         }
-        return new RewardGrantResult(standard, List.of(), bonus, payCurrency(player, definitionId, plan.currency()));
+        return new RewardGrantResult(standard, List.of(), bonus,
+                payCurrency(player, definitionId, plan.currency()), 0);
     }
 
     /** Legacy path: exactly what a hand-written definition did before the policy existed. */
@@ -129,7 +156,7 @@ public final class RaidRewardGrantEngine {
             if (give(player, rolled, definitionId)) bonusGranted.add(rolled);
         }
         return new RewardGrantResult(base, chanceGranted, bonusGranted,
-                payCurrency(player, definitionId, plan.currency()));
+                payCurrency(player, definitionId, plan.currency()), 0);
     }
 
     private static ResourceLocation parse(String tableId, ResourceLocation definitionId) {

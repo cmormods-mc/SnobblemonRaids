@@ -148,6 +148,9 @@ public final class RaidRewardRevealScreen extends Screen {
     private static final int CURRENCY_FILL = 0xD22E2206;
     private static final int CURRENCY_EDGE = 0xE6F0BE46;
     private static final int CURRENCY_TEXT = 0xFFFFD666;
+    private static final int POINTS_FILL = 0xD2062630;
+    private static final int POINTS_EDGE = 0xE64FD6E0;
+    private static final int POINTS_TEXT = 0xFF8FE8F2;
 
     // Built once when the result arrives, not per frame.
     private ItemStack resultIcon;
@@ -156,6 +159,7 @@ public final class RaidRewardRevealScreen extends Screen {
     // rather than a paragraph. Built once on arrival, like everything else here.
     private List<ItemStack> resultStacks = List.of();
     private long resultCurrency;
+    private int resultPoints;
 
     private RaidRewardRevealScreen(PendingRewardRevealPayload pending) {
         super(Component.literal(pending.speciesDisplayName()));
@@ -201,6 +205,7 @@ public final class RaidRewardRevealScreen extends Screen {
                     : List.of(Component.literal("Something went wrong. Check chat for details."));
             this.resultStacks = List.of();
             this.resultCurrency = 0L;
+            this.resultPoints = 0;
             return;
         }
         // A claim can pay currency and no items -- an economy-only reward, or every item line
@@ -214,6 +219,7 @@ public final class RaidRewardRevealScreen extends Screen {
         }
         this.resultStacks = List.copyOf(stacks);
         this.resultCurrency = payload.currencyGranted();
+        this.resultPoints = payload.raidPointsGranted();
         this.resultIcon = payload.granted().isEmpty()
                 ? new ItemStack(BuiltInRegistries.ITEM.get(BALL_ITEM))
                 : new ItemStack(BuiltInRegistries.ITEM.get(payload.granted().get(0).item()));
@@ -427,10 +433,12 @@ public final class RaidRewardRevealScreen extends Screen {
      * panel and then, once that was fixed, sat on top of the Poke Ball.
      */
     private void renderResultRow(GuiGraphics graphics, Rect chamber, int mouseX, int mouseY) {
-        if (result == null || !result.success() || resultStacks.isEmpty()) return;
+        if (result == null || !result.success()) return;
         boolean paid = resultCurrency > 0L;
+        boolean points = resultPoints > 0;
+        if (resultStacks.isEmpty() && !paid && !points) return;
         RewardSlotLayout slots = RewardSlotLayout.of(chamber.x(), chamber.y(), chamber.width(),
-                chamber.height(), resultStacks.size() + (paid ? 1 : 0));
+                chamber.height(), resultStacks.size() + (points ? 1 : 0) + (paid ? 1 : 0));
         if (slots == null) return;
 
         for (int index = 0; index < resultStacks.size(); index++) {
@@ -447,22 +455,34 @@ public final class RaidRewardRevealScreen extends Screen {
             graphics.pose().popPose();
         }
 
+        int chip = resultStacks.size();
+        if (points) {
+            // Raid Points are not something you can hold either, so they read as a chip too --
+            // in their own colour, so a player can tell the two currencies apart at a glance.
+            drawSlotBox(graphics, slots, chip, POINTS_FILL, POINTS_EDGE);
+            drawFittedText(graphics, "+" + CURRENCY_FORMAT.format(resultPoints) + " RP",
+                    slots.slotX(chip) + slots.cell() / 2, slots.y() + slots.cell() / 2,
+                    slots.cell(), POINTS_TEXT);
+            chip++;
+        }
         if (paid) {
-            int index = resultStacks.size();
-            drawSlotBox(graphics, slots, index, CURRENCY_FILL, CURRENCY_EDGE);
-            // A payout is not something you can hold, so it gets a chip rather than an item slot.
+            drawSlotBox(graphics, slots, chip, CURRENCY_FILL, CURRENCY_EDGE);
             drawFittedText(graphics, "+" + CURRENCY_FORMAT.format(resultCurrency),
-                    slots.slotX(index) + slots.cell() / 2, slots.y() + slots.cell() / 2,
+                    slots.slotX(chip) + slots.cell() / 2, slots.y() + slots.cell() / 2,
                     slots.cell(), CURRENCY_TEXT);
         }
 
         int hovered = slots.slotAt(mouseX, mouseY);
         if (hovered >= 0 && hovered < resultStacks.size()) {
             graphics.renderTooltip(this.font, resultStacks.get(hovered), mouseX, mouseY);
-        } else if (hovered == resultStacks.size() && paid) {
-            graphics.renderTooltip(this.font,
-                    Component.literal(CURRENCY_FORMAT.format(resultCurrency) + " CobbleDollars")
-                            .withStyle(ChatFormatting.GOLD), mouseX, mouseY);
+        } else if (hovered >= resultStacks.size() && hovered >= 0) {
+            boolean pointsChip = points && hovered == resultStacks.size();
+            Component label = pointsChip
+                    ? Component.literal(CURRENCY_FORMAT.format(resultPoints) + " Raid Points")
+                            .withStyle(ChatFormatting.AQUA)
+                    : Component.literal(CURRENCY_FORMAT.format(resultCurrency) + " CobbleDollars")
+                            .withStyle(ChatFormatting.GOLD);
+            if (pointsChip || paid) graphics.renderTooltip(this.font, label, mouseX, mouseY);
         }
     }
 

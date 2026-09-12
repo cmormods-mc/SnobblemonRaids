@@ -20,6 +20,7 @@ public record RewardResultPayload(
         boolean success,
         List<RewardItemPayload> granted,
         long currencyGranted,
+        int raidPointsGranted,
         boolean hasMoreQueued
 ) implements CustomPacketPayload {
     public static final Type<RewardResultPayload> TYPE =
@@ -30,6 +31,7 @@ public record RewardResultPayload(
             ByteBufCodecs.BOOL, RewardResultPayload::success,
             RewardItemPayload.STREAM_CODEC.apply(ByteBufCodecs.list()), RewardResultPayload::granted,
             ByteBufCodecs.VAR_LONG, RewardResultPayload::currencyGranted,
+            ByteBufCodecs.VAR_INT, RewardResultPayload::raidPointsGranted,
             ByteBufCodecs.BOOL, RewardResultPayload::hasMoreQueued,
             RewardResultPayload::new);
 

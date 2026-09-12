@@ -15,6 +15,7 @@ public record CobbleRaidsConfig(
         Currency currency,
         DynamicLevel dynamicLevel,
         MegaPity megaPity,
+        RaidPoints raidPoints,
         TierScaling tierScaling,
         BossGlow bossGlow,
         BossMovement bossMovement,
@@ -240,7 +241,12 @@ public record CobbleRaidsConfig(
          * the whole amount and a four-way raid divides it, and withheld entirely below a tenth of
          * the damage so that tagging a boss once pays nothing.
          */
-        public static Currency defaults() { return new Currency(true, 2_000L, 5_000L, 12_000L, 25_000L, true, 10.0); }
+        /**
+         * Off. Raid Points replaced this as what a raid pays; the figures are kept so a server that
+         * would rather pay CobbleDollars only has to flip the switch. See RaidPointsStore for why
+         * a mod-owned currency was preferred.
+         */
+        public static Currency defaults() { return new Currency(false, 2_000L, 5_000L, 12_000L, 25_000L, true, 10.0); }
 
         /** The all-zero configuration, kept for tests and for an operator switching payouts off. */
         public static Currency disabled() { return new Currency(false, 0L, 0L, 0L, 0L, false, 0.0); }
@@ -301,6 +307,50 @@ public record CobbleRaidsConfig(
         }
 
         public static MegaPity defaults() { return new MegaPity(true, 12); }
+    }
+
+    /**
+     * Raid Points paid for a won raid, by tier.
+     *
+     * <p>A currency this mod owns, spent in the raid shop and earnable nowhere else, which is what
+     * makes it a lever: CobbleDollars buys everything on a server, so what a raid was worth in them
+     * depended on every other mod's prices. Points depend on nothing.
+     *
+     * <p>Flat per claim rather than split by damage share. Every eligible participant fought the
+     * same raid, and a shop currency whose price list is fixed reads badly when what you earn
+     * toward it is not -- the contribution reward is the extra loot selections, which already
+     * scale.
+     */
+    public record RaidPoints(boolean enabled, int starter, int powerhouse, int legendary, int mythical) {
+        private static final int MAX_AWARD = 100_000;
+
+        public RaidPoints {
+            validate("starter", starter);
+            validate("powerhouse", powerhouse);
+            validate("legendary", legendary);
+            validate("mythical", mythical);
+        }
+
+        public static RaidPoints defaults() { return new RaidPoints(true, 25, 50, 75, 100); }
+
+        public int pointsFor(RaidRarityTier tier) {
+            return switch (tier) {
+                case STARTER -> starter;
+                case POWERHOUSE -> powerhouse;
+                case LEGENDARY -> legendary;
+                case MYTHICAL -> mythical;
+            };
+        }
+
+        /** True when no tier pays anything, so the claim path can skip the award entirely. */
+        public boolean isNoOp() {
+            return starter <= 0 && powerhouse <= 0 && legendary <= 0 && mythical <= 0;
+        }
+
+        private static void validate(String name, int amount) {
+            if (amount < 0 || amount > MAX_AWARD)
+                throw new IllegalArgumentException("raid_points." + name + " must be 0.." + MAX_AWARD);
+        }
     }
 
     public record BattleCarryover(boolean health, boolean pp, boolean status) {
@@ -435,6 +485,7 @@ public record CobbleRaidsConfig(
                 Currency.defaults(),
                 DynamicLevel.defaults(),
                 MegaPity.defaults(),
+                RaidPoints.defaults(),
                 TierScaling.defaults(),
                 BossGlow.defaults(),
                 BossMovement.defaults(),
@@ -551,6 +602,15 @@ public record CobbleRaidsConfig(
                 Json.bool(megaPityObject, "enabled", mp.enabled()),
                 Json.integer(megaPityObject, "threshold", mp.threshold()));
 
+        JsonObject raidPointsObject = Json.object(root, "raid_points");
+        RaidPoints rp = defaults.raidPoints();
+        RaidPoints raidPoints = new RaidPoints(
+                Json.bool(raidPointsObject, "enabled", rp.enabled()),
+                Json.integer(raidPointsObject, "starter", rp.starter()),
+                Json.integer(raidPointsObject, "powerhouse", rp.powerhouse()),
+                Json.integer(raidPointsObject, "legendary", rp.legendary()),
+                Json.integer(raidPointsObject, "mythical", rp.mythical()));
+
         JsonObject tierScalingObject = Json.object(root, "tier_scaling");
         TierScaling ts = defaults.tierScaling();
         TierScaling tierScaling = new TierScaling(
@@ -576,7 +636,7 @@ public record CobbleRaidsConfig(
                 Json.bool(bossMovementObject, "prevent_knockback", bm.preventKnockback()));
 
         return new CobbleRaidsConfig(naturalSpawning, recruitmentDefaults, combatDefaults, battleCarryover,
-                bossTraits, catching, currency, dynamicLevel, megaPity, tierScaling, bossGlow, bossMovement,
+                bossTraits, catching, currency, dynamicLevel, megaPity, raidPoints, tierScaling, bossGlow, bossMovement,
                 Json.bool(root, "debug_logging", defaults.debugLogging()));
     }
 
@@ -672,6 +732,14 @@ public record CobbleRaidsConfig(
         megaPityJson.addProperty("enabled", megaPity.enabled());
         megaPityJson.addProperty("threshold", megaPity.threshold());
         root.add("mega_pity", megaPityJson);
+
+        JsonObject raidPointsJson = new JsonObject();
+        raidPointsJson.addProperty("enabled", raidPoints.enabled());
+        raidPointsJson.addProperty("starter", raidPoints.starter());
+        raidPointsJson.addProperty("powerhouse", raidPoints.powerhouse());
+        raidPointsJson.addProperty("legendary", raidPoints.legendary());
+        raidPointsJson.addProperty("mythical", raidPoints.mythical());
+        root.add("raid_points", raidPointsJson);
 
         JsonObject tierScalingObject = new JsonObject();
         tierScalingObject.addProperty("enabled", tierScaling.enabled());
