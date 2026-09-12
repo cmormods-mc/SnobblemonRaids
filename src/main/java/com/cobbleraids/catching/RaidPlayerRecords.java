@@ -88,6 +88,23 @@ public final class RaidPlayerRecords extends SavedData {
 
     // ---------------------------------------------------------------- persistence
 
+    /**
+     * Records one mega-capable raid claim, and whether it produced a stone.
+     *
+     * <p>The counter only moves on raids that could have dropped one: counting a Pidgeot raid
+     * against a player's bad luck would make the guarantee mean nothing, since 30% of starter
+     * spawns and nearly every legendary carry no stone at all.
+     */
+    public static void recordMegaCapableClaim(MinecraftServer server, UUID playerId, boolean gotStone) {
+        LIVE.compute(playerId, (ignored, existing) -> {
+            RaidPlayerRecord current = existing == null ? RaidPlayerRecord.EMPTY : existing;
+            return new RaidPlayerRecord(current.raidsWon(), current.winsByTier(),
+                    current.defeatsBySpecies(), current.totalContribution(), current.bossesCaught(),
+                    gotStone ? 0 : current.raidsSinceMegaStone() + 1);
+        });
+        persist(server);
+    }
+
     public static SavedData.Factory<RaidPlayerRecords> factory() {
         return new SavedData.Factory<>(RaidPlayerRecords::new, RaidPlayerRecords::load, DataFixTypes.LEVEL);
     }
@@ -131,7 +148,8 @@ public final class RaidPlayerRecords extends SavedData {
             }
             store.loaded.put(playerTag.getUUID("player"), new RaidPlayerRecord(
                     playerTag.getInt("wins"), tiers, species,
-                    playerTag.getDouble("contribution"), playerTag.getInt("caught")));
+                    playerTag.getDouble("contribution"), playerTag.getInt("caught"),
+                    playerTag.getInt("since_mega")));
         }
         return store;
     }
@@ -146,6 +164,7 @@ public final class RaidPlayerRecords extends SavedData {
             playerTag.putInt("wins", record.raidsWon());
             playerTag.putDouble("contribution", record.totalContribution());
             playerTag.putInt("caught", record.bossesCaught());
+            playerTag.putInt("since_mega", record.raidsSinceMegaStone());
             CompoundTag tiers = new CompoundTag();
             record.winsByTier().forEach((tier, count) ->
                     tiers.putInt(tier.serializedName().toLowerCase(Locale.ROOT), count));

@@ -10,8 +10,8 @@ Weights are hundredths of a percent; each pool totals 10000. The *matched* colum
 
 | Row | starter matched | starter unmatched | powerhouse matched | powerhouse unmatched | legendary matched | legendary unmatched | mythical matched | mythical unmatched |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| mega stone | 45.25% | -- | 45.25% | -- | 45.25% | -- | 45.25% | -- |
-| standard tera shard | 26.60% | 26.60% | -- | -- | -- | -- | -- | -- |
+| mega stone | 10.00% | -- | 10.00% | -- | 10.00% | -- | 10.00% | -- |
+| standard tera shard | 11.90% | 11.90% | -- | -- | -- | -- | -- | -- |
 | stellar tera shard | 0.20% | 0.20% | -- | -- | -- | -- | -- | -- |
 | copper incubator | 1.50% | 1.50% | 1.00% | 1.00% | -- | -- | -- | -- |
 | iron incubator | 0.60% | 0.60% | 1.00% | 1.00% | -- | -- | -- | -- |
@@ -44,7 +44,7 @@ Weights are hundredths of a percent; each pool totals 10000. The *matched* colum
 | golden auspicious ball | -- | -- | -- | -- | 0.02% | 0.02% | 0.05% | 0.05% |
 | rare candy | 1.00% | 1.00% | 2.00% | 2.00% | 3.00% | 3.00% | 4.00% | 4.00% |
 | large exp candy | -- | -- | 5.00% | 5.00% | 8.00% | 8.00% | 10.00% | 10.00% |
-| base fallback | 21.60% | 66.85% | 38.95% | 84.20% | 28.99% | 74.24% | 20.45% | 65.70% |
+| base fallback | 71.55% | 81.55% | 74.20% | 84.20% | 64.24% | 74.24% | 55.70% | 65.70% |
 
 ## Mega Stones
 
@@ -52,27 +52,27 @@ The 5.00% row splits evenly between a boss's stones, so a single-stone boss is 5
 
 | Boss | Tier | Stones | Each |
 |---|---|---|---:|
-| blastoise | starter | blastoisinite | 45.25% |
-| blaziken | starter | blazikenite | 45.25% |
-| charizard | starter | charizardite_x, charizardite_y | 22.62% |
-| chesnaught | starter | chesnaughtite | 45.25% |
-| delphox | starter | delphoxite | 45.25% |
-| diancie | mythical | diancite | 45.25% |
-| dragonite | powerhouse | dragoninite | 45.25% |
-| emboar | starter | emboarite | 45.25% |
-| feraligatr | starter | feraligite | 45.25% |
-| garchomp | powerhouse | garchompite | 45.25% |
-| greninja | starter | greninjite | 45.25% |
-| latias | legendary | latiasite | 45.25% |
-| latios | legendary | latiosite | 45.25% |
-| meganium | starter | meganiumite | 45.25% |
-| metagross | powerhouse | metagrossite | 45.25% |
-| mewtwo | legendary | mewtwonite_x, mewtwonite_y | 22.62% |
-| salamence | powerhouse | salamencite | 45.25% |
-| sceptile | starter | sceptilite | 45.25% |
-| swampert | starter | swampertite | 45.25% |
-| tyranitar | powerhouse | tyranitarite | 45.25% |
-| venusaur | starter | venusaurite | 45.25% |
+| blastoise | starter | blastoisinite | 10.00% |
+| blaziken | starter | blazikenite | 10.00% |
+| charizard | starter | charizardite_x, charizardite_y | 5.00% |
+| chesnaught | starter | chesnaughtite | 10.00% |
+| delphox | starter | delphoxite | 10.00% |
+| diancie | mythical | diancite | 10.00% |
+| dragonite | powerhouse | dragoninite | 10.00% |
+| emboar | starter | emboarite | 10.00% |
+| feraligatr | starter | feraligite | 10.00% |
+| garchomp | powerhouse | garchompite | 10.00% |
+| greninja | starter | greninjite | 10.00% |
+| latias | legendary | latiasite | 10.00% |
+| latios | legendary | latiosite | 10.00% |
+| meganium | starter | meganiumite | 10.00% |
+| metagross | powerhouse | metagrossite | 10.00% |
+| mewtwo | legendary | mewtwonite_x, mewtwonite_y | 5.00% |
+| salamence | powerhouse | salamencite | 10.00% |
+| sceptile | starter | sceptilite | 10.00% |
+| swampert | starter | swampertite | 10.00% |
+| tyranitar | powerhouse | tyranitarite | 10.00% |
+| venusaur | starter | venusaurite | 10.00% |
 
 ## General rolls
 

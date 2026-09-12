@@ -4,7 +4,7 @@
   "base_health": 550,
   "spawn": {
     "enabled": true,
-    "weight": 5,
+    "weight": 15,
     "dimensions": [
       "minecraft:overworld"
     ],

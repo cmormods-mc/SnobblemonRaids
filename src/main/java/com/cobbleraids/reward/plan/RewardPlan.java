@@ -37,7 +37,8 @@ public sealed interface RewardPlan permits RewardPlan.Policy, RewardPlan.Legacy 
      * @param lootTables one specialty table followed by the general table repeated
      *                   {@code standardGeneralRolls + bonusGeneralRolls} times
      */
-    record Policy(List<String> lootTables, int bonusGeneralRolls, BigInteger currency) implements RewardPlan {
+    record Policy(List<String> lootTables, int bonusGeneralRolls, BigInteger currency,
+                  boolean megaCapable) implements RewardPlan {
         public Policy {
             lootTables = List.copyOf(lootTables);
             currency = currency == null ? BigInteger.ZERO : currency;

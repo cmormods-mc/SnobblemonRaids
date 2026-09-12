@@ -51,6 +51,7 @@ class CobbleRaidsConfigRoundTripTest {
                 new CobbleRaidsConfig.Catching(true, 0.5, 0.25, 0.1, 0.0),
                 new CobbleRaidsConfig.Currency(true, 25L, 100L, 400L, 1_000L, true, 20.0),
                 new CobbleRaidsConfig.DynamicLevel(true, -5, 90),
+                new CobbleRaidsConfig.MegaPity(true, 20),
                 CobbleRaidsConfig.defaults().tierScaling(),
                 CobbleRaidsConfig.defaults().bossGlow(),
                 CobbleRaidsConfig.defaults().bossMovement(),
@@ -74,6 +75,7 @@ class CobbleRaidsConfigRoundTripTest {
         assertEquals(20.0, reparsed.currency().minimumSharePercentage(), 0.0);
         assertEquals(-5, reparsed.dynamicLevel().levelOffset());
         assertEquals(90, reparsed.dynamicLevel().maxLevel());
+        assertEquals(20, reparsed.megaPity().threshold());
     }
 
     @Test
@@ -88,6 +90,7 @@ class CobbleRaidsConfigRoundTripTest {
         old.remove("catching");
         old.remove("currency");
         old.remove("dynamic_level");
+        old.remove("mega_pity");
         old.getAsJsonObject("combat_defaults").remove("max_failed_attempts");
 
         CobbleRaidsConfig loaded = CobbleRaidsConfig.fromJson(old);
@@ -99,6 +102,7 @@ class CobbleRaidsConfigRoundTripTest {
         assertEquals(CobbleRaidsConfig.defaults().catching(), loaded.catching());
         assertEquals(CobbleRaidsConfig.defaults().currency(), loaded.currency());
         assertEquals(CobbleRaidsConfig.defaults().dynamicLevel(), loaded.dynamicLevel());
+        assertEquals(CobbleRaidsConfig.defaults().megaPity(), loaded.megaPity());
     }
 
     @Test

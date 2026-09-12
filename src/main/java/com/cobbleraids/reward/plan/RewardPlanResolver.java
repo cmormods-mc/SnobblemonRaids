@@ -5,6 +5,7 @@ import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.config.RaidRarityTier;
 import com.cobbleraids.config.RaidRewardPolicy;
 import com.cobbleraids.reward.ContributionMath;
+import com.cobbleraids.reward.RaidMegaPity;
 import com.cobbleraids.reward.currency.RaidCurrencyPolicy;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -80,7 +81,9 @@ public final class RewardPlanResolver {
                                      int bonusRolls,
                                      RaidRewardPolicy policy,
                                      CobbleRaidsConfig.Currency currencyConfig,
-                                     Predicate<String> tableExists) {
+                                     Predicate<String> tableExists,
+                                     int raidsSinceMegaStone,
+                                     CobbleRaidsConfig.MegaPity pityConfig) {
         BigInteger currency = RaidCurrencyPolicy.payout(currencyConfig, tier, contributionPercentage);
 
         if (isSelfDescribing(rewards, choice)) {
@@ -101,12 +104,28 @@ public final class RewardPlanResolver {
                     currency);
         }
 
+        String bossTable = species == null || species.isBlank() ? null
+                : policy.bossSpecialtyTableFor(species);
+        boolean megaCapable = bossTable != null && tableExists != null && tableExists.test(bossTable);
+
         List<String> tables = new ArrayList<>();
-        tables.add(specialtyTableFor(policy, tier, species, tableExists));
+        if (megaCapable && RaidMegaPity.guaranteed(raidsSinceMegaStone, pityConfig)) {
+            // The guarantee replaces the specialty selection rather than adding one: a player owed
+            // a stone gets a stone instead of that roll, not as well as it, so the bundle is always
+            // the same size and nothing else in the pool is displaced.
+            tables.add(megaTableFor(bossTable));
+        } else {
+            tables.add(megaCapable ? bossTable : policy.specialtyTableFor(tier));
+        }
         int generalRolls = policy.standardGeneralRolls() + Math.max(0, bonusRolls);
         String general = policy.generalTableFor(tier);
         for (int index = 0; index < generalRolls; index++) tables.add(general);
-        return new RewardPlan.Policy(tables, Math.max(0, bonusRolls), currency);
+        return new RewardPlan.Policy(tables, Math.max(0, bonusRolls), currency, megaCapable);
+    }
+
+    /** The boss's stone table, derived from its specialty table so the two cannot drift apart. */
+    static String megaTableFor(String bossSpecialtyTable) {
+        return bossSpecialtyTable.replace("specialty/boss/", "specialty/mega/");
     }
 
     /**
