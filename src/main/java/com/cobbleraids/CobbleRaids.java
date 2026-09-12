@@ -24,6 +24,7 @@ import com.cobbleraids.reward.NativeRewardScreenGateway;
 import com.cobbleraids.reward.RaidRewardCommand;
 import com.cobbleraids.reward.RewardGuiBackends;
 import com.cobbleraids.reward.currency.RaidCurrencyBackends;
+import com.cobbleraids.shop.ShopCatalogManager;
 import com.cobbleraids.showdown.RaidInstructionRegistrar;
 import com.cobbleraids.showdown.ShowdownIntegrationInstaller;
 import com.cobbleraids.spawn.RaidSpawnHistory;
@@ -48,6 +49,7 @@ public final class CobbleRaids implements ModInitializer {
         // per-raid fields inherit values from config/cobbleraids/server.json.
         CobbleRaidsConfigManager.load();
         RaidRewardPolicyManager.load();
+        ShopCatalogManager.load();
 
         RaidRewardPayloads.registerPayloadTypes();
         ServerPlayNetworking.registerGlobalReceiver(RewardChoicePayload.TYPE, (payload, context) ->
@@ -83,6 +85,9 @@ public final class CobbleRaids implements ModInitializer {
         // aborting the reload that also brings in this mod's raid definitions.
         ServerLifecycleEvents.START_DATA_PACK_RELOAD.register((server, resources) ->
                 RaidFaultBarrier.guard("reward-policy-reload", RaidRewardPolicyManager::reload));
+        // And the shop catalogue, so an operator can reprice without restarting the server.
+        ServerLifecycleEvents.START_DATA_PACK_RELOAD.register((server, resources) ->
+                RaidFaultBarrier.guard("shop-catalog-reload", ShopCatalogManager::reload));
         ServerLifecycleEvents.SERVER_STARTING.register(server ->
                 RaidFaultBarrier.guard("startup:reward-gui", RewardGuiBackends::ensureReady));
         ServerLifecycleEvents.SERVER_STARTING.register(server ->

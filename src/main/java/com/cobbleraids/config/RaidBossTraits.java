@@ -157,7 +157,11 @@ public record RaidBossTraits(
                 string(traits, "form"));
     }
 
-    private static Map<String, Integer> readStats(JsonObject traits, String key, int min, int max, String definitionId) {
+    /**
+     * Reads an ivs/evs block. Public because the shop catalogue writes stats the same way and the
+     * rule for what a stat is called, and what it may be set to, should have one owner.
+     */
+    public static Map<String, Integer> readStats(JsonObject traits, String key, int min, int max, String definitionId) {
         if (!traits.has(key) || !traits.get(key).isJsonObject()) return Map.of();
         Map<String, Integer> values = new LinkedHashMap<>();
         for (Map.Entry<String, JsonElement> entry : traits.getAsJsonObject(key).entrySet()) {

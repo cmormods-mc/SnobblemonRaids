@@ -13,39 +13,40 @@ import com.google.gson.JsonObject;
  * malformed *value* still throws, because a key someone wrote wrong should be reported, not
  * silently replaced with a default they did not choose.
  *
- * <p>These were duplicated verbatim in CobbleRaidsConfig and RaidDefinition.
+ * <p>These were duplicated verbatim in CobbleRaidsConfig and RaidDefinition. The shop
+ * catalogue reads the same way, which is why they are public rather than package-private.
  */
-final class Json {
+public final class Json {
 
     private Json() {}
 
     /** A nested object, or an empty one so callers can read defaults out of it without null checks. */
-    static JsonObject object(JsonObject root, String key) {
+    public static JsonObject object(JsonObject root, String key) {
         return root.has(key) && root.get(key).isJsonObject() ? root.getAsJsonObject(key) : new JsonObject();
     }
 
     /** A nested array, or an empty one. */
-    static JsonArray array(JsonObject root, String key) {
+    public static JsonArray array(JsonObject root, String key) {
         return root.has(key) && root.get(key).isJsonArray() ? root.getAsJsonArray(key) : new JsonArray();
     }
 
-    static int integer(JsonObject root, String key, int fallback) {
+    public static int integer(JsonObject root, String key, int fallback) {
         return root.has(key) ? root.get(key).getAsInt() : fallback;
     }
 
-    static long integer64(JsonObject root, String key, long fallback) {
+    public static long integer64(JsonObject root, String key, long fallback) {
         return root.has(key) ? root.get(key).getAsLong() : fallback;
     }
 
-    static double decimal(JsonObject root, String key, double fallback) {
+    public static double decimal(JsonObject root, String key, double fallback) {
         return root.has(key) ? root.get(key).getAsDouble() : fallback;
     }
 
-    static boolean bool(JsonObject root, String key, boolean fallback) {
+    public static boolean bool(JsonObject root, String key, boolean fallback) {
         return root.has(key) ? root.get(key).getAsBoolean() : fallback;
     }
 
-    static String string(JsonObject root, String key, String fallback) {
+    public static String string(JsonObject root, String key, String fallback) {
         return root.has(key) ? root.get(key).getAsString() : fallback;
     }
 }
