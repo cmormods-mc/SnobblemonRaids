@@ -7,7 +7,7 @@
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:specialty/mega/latias",
-          "weight": 500
+          "weight": 4525
         },
         {
           "type": "minecraft:loot_table",
@@ -147,7 +147,7 @@
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:base/legendary",
-          "weight": 6924
+          "weight": 2899
         }
       ]
     }

@@ -26,6 +26,12 @@ TABLE_ROOT = os.path.join(REPO_ROOT, "compat", "addonrewards", "src", "main", "r
 MANIFEST_PATH = os.path.join(REPO_ROOT, "validation", "economy", "manifest.json")
 
 TIERS = ["starter", "powerhouse", "legendary", "mythical"]
+
+# The rates the matrix is supposed to produce, in hundredths of a percent. Stated here rather than
+# read from the generator on purpose: this file exists to catch the generator disagreeing with what
+# the economy was designed to do, and a check that asks the thing it is checking cannot do that.
+MEGA_RATE = 4525
+TERA_RATE = 2660
 TOLERANCE = Fraction(1, 1000000)
 
 failures = []
@@ -119,10 +125,11 @@ def main():
         outcomes = distribution(table_id, tags)
         stones = [stone["item"] for stone in entry["stones"]]
         aggregate = sum((outcomes.get(stone, Fraction(0)) for stone in stones), Fraction(0))
-        check(aggregate == Fraction(5, 100),
-              boss + " drops a mega stone at " + str(float(aggregate) * 100) + "%, not 5.00%")
+        check(aggregate == Fraction(MEGA_RATE, 10000),
+              boss + " drops a mega stone at " + str(float(aggregate) * 100) + "%, not "
+              + str(MEGA_RATE / 100.0) + "%")
         for stone in stones:
-            expected = Fraction(5, 100) / len(stones)
+            expected = Fraction(MEGA_RATE, 10000) / len(stones)
             check(outcomes.get(stone, Fraction(0)) == expected,
                   boss + " drops " + stone + " at " + str(float(outcomes.get(stone, 0)) * 100)
                   + "%, not " + str(float(expected) * 100) + "%")
@@ -138,8 +145,9 @@ def main():
     starter = distribution("cobbleraids:specialty/starter", tags)
     tera = sum((probability for key, probability in starter.items() if key.endswith("_tera_shard")
                 and not key.startswith("mega_showdown:stellar")), Fraction(0))
-    check(tera == Fraction(15, 100),
-          "standard tera shards total " + str(float(tera) * 100) + "% at starter, not 15.00%")
+    check(tera == Fraction(TERA_RATE, 10000),
+          "standard tera shards total " + str(float(tera) * 100) + "% at starter, not "
+          + str(TERA_RATE / 100.0) + "%")
     check(starter.get("mega_showdown:stellar_tera_shard") == Fraction(20, 10000),
           "the stellar tera shard is not at its own 0.20%")
 
@@ -218,9 +226,9 @@ def main():
         return 1
 
     checked = len(TIERS) * 3 + len(manifest.get("mega", {}))
-    print("Economy probability validation: PASS -- %d tables walked exactly; mega 5.00%% aggregate"
-          " over %d bosses, tera 15.00%%, TM/TR 80/20, no premium item reachable from a general roll"
-          % (checked, len(manifest.get("mega", {}))))
+    print("Economy probability validation: PASS -- %d tables walked exactly; mega %.2f%% aggregate"
+          " over %d bosses, tera %.2f%%, TM/TR 80/20, no premium item reachable from a general roll"
+          % (checked, MEGA_RATE / 100.0, len(manifest.get("mega", {})), TERA_RATE / 100.0))
     return 0
 
 

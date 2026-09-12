@@ -7,7 +7,7 @@
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:specialty/leaf/tera_standard",
-          "weight": 1500
+          "weight": 2660
         },
         {
           "type": "minecraft:loot_table",
@@ -67,7 +67,7 @@
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:base/starter",
-          "weight": 7845
+          "weight": 6685
         }
       ]
     }
