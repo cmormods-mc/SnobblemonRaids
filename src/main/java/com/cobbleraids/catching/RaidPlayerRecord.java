@@ -23,10 +23,11 @@ public record RaidPlayerRecord(
         Map<RaidRarityTier, Integer> winsByTier,
         Map<ResourceLocation, Integer> defeatsBySpecies,
         double totalContribution,
-        int bossesCaught
+        int bossesCaught,
+        int raidsSinceMegaStone
 ) {
     public static final RaidPlayerRecord EMPTY =
-            new RaidPlayerRecord(0, Map.of(), Map.of(), 0.0, 0);
+            new RaidPlayerRecord(0, Map.of(), Map.of(), 0.0, 0, 0);
 
     public RaidPlayerRecord {
         // Built key-first rather than with EnumMap's copy constructor: that one throws
@@ -64,10 +65,11 @@ public record RaidPlayerRecord(
         LinkedHashMap<ResourceLocation, Integer> species = new LinkedHashMap<>(defeatsBySpecies);
         species.merge(definitionId, 1, Integer::sum);
         return new RaidPlayerRecord(raidsWon + 1, tiers, species,
-                totalContribution + contribution, bossesCaught);
+                totalContribution + contribution, bossesCaught, raidsSinceMegaStone);
     }
 
     public RaidPlayerRecord withCatch() {
-        return new RaidPlayerRecord(raidsWon, winsByTier, defeatsBySpecies, totalContribution, bossesCaught + 1);
+        return new RaidPlayerRecord(raidsWon, winsByTier, defeatsBySpecies, totalContribution,
+                bossesCaught + 1, raidsSinceMegaStone);
     }
 }

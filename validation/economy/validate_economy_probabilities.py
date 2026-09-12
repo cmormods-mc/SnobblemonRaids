@@ -30,8 +30,8 @@ TIERS = ["starter", "powerhouse", "legendary", "mythical"]
 # The rates the matrix is supposed to produce, in hundredths of a percent. Stated here rather than
 # read from the generator on purpose: this file exists to catch the generator disagreeing with what
 # the economy was designed to do, and a check that asks the thing it is checking cannot do that.
-MEGA_RATE = 4525
-TERA_RATE = 2660
+MEGA_RATE = 1000
+TERA_RATE = 1190
 TOLERANCE = Fraction(1, 1000000)
 
 failures = []

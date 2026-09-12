@@ -14,6 +14,7 @@ public record CobbleRaidsConfig(
         Catching catching,
         Currency currency,
         DynamicLevel dynamicLevel,
+        MegaPity megaPity,
         TierScaling tierScaling,
         BossGlow bossGlow,
         BossMovement bossMovement,
@@ -286,6 +287,22 @@ public record CobbleRaidsConfig(
         public static DynamicLevel defaults() { return new DynamicLevel(true, 0, 100); }
     }
 
+    /**
+     * Bad-luck protection on Mega Stones: guaranteed by the Nth mega-capable raid.
+     *
+     * <p>Counted in raids that could have dropped one, not in raids. It is what lets the drop rate
+     * itself stay low -- 10% with a floor under it averages the same as 15% without one, and the
+     * distribution is far tighter. See RaidMegaPity.
+     */
+    public record MegaPity(boolean enabled, int threshold) {
+        public MegaPity {
+            if (threshold < 1 || threshold > 200)
+                throw new IllegalArgumentException("mega_pity.threshold must be 1..200");
+        }
+
+        public static MegaPity defaults() { return new MegaPity(true, 12); }
+    }
+
     public record BattleCarryover(boolean health, boolean pp, boolean status) {
         public static BattleCarryover defaults() { return new BattleCarryover(true, true, false); }
 
@@ -381,14 +398,15 @@ public record CobbleRaidsConfig(
                 new NaturalSpawning(
                         true,           // enabled
                         1200,           // check_interval_ticks
-                        // One check a minute, 2.22% of which proceed, so a raid every 45 minutes
-                        // on average. It was 0.25 -- one every four minutes, about fifteen an hour,
-                        // each announced server-wide -- which a live server reported as constant.
+                        // One check a minute, 5% of which proceed: a raid every 20 minutes on
+                        // average, three an hour. Set alongside the Mega Stone rate rather than on
+                        // its own -- supply is the dominant term in how often a stone turns up, and
+                        // at 45 minutes no sane drop rate reached a four-hour stone.
                         //
                         // The distribution is geometric rather than a fixed timer: the wait is
                         // memoryless, so raids do not become predictable and two can fall close
-                        // together. 45 minutes is the mean, not the interval.
-                        0.0222,         // spawn_attempt_chance
+                        // together. 20 minutes is the mean, not the interval.
+                        0.05,           // spawn_attempt_chance
                         1,              // attempts_per_check
                         // Left at 10/4. These were raised from 3/2 because at three global slots a
                         // handful of players sitting on bosses could stop wild raids for everyone,
@@ -416,6 +434,7 @@ public record CobbleRaidsConfig(
                 Catching.defaults(),
                 Currency.defaults(),
                 DynamicLevel.defaults(),
+                MegaPity.defaults(),
                 TierScaling.defaults(),
                 BossGlow.defaults(),
                 BossMovement.defaults(),
@@ -526,6 +545,12 @@ public record CobbleRaidsConfig(
                 Json.integer(dynamicLevelObject, "level_offset", dl.levelOffset()),
                 Json.integer(dynamicLevelObject, "max_level", dl.maxLevel()));
 
+        JsonObject megaPityObject = Json.object(root, "mega_pity");
+        MegaPity mp = defaults.megaPity();
+        MegaPity megaPity = new MegaPity(
+                Json.bool(megaPityObject, "enabled", mp.enabled()),
+                Json.integer(megaPityObject, "threshold", mp.threshold()));
+
         JsonObject tierScalingObject = Json.object(root, "tier_scaling");
         TierScaling ts = defaults.tierScaling();
         TierScaling tierScaling = new TierScaling(
@@ -551,7 +576,7 @@ public record CobbleRaidsConfig(
                 Json.bool(bossMovementObject, "prevent_knockback", bm.preventKnockback()));
 
         return new CobbleRaidsConfig(naturalSpawning, recruitmentDefaults, combatDefaults, battleCarryover,
-                bossTraits, catching, currency, dynamicLevel, tierScaling, bossGlow, bossMovement,
+                bossTraits, catching, currency, dynamicLevel, megaPity, tierScaling, bossGlow, bossMovement,
                 Json.bool(root, "debug_logging", defaults.debugLogging()));
     }
 
@@ -642,6 +667,11 @@ public record CobbleRaidsConfig(
         dynamicLevelJson.addProperty("level_offset", dynamicLevel.levelOffset());
         dynamicLevelJson.addProperty("max_level", dynamicLevel.maxLevel());
         root.add("dynamic_level", dynamicLevelJson);
+
+        JsonObject megaPityJson = new JsonObject();
+        megaPityJson.addProperty("enabled", megaPity.enabled());
+        megaPityJson.addProperty("threshold", megaPity.threshold());
+        root.add("mega_pity", megaPityJson);
 
         JsonObject tierScalingObject = new JsonObject();
         tierScalingObject.addProperty("enabled", tierScaling.enabled());

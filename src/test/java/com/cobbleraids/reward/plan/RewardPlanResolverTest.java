@@ -27,6 +27,7 @@ class RewardPlanResolverTest {
     private static final RaidRewardPolicy POLICY = RaidRewardPolicy.defaults();
     private static final CobbleRaidsConfig.Currency NO_CURRENCY = CobbleRaidsConfig.Currency.disabled();
     private static final Predicate<String> NO_BOSS_TABLES = table -> false;
+    private static final CobbleRaidsConfig.MegaPity NO_PITY = new CobbleRaidsConfig.MegaPity(false, 12);
 
     private static RaidDefinition.RewardItem item(String id, int amount) {
         return new RaidDefinition.RewardItem(ResourceLocation.parse(id), amount, 1.0, 1);
@@ -56,7 +57,7 @@ class RewardPlanResolverTest {
                                       RaidRarityTier tier, String species, int bonusRolls,
                                       Predicate<String> tableExists) {
         return RewardPlanResolver.resolve(rewards, choice, tier, species, 100.0, bonusRolls,
-                POLICY, NO_CURRENCY, tableExists);
+                POLICY, NO_CURRENCY, tableExists, 0, NO_PITY);
     }
 
     // --- classification --------------------------------------------------------------------------
@@ -138,6 +139,42 @@ class RewardPlanResolverTest {
             assertEquals("cobbleraids:specialty/legendary", plan.lootTables().get(0),
                     "the specialty selection is always first at B=" + bonus);
         }
+    }
+
+    @Test
+    @DisplayName("a player owed a stone gets the boss's mega table instead of its specialty one")
+    void pityReplacesTheSpecialtySelection() {
+        Predicate<String> onlyCharizard = Set.of("cobbleraids:specialty/boss/charizard")::contains;
+        CobbleRaidsConfig.MegaPity pity = new CobbleRaidsConfig.MegaPity(true, 12);
+
+        RewardPlan.Policy owed = assertInstanceOf(RewardPlan.Policy.class,
+                RewardPlanResolver.resolve(rewards(List.of(), noBonus()), emptyChoice(),
+                        RaidRarityTier.STARTER, "charizard", 100.0, 0, POLICY, NO_CURRENCY,
+                        onlyCharizard, 12, pity));
+        RewardPlan.Policy notOwed = assertInstanceOf(RewardPlan.Policy.class,
+                RewardPlanResolver.resolve(rewards(List.of(), noBonus()), emptyChoice(),
+                        RaidRarityTier.STARTER, "charizard", 100.0, 0, POLICY, NO_CURRENCY,
+                        onlyCharizard, 11, pity));
+
+        assertEquals("cobbleraids:specialty/mega/charizard", owed.lootTables().get(0));
+        assertEquals("cobbleraids:specialty/boss/charizard", notOwed.lootTables().get(0));
+        // The guarantee replaces the roll rather than adding one, so the bundle is the same size.
+        assertEquals(notOwed.lootTables().size(), owed.lootTables().size());
+        assertTrue(owed.megaCapable());
+    }
+
+    @Test
+    @DisplayName("a boss with no stone never triggers the guarantee, however unlucky the player")
+    void pityNeedsAMegaCapableBoss() {
+        CobbleRaidsConfig.MegaPity pity = new CobbleRaidsConfig.MegaPity(true, 12);
+
+        RewardPlan.Policy plan = assertInstanceOf(RewardPlan.Policy.class,
+                RewardPlanResolver.resolve(rewards(List.of(), noBonus()), emptyChoice(),
+                        RaidRarityTier.STARTER, "pidgeot", 100.0, 0, POLICY, NO_CURRENCY,
+                        NO_BOSS_TABLES, 999, pity));
+
+        assertEquals("cobbleraids:specialty/starter", plan.lootTables().get(0));
+        assertFalse(plan.megaCapable());
     }
 
     @Test
@@ -256,10 +293,10 @@ class RewardPlanResolverTest {
                 true, 100L, 100L, 100L, 100L, false, 0.0);
 
         RewardPlan policyPlan = RewardPlanResolver.resolve(rewards(List.of(), noBonus()), emptyChoice(),
-                RaidRarityTier.STARTER, "charizard", 100.0, 0, POLICY, paying, NO_BOSS_TABLES);
+                RaidRarityTier.STARTER, "charizard", 100.0, 0, POLICY, paying, NO_BOSS_TABLES, 0, NO_PITY);
         RewardPlan legacyPlan = RewardPlanResolver.resolve(rewards(List.of(), noBonus()),
                 choice(List.of(item("cobblemon:rare_candy", 1)), List.of(), List.of()),
-                RaidRarityTier.STARTER, "charizard", 100.0, 0, POLICY, paying, NO_BOSS_TABLES);
+                RaidRarityTier.STARTER, "charizard", 100.0, 0, POLICY, paying, NO_BOSS_TABLES, 0, NO_PITY);
 
         assertEquals(BigInteger.valueOf(100L), policyPlan.currency());
         assertEquals(BigInteger.valueOf(100L), legacyPlan.currency());

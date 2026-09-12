@@ -4,7 +4,9 @@ import com.cobbleraids.RaidLog;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.config.RaidDefinitionRegistry;
+import com.cobbleraids.catching.RaidPlayerRecords;
 import com.cobbleraids.config.RaidRewardPolicyManager;
+import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobbleraids.reward.currency.RaidCurrencyBackends;
 import com.cobbleraids.reward.plan.RewardPlan;
 import com.cobbleraids.reward.plan.RewardPlanResolver;
@@ -36,11 +38,13 @@ public final class RaidRewardGrantEngine {
         RaidDefinition definition = RaidDefinitionRegistry.get(definitionId);
         String species = definition == null ? null : definition.species().getPath();
 
+        int sinceStone = RaidPlayerRecords.get(player.getUUID()).raidsSinceMegaStone();
         RewardPlan plan = RewardPlanResolver.resolve(
                 pending.rewards(), choice, pending.rarityTier(), species,
                 pending.contributionPercentage(), pending.contributionBonusRolls(),
                 RaidRewardPolicyManager.get(), CobbleRaidsConfigManager.get().currency(),
-                table -> RaidLootRoller.exists(player, parse(table, definitionId)));
+                table -> RaidLootRoller.exists(player, parse(table, definitionId)),
+                sinceStone, CobbleRaidsConfigManager.get().megaPity());
 
         // One generator per claim, seeded from the claim token, handing a fresh sub-seed to each
         // selection. Reusing the claim seed directly for every roll would make all of a bundle's
@@ -50,11 +54,33 @@ public final class RaidRewardGrantEngine {
             case RewardPlan.Policy policy -> grantPolicy(player, definitionId, policy, claimRandom);
             case RewardPlan.Legacy legacy -> grantLegacy(player, definitionId, legacy, claimRandom);
         };
+        if (plan instanceof RewardPlan.Policy policy && policy.megaCapable()) {
+            recordMegaCapableClaim(player, result, sinceStone);
+        }
         if (CobbleRaidsConfigManager.get().debugLogging()) {
             RaidLog.info("" + definitionId + " granted via the " + plan.mode() + " path: "
                     + plan.lootTables().size() + " table roll(s)");
         }
         return result;
+    }
+
+    /**
+     * Advances or resets the player's Mega Stone counter, and says so when the guarantee fired.
+     *
+     * <p>Guarded: bad-luck protection failing must never cost somebody the reward they just won.
+     * The worst case is a counter that does not move, which delays a guarantee rather than
+     * breaking a claim.
+     */
+    private static void recordMegaCapableClaim(ServerPlayer player, RewardGrantResult result, int sinceStone) {
+        RaidFaultBarrier.guard("reward:mega-pity", () -> {
+            boolean stone = result.allGranted().stream()
+                    .anyMatch(item -> RaidMegaPity.isMegaStone(item.item().toString()));
+            RaidPlayerRecords.recordMegaCapableClaim(player.getServer(), player.getUUID(), stone);
+            if (stone && sinceStone > 0 && CobbleRaidsConfigManager.get().debugLogging()) {
+                RaidLog.info("{} received a Mega Stone after {} mega-capable raid(s) without one",
+                        player.getGameProfile().getName(), sinceStone);
+            }
+        });
     }
 
     /** Policy path: roll each table in the plan once, then pay. Every selection is one table roll. */
