@@ -48,6 +48,9 @@ step "Validate generated reward tables"
 step "Validate exact reward probabilities"
 "$py" validation/economy/validate_economy_probabilities.py
 
+step "Validate the shop test catalogue"
+"$py" validation/shop/build_test_catalog.py --check
+
 step "Compile, test and remap"
 ./gradlew clean build --stacktrace --warning-mode all
 

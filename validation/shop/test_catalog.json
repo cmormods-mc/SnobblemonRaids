@@ -1,0 +1,1079 @@
+{
+  "version": 1,
+  "per_page": 72,
+  "sections": [
+    {
+      "id": "showcase",
+      "title": "Pokemon",
+      "entries": [
+        {
+          "id": "mon_charizard",
+          "cost": 200,
+          "species": "charizard",
+          "level": 25
+        },
+        {
+          "id": "mon_blastoise",
+          "cost": 250,
+          "species": "blastoise",
+          "level": 25
+        },
+        {
+          "id": "mon_greninja",
+          "cost": 300,
+          "species": "greninja",
+          "level": 25
+        },
+        {
+          "id": "mon_garchomp",
+          "cost": 350,
+          "species": "garchomp",
+          "level": 25
+        },
+        {
+          "id": "mon_metagross",
+          "cost": 400,
+          "species": "metagross",
+          "level": 25
+        },
+        {
+          "id": "mon_tyranitar",
+          "cost": 450,
+          "species": "tyranitar",
+          "level": 25
+        },
+        {
+          "id": "mon_dragonite",
+          "cost": 500,
+          "species": "dragonite",
+          "level": 25
+        },
+        {
+          "id": "mon_salamence",
+          "cost": 550,
+          "species": "salamence",
+          "level": 25
+        },
+        {
+          "id": "mon_hydreigon",
+          "cost": 600,
+          "species": "hydreigon",
+          "level": 25
+        }
+      ]
+    },
+    {
+      "id": "vault",
+      "title": "Shiny Vault",
+      "entries": [
+        {
+          "id": "shiny_charizard",
+          "cost": 2500,
+          "species": "charizard",
+          "level": 50,
+          "shiny": true,
+          "once_per_player": true
+        },
+        {
+          "id": "shiny_garchomp",
+          "cost": 2500,
+          "species": "garchomp",
+          "level": 50,
+          "shiny": true,
+          "once_per_player": true
+        },
+        {
+          "id": "shiny_metagross",
+          "cost": 2500,
+          "species": "metagross",
+          "level": 50,
+          "shiny": true,
+          "once_per_player": true
+        },
+        {
+          "id": "shiny_dragonite",
+          "cost": 2500,
+          "species": "dragonite",
+          "level": 50,
+          "shiny": true,
+          "once_per_player": true
+        },
+        {
+          "id": "perfect_garchomp",
+          "cost": 5000,
+          "species": "garchomp",
+          "level": 100,
+          "once_per_player": true,
+          "traits": {
+            "nature": "jolly",
+            "ability": "rough-skin",
+            "held_item": "cobblemon:life_orb",
+            "ivs": {
+              "attack": 31,
+              "hp": 31,
+              "speed": 31,
+              "defence": 31,
+              "special_attack": 31,
+              "special_defence": 31
+            },
+            "evs": {
+              "attack": 252,
+              "speed": 252,
+              "hp": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "consumables",
+      "title": "Consumables",
+      "entries": [
+        {
+          "id": "poke_ball",
+          "cost": 5,
+          "item": "cobblemon:poke_ball",
+          "count": 16
+        },
+        {
+          "id": "great_ball",
+          "cost": 12,
+          "item": "cobblemon:great_ball",
+          "count": 16
+        },
+        {
+          "id": "ultra_ball",
+          "cost": 25,
+          "item": "cobblemon:ultra_ball",
+          "count": 16
+        },
+        {
+          "id": "heal_ball",
+          "cost": 10,
+          "item": "cobblemon:heal_ball",
+          "count": 16
+        },
+        {
+          "id": "revive",
+          "cost": 20,
+          "item": "cobblemon:revive",
+          "count": 8
+        },
+        {
+          "id": "max_revive",
+          "cost": 60,
+          "item": "cobblemon:max_revive",
+          "count": 4
+        },
+        {
+          "id": "max_potion",
+          "cost": 30,
+          "item": "cobblemon:max_potion",
+          "count": 8
+        },
+        {
+          "id": "full_restore",
+          "cost": 45,
+          "item": "cobblemon:full_restore",
+          "count": 4
+        },
+        {
+          "id": "rare_candy",
+          "cost": 75,
+          "item": "cobblemon:rare_candy",
+          "count": 1
+        },
+        {
+          "id": "exp_candy_l",
+          "cost": 40,
+          "item": "cobblemon:exp_candy_l",
+          "count": 8
+        },
+        {
+          "id": "exp_candy_xl",
+          "cost": 90,
+          "item": "cobblemon:exp_candy_xl",
+          "count": 4
+        },
+        {
+          "id": "pp_up",
+          "cost": 100,
+          "item": "cobblemon:pp_up",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "held",
+      "title": "Held Items",
+      "entries": [
+        {
+          "id": "leftovers",
+          "cost": 150,
+          "item": "cobblemon:leftovers",
+          "count": 1
+        },
+        {
+          "id": "choice_band",
+          "cost": 175,
+          "item": "cobblemon:choice_band",
+          "count": 1
+        },
+        {
+          "id": "choice_specs",
+          "cost": 175,
+          "item": "cobblemon:choice_specs",
+          "count": 1
+        },
+        {
+          "id": "choice_scarf",
+          "cost": 175,
+          "item": "cobblemon:choice_scarf",
+          "count": 1
+        },
+        {
+          "id": "life_orb",
+          "cost": 200,
+          "item": "cobblemon:life_orb",
+          "count": 1
+        },
+        {
+          "id": "focus_sash",
+          "cost": 200,
+          "item": "cobblemon:focus_sash",
+          "count": 1
+        },
+        {
+          "id": "assault_vest",
+          "cost": 175,
+          "item": "cobblemon:assault_vest",
+          "count": 1
+        },
+        {
+          "id": "rocky_helmet",
+          "cost": 150,
+          "item": "cobblemon:rocky_helmet",
+          "count": 1
+        },
+        {
+          "id": "lucky_egg",
+          "cost": 250,
+          "item": "cobblemon:lucky_egg",
+          "count": 1
+        },
+        {
+          "id": "exp_share",
+          "cost": 200,
+          "item": "cobblemon:exp_share",
+          "count": 1
+        },
+        {
+          "id": "metal_coat",
+          "cost": 90,
+          "item": "cobblemon:metal_coat",
+          "count": 1
+        },
+        {
+          "id": "kings_rock",
+          "cost": 90,
+          "item": "cobblemon:kings_rock",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "mega",
+      "title": "Mega Stones",
+      "entries": [
+        {
+          "id": "blastoisinite",
+          "cost": 1200,
+          "item": "mega_showdown:blastoisinite",
+          "count": 1
+        },
+        {
+          "id": "blazikenite",
+          "cost": 1200,
+          "item": "mega_showdown:blazikenite",
+          "count": 1
+        },
+        {
+          "id": "charizardite_x",
+          "cost": 1200,
+          "item": "mega_showdown:charizardite_x",
+          "count": 1
+        },
+        {
+          "id": "charizardite_y",
+          "cost": 1200,
+          "item": "mega_showdown:charizardite_y",
+          "count": 1
+        },
+        {
+          "id": "chesnaughtite",
+          "cost": 1200,
+          "item": "mega_showdown:chesnaughtite",
+          "count": 1
+        },
+        {
+          "id": "delphoxite",
+          "cost": 1200,
+          "item": "mega_showdown:delphoxite",
+          "count": 1
+        },
+        {
+          "id": "diancite",
+          "cost": 1200,
+          "item": "mega_showdown:diancite",
+          "count": 1
+        },
+        {
+          "id": "dragoninite",
+          "cost": 1200,
+          "item": "mega_showdown:dragoninite",
+          "count": 1
+        },
+        {
+          "id": "emboarite",
+          "cost": 1200,
+          "item": "mega_showdown:emboarite",
+          "count": 1
+        },
+        {
+          "id": "feraligite",
+          "cost": 1200,
+          "item": "mega_showdown:feraligite",
+          "count": 1
+        },
+        {
+          "id": "garchompite",
+          "cost": 1200,
+          "item": "mega_showdown:garchompite",
+          "count": 1
+        },
+        {
+          "id": "greninjite",
+          "cost": 1200,
+          "item": "mega_showdown:greninjite",
+          "count": 1
+        },
+        {
+          "id": "latiasite",
+          "cost": 1200,
+          "item": "mega_showdown:latiasite",
+          "count": 1
+        },
+        {
+          "id": "latiosite",
+          "cost": 1200,
+          "item": "mega_showdown:latiosite",
+          "count": 1
+        },
+        {
+          "id": "meganiumite",
+          "cost": 1200,
+          "item": "mega_showdown:meganiumite",
+          "count": 1
+        },
+        {
+          "id": "metagrossite",
+          "cost": 1200,
+          "item": "mega_showdown:metagrossite",
+          "count": 1
+        },
+        {
+          "id": "mewtwonite_x",
+          "cost": 1200,
+          "item": "mega_showdown:mewtwonite_x",
+          "count": 1
+        },
+        {
+          "id": "mewtwonite_y",
+          "cost": 1200,
+          "item": "mega_showdown:mewtwonite_y",
+          "count": 1
+        },
+        {
+          "id": "salamencite",
+          "cost": 1200,
+          "item": "mega_showdown:salamencite",
+          "count": 1
+        },
+        {
+          "id": "sceptilite",
+          "cost": 1200,
+          "item": "mega_showdown:sceptilite",
+          "count": 1
+        },
+        {
+          "id": "swampertite",
+          "cost": 1200,
+          "item": "mega_showdown:swampertite",
+          "count": 1
+        },
+        {
+          "id": "tyranitarite",
+          "cost": 1200,
+          "item": "mega_showdown:tyranitarite",
+          "count": 1
+        },
+        {
+          "id": "venusaurite",
+          "cost": 1200,
+          "item": "mega_showdown:venusaurite",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "tera",
+      "title": "Tera Shards",
+      "entries": [
+        {
+          "id": "bug_tera_shard",
+          "cost": 400,
+          "item": "mega_showdown:bug_tera_shard",
+          "count": 1
+        },
+        {
+          "id": "dark_tera_shard",
+          "cost": 400,
+          "item": "mega_showdown:dark_tera_shard",
+          "count": 1
+        },
+        {
+          "id": "dragon_tera_shard",
+          "cost": 400,
+          "item": "mega_showdown:dragon_tera_shard",
+          "count": 1
+        },
+        {
+          "id": "electric_tera_shard",
+          "cost": 400,
+          "item": "mega_showdown:electric_tera_shard",
+          "count": 1
+        },
+        {
+          "id": "fairy_tera_shard",
+          "cost": 400,
+          "item": "mega_showdown:fairy_tera_shard",
+          "count": 1
+        },
+        {
+          "id": "fighting_tera_shard",
+          "cost": 400,
+          "item": "mega_showdown:fighting_tera_shard",
+          "count": 1
+        },
+        {
+          "id": "fire_tera_shard",
+          "cost": 400,
+          "item": "mega_showdown:fire_tera_shard",
+          "count": 1
+        },
+        {
+          "id": "flying_tera_shard",
+          "cost": 400,
+          "item": "mega_showdown:flying_tera_shard",
+          "count": 1
+        },
+        {
+          "id": "ghost_tera_shard",
+          "cost": 400,
+          "item": "mega_showdown:ghost_tera_shard",
+          "count": 1
+        },
+        {
+          "id": "grass_tera_shard",
+          "cost": 400,
+          "item": "mega_showdown:grass_tera_shard",
+          "count": 1
+        },
+        {
+          "id": "ground_tera_shard",
+          "cost": 400,
+          "item": "mega_showdown:ground_tera_shard",
+          "count": 1
+        },
+        {
+          "id": "ice_tera_shard",
+          "cost": 400,
+          "item": "mega_showdown:ice_tera_shard",
+          "count": 1
+        },
+        {
+          "id": "normal_tera_shard",
+          "cost": 400,
+          "item": "mega_showdown:normal_tera_shard",
+          "count": 1
+        },
+        {
+          "id": "poison_tera_shard",
+          "cost": 400,
+          "item": "mega_showdown:poison_tera_shard",
+          "count": 1
+        },
+        {
+          "id": "psychic_tera_shard",
+          "cost": 400,
+          "item": "mega_showdown:psychic_tera_shard",
+          "count": 1
+        },
+        {
+          "id": "rock_tera_shard",
+          "cost": 400,
+          "item": "mega_showdown:rock_tera_shard",
+          "count": 1
+        },
+        {
+          "id": "steel_tera_shard",
+          "cost": 400,
+          "item": "mega_showdown:steel_tera_shard",
+          "count": 1
+        },
+        {
+          "id": "stellar_tera_shard",
+          "cost": 400,
+          "item": "mega_showdown:stellar_tera_shard",
+          "count": 1
+        },
+        {
+          "id": "water_tera_shard",
+          "cost": 400,
+          "item": "mega_showdown:water_tera_shard",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "bulk",
+      "title": "Overflow Test",
+      "entries": [
+        {
+          "id": "bulk_00",
+          "cost": 5,
+          "item": "cobblemon:poke_ball",
+          "count": 1
+        },
+        {
+          "id": "bulk_01",
+          "cost": 6,
+          "item": "cobblemon:great_ball",
+          "count": 2
+        },
+        {
+          "id": "bulk_02",
+          "cost": 7,
+          "item": "cobblemon:ultra_ball",
+          "count": 3
+        },
+        {
+          "id": "bulk_03",
+          "cost": 8,
+          "item": "cobblemon:heal_ball",
+          "count": 4
+        },
+        {
+          "id": "bulk_04",
+          "cost": 9,
+          "item": "cobblemon:revive",
+          "count": 5
+        },
+        {
+          "id": "bulk_05",
+          "cost": 10,
+          "item": "cobblemon:max_revive",
+          "count": 6
+        },
+        {
+          "id": "bulk_06",
+          "cost": 11,
+          "item": "cobblemon:max_potion",
+          "count": 7
+        },
+        {
+          "id": "bulk_07",
+          "cost": 12,
+          "item": "cobblemon:full_restore",
+          "count": 8
+        },
+        {
+          "id": "bulk_08",
+          "cost": 13,
+          "item": "cobblemon:rare_candy",
+          "count": 9
+        },
+        {
+          "id": "bulk_09",
+          "cost": 14,
+          "item": "cobblemon:exp_candy_l",
+          "count": 10
+        },
+        {
+          "id": "bulk_10",
+          "cost": 15,
+          "item": "cobblemon:exp_candy_xl",
+          "count": 11
+        },
+        {
+          "id": "bulk_11",
+          "cost": 16,
+          "item": "cobblemon:pp_up",
+          "count": 12
+        },
+        {
+          "id": "bulk_12",
+          "cost": 17,
+          "item": "cobblemon:poke_ball",
+          "count": 13
+        },
+        {
+          "id": "bulk_13",
+          "cost": 18,
+          "item": "cobblemon:great_ball",
+          "count": 14
+        },
+        {
+          "id": "bulk_14",
+          "cost": 19,
+          "item": "cobblemon:ultra_ball",
+          "count": 15
+        },
+        {
+          "id": "bulk_15",
+          "cost": 20,
+          "item": "cobblemon:heal_ball",
+          "count": 16
+        },
+        {
+          "id": "bulk_16",
+          "cost": 21,
+          "item": "cobblemon:revive",
+          "count": 1
+        },
+        {
+          "id": "bulk_17",
+          "cost": 22,
+          "item": "cobblemon:max_revive",
+          "count": 2
+        },
+        {
+          "id": "bulk_18",
+          "cost": 23,
+          "item": "cobblemon:max_potion",
+          "count": 3
+        },
+        {
+          "id": "bulk_19",
+          "cost": 24,
+          "item": "cobblemon:full_restore",
+          "count": 4
+        },
+        {
+          "id": "bulk_20",
+          "cost": 25,
+          "item": "cobblemon:rare_candy",
+          "count": 5
+        },
+        {
+          "id": "bulk_21",
+          "cost": 26,
+          "item": "cobblemon:exp_candy_l",
+          "count": 6
+        },
+        {
+          "id": "bulk_22",
+          "cost": 27,
+          "item": "cobblemon:exp_candy_xl",
+          "count": 7
+        },
+        {
+          "id": "bulk_23",
+          "cost": 28,
+          "item": "cobblemon:pp_up",
+          "count": 8
+        },
+        {
+          "id": "bulk_24",
+          "cost": 29,
+          "item": "cobblemon:poke_ball",
+          "count": 9
+        },
+        {
+          "id": "bulk_25",
+          "cost": 30,
+          "item": "cobblemon:great_ball",
+          "count": 10
+        },
+        {
+          "id": "bulk_26",
+          "cost": 31,
+          "item": "cobblemon:ultra_ball",
+          "count": 11
+        },
+        {
+          "id": "bulk_27",
+          "cost": 32,
+          "item": "cobblemon:heal_ball",
+          "count": 12
+        },
+        {
+          "id": "bulk_28",
+          "cost": 33,
+          "item": "cobblemon:revive",
+          "count": 13
+        },
+        {
+          "id": "bulk_29",
+          "cost": 34,
+          "item": "cobblemon:max_revive",
+          "count": 14
+        },
+        {
+          "id": "bulk_30",
+          "cost": 35,
+          "item": "cobblemon:max_potion",
+          "count": 15
+        },
+        {
+          "id": "bulk_31",
+          "cost": 36,
+          "item": "cobblemon:full_restore",
+          "count": 16
+        },
+        {
+          "id": "bulk_32",
+          "cost": 37,
+          "item": "cobblemon:rare_candy",
+          "count": 1
+        },
+        {
+          "id": "bulk_33",
+          "cost": 38,
+          "item": "cobblemon:exp_candy_l",
+          "count": 2
+        },
+        {
+          "id": "bulk_34",
+          "cost": 39,
+          "item": "cobblemon:exp_candy_xl",
+          "count": 3
+        },
+        {
+          "id": "bulk_35",
+          "cost": 40,
+          "item": "cobblemon:pp_up",
+          "count": 4
+        },
+        {
+          "id": "bulk_36",
+          "cost": 41,
+          "item": "cobblemon:poke_ball",
+          "count": 5
+        },
+        {
+          "id": "bulk_37",
+          "cost": 42,
+          "item": "cobblemon:great_ball",
+          "count": 6
+        },
+        {
+          "id": "bulk_38",
+          "cost": 43,
+          "item": "cobblemon:ultra_ball",
+          "count": 7
+        },
+        {
+          "id": "bulk_39",
+          "cost": 44,
+          "item": "cobblemon:heal_ball",
+          "count": 8
+        },
+        {
+          "id": "bulk_40",
+          "cost": 45,
+          "item": "cobblemon:revive",
+          "count": 9
+        },
+        {
+          "id": "bulk_41",
+          "cost": 46,
+          "item": "cobblemon:max_revive",
+          "count": 10
+        },
+        {
+          "id": "bulk_42",
+          "cost": 47,
+          "item": "cobblemon:max_potion",
+          "count": 11
+        },
+        {
+          "id": "bulk_43",
+          "cost": 48,
+          "item": "cobblemon:full_restore",
+          "count": 12
+        },
+        {
+          "id": "bulk_44",
+          "cost": 49,
+          "item": "cobblemon:rare_candy",
+          "count": 13
+        },
+        {
+          "id": "bulk_45",
+          "cost": 50,
+          "item": "cobblemon:exp_candy_l",
+          "count": 14
+        },
+        {
+          "id": "bulk_46",
+          "cost": 51,
+          "item": "cobblemon:exp_candy_xl",
+          "count": 15
+        },
+        {
+          "id": "bulk_47",
+          "cost": 52,
+          "item": "cobblemon:pp_up",
+          "count": 16
+        },
+        {
+          "id": "bulk_48",
+          "cost": 53,
+          "item": "cobblemon:poke_ball",
+          "count": 1
+        },
+        {
+          "id": "bulk_49",
+          "cost": 54,
+          "item": "cobblemon:great_ball",
+          "count": 2
+        },
+        {
+          "id": "bulk_50",
+          "cost": 55,
+          "item": "cobblemon:ultra_ball",
+          "count": 3
+        },
+        {
+          "id": "bulk_51",
+          "cost": 56,
+          "item": "cobblemon:heal_ball",
+          "count": 4
+        },
+        {
+          "id": "bulk_52",
+          "cost": 57,
+          "item": "cobblemon:revive",
+          "count": 5
+        },
+        {
+          "id": "bulk_53",
+          "cost": 58,
+          "item": "cobblemon:max_revive",
+          "count": 6
+        },
+        {
+          "id": "bulk_54",
+          "cost": 59,
+          "item": "cobblemon:max_potion",
+          "count": 7
+        },
+        {
+          "id": "bulk_55",
+          "cost": 60,
+          "item": "cobblemon:full_restore",
+          "count": 8
+        },
+        {
+          "id": "bulk_56",
+          "cost": 61,
+          "item": "cobblemon:rare_candy",
+          "count": 9
+        },
+        {
+          "id": "bulk_57",
+          "cost": 62,
+          "item": "cobblemon:exp_candy_l",
+          "count": 10
+        },
+        {
+          "id": "bulk_58",
+          "cost": 63,
+          "item": "cobblemon:exp_candy_xl",
+          "count": 11
+        },
+        {
+          "id": "bulk_59",
+          "cost": 64,
+          "item": "cobblemon:pp_up",
+          "count": 12
+        },
+        {
+          "id": "bulk_60",
+          "cost": 65,
+          "item": "cobblemon:poke_ball",
+          "count": 13
+        },
+        {
+          "id": "bulk_61",
+          "cost": 66,
+          "item": "cobblemon:great_ball",
+          "count": 14
+        },
+        {
+          "id": "bulk_62",
+          "cost": 67,
+          "item": "cobblemon:ultra_ball",
+          "count": 15
+        },
+        {
+          "id": "bulk_63",
+          "cost": 68,
+          "item": "cobblemon:heal_ball",
+          "count": 16
+        },
+        {
+          "id": "bulk_64",
+          "cost": 69,
+          "item": "cobblemon:revive",
+          "count": 1
+        },
+        {
+          "id": "bulk_65",
+          "cost": 70,
+          "item": "cobblemon:max_revive",
+          "count": 2
+        },
+        {
+          "id": "bulk_66",
+          "cost": 71,
+          "item": "cobblemon:max_potion",
+          "count": 3
+        },
+        {
+          "id": "bulk_67",
+          "cost": 72,
+          "item": "cobblemon:full_restore",
+          "count": 4
+        },
+        {
+          "id": "bulk_68",
+          "cost": 73,
+          "item": "cobblemon:rare_candy",
+          "count": 5
+        },
+        {
+          "id": "bulk_69",
+          "cost": 74,
+          "item": "cobblemon:exp_candy_l",
+          "count": 6
+        },
+        {
+          "id": "bulk_70",
+          "cost": 75,
+          "item": "cobblemon:exp_candy_xl",
+          "count": 7
+        },
+        {
+          "id": "bulk_71",
+          "cost": 76,
+          "item": "cobblemon:pp_up",
+          "count": 8
+        },
+        {
+          "id": "bulk_72",
+          "cost": 77,
+          "item": "cobblemon:poke_ball",
+          "count": 9
+        },
+        {
+          "id": "bulk_73",
+          "cost": 78,
+          "item": "cobblemon:great_ball",
+          "count": 10
+        },
+        {
+          "id": "bulk_74",
+          "cost": 79,
+          "item": "cobblemon:ultra_ball",
+          "count": 11
+        },
+        {
+          "id": "bulk_75",
+          "cost": 80,
+          "item": "cobblemon:heal_ball",
+          "count": 12
+        },
+        {
+          "id": "bulk_76",
+          "cost": 81,
+          "item": "cobblemon:revive",
+          "count": 13
+        },
+        {
+          "id": "bulk_77",
+          "cost": 82,
+          "item": "cobblemon:max_revive",
+          "count": 14
+        },
+        {
+          "id": "bulk_78",
+          "cost": 83,
+          "item": "cobblemon:max_potion",
+          "count": 15
+        },
+        {
+          "id": "bulk_79",
+          "cost": 84,
+          "item": "cobblemon:full_restore",
+          "count": 16
+        }
+      ]
+    },
+    {
+      "id": "unaffordable",
+      "title": "Too Expensive",
+      "entries": [
+        {
+          "id": "priced_out_leftovers",
+          "cost": 999999,
+          "item": "cobblemon:leftovers",
+          "count": 1
+        },
+        {
+          "id": "priced_out_choice_band",
+          "cost": 999999,
+          "item": "cobblemon:choice_band",
+          "count": 1
+        },
+        {
+          "id": "priced_out_choice_specs",
+          "cost": 999999,
+          "item": "cobblemon:choice_specs",
+          "count": 1
+        },
+        {
+          "id": "priced_out_choice_scarf",
+          "cost": 999999,
+          "item": "cobblemon:choice_scarf",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "single",
+      "title": "One Of A Kind",
+      "entries": [
+        {
+          "id": "the_only_one",
+          "cost": 10000,
+          "species": "arceus",
+          "level": 100,
+          "shiny": true,
+          "once_per_player": true
+        }
+      ]
+    }
+  ]
+}

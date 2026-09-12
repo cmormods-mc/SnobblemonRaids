@@ -64,6 +64,9 @@ jobs:
       - name: Validate exact reward probabilities
         run: python3 validation/economy/validate_economy_probabilities.py
 
+      - name: Validate the shop test catalogue
+        run: python3 validation/shop/build_test_catalog.py --check
+
       - name: Compile and remap
         run: gradle --no-daemon clean build --stacktrace --warning-mode all
 
