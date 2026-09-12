@@ -136,8 +136,10 @@ public final class RaidLobbyManager {
             return;
         }
 
-        long scaledHealth = RaidScalingPolicy.maxHealth(definition, eligible.size());
-        applyDynamicLevel(boss, definition, eligible);
+        // Level first: the health pool is scaled by the level the boss ends up at, so a party that
+        // raises a boss also raises what it has to chew through.
+        int bossLevel = applyDynamicLevel(boss, definition, eligible);
+        long scaledHealth = RaidScalingPolicy.maxHealth(definition, eligible.size(), bossLevel);
         try {
             RaidFactory.startFromWildBoss(eligible, definition, boss, scaledHealth);
             lobby.started();
@@ -162,8 +164,11 @@ public final class RaidLobbyManager {
      * -- the boss simply fights at the level its definition asks for, which is what it did before
      * any of this existed.
      */
-    private static void applyDynamicLevel(PokemonEntity boss, RaidDefinition definition,
-                                          List<ServerPlayer> eligible) {
+    private static int applyDynamicLevel(PokemonEntity boss, RaidDefinition definition,
+                                         List<ServerPlayer> eligible) {
+        // Falls back to the definition's own level, which is what the health pool is sized against
+        // when nothing scales -- so a failure here cannot produce a mismatched pool either.
+        int[] applied = { definition.level() };
         RaidFaultBarrier.guard("lobby:dynamic-level", () -> {
             CobbleRaidsConfig.DynamicLevel config = CobbleRaidsConfigManager.get().dynamicLevel();
             if (!config.enabled()) return;
@@ -186,8 +191,10 @@ public final class RaidLobbyManager {
                 // operator wonders about after enabling the feature.
                 RaidLog.info("{} stays at level {}: {} player(s) averaging {} across {} Pokemon",
                         definition.id(), level, eligible.size(), party, levels.size());
+                applied[0] = level;
                 return;
             }
+            applied[0] = level;
 
             boss.getPokemon().setLevel(level);
             // Level changes max HP, and a boss left on its old current health would enter the
@@ -205,6 +212,7 @@ public final class RaidLobbyManager {
             RaidLog.info("{} scaled from level {} to {}: {} player(s) averaging {} across {} Pokemon",
                     definition.id(), definition.level(), level, eligible.size(), party, levels.size());
         });
+        return applied[0];
     }
 
     private static boolean isEligibleAtLock(ServerPlayer player, PokemonEntity boss, RaidDefinition definition) {
