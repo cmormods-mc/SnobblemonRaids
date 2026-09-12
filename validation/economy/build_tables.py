@@ -77,7 +77,9 @@ TYPES = ["normal", "fire", "water", "electric", "grass", "ice", "fighting", "poi
 # --- section 8: the specialty matrix -----------------------------------------------------------
 # (row name, what it grants, weight per tier). A str target is an item id; a dict is a child table.
 SPECIALTY_ROWS = [
-    ("standard tera shard", {"table": "cobbleraids:specialty/leaf/tera_standard"}, [1500, 0, 0, 0]),
+    # 26.60% plus the stellar row's 0.20% is 26.80%: one shard per four hours of raiding, given
+    # starter is 70% of spawns and the only tier that carries them.
+    ("standard tera shard", {"table": "cobbleraids:specialty/leaf/tera_standard"}, [2660, 0, 0, 0]),
     ("stellar tera shard", "mega_showdown:stellar_tera_shard", [20, 0, 0, 0]),
     ("copper incubator", "daycareplus:copper_incubator", [150, 100, 0, 0]),
     ("iron incubator", "daycareplus:iron_incubator", [60, 100, 0, 0]),
@@ -120,7 +122,11 @@ SPECIALTY_ROWS = [
     ("large exp candy", "cobblemon:exp_candy_l", [0, 500, 800, 1000]),
 ]
 
-MEGA_WEIGHT = 500  # 5.00%, and only on a boss that has a stone
+# 45.25%, and only on a boss that has a stone. Set from an acquisition target rather than a feel:
+# at a 45-minute spawn only 0.55 mega-capable raids happen an hour, so a player averaging one stone
+# per four hours needs roughly every other capable raid to yield one. The extra weight comes out of
+# the base fallback, so no other premium row changes.
+MEGA_WEIGHT = 4525
 
 # Namespaces guaranteed present. Everything else is an optional mod, and an item from one can
 # never be named directly in a pool -- see optional_item_table().

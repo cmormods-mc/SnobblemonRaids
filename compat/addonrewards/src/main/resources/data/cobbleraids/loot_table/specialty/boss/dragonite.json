@@ -7,7 +7,7 @@
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:specialty/mega/dragonite",
-          "weight": 500
+          "weight": 4525
         },
         {
           "type": "minecraft:loot_table",
@@ -87,7 +87,7 @@
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:base/powerhouse",
-          "weight": 7920
+          "weight": 3895
         }
       ]
     }

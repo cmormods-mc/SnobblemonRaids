@@ -7,7 +7,7 @@
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:specialty/mega/diancie",
-          "weight": 500
+          "weight": 4525
         },
         {
           "type": "minecraft:loot_table",
@@ -147,7 +147,7 @@
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:base/mythical",
-          "weight": 6070
+          "weight": 2045
         }
       ]
     }
