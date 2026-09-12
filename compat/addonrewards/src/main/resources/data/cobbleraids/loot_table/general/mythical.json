@@ -7,27 +7,12 @@
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:base/mythical",
-          "weight": 30
+          "weight": 47
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:general/leaf/cards",
-          "weight": 16
-        },
-        {
-          "type": "minecraft:loot_table",
-          "value": "cobbleraids:general/leaf/capsule_materials",
-          "weight": 31
-        },
-        {
-          "type": "minecraft:loot_table",
-          "value": "cobbleraids:general/leaf/safari_consumables",
-          "weight": 16
-        },
-        {
-          "type": "minecraft:loot_table",
-          "value": "cobbleraids:general/leaf/riding_consumables",
-          "weight": 7
+          "weight": 53
         }
       ]
     }

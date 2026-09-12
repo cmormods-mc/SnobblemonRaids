@@ -80,13 +80,10 @@ Category weights total 100 per tier and apply to every general selection, standa
 
 | Category | starter | powerhouse | legendary | mythical |
 |---|---:|---:|---:|---:|
-| base/<tier> | 40% | 35% | 33% | 30% |
-| general/leaf/cards | 20% | 20% | 17% | 16% |
-| general/leaf/capsule_materials | 16% | 20% | 25% | 31% |
-| general/leaf/safari_consumables | 14% | 16% | 17% | 16% |
-| general/leaf/riding_consumables | 10% | 9% | 8% | 7% |
+| base/<tier> | 58% | 53% | 51% | 47% |
+| general/leaf/cards | 42% | 47% | 49% | 53% |
 
-A category at weight *w* appears at least once in a bundle with probability `1 - (1 - w/100)^(2+B)`. For the 10%% card category: 19.00%% at B=0, 27.10%% at B=1, 34.39%% at B=2, 40.95%% at B=3.
+A category at weight *w* appears at least once in a bundle with probability `1 - (1 - w/100)^(2+B)`. For the 42% starter card category: 66.36% at B=0, 80.49% at B=1, 88.68% at B=2, 93.43% at B=3.
 
 ## Base catalog
 
@@ -155,10 +152,10 @@ Base is reached from a general selection at its category weight and from the spe
 
 | Tier | base per bundle | share | Master Ball per bundle |
 |---|---:|---:|---:|
-| starter | 2.02 of 4 | 50% | -- |
-| powerhouse | 1.89 of 4 | 47% | -- |
-| legendary | 1.73 of 4 | 43% | -- |
-| mythical | 1.56 of 4 | 39% | 0.311% (1 in 321) |
+| starter | 2.56 of 4 | 64% | -- |
+| powerhouse | 2.43 of 4 | 61% | -- |
+| legendary | 2.27 of 4 | 57% | -- |
+| mythical | 2.07 of 4 | 52% | 0.413% (1 in 242) |
 
 ## Resolved against the pack
 
