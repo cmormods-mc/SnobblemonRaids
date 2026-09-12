@@ -1,0 +1,4099 @@
+{
+  "icons": {
+    "abomasnow": {
+      "icon": "0460_abomasnow/abomasnow",
+      "shiny": "0460_abomasnow/abomasnow_shiny"
+    },
+    "abra": {
+      "icon": "0063_abra/abra",
+      "shiny": "0063_abra/abra_shiny"
+    },
+    "absol": {
+      "icon": "0359_absol/absol",
+      "shiny": "0359_absol/absol_shiny"
+    },
+    "accelgor": {
+      "icon": "0617_accelgor/accelgor",
+      "shiny": "0617_accelgor/accelgor_shiny"
+    },
+    "aegislash": {
+      "icon": "0681_aegislash/aegislash",
+      "shiny": "0681_aegislash/aegislash_shiny"
+    },
+    "aerodactyl": {
+      "icon": "0142_aerodactyl/aerodactyl",
+      "shiny": "0142_aerodactyl/aerodactyl_shiny"
+    },
+    "aggron": {
+      "icon": "0306_aggron/aggron",
+      "shiny": "0306_aggron/aggron_shiny"
+    },
+    "aipom": {
+      "icon": "0190_aipom/aipom",
+      "shiny": "0190_aipom/aipom_shiny"
+    },
+    "alakazam": {
+      "icon": "0065_alakazam/alakazam",
+      "shiny": "0065_alakazam/alakazam_shiny"
+    },
+    "alcremie": {
+      "icon": "0869_alcremie/alcremie_mint"
+    },
+    "alomomola": {
+      "icon": "0594_alomomola/alomomola",
+      "shiny": "0594_alomomola/alomomola_shiny"
+    },
+    "altaria": {
+      "icon": "0334_altaria/altaria",
+      "shiny": "0334_altaria/altaria_shiny"
+    },
+    "amaura": {
+      "icon": "0698_amaura/amaura",
+      "shiny": "0698_amaura/amaura_shiny"
+    },
+    "ambipom": {
+      "icon": "0424_ambipom/ambipom",
+      "shiny": "0424_ambipom/ambipom_shiny"
+    },
+    "amoonguss": {
+      "icon": "0591_amoonguss/amoonguss",
+      "shiny": "0591_amoonguss/amoonguss_shiny"
+    },
+    "ampharos": {
+      "icon": "0181_ampharos/ampharos",
+      "shiny": "0181_ampharos/ampharos_shiny"
+    },
+    "annihilape": {
+      "icon": "0979_annihilape/annihilape",
+      "shiny": "0979_annihilape/annihilape_shiny"
+    },
+    "anorith": {
+      "icon": "0347_anorith/anorith",
+      "shiny": "0347_anorith/anorith_shiny"
+    },
+    "appletun": {
+      "icon": "0842_appletun/appletun",
+      "shiny": "0842_appletun/appletun_shiny"
+    },
+    "applin": {
+      "icon": "0840_applin/applin",
+      "shiny": "0840_applin/applin_shiny"
+    },
+    "araquanid": {
+      "icon": "0752_araquanid/araquanid",
+      "shiny": "0752_araquanid/araquanid_shiny"
+    },
+    "arbok": {
+      "icon": "0024_arbok/arbok",
+      "shiny": "0024_arbok/arbok_shiny"
+    },
+    "arboliva": {
+      "icon": "0930_arboliva/arboliva",
+      "shiny": "0930_arboliva/arboliva_shiny"
+    },
+    "arcanine": {
+      "icon": "0059_arcanine/arcanine",
+      "shiny": "0059_arcanine/arcanine_shiny"
+    },
+    "arceus": {
+      "icon": "0493_arceus/arceus",
+      "shiny": "0493_arceus/arceus_shiny"
+    },
+    "archaludon": {
+      "icon": "1018_archaludon/archaludon",
+      "shiny": "1018_archaludon/archaludon_shiny"
+    },
+    "archen": {
+      "icon": "0566_archen/archen",
+      "shiny": "0566_archen/archen_shiny"
+    },
+    "archeops": {
+      "icon": "0567_archeops/archeops",
+      "shiny": "0567_archeops/archeops_shiny"
+    },
+    "arctibax": {
+      "icon": "0997_arctibax/arctibax",
+      "shiny": "0997_arctibax/arctibax_shiny"
+    },
+    "arctovish": {
+      "icon": "0883_arctovish/arctovish",
+      "shiny": "0883_arctovish/arctovish_shiny"
+    },
+    "arctozolt": {
+      "icon": "0881_arctozolt/arctozolt",
+      "shiny": "0881_arctozolt/arctozolt_shiny"
+    },
+    "ariados": {
+      "icon": "0168_ariados/ariados",
+      "shiny": "0168_ariados/ariados_shiny"
+    },
+    "armaldo": {
+      "icon": "0348_armaldo/armaldo",
+      "shiny": "0348_armaldo/armaldo_shiny"
+    },
+    "armarouge": {
+      "icon": "0936_armarouge/armarouge",
+      "shiny": "0936_armarouge/armarouge_shiny"
+    },
+    "aromatisse": {
+      "icon": "0683_aromatisse/aromatisse",
+      "shiny": "0683_aromatisse/aromatisse_shiny"
+    },
+    "aron": {
+      "icon": "0304_aron/aron",
+      "shiny": "0304_aron/aron_shiny"
+    },
+    "arrokuda": {
+      "icon": "0846_arrokuda/arrokuda",
+      "shiny": "0846_arrokuda/arrokuda_shiny"
+    },
+    "articuno": {
+      "icon": "0144_articuno/articuno",
+      "shiny": "0144_articuno/articuno_shiny"
+    },
+    "audino": {
+      "icon": "0531_audino/audino",
+      "shiny": "0531_audino/audino_shiny"
+    },
+    "aurorus": {
+      "icon": "0699_aurorus/aurorus",
+      "shiny": "0699_aurorus/aurorus_shiny"
+    },
+    "avalugg": {
+      "icon": "0713_avalugg/avalugg",
+      "shiny": "0713_avalugg/avalugg_shiny"
+    },
+    "axew": {
+      "icon": "0610_axew/axew",
+      "shiny": "0610_axew/axew_shiny"
+    },
+    "azelf": {
+      "icon": "0482_azelf/azelf",
+      "shiny": "0482_azelf/azelf_shiny"
+    },
+    "azumarill": {
+      "icon": "0184_azumarill/azumarill",
+      "shiny": "0184_azumarill/azumarill_shiny"
+    },
+    "azurill": {
+      "icon": "0298_azurill/azurill",
+      "shiny": "0298_azurill/azurill_shiny"
+    },
+    "bagon": {
+      "icon": "0371_bagon/bagon",
+      "shiny": "0371_bagon/bagon_shiny"
+    },
+    "baltoy": {
+      "icon": "0343_baltoy/baltoy",
+      "shiny": "0343_baltoy/baltoy_shiny"
+    },
+    "banette": {
+      "icon": "0354_banette/banette",
+      "shiny": "0354_banette/banette_shiny"
+    },
+    "barbaracle": {
+      "icon": "0689_barbaracle/barbaracle",
+      "shiny": "0689_barbaracle/barbaracle_shiny"
+    },
+    "barboach": {
+      "icon": "0339_barboach/barboach",
+      "shiny": "0339_barboach/barboach_shiny"
+    },
+    "barraskewda": {
+      "icon": "0847_barraskewda/barraskewda",
+      "shiny": "0847_barraskewda/barraskewda_shiny"
+    },
+    "basculegion": {
+      "icon": "0902_basculegion/basculegion_male",
+      "shiny": "0902_basculegion/basculegion_male_shiny"
+    },
+    "basculin": {
+      "icon": "0550_basculin/basculin_redstripe",
+      "shiny": "0550_basculin/basculin_redstripe_shiny"
+    },
+    "bastiodon": {
+      "icon": "0411_bastiodon/bastiodon",
+      "shiny": "0411_bastiodon/bastiodon_shiny"
+    },
+    "baxcalibur": {
+      "icon": "0998_baxcalibur/baxcalibur",
+      "shiny": "0998_baxcalibur/baxcalibur_shiny"
+    },
+    "bayleef": {
+      "icon": "0153_bayleef/bayleef",
+      "shiny": "0153_bayleef/bayleef_shiny"
+    },
+    "beartic": {
+      "icon": "0614_beartic/beartic",
+      "shiny": "0614_beartic/beartic_shiny"
+    },
+    "beautifly": {
+      "icon": "0267_beautifly/beautifly",
+      "shiny": "0267_beautifly/beautifly_shiny"
+    },
+    "beedrill": {
+      "icon": "0015_beedrill/beedrill",
+      "shiny": "0015_beedrill/beedrill_shiny"
+    },
+    "beheeyem": {
+      "icon": "0606_beheeyem/beheeyem",
+      "shiny": "0606_beheeyem/beheeyem_shiny"
+    },
+    "beldum": {
+      "icon": "0374_beldum/beldum",
+      "shiny": "0374_beldum/beldum_shiny"
+    },
+    "bellibolt": {
+      "icon": "0939_bellibolt/bellibolt",
+      "shiny": "0939_bellibolt/bellibolt_shiny"
+    },
+    "bellossom": {
+      "icon": "0182_bellossom/bellossom",
+      "shiny": "0182_bellossom/bellossom_shiny"
+    },
+    "bellsprout": {
+      "icon": "0069_bellsprout/bellsprout",
+      "shiny": "0069_bellsprout/bellsprout_shiny"
+    },
+    "bergmite": {
+      "icon": "0712_bergmite/bergmite",
+      "shiny": "0712_bergmite/bergmite_shiny"
+    },
+    "bewear": {
+      "icon": "0760_bewear/bewear",
+      "shiny": "0760_bewear/bewear_shiny"
+    },
+    "bibarel": {
+      "icon": "0400_bibarel/bibarel",
+      "shiny": "0400_bibarel/bibarel_shiny"
+    },
+    "bidoof": {
+      "icon": "0399_bidoof/bidoof",
+      "shiny": "0399_bidoof/bidoof_shiny"
+    },
+    "binacle": {
+      "icon": "0688_binacle/binacle",
+      "shiny": "0688_binacle/binacle_shiny"
+    },
+    "bisharp": {
+      "icon": "0625_bisharp/bisharp",
+      "shiny": "0625_bisharp/bisharp_shiny"
+    },
+    "blacephalon": {
+      "icon": "0806_blacephalon/blacephalon",
+      "shiny": "0806_blacephalon/blacephalon_shiny"
+    },
+    "blastoise": {
+      "icon": "0009_blastoise/blastoise",
+      "shiny": "0009_blastoise/blastoise_shiny"
+    },
+    "blaziken": {
+      "icon": "0257_blaziken/blaziken",
+      "shiny": "0257_blaziken/blaziken_shiny"
+    },
+    "blipbug": {
+      "icon": "0824_blipbug/blipbug",
+      "shiny": "0824_blipbug/blipbug_shiny"
+    },
+    "blissey": {
+      "icon": "0242_blissey/blissey",
+      "shiny": "0242_blissey/blissey_shiny"
+    },
+    "blitzle": {
+      "icon": "0522_blitzle/blitzle",
+      "shiny": "0522_blitzle/blitzle_shiny"
+    },
+    "boldore": {
+      "icon": "0525_boldore/boldore",
+      "shiny": "0525_boldore/boldore_shiny"
+    },
+    "boltund": {
+      "icon": "0836_boltund/boltund",
+      "shiny": "0836_boltund/boltund_shiny"
+    },
+    "bombirdier": {
+      "icon": "0962_bombirdier/bombirdier",
+      "shiny": "0962_bombirdier/bombirdier_shiny"
+    },
+    "bonsly": {
+      "icon": "0438_bonsly/bonsly",
+      "shiny": "0438_bonsly/bonsly_shiny"
+    },
+    "bouffalant": {
+      "icon": "0626_bouffalant/bouffalant",
+      "shiny": "0626_bouffalant/bouffalant_shiny"
+    },
+    "bounsweet": {
+      "icon": "0761_bounsweet/bounsweet",
+      "shiny": "0761_bounsweet/bounsweet_shiny"
+    },
+    "braixen": {
+      "icon": "0654_braixen/braixen",
+      "shiny": "0654_braixen/braixen_shiny"
+    },
+    "brambleghast": {
+      "icon": "0947_brambleghast/brambleghast",
+      "shiny": "0947_brambleghast/brambleghast_shiny"
+    },
+    "bramblin": {
+      "icon": "0946_bramblin/bramblin",
+      "shiny": "0946_bramblin/bramblin_shiny"
+    },
+    "braviary": {
+      "icon": "0628_braviary/braviary",
+      "shiny": "0628_braviary/braviary_shiny"
+    },
+    "breloom": {
+      "icon": "0286_breloom/breloom",
+      "shiny": "0286_breloom/breloom_shiny"
+    },
+    "brionne": {
+      "icon": "0729_brionne/brionne",
+      "shiny": "0729_brionne/brionne_shiny"
+    },
+    "bronzong": {
+      "icon": "0437_bronzong/bronzong",
+      "shiny": "0437_bronzong/bronzong_shiny"
+    },
+    "bronzor": {
+      "icon": "0436_bronzor/bronzor",
+      "shiny": "0436_bronzor/bronzor_shiny"
+    },
+    "brutebonnet": {
+      "icon": "0986_brutebonnet/brutebonnet",
+      "shiny": "0986_brutebonnet/brutebonnet_shiny"
+    },
+    "bruxish": {
+      "icon": "0779_bruxish/bruxish",
+      "shiny": "0779_bruxish/bruxish_shiny"
+    },
+    "budew": {
+      "icon": "0406_budew/budew",
+      "shiny": "0406_budew/budew_shiny"
+    },
+    "buizel": {
+      "icon": "0418_buizel/buizel",
+      "shiny": "0418_buizel/buizel_shiny"
+    },
+    "bulbasaur": {
+      "icon": "0001_bulbasaur/bulbasaur",
+      "shiny": "0001_bulbasaur/bulbasaur_shiny"
+    },
+    "buneary": {
+      "icon": "0427_buneary/buneary",
+      "shiny": "0427_buneary/buneary_shiny"
+    },
+    "bunnelby": {
+      "icon": "0659_bunnelby/bunnelby",
+      "shiny": "0659_bunnelby/bunnelby_shiny"
+    },
+    "burmy": {
+      "icon": "0412_burmy/burmy",
+      "shiny": "0412_burmy/burmy_shiny"
+    },
+    "butterfree": {
+      "icon": "0012_butterfree/butterfree",
+      "shiny": "0012_butterfree/butterfree_shiny"
+    },
+    "buzzwole": {
+      "icon": "0794_buzzwole/buzzwole",
+      "shiny": "0794_buzzwole/buzzwole_shiny"
+    },
+    "cacnea": {
+      "icon": "0331_cacnea/cacnea",
+      "shiny": "0331_cacnea/cacnea_shiny"
+    },
+    "cacturne": {
+      "icon": "0332_cacturne/cacturne",
+      "shiny": "0332_cacturne/cacturne_shiny"
+    },
+    "calyrex": {
+      "icon": "0898_calyrex/calyrex"
+    },
+    "camerupt": {
+      "icon": "0323_camerupt/camerupt",
+      "shiny": "0323_camerupt/camerupt_shiny"
+    },
+    "capsakid": {
+      "icon": "0951_capsakid/capsakid",
+      "shiny": "0951_capsakid/capsakid_shiny"
+    },
+    "carbink": {
+      "icon": "0703_carbink/carbink",
+      "shiny": "0703_carbink/carbink_shiny"
+    },
+    "carkol": {
+      "icon": "0838_carkol/carkol",
+      "shiny": "0838_carkol/carkol_shiny"
+    },
+    "carnivine": {
+      "icon": "0455_carnivine/carnivine",
+      "shiny": "0455_carnivine/carnivine_shiny"
+    },
+    "carracosta": {
+      "icon": "0565_carracosta/carracosta",
+      "shiny": "0565_carracosta/carracosta_shiny"
+    },
+    "carvanha": {
+      "icon": "0318_carvanha/carvanha",
+      "shiny": "0318_carvanha/carvanha_shiny"
+    },
+    "cascoon": {
+      "icon": "0268_cascoon/cascoon",
+      "shiny": "0268_cascoon/cascoon_shiny"
+    },
+    "castform": {
+      "icon": "0351_castform/castform",
+      "shiny": "0351_castform/castform_shiny"
+    },
+    "caterpie": {
+      "icon": "0010_caterpie/caterpie",
+      "shiny": "0010_caterpie/caterpie_shiny"
+    },
+    "celebi": {
+      "icon": "0251_celebi/celebi",
+      "shiny": "0251_celebi/celebi_shiny"
+    },
+    "celesteela": {
+      "icon": "0797_celesteela/celesteela",
+      "shiny": "0797_celesteela/celesteela_shiny"
+    },
+    "centiskorch": {
+      "icon": "0851_centiskorch/centiskorch",
+      "shiny": "0851_centiskorch/centiskorch_shiny"
+    },
+    "ceruledge": {
+      "icon": "0937_ceruledge/ceruledge",
+      "shiny": "0937_ceruledge/ceruledge_shiny"
+    },
+    "cetitan": {
+      "icon": "0975_cetitan/cetitan",
+      "shiny": "0975_cetitan/cetitan_shiny"
+    },
+    "cetoddle": {
+      "icon": "0974_cetoddle/cetoddle",
+      "shiny": "0974_cetoddle/cetoddle_shiny"
+    },
+    "chandelure": {
+      "icon": "0609_chandelure/chandelure",
+      "shiny": "0609_chandelure/chandelure_shiny"
+    },
+    "chansey": {
+      "icon": "0113_chansey/chansey",
+      "shiny": "0113_chansey/chansey_shiny"
+    },
+    "charcadet": {
+      "icon": "0935_charcadet/charcadet_1"
+    },
+    "charizard": {
+      "icon": "0006_charizard/charizard",
+      "shiny": "0006_charizard/charizard_shiny"
+    },
+    "charjabug": {
+      "icon": "0737_charjabug/charjabug",
+      "shiny": "0737_charjabug/charjabug_shiny"
+    },
+    "charmander": {
+      "icon": "0004_charmander/charmander",
+      "shiny": "0004_charmander/charmander_shiny"
+    },
+    "charmeleon": {
+      "icon": "0005_charmeleon/charmeleon",
+      "shiny": "0005_charmeleon/charmeleon_shiny"
+    },
+    "chatot": {
+      "icon": "0441_chatot/chatot",
+      "shiny": "0441_chatot/chatot_shiny"
+    },
+    "cherrim": {
+      "icon": "0421_cherrim/cherrim",
+      "shiny": "0421_cherrim/cherrim_shiny"
+    },
+    "cherubi": {
+      "icon": "0420_cherubi/cherubi",
+      "shiny": "0420_cherubi/cherubi_shiny"
+    },
+    "chesnaught": {
+      "icon": "0652_chesnaught/chesnaught",
+      "shiny": "0652_chesnaught/chesnaught_shiny"
+    },
+    "chespin": {
+      "icon": "0650_chespin/chespin",
+      "shiny": "0650_chespin/chespin_shiny"
+    },
+    "chewtle": {
+      "icon": "0833_chewtle/chewtle",
+      "shiny": "0833_chewtle/chewtle_shiny"
+    },
+    "chienpao": {
+      "icon": "1002_chienpao/chienpao",
+      "shiny": "1002_chienpao/chienpao_shiny"
+    },
+    "chikorita": {
+      "icon": "0152_chikorita/chikorita",
+      "shiny": "0152_chikorita/chikorita_shiny"
+    },
+    "chimchar": {
+      "icon": "0390_chimchar/chimchar",
+      "shiny": "0390_chimchar/chimchar_shiny"
+    },
+    "chimecho": {
+      "icon": "0358_chimecho/chimecho",
+      "shiny": "0358_chimecho/chimecho_shiny"
+    },
+    "chinchou": {
+      "icon": "0170_chinchou/chinchou",
+      "shiny": "0170_chinchou/chinchou_shiny"
+    },
+    "chingling": {
+      "icon": "0433_chingling/chingling",
+      "shiny": "0433_chingling/chingling_shiny"
+    },
+    "chiyu": {
+      "icon": "1004_chiyu/chiyu",
+      "shiny": "1004_chiyu/chiyu_shiny"
+    },
+    "cinccino": {
+      "icon": "0573_cinccino/cinccino",
+      "shiny": "0573_cinccino/cinccino_shiny"
+    },
+    "cinderace": {
+      "icon": "0815_cinderace/cinderace",
+      "shiny": "0815_cinderace/cinderace_shiny"
+    },
+    "clamperl": {
+      "icon": "0366_clamperl/clamperl",
+      "shiny": "0366_clamperl/clamperl_shiny"
+    },
+    "clauncher": {
+      "icon": "0692_clauncher/clauncher_left",
+      "shiny": "0692_clauncher/clauncher_left_shiny"
+    },
+    "clawitzer": {
+      "icon": "0693_clawitzer/clawitzer_left",
+      "shiny": "0693_clawitzer/clawitzer_left_shiny"
+    },
+    "claydol": {
+      "icon": "0344_claydol/claydol",
+      "shiny": "0344_claydol/claydol_shiny"
+    },
+    "clefable": {
+      "icon": "0036_clefable/clefable",
+      "shiny": "0036_clefable/clefable_shiny"
+    },
+    "clefairy": {
+      "icon": "0035_clefairy/clefairy",
+      "shiny": "0035_clefairy/clefairy_shiny"
+    },
+    "cleffa": {
+      "icon": "0173_cleffa/cleffa",
+      "shiny": "0173_cleffa/cleffa_shiny"
+    },
+    "clobbopus": {
+      "icon": "0852_clobbopus/clobbopus",
+      "shiny": "0852_clobbopus/clobbopus_shiny"
+    },
+    "clodsire": {
+      "icon": "0980_clodsire/clodsire",
+      "shiny": "0980_clodsire/clodsire_shiny"
+    },
+    "cloyster": {
+      "icon": "0091_cloyster/cloyster",
+      "shiny": "0091_cloyster/cloyster_shiny"
+    },
+    "coalossal": {
+      "icon": "0839_coalossal/coalossal",
+      "shiny": "0839_coalossal/coalossal_shiny"
+    },
+    "cobalion": {
+      "icon": "0638_cobalion/cobalion",
+      "shiny": "0638_cobalion/cobalion_shiny"
+    },
+    "cofagrigus": {
+      "icon": "0563_cofagrigus/cofagrigus",
+      "shiny": "0563_cofagrigus/cofagrigus_shiny"
+    },
+    "combee": {
+      "icon": "0415_combee/combee",
+      "shiny": "0415_combee/combee_shiny"
+    },
+    "combusken": {
+      "icon": "0256_combusken/combusken",
+      "shiny": "0256_combusken/combusken_shiny"
+    },
+    "comfey": {
+      "icon": "0764_comfey/comfey",
+      "shiny": "0764_comfey/comfey_shiny"
+    },
+    "conkeldurr": {
+      "icon": "0534_conkeldurr/conkeldurr",
+      "shiny": "0534_conkeldurr/conkeldurr_shiny"
+    },
+    "copperajah": {
+      "icon": "0879_copperajah/copperajah",
+      "shiny": "0879_copperajah/copperajah_shiny"
+    },
+    "corphish": {
+      "icon": "0341_corphish/corphish",
+      "shiny": "0341_corphish/corphish_shiny"
+    },
+    "corsola": {
+      "icon": "0222_corsola/corsola",
+      "shiny": "0222_corsola/corsola_shiny"
+    },
+    "corviknight": {
+      "icon": "0823_corviknight/corviknight",
+      "shiny": "0823_corviknight/corviknight_shiny"
+    },
+    "corvisquire": {
+      "icon": "0822_corvisquire/corvisquire",
+      "shiny": "0822_corvisquire/corvisquire_shiny"
+    },
+    "cosmoem": {
+      "icon": "0790_cosmoem/cosmoem",
+      "shiny": "0790_cosmoem/cosmoem_shiny"
+    },
+    "cosmog": {
+      "icon": "0789_cosmog/cosmog",
+      "shiny": "0789_cosmog/cosmog_shiny"
+    },
+    "cottonee": {
+      "icon": "0546_cottonee/cottonee",
+      "shiny": "0546_cottonee/cottonee_shiny"
+    },
+    "crabominable": {
+      "icon": "0740_crabominable/crabominable",
+      "shiny": "0740_crabominable/crabominable_shiny"
+    },
+    "crabrawler": {
+      "icon": "0739_crabrawler/crabrawler",
+      "shiny": "0739_crabrawler/crabrawler_shiny"
+    },
+    "cradily": {
+      "icon": "0346_cradily/cradily",
+      "shiny": "0346_cradily/cradily_shiny"
+    },
+    "cramorant": {
+      "icon": "0845_cramorant/cramorant",
+      "shiny": "0845_cramorant/cramorant_shiny"
+    },
+    "cranidos": {
+      "icon": "0408_cranidos/cranidos",
+      "shiny": "0408_cranidos/cranidos_shiny"
+    },
+    "crawdaunt": {
+      "icon": "0342_crawdaunt/crawdaunt",
+      "shiny": "0342_crawdaunt/crawdaunt_shiny"
+    },
+    "cresselia": {
+      "icon": "0488_cresselia/cresselia",
+      "shiny": "0488_cresselia/cresselia_shiny"
+    },
+    "croagunk": {
+      "icon": "0453_croagunk/croagunk",
+      "shiny": "0453_croagunk/croagunk_shiny"
+    },
+    "crobat": {
+      "icon": "0169_crobat/crobat",
+      "shiny": "0169_crobat/crobat_shiny"
+    },
+    "crocalor": {
+      "icon": "0910_crocalor/crocalor",
+      "shiny": "0910_crocalor/crocalor_shiny"
+    },
+    "croconaw": {
+      "icon": "0159_croconaw/croconaw",
+      "shiny": "0159_croconaw/croconaw_shiny"
+    },
+    "crustle": {
+      "icon": "0558_crustle/crustle",
+      "shiny": "0558_crustle/crustle_shiny"
+    },
+    "cryogonal": {
+      "icon": "0615_cryogonal/cryogonal",
+      "shiny": "0615_cryogonal/cryogonal_shiny"
+    },
+    "cubchoo": {
+      "icon": "0613_cubchoo/cubchoo",
+      "shiny": "0613_cubchoo/cubchoo_shiny"
+    },
+    "cubone": {
+      "icon": "0104_cubone/cubone",
+      "shiny": "0104_cubone/cubone_shiny"
+    },
+    "cufant": {
+      "icon": "0878_cufant/cufant",
+      "shiny": "0878_cufant/cufant_shiny"
+    },
+    "cursola": {
+      "icon": "0864_cursola/cursola",
+      "shiny": "0864_cursola/cursola_shiny"
+    },
+    "cutiefly": {
+      "icon": "0742_cutiefly/cutiefly",
+      "shiny": "0742_cutiefly/cutiefly_shiny"
+    },
+    "cyclizar": {
+      "icon": "0967_cyclizar/cyclizar",
+      "shiny": "0967_cyclizar/cyclizar_shiny"
+    },
+    "cyndaquil": {
+      "icon": "0155_cyndaquil/cyndaquil",
+      "shiny": "0155_cyndaquil/cyndaquil_shiny"
+    },
+    "dachsbun": {
+      "icon": "0927_dachsbun/dachsbun",
+      "shiny": "0927_dachsbun/dachsbun_shiny"
+    },
+    "darkrai": {
+      "icon": "0491_darkrai/darkrai",
+      "shiny": "0491_darkrai/darkrai_shiny"
+    },
+    "darmanitan": {
+      "icon": "0555_darmanitan/darmanitan",
+      "shiny": "0555_darmanitan/darmanitan_shiny"
+    },
+    "dartrix": {
+      "icon": "0723_dartrix/dartrix",
+      "shiny": "0723_dartrix/dartrix_shiny"
+    },
+    "darumaka": {
+      "icon": "0554_darumaka/darumaka",
+      "shiny": "0554_darumaka/darumaka_shiny"
+    },
+    "decidueye": {
+      "icon": "0724_decidueye/decidueye",
+      "shiny": "0724_decidueye/decidueye_shiny"
+    },
+    "dedenne": {
+      "icon": "0702_dedenne/dedenne",
+      "shiny": "0702_dedenne/dedenne_shiny"
+    },
+    "deerling": {
+      "icon": "0585_deerling/deerling_spring",
+      "shiny": "0585_deerling/deerling_spring_shiny"
+    },
+    "deino": {
+      "icon": "0633_deino/deino",
+      "shiny": "0633_deino/deino_shiny"
+    },
+    "delcatty": {
+      "icon": "0301_delcatty/delcatty",
+      "shiny": "0301_delcatty/delcatty_shiny"
+    },
+    "delibird": {
+      "icon": "0225_delibird/delibird",
+      "shiny": "0225_delibird/delibird_shiny"
+    },
+    "delphox": {
+      "icon": "0655_delphox/delphox",
+      "shiny": "0655_delphox/delphox_shiny"
+    },
+    "deoxys": {
+      "icon": "0386_deoxys/deoxys",
+      "shiny": "0386_deoxys/deoxys_shiny"
+    },
+    "dewgong": {
+      "icon": "0087_dewgong/dewgong",
+      "shiny": "0087_dewgong/dewgong_shiny"
+    },
+    "dewott": {
+      "icon": "0502_dewott/dewott",
+      "shiny": "0502_dewott/dewott_shiny"
+    },
+    "dewpider": {
+      "icon": "0751_dewpider/dewpider",
+      "shiny": "0751_dewpider/dewpider_shiny"
+    },
+    "dhelmise": {
+      "icon": "0781_dhelmise/dhelmise",
+      "shiny": "0781_dhelmise/dhelmise_shiny"
+    },
+    "dialga": {
+      "icon": "0483_dialga/dialga",
+      "shiny": "0483_dialga/dialga_shiny"
+    },
+    "diancie": {
+      "icon": "0719_diancie/diancie",
+      "shiny": "0719_diancie/diancie_shiny"
+    },
+    "diggersby": {
+      "icon": "0660_diggersby/diggersby",
+      "shiny": "0660_diggersby/diggersby_shiny"
+    },
+    "diglett": {
+      "icon": "0050_diglett/diglett",
+      "shiny": "0050_diglett/diglett_shiny"
+    },
+    "dipplin": {
+      "icon": "1011_dipplin/dipplin",
+      "shiny": "1011_dipplin/dipplin_shiny"
+    },
+    "ditto": {
+      "icon": "0132_ditto/ditto",
+      "shiny": "0132_ditto/ditto_shiny"
+    },
+    "dodrio": {
+      "icon": "0085_dodrio/dodrio",
+      "shiny": "0085_dodrio/dodrio_shiny"
+    },
+    "doduo": {
+      "icon": "0084_doduo/doduo",
+      "shiny": "0084_doduo/doduo_shiny"
+    },
+    "dolliv": {
+      "icon": "0929_dolliv/dolliv",
+      "shiny": "0929_dolliv/dolliv_shiny"
+    },
+    "dondozo": {
+      "icon": "0977_dondozo/dondozo",
+      "shiny": "0977_dondozo/dondozo_shiny"
+    },
+    "donphan": {
+      "icon": "0232_donphan/donphan",
+      "shiny": "0232_donphan/donphan_shiny"
+    },
+    "dottler": {
+      "icon": "0825_dottler/dottler",
+      "shiny": "0825_dottler/dottler_shiny"
+    },
+    "doublade": {
+      "icon": "0680_doublade/doublade",
+      "shiny": "0680_doublade/doublade_shiny"
+    },
+    "dracovish": {
+      "icon": "0882_dracovish/dracovish",
+      "shiny": "0882_dracovish/dracovish_shiny"
+    },
+    "dracozolt": {
+      "icon": "0880_dracozolt/dracozolt",
+      "shiny": "0880_dracozolt/dracozolt_shiny"
+    },
+    "dragalge": {
+      "icon": "0691_dragalge/dragalge",
+      "shiny": "0691_dragalge/dragalge_shiny"
+    },
+    "dragapult": {
+      "icon": "0887_dragapult/dragapult",
+      "shiny": "0887_dragapult/dragapult_shiny"
+    },
+    "dragonair": {
+      "icon": "0148_dragonair/dragonair",
+      "shiny": "0148_dragonair/dragonair_shiny"
+    },
+    "dragonite": {
+      "icon": "0149_dragonite/dragonite",
+      "shiny": "0149_dragonite/dragonite_shiny"
+    },
+    "drakloak": {
+      "icon": "0886_drakloak/drakloak",
+      "shiny": "0886_drakloak/drakloak_shiny"
+    },
+    "drampa": {
+      "icon": "0780_drampa/drampa",
+      "shiny": "0780_drampa/drampa_shiny"
+    },
+    "drapion": {
+      "icon": "0452_drapion/drapion",
+      "shiny": "0452_drapion/drapion_shiny"
+    },
+    "dratini": {
+      "icon": "0147_dratini/dratini",
+      "shiny": "0147_dratini/dratini_shiny"
+    },
+    "drednaw": {
+      "icon": "0834_drednaw/drednaw",
+      "shiny": "0834_drednaw/drednaw_shiny"
+    },
+    "dreepy": {
+      "icon": "0885_dreepy/dreepy",
+      "shiny": "0885_dreepy/dreepy_shiny"
+    },
+    "drifblim": {
+      "icon": "0426_drifblim/drifblim",
+      "shiny": "0426_drifblim/drifblim_shiny"
+    },
+    "drifloon": {
+      "icon": "0425_drifloon/drifloon",
+      "shiny": "0425_drifloon/drifloon_shiny"
+    },
+    "drilbur": {
+      "icon": "0529_drilbur/drilbur",
+      "shiny": "0529_drilbur/drilbur_shiny"
+    },
+    "drizzile": {
+      "icon": "0817_drizzile/drizzile",
+      "shiny": "0817_drizzile/drizzile_shiny"
+    },
+    "drowzee": {
+      "icon": "0096_drowzee/drowzee",
+      "shiny": "0096_drowzee/drowzee_shiny"
+    },
+    "druddigon": {
+      "icon": "0621_druddigon/druddigon",
+      "shiny": "0621_druddigon/druddigon_shiny"
+    },
+    "dubwool": {
+      "icon": "0832_dubwool/dubwool",
+      "shiny": "0832_dubwool/dubwool_shiny"
+    },
+    "ducklett": {
+      "icon": "0580_ducklett/ducklett",
+      "shiny": "0580_ducklett/ducklett_shiny"
+    },
+    "dudunsparce": {
+      "icon": "0982_dudunsparce/dudunsparce_two_segment",
+      "shiny": "0982_dudunsparce/dudunsparce_two_segment_shiny"
+    },
+    "dugtrio": {
+      "icon": "0051_dugtrio/dugtrio",
+      "shiny": "0051_dugtrio/dugtrio_shiny"
+    },
+    "dunsparce": {
+      "icon": "0206_dunsparce/dunsparce",
+      "shiny": "0206_dunsparce/dunsparce_shiny"
+    },
+    "duosion": {
+      "icon": "0578_duosion/duosion",
+      "shiny": "0578_duosion/duosion_shiny"
+    },
+    "duraludon": {
+      "icon": "0884_duraludon/duraludon",
+      "shiny": "0884_duraludon/duraludon_shiny"
+    },
+    "durant": {
+      "icon": "0632_durant/durant",
+      "shiny": "0632_durant/durant_shiny"
+    },
+    "dusclops": {
+      "icon": "0356_dusclops/dusclops",
+      "shiny": "0356_dusclops/dusclops_shiny"
+    },
+    "dusknoir": {
+      "icon": "0477_dusknoir/dusknoir",
+      "shiny": "0477_dusknoir/dusknoir_shiny"
+    },
+    "duskull": {
+      "icon": "0355_duskull/duskull",
+      "shiny": "0355_duskull/duskull_shiny"
+    },
+    "dustox": {
+      "icon": "0269_dustox/dustox",
+      "shiny": "0269_dustox/dustox_shiny"
+    },
+    "dwebble": {
+      "icon": "0557_dwebble/dwebble",
+      "shiny": "0557_dwebble/dwebble_shiny"
+    },
+    "eelektrik": {
+      "icon": "0603_eelektrik/eelektrik",
+      "shiny": "0603_eelektrik/eelektrik_shiny"
+    },
+    "eelektross": {
+      "icon": "0604_eelektross/eelektross",
+      "shiny": "0604_eelektross/eelektross_shiny"
+    },
+    "eevee": {
+      "icon": "0133_eevee/eevee",
+      "shiny": "0133_eevee/eevee_shiny"
+    },
+    "eiscue": {
+      "icon": "0875_eiscue/eiscue",
+      "shiny": "0875_eiscue/eiscue_shiny"
+    },
+    "ekans": {
+      "icon": "0023_ekans/ekans",
+      "shiny": "0023_ekans/ekans_shiny"
+    },
+    "eldegoss": {
+      "icon": "0830_eldegoss/eldegoss",
+      "shiny": "0830_eldegoss/eldegoss_shiny"
+    },
+    "electabuzz": {
+      "icon": "0125_electabuzz/electabuzz",
+      "shiny": "0125_electabuzz/electabuzz_shiny"
+    },
+    "electivire": {
+      "icon": "0466_electivire/electivire",
+      "shiny": "0466_electivire/electivire_shiny"
+    },
+    "electrike": {
+      "icon": "0309_electrike/electrike",
+      "shiny": "0309_electrike/electrike_shiny"
+    },
+    "electrode": {
+      "icon": "0101_electrode/electrode",
+      "shiny": "0101_electrode/electrode_shiny"
+    },
+    "elekid": {
+      "icon": "0239_elekid/elekid",
+      "shiny": "0239_elekid/elekid_shiny"
+    },
+    "elgyem": {
+      "icon": "0605_elgyem/elgyem",
+      "shiny": "0605_elgyem/elgyem_shiny"
+    },
+    "emboar": {
+      "icon": "0500_emboar/emboar",
+      "shiny": "0500_emboar/emboar_shiny"
+    },
+    "emolga": {
+      "icon": "0587_emolga/emolga",
+      "shiny": "0587_emolga/emolga_shiny"
+    },
+    "empoleon": {
+      "icon": "0395_empoleon/empoleon",
+      "shiny": "0395_empoleon/empoleon_shiny"
+    },
+    "enamorus": {
+      "icon": "0905_enamorus/enamorus_incarnate",
+      "shiny": "0905_enamorus/enamorus_incarnate_shiny"
+    },
+    "entei": {
+      "icon": "0244_entei/entei",
+      "shiny": "0244_entei/entei_shiny"
+    },
+    "escavalier": {
+      "icon": "0589_escavalier/escavalier",
+      "shiny": "0589_escavalier/escavalier_shiny"
+    },
+    "espathra": {
+      "icon": "0956_espathra/espathra",
+      "shiny": "0956_espathra/espathra_shiny"
+    },
+    "espeon": {
+      "icon": "0196_espeon/espeon",
+      "shiny": "0196_espeon/espeon_shiny"
+    },
+    "espurr": {
+      "icon": "0677_espurr/espurr",
+      "shiny": "0677_espurr/espurr_shiny"
+    },
+    "eternatus": {
+      "icon": "0890_eternatus/eternatus",
+      "shiny": "0890_eternatus/eternatus_shiny"
+    },
+    "excadrill": {
+      "icon": "0530_excadrill/excadrill",
+      "shiny": "0530_excadrill/excadrill_shiny"
+    },
+    "exeggcute": {
+      "icon": "0102_exeggcute/exeggcute",
+      "shiny": "0102_exeggcute/exeggcute_shiny"
+    },
+    "exeggutor": {
+      "icon": "0103_exeggutor/exeggutor",
+      "shiny": "0103_exeggutor/exeggutor_shiny"
+    },
+    "exploud": {
+      "icon": "0295_exploud/exploud",
+      "shiny": "0295_exploud/exploud_shiny"
+    },
+    "falinks": {
+      "icon": "0870_falinks/falinks",
+      "shiny": "0870_falinks/falinks_shiny"
+    },
+    "farfetchd": {
+      "icon": "0083_farfetchd/farfetchd",
+      "shiny": "0083_farfetchd/farfetchd_shiny"
+    },
+    "farigiraf": {
+      "icon": "0981_farigiraf/farigiraf",
+      "shiny": "0981_farigiraf/farigiraf_shiny"
+    },
+    "fearow": {
+      "icon": "0022_fearow/fearow",
+      "shiny": "0022_fearow/fearow_shiny"
+    },
+    "feebas": {
+      "icon": "0349_feebas/feebas",
+      "shiny": "0349_feebas/feebas_shiny"
+    },
+    "fennekin": {
+      "icon": "0653_fennekin/fennekin",
+      "shiny": "0653_fennekin/fennekin_shiny"
+    },
+    "feraligatr": {
+      "icon": "0160_feraligatr/feraligatr",
+      "shiny": "0160_feraligatr/feraligatr_shiny"
+    },
+    "ferroseed": {
+      "icon": "0597_ferroseed/ferroseed",
+      "shiny": "0597_ferroseed/ferroseed_shiny"
+    },
+    "ferrothorn": {
+      "icon": "0598_ferrothorn/ferrothorn",
+      "shiny": "0598_ferrothorn/ferrothorn_shiny"
+    },
+    "fezandipiti": {
+      "icon": "1016_fezandipiti/fezandipiti",
+      "shiny": "1016_fezandipiti/fezandipiti_shiny"
+    },
+    "fidough": {
+      "icon": "0926_fidough/fidough",
+      "shiny": "0926_fidough/fidough_shiny"
+    },
+    "finizen": {
+      "icon": "0963_finizen/finizen",
+      "shiny": "0963_finizen/finizen_shiny"
+    },
+    "finneon": {
+      "icon": "0456_finneon/finneon",
+      "shiny": "0456_finneon/finneon_shiny"
+    },
+    "flaaffy": {
+      "icon": "0180_flaaffy/flaaffy",
+      "shiny": "0180_flaaffy/flaaffy_shiny"
+    },
+    "flabebe": {
+      "icon": "0669_flabebe/flabebe",
+      "shiny": "0669_flabebe/flabebe_shiny"
+    },
+    "flamigo": {
+      "icon": "0973_flamigo/flamigo",
+      "shiny": "0973_flamigo/flamigo_shiny"
+    },
+    "flapple": {
+      "icon": "0841_flapple/flapple",
+      "shiny": "0841_flapple/flapple_shiny"
+    },
+    "flareon": {
+      "icon": "0136_flareon/flareon",
+      "shiny": "0136_flareon/flareon_shiny"
+    },
+    "fletchinder": {
+      "icon": "0662_fletchinder/fletchinder",
+      "shiny": "0662_fletchinder/fletchinder_shiny"
+    },
+    "fletchling": {
+      "icon": "0661_fletchling/fletchling",
+      "shiny": "0661_fletchling/fletchling_shiny"
+    },
+    "flittle": {
+      "icon": "0955_flittle/flittle",
+      "shiny": "0955_flittle/flittle_shiny"
+    },
+    "floatzel": {
+      "icon": "0419_floatzel/floatzel",
+      "shiny": "0419_floatzel/floatzel_shiny"
+    },
+    "floette": {
+      "icon": "0670_floette/floette",
+      "shiny": "0670_floette/floette_shiny"
+    },
+    "floragato": {
+      "icon": "0907_floragato/floragato",
+      "shiny": "0907_floragato/floragato_shiny"
+    },
+    "florges": {
+      "icon": "0671_florges/florges",
+      "shiny": "0671_florges/florges_shiny"
+    },
+    "fluttermane": {
+      "icon": "0987_fluttermane/fluttermane",
+      "shiny": "0987_fluttermane/fluttermane_shiny"
+    },
+    "flygon": {
+      "icon": "0330_flygon/flygon",
+      "shiny": "0330_flygon/flygon_shiny"
+    },
+    "fomantis": {
+      "icon": "0753_fomantis/fomantis",
+      "shiny": "0753_fomantis/fomantis_shiny"
+    },
+    "foongus": {
+      "icon": "0590_foongus/foongus",
+      "shiny": "0590_foongus/foongus_shiny"
+    },
+    "forretress": {
+      "icon": "0205_forretress/forretress",
+      "shiny": "0205_forretress/forretress_shiny"
+    },
+    "fraxure": {
+      "icon": "0611_fraxure/fraxure",
+      "shiny": "0611_fraxure/fraxure_shiny"
+    },
+    "frigibax": {
+      "icon": "0996_frigibax/frigibax",
+      "shiny": "0996_frigibax/frigibax_shiny"
+    },
+    "frillish": {
+      "icon": "0592_frillish/frillish_male",
+      "shiny": "0592_frillish/frillish_male_shiny"
+    },
+    "froakie": {
+      "icon": "0656_froakie/froakie",
+      "shiny": "0656_froakie/froakie_shiny"
+    },
+    "frogadier": {
+      "icon": "0657_frogadier/frogadier",
+      "shiny": "0657_frogadier/frogadier_shiny"
+    },
+    "froslass": {
+      "icon": "0478_froslass/froslass",
+      "shiny": "0478_froslass/froslass_shiny"
+    },
+    "frosmoth": {
+      "icon": "0873_frosmoth/frosmoth",
+      "shiny": "0873_frosmoth/frosmoth_shiny"
+    },
+    "fuecoco": {
+      "icon": "0909_fuecoco/fuecoco",
+      "shiny": "0909_fuecoco/fuecoco_shiny"
+    },
+    "furfrou": {
+      "icon": "0676_furfrou/furfrou",
+      "shiny": "0676_furfrou/furfrou_shiny"
+    },
+    "furret": {
+      "icon": "0162_furret/furret",
+      "shiny": "0162_furret/furret_shiny"
+    },
+    "gabite": {
+      "icon": "0444_gabite/gabite",
+      "shiny": "0444_gabite/gabite_shiny"
+    },
+    "gallade": {
+      "icon": "0475_gallade/gallade",
+      "shiny": "0475_gallade/gallade_shiny"
+    },
+    "galvantula": {
+      "icon": "0596_galvantula/galvantula",
+      "shiny": "0596_galvantula/galvantula_shiny"
+    },
+    "garbodor": {
+      "icon": "0569_garbodor/garbodor",
+      "shiny": "0569_garbodor/garbodor_shiny"
+    },
+    "garchomp": {
+      "icon": "0445_garchomp/garchomp",
+      "shiny": "0445_garchomp/garchomp_shiny"
+    },
+    "gardevoir": {
+      "icon": "0282_gardevoir/gardevoir",
+      "shiny": "0282_gardevoir/gardevoir_shiny"
+    },
+    "garganacl": {
+      "icon": "0934_garganacl/garganacl",
+      "shiny": "0934_garganacl/garganacl_shiny"
+    },
+    "gastly": {
+      "icon": "0092_gastly/gastly",
+      "shiny": "0092_gastly/gastly_shiny"
+    },
+    "gastrodon": {
+      "icon": "0423_gastrodon/gastrodon_west",
+      "shiny": "0423_gastrodon/gastrodon_west_shiny"
+    },
+    "genesect": {
+      "icon": "0649_genesect/genesect",
+      "shiny": "0649_genesect/genesect_shiny"
+    },
+    "gengar": {
+      "icon": "0094_gengar/gengar",
+      "shiny": "0094_gengar/gengar_shiny"
+    },
+    "geodude": {
+      "icon": "0074_geodude/geodude",
+      "shiny": "0074_geodude/geodude_shiny"
+    },
+    "gholdengo": {
+      "icon": "1000_gholdengo/gholdengo",
+      "shiny": "1000_gholdengo/gholdengo_shiny"
+    },
+    "gible": {
+      "icon": "0443_gible/gible",
+      "shiny": "0443_gible/gible_shiny"
+    },
+    "gigalith": {
+      "icon": "0526_gigalith/gigalith",
+      "shiny": "0526_gigalith/gigalith_shiny"
+    },
+    "gimmighoul": {
+      "icon": "0999_gimmighoul/gimmighoul_chest",
+      "shiny": "0999_gimmighoul/gimmighoul_chest_shiny"
+    },
+    "girafarig": {
+      "icon": "0203_girafarig/girafarig",
+      "shiny": "0203_girafarig/girafarig_shiny"
+    },
+    "giratina": {
+      "icon": "0487_giratina/giratina",
+      "shiny": "0487_giratina/giratina_shiny"
+    },
+    "glaceon": {
+      "icon": "0471_glaceon/glaceon",
+      "shiny": "0471_glaceon/glaceon_shiny"
+    },
+    "glalie": {
+      "icon": "0362_glalie/glalie",
+      "shiny": "0362_glalie/glalie_shiny"
+    },
+    "glameow": {
+      "icon": "0431_glameow/glameow",
+      "shiny": "0431_glameow/glameow_shiny"
+    },
+    "glastrier": {
+      "icon": "0896_glastrier/glastrier"
+    },
+    "gligar": {
+      "icon": "0207_gligar/gligar",
+      "shiny": "0207_gligar/gligar_shiny"
+    },
+    "glimmet": {
+      "icon": "0969_glimmet/glimmet",
+      "shiny": "0969_glimmet/glimmet_shiny"
+    },
+    "glimmora": {
+      "icon": "0970_glimmora/glimmora",
+      "shiny": "0970_glimmora/glimmora_shiny"
+    },
+    "gliscor": {
+      "icon": "0472_gliscor/gliscor",
+      "shiny": "0472_gliscor/gliscor_shiny"
+    },
+    "gloom": {
+      "icon": "0044_gloom/gloom",
+      "shiny": "0044_gloom/gloom_shiny"
+    },
+    "gogoat": {
+      "icon": "0673_gogoat/gogoat",
+      "shiny": "0673_gogoat/gogoat_shiny"
+    },
+    "golbat": {
+      "icon": "0042_golbat/golbat",
+      "shiny": "0042_golbat/golbat_shiny"
+    },
+    "goldeen": {
+      "icon": "0118_goldeen/goldeen",
+      "shiny": "0118_goldeen/goldeen_shiny"
+    },
+    "golduck": {
+      "icon": "0055_golduck/golduck",
+      "shiny": "0055_golduck/golduck_shiny"
+    },
+    "golem": {
+      "icon": "0076_golem/golem",
+      "shiny": "0076_golem/golem_shiny"
+    },
+    "golett": {
+      "icon": "0622_golett/golett",
+      "shiny": "0622_golett/golett_shiny"
+    },
+    "golisopod": {
+      "icon": "0768_golisopod/golisopod",
+      "shiny": "0768_golisopod/golisopod_shiny"
+    },
+    "golurk": {
+      "icon": "0623_golurk/golurk_1"
+    },
+    "goodra": {
+      "icon": "0706_goodra/goodra",
+      "shiny": "0706_goodra/goodra_shiny"
+    },
+    "goomy": {
+      "icon": "0704_goomy/goomy",
+      "shiny": "0704_goomy/goomy_shiny"
+    },
+    "gorebyss": {
+      "icon": "0368_gorebyss/gorebyss",
+      "shiny": "0368_gorebyss/gorebyss_shiny"
+    },
+    "gossifleur": {
+      "icon": "0829_gossifleur/gossifleur",
+      "shiny": "0829_gossifleur/gossifleur_shiny"
+    },
+    "gothita": {
+      "icon": "0574_gothita/gothita",
+      "shiny": "0574_gothita/gothita_shiny"
+    },
+    "gothitelle": {
+      "icon": "0576_gothitelle/gothitelle",
+      "shiny": "0576_gothitelle/gothitelle_shiny"
+    },
+    "gothorita": {
+      "icon": "0575_gothorita/gothorita",
+      "shiny": "0575_gothorita/gothorita_shiny"
+    },
+    "gougingfire": {
+      "icon": "1020_gougingfire/gougingfire",
+      "shiny": "1020_gougingfire/gougingfire_shiny"
+    },
+    "gourgeist": {
+      "icon": "0711_gourgeist/gourgeist",
+      "shiny": "0711_gourgeist/gourgeist_shiny"
+    },
+    "grafaiai": {
+      "icon": "0945_grafaiai/grafaiai",
+      "shiny": "0945_grafaiai/grafaiai_shiny"
+    },
+    "granbull": {
+      "icon": "0210_granbull/granbull",
+      "shiny": "0210_granbull/granbull_shiny"
+    },
+    "grapploct": {
+      "icon": "0853_grapploct/grapploct",
+      "shiny": "0853_grapploct/grapploct_shiny"
+    },
+    "graveler": {
+      "icon": "0075_graveler/graveler",
+      "shiny": "0075_graveler/graveler_shiny"
+    },
+    "greattusk": {
+      "icon": "0984_greattusk/greattusk",
+      "shiny": "0984_greattusk/greattusk_shiny"
+    },
+    "greavard": {
+      "icon": "0971_greavard/greavard",
+      "shiny": "0971_greavard/greavard_shiny"
+    },
+    "greedent": {
+      "icon": "0820_greedent/greedent",
+      "shiny": "0820_greedent/greedent_shiny"
+    },
+    "greninja": {
+      "icon": "0658_greninja/greninja",
+      "shiny": "0658_greninja/greninja_shiny"
+    },
+    "grimer": {
+      "icon": "0088_grimer/grimer",
+      "shiny": "0088_grimer/grimer_shiny"
+    },
+    "grimmsnarl": {
+      "icon": "0861_grimmsnarl/grimmsnarl",
+      "shiny": "0861_grimmsnarl/grimmsnarl_shiny"
+    },
+    "grookey": {
+      "icon": "0810_grookey/grookey",
+      "shiny": "0810_grookey/grookey_shiny"
+    },
+    "grotle": {
+      "icon": "0388_grotle/grotle",
+      "shiny": "0388_grotle/grotle_shiny"
+    },
+    "groudon": {
+      "icon": "0383_groudon/groudon",
+      "shiny": "0383_groudon/groudon_shiny"
+    },
+    "grovyle": {
+      "icon": "0253_grovyle/grovyle",
+      "shiny": "0253_grovyle/grovyle_shiny"
+    },
+    "growlithe": {
+      "icon": "0058_growlithe/growlithe",
+      "shiny": "0058_growlithe/growlithe_shiny"
+    },
+    "grubbin": {
+      "icon": "0736_grubbin/grubbin",
+      "shiny": "0736_grubbin/grubbin_shiny"
+    },
+    "grumpig": {
+      "icon": "0326_grumpig/grumpig",
+      "shiny": "0326_grumpig/grumpig_shiny"
+    },
+    "gulpin": {
+      "icon": "0316_gulpin/gulpin",
+      "shiny": "0316_gulpin/gulpin_shiny"
+    },
+    "gumshoos": {
+      "icon": "0735_gumshoos/gumshoos",
+      "shiny": "0735_gumshoos/gumshoos_shiny"
+    },
+    "gurdurr": {
+      "icon": "0533_gurdurr/gurdurr",
+      "shiny": "0533_gurdurr/gurdurr_shiny"
+    },
+    "guzzlord": {
+      "icon": "0799_guzzlord/guzzlord",
+      "shiny": "0799_guzzlord/guzzlord_shiny"
+    },
+    "gyarados": {
+      "icon": "0130_gyarados/gyarados",
+      "shiny": "0130_gyarados/gyarados_shiny"
+    },
+    "hakamoo": {
+      "icon": "0783_hakamoo/hakamo-o",
+      "shiny": "0783_hakamoo/hakamo-o_shiny"
+    },
+    "happiny": {
+      "icon": "0440_happiny/happiny",
+      "shiny": "0440_happiny/happiny_shiny"
+    },
+    "hariyama": {
+      "icon": "0297_hariyama/hariyama",
+      "shiny": "0297_hariyama/hariyama_shiny"
+    },
+    "hatenna": {
+      "icon": "0856_hatenna/hatenna",
+      "shiny": "0856_hatenna/hatenna_shiny"
+    },
+    "hatterene": {
+      "icon": "0858_hatterene/hatterene",
+      "shiny": "0858_hatterene/hatterene_shiny"
+    },
+    "hattrem": {
+      "icon": "0857_hattrem/hattrem",
+      "shiny": "0857_hattrem/hattrem_shiny"
+    },
+    "haunter": {
+      "icon": "0093_haunter/haunter",
+      "shiny": "0093_haunter/haunter_shiny"
+    },
+    "hawlucha": {
+      "icon": "0701_hawlucha/hawlucha",
+      "shiny": "0701_hawlucha/hawlucha_shiny"
+    },
+    "haxorus": {
+      "icon": "0612_haxorus/haxorus",
+      "shiny": "0612_haxorus/haxorus_shiny"
+    },
+    "heatmor": {
+      "icon": "0631_heatmor/heatmor",
+      "shiny": "0631_heatmor/heatmor_shiny"
+    },
+    "heatran": {
+      "icon": "0485_heatran/heatran",
+      "shiny": "0485_heatran/heatran_shiny"
+    },
+    "heliolisk": {
+      "icon": "0695_heliolisk/heliolisk",
+      "shiny": "0695_heliolisk/heliolisk_shiny"
+    },
+    "helioptile": {
+      "icon": "0694_helioptile/helioptile",
+      "shiny": "0694_helioptile/helioptile_shiny"
+    },
+    "heracross": {
+      "icon": "0214_heracross/heracross",
+      "shiny": "0214_heracross/heracross_shiny"
+    },
+    "herdier": {
+      "icon": "0507_herdier/herdier",
+      "shiny": "0507_herdier/herdier_shiny"
+    },
+    "hippopotas": {
+      "icon": "0449_hippopotas/hippopotas_male",
+      "shiny": "0449_hippopotas/hippopotas_male_shiny"
+    },
+    "hippowdon": {
+      "icon": "0450_hippowdon/hippowdon_male",
+      "shiny": "0450_hippowdon/hippowdon_male_shiny"
+    },
+    "hitmonchan": {
+      "icon": "0107_hitmonchan/hitmonchan",
+      "shiny": "0107_hitmonchan/hitmonchan_shiny"
+    },
+    "hitmonlee": {
+      "icon": "0106_hitmonlee/hitmonlee",
+      "shiny": "0106_hitmonlee/hitmonlee_shiny"
+    },
+    "hitmontop": {
+      "icon": "0237_hitmontop/hitmontop",
+      "shiny": "0237_hitmontop/hitmontop_shiny"
+    },
+    "honchkrow": {
+      "icon": "0430_honchkrow/honchkrow",
+      "shiny": "0430_honchkrow/honchkrow_shiny"
+    },
+    "honedge": {
+      "icon": "0679_honedge/honedge",
+      "shiny": "0679_honedge/honedge_shiny"
+    },
+    "hooh": {
+      "icon": "0250_hooh/ho_oh",
+      "shiny": "0250_hooh/ho_oh_shiny"
+    },
+    "hoopa": {
+      "icon": "0720_hoopa/hoopa",
+      "shiny": "0720_hoopa/hoopa_shiny"
+    },
+    "hoothoot": {
+      "icon": "0163_hoothoot/hoothoot",
+      "shiny": "0163_hoothoot/hoothoot_shiny"
+    },
+    "hoppip": {
+      "icon": "0187_hoppip/hoppip",
+      "shiny": "0187_hoppip/hoppip_shiny"
+    },
+    "horsea": {
+      "icon": "0116_horsea/horsea",
+      "shiny": "0116_horsea/horsea_shiny"
+    },
+    "houndoom": {
+      "icon": "0229_houndoom/houndoom",
+      "shiny": "0229_houndoom/houndoom_shiny"
+    },
+    "houndour": {
+      "icon": "0228_houndour/houndour",
+      "shiny": "0228_houndour/houndour_shiny"
+    },
+    "houndstone": {
+      "icon": "0972_houndstone/houndstone",
+      "shiny": "0972_houndstone/houndstone_shiny"
+    },
+    "huntail": {
+      "icon": "0367_huntail/huntail",
+      "shiny": "0367_huntail/huntail_shiny"
+    },
+    "hydrapple": {
+      "icon": "1019_hydrapple/hydrapple",
+      "shiny": "1019_hydrapple/hydrapple_shiny"
+    },
+    "hydreigon": {
+      "icon": "0635_hydreigon/hydreigon",
+      "shiny": "0635_hydreigon/hydreigon_shiny"
+    },
+    "hypno": {
+      "icon": "0097_hypno/hypno",
+      "shiny": "0097_hypno/hypno_shiny"
+    },
+    "igglybuff": {
+      "icon": "0174_igglybuff/igglybuff",
+      "shiny": "0174_igglybuff/igglybuff_shiny"
+    },
+    "illumise": {
+      "icon": "0314_illumise/illumise",
+      "shiny": "0314_illumise/illumise_shiny"
+    },
+    "impidimp": {
+      "icon": "0859_impidimp/impidimp",
+      "shiny": "0859_impidimp/impidimp_shiny"
+    },
+    "incineroar": {
+      "icon": "0727_incineroar/incineroar",
+      "shiny": "0727_incineroar/incineroar_shiny"
+    },
+    "indeedee": {
+      "icon": "0876_indeedee/indeedee_f",
+      "shiny": "0876_indeedee/indeedee_f_shiny"
+    },
+    "infernape": {
+      "icon": "0392_infernape/infernape",
+      "shiny": "0392_infernape/infernape_shiny"
+    },
+    "inkay": {
+      "icon": "0686_inkay/inkay",
+      "shiny": "0686_inkay/inkay_shiny"
+    },
+    "inteleon": {
+      "icon": "0818_inteleon/inteleon",
+      "shiny": "0818_inteleon/inteleon_shiny"
+    },
+    "ironboulder": {
+      "icon": "1022_ironboulder/ironboulder",
+      "shiny": "1022_ironboulder/ironboulder_shiny"
+    },
+    "ironbundle": {
+      "icon": "0991_ironbundle/ironbundle",
+      "shiny": "0991_ironbundle/ironbundle_shiny"
+    },
+    "ironcrown": {
+      "icon": "1023_ironcrown/ironcrown",
+      "shiny": "1023_ironcrown/ironcrown_shiny"
+    },
+    "ironhands": {
+      "icon": "0992_ironhands/ironhands",
+      "shiny": "0992_ironhands/ironhands_shiny"
+    },
+    "ironjugulis": {
+      "icon": "0993_ironjugulis/ironjugulis",
+      "shiny": "0993_ironjugulis/ironjugulis_shiny"
+    },
+    "ironleaves": {
+      "icon": "1010_ironleaves/ironleaves",
+      "shiny": "1010_ironleaves/ironleaves_shiny"
+    },
+    "ironmoth": {
+      "icon": "0994_ironmoth/ironmoth",
+      "shiny": "0994_ironmoth/ironmoth_shiny"
+    },
+    "ironthorns": {
+      "icon": "0995_ironthorns/ironthorns",
+      "shiny": "0995_ironthorns/ironthorns_shiny"
+    },
+    "irontreads": {
+      "icon": "0990_irontreads/irontreads",
+      "shiny": "0990_irontreads/irontreads_shiny"
+    },
+    "ironvaliant": {
+      "icon": "1006_ironvaliant/ironvaliant",
+      "shiny": "1006_ironvaliant/ironvaliant_shiny"
+    },
+    "ivysaur": {
+      "icon": "0002_ivysaur/ivysaur",
+      "shiny": "0002_ivysaur/ivysaur_shiny"
+    },
+    "jangmoo": {
+      "icon": "0782_jangmoo/jangmo-o",
+      "shiny": "0782_jangmoo/jangmo-o_shiny"
+    },
+    "jellicent": {
+      "icon": "0593_jellicent/jellicent_male",
+      "shiny": "0593_jellicent/jellicent_male_shiny"
+    },
+    "jigglypuff": {
+      "icon": "0039_jigglypuff/jigglypuff",
+      "shiny": "0039_jigglypuff/jigglypuff_shiny"
+    },
+    "jirachi": {
+      "icon": "0385_jirachi/jirachi",
+      "shiny": "0385_jirachi/jirachi_shiny"
+    },
+    "jolteon": {
+      "icon": "0135_jolteon/jolteon",
+      "shiny": "0135_jolteon/jolteon_shiny"
+    },
+    "joltik": {
+      "icon": "0595_joltik/joltik",
+      "shiny": "0595_joltik/joltik_shiny"
+    },
+    "jumpluff": {
+      "icon": "0189_jumpluff/jumpluff",
+      "shiny": "0189_jumpluff/jumpluff_shiny"
+    },
+    "jynx": {
+      "icon": "0124_jynx/jynx",
+      "shiny": "0124_jynx/jynx_shiny"
+    },
+    "kabuto": {
+      "icon": "0140_kabuto/kabuto",
+      "shiny": "0140_kabuto/kabuto_shiny"
+    },
+    "kabutops": {
+      "icon": "0141_kabutops/kabutops",
+      "shiny": "0141_kabutops/kabutops_shiny"
+    },
+    "kadabra": {
+      "icon": "0064_kadabra/kadabra",
+      "shiny": "0064_kadabra/kadabra_shiny"
+    },
+    "kakuna": {
+      "icon": "0014_kakuna/kakuna",
+      "shiny": "0014_kakuna/kakuna_shiny"
+    },
+    "kangaskhan": {
+      "icon": "0115_kangaskhan/kangaskhan",
+      "shiny": "0115_kangaskhan/kangaskhan_shiny"
+    },
+    "karrablast": {
+      "icon": "0588_karrablast/karrablast",
+      "shiny": "0588_karrablast/karrablast_shiny"
+    },
+    "kartana": {
+      "icon": "0798_kartana/kartana",
+      "shiny": "0798_kartana/kartana_shiny"
+    },
+    "kecleon": {
+      "icon": "0352_kecleon/kecleon",
+      "shiny": "0352_kecleon/kecleon_shiny"
+    },
+    "keldeo": {
+      "icon": "0647_keldeo/keldeo",
+      "shiny": "0647_keldeo/keldeo_shiny"
+    },
+    "kilowattrel": {
+      "icon": "0941_kilowattrel/kilowattrel",
+      "shiny": "0941_kilowattrel/kilowattrel_shiny"
+    },
+    "kingambit": {
+      "icon": "0983_kingambit/kingambit",
+      "shiny": "0983_kingambit/kingambit_shiny"
+    },
+    "kingdra": {
+      "icon": "0230_kingdra/kingdra",
+      "shiny": "0230_kingdra/kingdra_shiny"
+    },
+    "kingler": {
+      "icon": "0099_kingler/kingler",
+      "shiny": "0099_kingler/kingler_shiny"
+    },
+    "kirlia": {
+      "icon": "0281_kirlia/kirlia",
+      "shiny": "0281_kirlia/kirlia_shiny"
+    },
+    "klang": {
+      "icon": "0600_klang/klang",
+      "shiny": "0600_klang/klang_shiny"
+    },
+    "klawf": {
+      "icon": "0950_klawf/klawf",
+      "shiny": "0950_klawf/klawf_shiny"
+    },
+    "kleavor": {
+      "icon": "0900_kleavor/kleavor",
+      "shiny": "0900_kleavor/kleavor_shiny"
+    },
+    "klefki": {
+      "icon": "0707_klefki/klefki",
+      "shiny": "0707_klefki/klefki_shiny"
+    },
+    "klink": {
+      "icon": "0599_klink/klink",
+      "shiny": "0599_klink/klink_shiny"
+    },
+    "klinklang": {
+      "icon": "0601_klinklang/klinklang",
+      "shiny": "0601_klinklang/klinklang_shiny"
+    },
+    "koffing": {
+      "icon": "0109_koffing/koffing",
+      "shiny": "0109_koffing/koffing_shiny"
+    },
+    "komala": {
+      "icon": "0775_komala/komala",
+      "shiny": "0775_komala/komala_shiny"
+    },
+    "kommoo": {
+      "icon": "0784_kommoo/kommo-o",
+      "shiny": "0784_kommoo/kommo-o_shiny"
+    },
+    "koraidon": {
+      "icon": "1007_koraidon/koraidon",
+      "shiny": "1007_koraidon/koraidon_shiny"
+    },
+    "krabby": {
+      "icon": "0098_krabby/krabby",
+      "shiny": "0098_krabby/krabby_shiny"
+    },
+    "kricketot": {
+      "icon": "0401_kricketot/kricketot",
+      "shiny": "0401_kricketot/kricketot_shiny"
+    },
+    "kricketune": {
+      "icon": "0402_kricketune/kricketune",
+      "shiny": "0402_kricketune/kricketune_shiny"
+    },
+    "krokorok": {
+      "icon": "0552_krokorok/krokorok",
+      "shiny": "0552_krokorok/krokorok_shiny"
+    },
+    "krookodile": {
+      "icon": "0553_krookodile/krookodile",
+      "shiny": "0553_krookodile/krookodile_shiny"
+    },
+    "kubfu": {
+      "icon": "0891_kubfu/kubfu",
+      "shiny": "0891_kubfu/kubfu_shiny"
+    },
+    "kyogre": {
+      "icon": "0382_kyogre/kyogre",
+      "shiny": "0382_kyogre/kyogre_shiny"
+    },
+    "kyurem": {
+      "icon": "0646_kyurem/kyurem",
+      "shiny": "0646_kyurem/kyurem_shiny"
+    },
+    "lairon": {
+      "icon": "0305_lairon/lairon",
+      "shiny": "0305_lairon/lairon_shiny"
+    },
+    "lampent": {
+      "icon": "0608_lampent/lampent",
+      "shiny": "0608_lampent/lampent_shiny"
+    },
+    "landorus": {
+      "icon": "0645_landorus/landorus",
+      "shiny": "0645_landorus/landorus_shiny"
+    },
+    "lanturn": {
+      "icon": "0171_lanturn/lanturn",
+      "shiny": "0171_lanturn/lanturn_shiny"
+    },
+    "lapras": {
+      "icon": "0131_lapras/lapras",
+      "shiny": "0131_lapras/lapras_shiny"
+    },
+    "larvesta": {
+      "icon": "0636_larvesta/larvesta",
+      "shiny": "0636_larvesta/larvesta_shiny"
+    },
+    "larvitar": {
+      "icon": "0246_larvitar/larvitar",
+      "shiny": "0246_larvitar/larvitar_shiny"
+    },
+    "latias": {
+      "icon": "0380_latias/latias",
+      "shiny": "0380_latias/latias_shiny"
+    },
+    "latios": {
+      "icon": "0381_latios/latios",
+      "shiny": "0381_latios/latios_shiny"
+    },
+    "leafeon": {
+      "icon": "0470_leafeon/leafeon",
+      "shiny": "0470_leafeon/leafeon_shiny"
+    },
+    "leavanny": {
+      "icon": "0542_leavanny/leavanny",
+      "shiny": "0542_leavanny/leavanny_shiny"
+    },
+    "lechonk": {
+      "icon": "0915_lechonk/lechonk",
+      "shiny": "0915_lechonk/lechonk_shiny"
+    },
+    "ledian": {
+      "icon": "0166_ledian/ledian",
+      "shiny": "0166_ledian/ledian_shiny"
+    },
+    "ledyba": {
+      "icon": "0165_ledyba/ledyba",
+      "shiny": "0165_ledyba/ledyba_shiny"
+    },
+    "lickilicky": {
+      "icon": "0463_lickilicky/lickilicky",
+      "shiny": "0463_lickilicky/lickilicky_shiny"
+    },
+    "lickitung": {
+      "icon": "0108_lickitung/lickitung",
+      "shiny": "0108_lickitung/lickitung_shiny"
+    },
+    "liepard": {
+      "icon": "0510_liepard/liepard",
+      "shiny": "0510_liepard/liepard_shiny"
+    },
+    "lileep": {
+      "icon": "0345_lileep/lileep",
+      "shiny": "0345_lileep/lileep_shiny"
+    },
+    "lilligant": {
+      "icon": "0549_lilligant/lilligant",
+      "shiny": "0549_lilligant/lilligant_shiny"
+    },
+    "lillipup": {
+      "icon": "0506_lillipup/lillipup",
+      "shiny": "0506_lillipup/lillipup_shiny"
+    },
+    "linoone": {
+      "icon": "0264_linoone/linoone",
+      "shiny": "0264_linoone/linoone_shiny"
+    },
+    "litleo": {
+      "icon": "0667_litleo/litleo",
+      "shiny": "0667_litleo/litleo_shiny"
+    },
+    "litten": {
+      "icon": "0725_litten/litten",
+      "shiny": "0725_litten/litten_shiny"
+    },
+    "litwick": {
+      "icon": "0607_litwick/litwick",
+      "shiny": "0607_litwick/litwick_shiny"
+    },
+    "lokix": {
+      "icon": "0920_lokix/lokix",
+      "shiny": "0920_lokix/lokix_shiny"
+    },
+    "lombre": {
+      "icon": "0271_lombre/lombre",
+      "shiny": "0271_lombre/lombre_shiny"
+    },
+    "lopunny": {
+      "icon": "0428_lopunny/lopunny",
+      "shiny": "0428_lopunny/lopunny_shiny"
+    },
+    "lotad": {
+      "icon": "0270_lotad/lotad",
+      "shiny": "0270_lotad/lotad_shiny"
+    },
+    "loudred": {
+      "icon": "0294_loudred/loudred",
+      "shiny": "0294_loudred/loudred_shiny"
+    },
+    "lucario": {
+      "icon": "0448_lucario/lucario",
+      "shiny": "0448_lucario/lucario_shiny"
+    },
+    "ludicolo": {
+      "icon": "0272_ludicolo/ludicolo",
+      "shiny": "0272_ludicolo/ludicolo_shiny"
+    },
+    "lugia": {
+      "icon": "0249_lugia/lugia",
+      "shiny": "0249_lugia/lugia_shiny"
+    },
+    "lumineon": {
+      "icon": "0457_lumineon/lumineon",
+      "shiny": "0457_lumineon/lumineon_shiny"
+    },
+    "lunala": {
+      "icon": "0792_lunala/lunala",
+      "shiny": "0792_lunala/lunala_shiny"
+    },
+    "lunatone": {
+      "icon": "0337_lunatone/lunatone",
+      "shiny": "0337_lunatone/lunatone_shiny"
+    },
+    "lurantis": {
+      "icon": "0754_lurantis/lurantis",
+      "shiny": "0754_lurantis/lurantis_shiny"
+    },
+    "luvdisc": {
+      "icon": "0370_luvdisc/luvdisc",
+      "shiny": "0370_luvdisc/luvdisc_shiny"
+    },
+    "luxio": {
+      "icon": "0404_luxio/luxio",
+      "shiny": "0404_luxio/luxio_shiny"
+    },
+    "luxray": {
+      "icon": "0405_luxray/luxray",
+      "shiny": "0405_luxray/luxray_shiny"
+    },
+    "lycanroc": {
+      "icon": "0745_lycanroc/lycanroc",
+      "shiny": "0745_lycanroc/lycanroc_shiny"
+    },
+    "mabosstiff": {
+      "icon": "0943_mabosstiff/mabosstiff",
+      "shiny": "0943_mabosstiff/mabosstiff_shiny"
+    },
+    "machamp": {
+      "icon": "0068_machamp/machamp",
+      "shiny": "0068_machamp/machamp_shiny"
+    },
+    "machoke": {
+      "icon": "0067_machoke/machoke",
+      "shiny": "0067_machoke/machoke_shiny"
+    },
+    "machop": {
+      "icon": "0066_machop/machop",
+      "shiny": "0066_machop/machop_shiny"
+    },
+    "magby": {
+      "icon": "0240_magby/magby",
+      "shiny": "0240_magby/magby_shiny"
+    },
+    "magcargo": {
+      "icon": "0219_magcargo/magcargo",
+      "shiny": "0219_magcargo/magcargo_shiny"
+    },
+    "magearna": {
+      "icon": "0801_magearna/magearna",
+      "shiny": "0801_magearna/magearna_shiny"
+    },
+    "magikarp": {
+      "icon": "0129_magikarp/magikarp",
+      "shiny": "0129_magikarp/magikarp_shiny"
+    },
+    "magmar": {
+      "icon": "0126_magmar/magmar",
+      "shiny": "0126_magmar/magmar_shiny"
+    },
+    "magmortar": {
+      "icon": "0467_magmortar/magmortar",
+      "shiny": "0467_magmortar/magmortar_shiny"
+    },
+    "magnemite": {
+      "icon": "0081_magnemite/magnemite",
+      "shiny": "0081_magnemite/magnemite_shiny"
+    },
+    "magneton": {
+      "icon": "0082_magneton/magneton",
+      "shiny": "0082_magneton/magneton_shiny"
+    },
+    "magnezone": {
+      "icon": "0462_magnezone/magnezone",
+      "shiny": "0462_magnezone/magnezone_shiny"
+    },
+    "makuhita": {
+      "icon": "0296_makuhita/makuhita",
+      "shiny": "0296_makuhita/makuhita_shiny"
+    },
+    "malamar": {
+      "icon": "0687_malamar/malamar",
+      "shiny": "0687_malamar/malamar_shiny"
+    },
+    "mamoswine": {
+      "icon": "0473_mamoswine/mamoswine",
+      "shiny": "0473_mamoswine/mamoswine_shiny"
+    },
+    "manaphy": {
+      "icon": "0490_manaphy/manaphy",
+      "shiny": "0490_manaphy/manaphy_shiny"
+    },
+    "mandibuzz": {
+      "icon": "0630_mandibuzz/mandibuzz",
+      "shiny": "0630_mandibuzz/mandibuzz_shiny"
+    },
+    "manectric": {
+      "icon": "0310_manectric/manectric",
+      "shiny": "0310_manectric/manectric_shiny"
+    },
+    "mankey": {
+      "icon": "0056_mankey/mankey",
+      "shiny": "0056_mankey/mankey_shiny"
+    },
+    "mantine": {
+      "icon": "0226_mantine/mantine",
+      "shiny": "0226_mantine/mantine_shiny"
+    },
+    "mantyke": {
+      "icon": "0458_mantyke/mantyke",
+      "shiny": "0458_mantyke/mantyke_shiny"
+    },
+    "maractus": {
+      "icon": "0556_maractus/maractus",
+      "shiny": "0556_maractus/maractus_shiny"
+    },
+    "mareanie": {
+      "icon": "0747_mareanie/mareanie",
+      "shiny": "0747_mareanie/mareanie_shiny"
+    },
+    "mareep": {
+      "icon": "0179_mareep/mareep",
+      "shiny": "0179_mareep/mareep_shiny"
+    },
+    "marill": {
+      "icon": "0183_marill/marill",
+      "shiny": "0183_marill/marill_shiny"
+    },
+    "marowak": {
+      "icon": "0105_marowak/marowak",
+      "shiny": "0105_marowak/marowak_shiny"
+    },
+    "marshadow": {
+      "icon": "0802_marshadow/marshadow",
+      "shiny": "0802_marshadow/marshadow_shiny"
+    },
+    "marshtomp": {
+      "icon": "0259_marshtomp/marshtomp",
+      "shiny": "0259_marshtomp/marshtomp_shiny"
+    },
+    "maschiff": {
+      "icon": "0942_maschiff/maschiff",
+      "shiny": "0942_maschiff/maschiff_shiny"
+    },
+    "masquerain": {
+      "icon": "0284_masquerain/masquerain",
+      "shiny": "0284_masquerain/masquerain_shiny"
+    },
+    "maushold": {
+      "icon": "0925_maushold/maushold",
+      "shiny": "0925_maushold/maushold_shiny"
+    },
+    "mawile": {
+      "icon": "0303_mawile/mawile",
+      "shiny": "0303_mawile/mawile_shiny"
+    },
+    "medicham": {
+      "icon": "0308_medicham/medicham",
+      "shiny": "0308_medicham/medicham_shiny"
+    },
+    "meditite": {
+      "icon": "0307_meditite/meditite",
+      "shiny": "0307_meditite/meditite_shiny"
+    },
+    "meganium": {
+      "icon": "0154_meganium/meganium",
+      "shiny": "0154_meganium/meganium_shiny"
+    },
+    "melmetal": {
+      "icon": "0809_melmetal/melmetal",
+      "shiny": "0809_melmetal/melmetal_shiny"
+    },
+    "meloetta": {
+      "icon": "0648_meloetta/meloetta",
+      "shiny": "0648_meloetta/meloetta_shiny"
+    },
+    "meltan": {
+      "icon": "0808_meltan/meltan",
+      "shiny": "0808_meltan/meltan_shiny"
+    },
+    "meowscarada": {
+      "icon": "0908_meowscarada/meowscarada",
+      "shiny": "0908_meowscarada/meowscarada_shiny"
+    },
+    "meowstic": {
+      "icon": "0678_meowstic/meowstic_male",
+      "shiny": "0678_meowstic/meowstic_male_shiny"
+    },
+    "meowth": {
+      "icon": "0052_meowth/meowth",
+      "shiny": "0052_meowth/meowth_shiny"
+    },
+    "mesprit": {
+      "icon": "0481_mesprit/mesprit",
+      "shiny": "0481_mesprit/mesprit_shiny"
+    },
+    "metagross": {
+      "icon": "0376_metagross/metagross",
+      "shiny": "0376_metagross/metagross_shiny"
+    },
+    "metang": {
+      "icon": "0375_metang/metang",
+      "shiny": "0375_metang/metang_shiny"
+    },
+    "metapod": {
+      "icon": "0011_metapod/metapod",
+      "shiny": "0011_metapod/metapod_shiny"
+    },
+    "mew": {
+      "icon": "0151_mew/mew",
+      "shiny": "0151_mew/mew_shiny"
+    },
+    "mewtwo": {
+      "icon": "0150_mewtwo/mewtwo",
+      "shiny": "0150_mewtwo/mewtwo_shiny"
+    },
+    "mienfoo": {
+      "icon": "0619_mienfoo/mienfoo",
+      "shiny": "0619_mienfoo/mienfoo_shiny"
+    },
+    "mienshao": {
+      "icon": "0620_mienshao/mienshao",
+      "shiny": "0620_mienshao/mienshao_shiny"
+    },
+    "mightyena": {
+      "icon": "0262_mightyena/mightyena",
+      "shiny": "0262_mightyena/mightyena_shiny"
+    },
+    "milcery": {
+      "icon": "0868_milcery/milcery",
+      "shiny": "0868_milcery/milcery_shiny"
+    },
+    "milotic": {
+      "icon": "0350_milotic/milotic",
+      "shiny": "0350_milotic/milotic_shiny"
+    },
+    "miltank": {
+      "icon": "0241_miltank/miltank",
+      "shiny": "0241_miltank/miltank_shiny"
+    },
+    "mimejr": {
+      "icon": "0439_mimejr/mime_jr",
+      "shiny": "0439_mimejr/mime_jr_shiny"
+    },
+    "mimikyu": {
+      "icon": "0778_mimikyu/mimikyu",
+      "shiny": "0778_mimikyu/mimikyu_shiny"
+    },
+    "minccino": {
+      "icon": "0572_minccino/minccino",
+      "shiny": "0572_minccino/minccino_shiny"
+    },
+    "minior": {
+      "icon": "0774_minior/minior",
+      "shiny": "0774_minior/minior_shiny"
+    },
+    "minun": {
+      "icon": "0312_minun/minun",
+      "shiny": "0312_minun/minun_shiny"
+    },
+    "miraidon": {
+      "icon": "1008_miraidon/miraidon",
+      "shiny": "1008_miraidon/miraidon_shiny"
+    },
+    "misdreavus": {
+      "icon": "0200_misdreavus/misdreavus",
+      "shiny": "0200_misdreavus/misdreavus_shiny"
+    },
+    "mismagius": {
+      "icon": "0429_mismagius/mismagius",
+      "shiny": "0429_mismagius/mismagius_shiny"
+    },
+    "moltres": {
+      "icon": "0146_moltres/moltres",
+      "shiny": "0146_moltres/moltres_shiny"
+    },
+    "monferno": {
+      "icon": "0391_monferno/monferno",
+      "shiny": "0391_monferno/monferno_shiny"
+    },
+    "morelull": {
+      "icon": "0755_morelull/morelull",
+      "shiny": "0755_morelull/morelull_shiny"
+    },
+    "morgrem": {
+      "icon": "0860_morgrem/morgrem",
+      "shiny": "0860_morgrem/morgrem_shiny"
+    },
+    "morpeko": {
+      "icon": "0877_morpeko/morpeko",
+      "shiny": "0877_morpeko/morpeko_shiny"
+    },
+    "mothim": {
+      "icon": "0414_mothim/mothim",
+      "shiny": "0414_mothim/mothim_shiny"
+    },
+    "mrmime": {
+      "icon": "0122_mrmime/mr_mime",
+      "shiny": "0122_mrmime/mr_mime_shiny"
+    },
+    "mrrime": {
+      "icon": "0866_mrrime/mr_rime",
+      "shiny": "0866_mrrime/mr_rime_shiny"
+    },
+    "mudbray": {
+      "icon": "0749_mudbray/mudbray",
+      "shiny": "0749_mudbray/mudbray_shiny"
+    },
+    "mudkip": {
+      "icon": "0258_mudkip/mudkip",
+      "shiny": "0258_mudkip/mudkip_shiny"
+    },
+    "mudsdale": {
+      "icon": "0750_mudsdale/mudsdale",
+      "shiny": "0750_mudsdale/mudsdale_shiny"
+    },
+    "muk": {
+      "icon": "0089_muk/muk",
+      "shiny": "0089_muk/muk_shiny"
+    },
+    "munchlax": {
+      "icon": "0446_munchlax/munchlax",
+      "shiny": "0446_munchlax/munchlax_shiny"
+    },
+    "munkidori": {
+      "icon": "1015_munkidori/munkidori",
+      "shiny": "1015_munkidori/munkidori_shiny"
+    },
+    "munna": {
+      "icon": "0517_munna/munna",
+      "shiny": "0517_munna/munna_shiny"
+    },
+    "murkrow": {
+      "icon": "0198_murkrow/murkrow",
+      "shiny": "0198_murkrow/murkrow_shiny"
+    },
+    "musharna": {
+      "icon": "0518_musharna/musharna",
+      "shiny": "0518_musharna/musharna_shiny"
+    },
+    "nacli": {
+      "icon": "0932_nacli/nacli",
+      "shiny": "0932_nacli/nacli_shiny"
+    },
+    "naclstack": {
+      "icon": "0933_naclstack/naclstack",
+      "shiny": "0933_naclstack/naclstack_shiny"
+    },
+    "naganadel": {
+      "icon": "0804_naganadel/naganadel",
+      "shiny": "0804_naganadel/naganadel_shiny"
+    },
+    "natu": {
+      "icon": "0177_natu/natu",
+      "shiny": "0177_natu/natu_shiny"
+    },
+    "necrozma": {
+      "icon": "0800_necrozma/necrozma",
+      "shiny": "0800_necrozma/necrozma_shiny"
+    },
+    "nickit": {
+      "icon": "0827_nickit/nickit",
+      "shiny": "0827_nickit/nickit_shiny"
+    },
+    "nidoking": {
+      "icon": "0034_nidoking/nidoking",
+      "shiny": "0034_nidoking/nidoking_shiny"
+    },
+    "nidoqueen": {
+      "icon": "0031_nidoqueen/nidoqueen",
+      "shiny": "0031_nidoqueen/nidoqueen_shiny"
+    },
+    "nidoranf": {
+      "icon": "0029_nidoranf/nidoranf",
+      "shiny": "0029_nidoranf/nidoranf_shiny"
+    },
+    "nidoranm": {
+      "icon": "0032_nidoranm/nidoranm",
+      "shiny": "0032_nidoranm/nidoranm_shiny"
+    },
+    "nidorina": {
+      "icon": "0030_nidorina/nidorina",
+      "shiny": "0030_nidorina/nidorina_shiny"
+    },
+    "nidorino": {
+      "icon": "0033_nidorino/nidorino",
+      "shiny": "0033_nidorino/nidorino_shiny"
+    },
+    "nihilego": {
+      "icon": "0793_nihilego/nihilego",
+      "shiny": "0793_nihilego/nihilego_shiny"
+    },
+    "nincada": {
+      "icon": "0290_nincada/nincada",
+      "shiny": "0290_nincada/nincada_shiny"
+    },
+    "ninetales": {
+      "icon": "0038_ninetales/ninetales",
+      "shiny": "0038_ninetales/ninetales_shiny"
+    },
+    "ninjask": {
+      "icon": "0291_ninjask/ninjask",
+      "shiny": "0291_ninjask/ninjask_shiny"
+    },
+    "noctowl": {
+      "icon": "0164_noctowl/noctowl",
+      "shiny": "0164_noctowl/noctowl_shiny"
+    },
+    "noibat": {
+      "icon": "0714_noibat/noibat",
+      "shiny": "0714_noibat/noibat_shiny"
+    },
+    "noivern": {
+      "icon": "0715_noivern/noivern",
+      "shiny": "0715_noivern/noivern_shiny"
+    },
+    "nosepass": {
+      "icon": "0299_nosepass/nosepass",
+      "shiny": "0299_nosepass/nosepass_shiny"
+    },
+    "numel": {
+      "icon": "0322_numel/numel",
+      "shiny": "0322_numel/numel_shiny"
+    },
+    "nuzleaf": {
+      "icon": "0274_nuzleaf/nuzleaf",
+      "shiny": "0274_nuzleaf/nuzleaf_shiny"
+    },
+    "nymble": {
+      "icon": "0919_nymble/nymble",
+      "shiny": "0919_nymble/nymble_shiny"
+    },
+    "obstagoon": {
+      "icon": "0862_obstagoon/obstagoon",
+      "shiny": "0862_obstagoon/obstagoon_shiny"
+    },
+    "octillery": {
+      "icon": "0224_octillery/octillery",
+      "shiny": "0224_octillery/octillery_shiny"
+    },
+    "oddish": {
+      "icon": "0043_oddish/oddish",
+      "shiny": "0043_oddish/oddish_shiny"
+    },
+    "ogerpon": {
+      "icon": "1017_ogerpon/ogerpon",
+      "shiny": "1017_ogerpon/ogerpon_shiny"
+    },
+    "oinkologne": {
+      "icon": "0916_oinkologne/oinkologne_male",
+      "shiny": "0916_oinkologne/oinkologne_male_shiny"
+    },
+    "okidogi": {
+      "icon": "1014_okidogi/okidogi",
+      "shiny": "1014_okidogi/okidogi_shiny"
+    },
+    "omanyte": {
+      "icon": "0138_omanyte/omanyte",
+      "shiny": "0138_omanyte/omanyte_shiny"
+    },
+    "omastar": {
+      "icon": "0139_omastar/omastar",
+      "shiny": "0139_omastar/omastar_shiny"
+    },
+    "onix": {
+      "icon": "0095_onix/onix",
+      "shiny": "0095_onix/onix_shiny"
+    },
+    "oranguru": {
+      "icon": "0765_oranguru/oranguru",
+      "shiny": "0765_oranguru/oranguru_shiny"
+    },
+    "orbeetle": {
+      "icon": "0826_orbeetle/orbeetle",
+      "shiny": "0826_orbeetle/orbeetle_shiny"
+    },
+    "oricorio": {
+      "icon": "0741_oricorio/oricorio",
+      "shiny": "0741_oricorio/oricorio_shiny"
+    },
+    "orthworm": {
+      "icon": "0968_orthworm/orthworm",
+      "shiny": "0968_orthworm/orthworm_shiny"
+    },
+    "oshawott": {
+      "icon": "0501_oshawott/oshawott",
+      "shiny": "0501_oshawott/oshawott_shiny"
+    },
+    "overqwil": {
+      "icon": "0904_overqwil/overqwil",
+      "shiny": "0904_overqwil/overqwil_shiny"
+    },
+    "pachirisu": {
+      "icon": "0417_pachirisu/pachirisu",
+      "shiny": "0417_pachirisu/pachirisu_shiny"
+    },
+    "palafin": {
+      "icon": "0964_palafin/palafin_hero",
+      "shiny": "0964_palafin/palafin_hero_shiny"
+    },
+    "palkia": {
+      "icon": "0484_palkia/palkia",
+      "shiny": "0484_palkia/palkia_shiny"
+    },
+    "palossand": {
+      "icon": "0770_palossand/palossand",
+      "shiny": "0770_palossand/palossand_shiny"
+    },
+    "palpitoad": {
+      "icon": "0536_palpitoad/palpitoad",
+      "shiny": "0536_palpitoad/palpitoad_shiny"
+    },
+    "pancham": {
+      "icon": "0674_pancham/pancham",
+      "shiny": "0674_pancham/pancham_shiny"
+    },
+    "pangoro": {
+      "icon": "0675_pangoro/pangoro",
+      "shiny": "0675_pangoro/pangoro_shiny"
+    },
+    "panpour": {
+      "icon": "0515_panpour/panpour",
+      "shiny": "0515_panpour/panpour_shiny"
+    },
+    "pansage": {
+      "icon": "0511_pansage/pansage",
+      "shiny": "0511_pansage/pansage_shiny"
+    },
+    "pansear": {
+      "icon": "0513_pansear/pansear",
+      "shiny": "0513_pansear/pansear_shiny"
+    },
+    "paras": {
+      "icon": "0046_paras/paras",
+      "shiny": "0046_paras/paras_shiny"
+    },
+    "parasect": {
+      "icon": "0047_parasect/parasect",
+      "shiny": "0047_parasect/parasect_shiny"
+    },
+    "passimian": {
+      "icon": "0766_passimian/passimian",
+      "shiny": "0766_passimian/passimian_shiny"
+    },
+    "patrat": {
+      "icon": "0504_patrat/patrat",
+      "shiny": "0504_patrat/patrat_shiny"
+    },
+    "pawmi": {
+      "icon": "0921_pawmi/pawmi",
+      "shiny": "0921_pawmi/pawmi_shiny"
+    },
+    "pawmo": {
+      "icon": "0922_pawmo/pawmo",
+      "shiny": "0922_pawmo/pawmo_shiny"
+    },
+    "pawmot": {
+      "icon": "0923_pawmot/pawmot",
+      "shiny": "0923_pawmot/pawmot_shiny"
+    },
+    "pawniard": {
+      "icon": "0624_pawniard/pawniard",
+      "shiny": "0624_pawniard/pawniard_shiny"
+    },
+    "pecharunt": {
+      "icon": "1025_pecharunt/pecharunt",
+      "shiny": "1025_pecharunt/pecharunt_shiny"
+    },
+    "pelipper": {
+      "icon": "0279_pelipper/pelipper",
+      "shiny": "0279_pelipper/pelipper_shiny"
+    },
+    "perrserker": {
+      "icon": "0863_perrserker/perrserker",
+      "shiny": "0863_perrserker/perrserker_shiny"
+    },
+    "persian": {
+      "icon": "0053_persian/persian",
+      "shiny": "0053_persian/persian_shiny"
+    },
+    "petilil": {
+      "icon": "0548_petilil/petilil",
+      "shiny": "0548_petilil/petilil_shiny"
+    },
+    "phanpy": {
+      "icon": "0231_phanpy/phanpy",
+      "shiny": "0231_phanpy/phanpy_shiny"
+    },
+    "phantump": {
+      "icon": "0708_phantump/phantump",
+      "shiny": "0708_phantump/phantump_shiny"
+    },
+    "pheromosa": {
+      "icon": "0795_pheromosa/pheromosa",
+      "shiny": "0795_pheromosa/pheromosa_shiny"
+    },
+    "phione": {
+      "icon": "0489_phione/phione",
+      "shiny": "0489_phione/phione_shiny"
+    },
+    "pichu": {
+      "icon": "0172_pichu/pichu",
+      "shiny": "0172_pichu/pichu_shiny"
+    },
+    "pidgeot": {
+      "icon": "0018_pidgeot/pidgeot",
+      "shiny": "0018_pidgeot/pidgeot_shiny"
+    },
+    "pidgeotto": {
+      "icon": "0017_pidgeotto/pidgeotto",
+      "shiny": "0017_pidgeotto/pidgeotto_shiny"
+    },
+    "pidgey": {
+      "icon": "0016_pidgey/pidgey",
+      "shiny": "0016_pidgey/pidgey_shiny"
+    },
+    "pidove": {
+      "icon": "0519_pidove/pidove",
+      "shiny": "0519_pidove/pidove_shiny"
+    },
+    "pignite": {
+      "icon": "0499_pignite/pignite",
+      "shiny": "0499_pignite/pignite_shiny"
+    },
+    "pikachu": {
+      "icon": "0025_pikachu/pikachu",
+      "shiny": "0025_pikachu/pikachu_shiny"
+    },
+    "pikipek": {
+      "icon": "0731_pikipek/pikipek",
+      "shiny": "0731_pikipek/pikipek_shiny"
+    },
+    "piloswine": {
+      "icon": "0221_piloswine/piloswine",
+      "shiny": "0221_piloswine/piloswine_shiny"
+    },
+    "pincurchin": {
+      "icon": "0871_pincurchin/pincurchin",
+      "shiny": "0871_pincurchin/pincurchin_shiny"
+    },
+    "pineco": {
+      "icon": "0204_pineco/pineco",
+      "shiny": "0204_pineco/pineco_shiny"
+    },
+    "pinsir": {
+      "icon": "0127_pinsir/pinsir",
+      "shiny": "0127_pinsir/pinsir_shiny"
+    },
+    "piplup": {
+      "icon": "0393_piplup/piplup",
+      "shiny": "0393_piplup/piplup_shiny"
+    },
+    "plusle": {
+      "icon": "0311_plusle/plusle",
+      "shiny": "0311_plusle/plusle_shiny"
+    },
+    "poipole": {
+      "icon": "0803_poipole/poipole",
+      "shiny": "0803_poipole/poipole_shiny"
+    },
+    "politoed": {
+      "icon": "0186_politoed/politoed",
+      "shiny": "0186_politoed/politoed_shiny"
+    },
+    "poliwag": {
+      "icon": "0060_poliwag/poliwag",
+      "shiny": "0060_poliwag/poliwag_shiny"
+    },
+    "poliwhirl": {
+      "icon": "0061_poliwhirl/poliwhirl",
+      "shiny": "0061_poliwhirl/poliwhirl_shiny"
+    },
+    "poliwrath": {
+      "icon": "0062_poliwrath/poliwrath",
+      "shiny": "0062_poliwrath/poliwrath_shiny"
+    },
+    "poltchageist": {
+      "icon": "1012_poltchageist/poltchageist",
+      "shiny": "1012_poltchageist/poltchageist_shiny"
+    },
+    "polteageist": {
+      "icon": "0855_polteageist/polteageist",
+      "shiny": "0855_polteageist/polteageist_shiny"
+    },
+    "ponyta": {
+      "icon": "0077_ponyta/ponyta",
+      "shiny": "0077_ponyta/ponyta_shiny"
+    },
+    "poochyena": {
+      "icon": "0261_poochyena/poochyena",
+      "shiny": "0261_poochyena/poochyena_shiny"
+    },
+    "popplio": {
+      "icon": "0728_popplio/popplio",
+      "shiny": "0728_popplio/popplio_shiny"
+    },
+    "porygon": {
+      "icon": "0137_porygon/porygon",
+      "shiny": "0137_porygon/porygon_shiny"
+    },
+    "porygon2": {
+      "icon": "0233_porygon2/porygon2",
+      "shiny": "0233_porygon2/porygon2_shiny"
+    },
+    "porygonz": {
+      "icon": "0474_porygonz/porygon-z",
+      "shiny": "0474_porygonz/porygon-z_shiny"
+    },
+    "primarina": {
+      "icon": "0730_primarina/primarina",
+      "shiny": "0730_primarina/primarina_shiny"
+    },
+    "primeape": {
+      "icon": "0057_primeape/primeape",
+      "shiny": "0057_primeape/primeape_shiny"
+    },
+    "prinplup": {
+      "icon": "0394_prinplup/prinplup",
+      "shiny": "0394_prinplup/prinplup_shiny"
+    },
+    "probopass": {
+      "icon": "0476_probopass/probopass",
+      "shiny": "0476_probopass/probopass_shiny"
+    },
+    "psyduck": {
+      "icon": "0054_psyduck/psyduck",
+      "shiny": "0054_psyduck/psyduck_shiny"
+    },
+    "pumpkaboo": {
+      "icon": "0710_pumpkaboo/pumpkaboo",
+      "shiny": "0710_pumpkaboo/pumpkaboo_shiny"
+    },
+    "pupitar": {
+      "icon": "0247_pupitar/pupitar",
+      "shiny": "0247_pupitar/pupitar_shiny"
+    },
+    "purrloin": {
+      "icon": "0509_purrloin/purrloin",
+      "shiny": "0509_purrloin/purrloin_shiny"
+    },
+    "purugly": {
+      "icon": "0432_purugly/purugly",
+      "shiny": "0432_purugly/purugly_shiny"
+    },
+    "pyroar": {
+      "icon": "0668_pyroar/pyroar_male",
+      "shiny": "0668_pyroar/pyroar_male_shiny"
+    },
+    "pyukumuku": {
+      "icon": "0771_pyukumuku/pyukumuku",
+      "shiny": "0771_pyukumuku/pyukumuku_shiny"
+    },
+    "quagsire": {
+      "icon": "0195_quagsire/quagsire",
+      "shiny": "0195_quagsire/quagsire_shiny"
+    },
+    "quaquaval": {
+      "icon": "0914_quaquaval/quaquaval",
+      "shiny": "0914_quaquaval/quaquaval_shiny"
+    },
+    "quaxly": {
+      "icon": "0912_quaxly/quaxly",
+      "shiny": "0912_quaxly/quaxly_shiny"
+    },
+    "quaxwell": {
+      "icon": "0913_quaxwell/quaxwell",
+      "shiny": "0913_quaxwell/quaxwell_shiny"
+    },
+    "quilava": {
+      "icon": "0156_quilava/quilava",
+      "shiny": "0156_quilava/quilava_shiny"
+    },
+    "quilladin": {
+      "icon": "0651_quilladin/quilladin",
+      "shiny": "0651_quilladin/quilladin_shiny"
+    },
+    "qwilfish": {
+      "icon": "0211_qwilfish/qwilfish",
+      "shiny": "0211_qwilfish/qwilfish_shiny"
+    },
+    "raboot": {
+      "icon": "0814_raboot/raboot",
+      "shiny": "0814_raboot/raboot_shiny"
+    },
+    "rabsca": {
+      "icon": "0954_rabsca/rabsca",
+      "shiny": "0954_rabsca/rabsca_shiny"
+    },
+    "ragingbolt": {
+      "icon": "1021_ragingbolt/ragingbolt",
+      "shiny": "1021_ragingbolt/ragingbolt_shiny"
+    },
+    "raichu": {
+      "icon": "0026_raichu/raichu",
+      "shiny": "0026_raichu/raichu_shiny"
+    },
+    "raikou": {
+      "icon": "0243_raikou/raikou",
+      "shiny": "0243_raikou/raikou_shiny"
+    },
+    "ralts": {
+      "icon": "0280_ralts/ralts",
+      "shiny": "0280_ralts/ralts_shiny"
+    },
+    "rampardos": {
+      "icon": "0409_rampardos/rampardos",
+      "shiny": "0409_rampardos/rampardos_shiny"
+    },
+    "rapidash": {
+      "icon": "0078_rapidash/rapidash",
+      "shiny": "0078_rapidash/rapidash_shiny"
+    },
+    "raticate": {
+      "icon": "0020_raticate/raticate",
+      "shiny": "0020_raticate/raticate_shiny"
+    },
+    "rattata": {
+      "icon": "0019_rattata/rattata",
+      "shiny": "0019_rattata/rattata_shiny"
+    },
+    "rayquaza": {
+      "icon": "0384_rayquaza/rayquaza",
+      "shiny": "0384_rayquaza/rayquaza_shiny"
+    },
+    "regice": {
+      "icon": "0378_regice/regice",
+      "shiny": "0378_regice/regice_shiny"
+    },
+    "regidrago": {
+      "icon": "0895_regidrago/regidrago",
+      "shiny": "0895_regidrago/regidrago_shiny"
+    },
+    "regieleki": {
+      "icon": "0894_regieleki/regieleki",
+      "shiny": "0894_regieleki/regieleki_shiny"
+    },
+    "regigigas": {
+      "icon": "0486_regigigas/regigigas",
+      "shiny": "0486_regigigas/regigigas_shiny"
+    },
+    "regirock": {
+      "icon": "0377_regirock/regirock",
+      "shiny": "0377_regirock/regirock_shiny"
+    },
+    "registeel": {
+      "icon": "0379_registeel/registeel",
+      "shiny": "0379_registeel/registeel_shiny"
+    },
+    "relicanth": {
+      "icon": "0369_relicanth/relicanth",
+      "shiny": "0369_relicanth/relicanth_shiny"
+    },
+    "rellor": {
+      "icon": "0953_rellor/rellor",
+      "shiny": "0953_rellor/rellor_shiny"
+    },
+    "remoraid": {
+      "icon": "0223_remoraid/remoraid",
+      "shiny": "0223_remoraid/remoraid_shiny"
+    },
+    "reshiram": {
+      "icon": "0643_reshiram/reshiram",
+      "shiny": "0643_reshiram/reshiram_shiny"
+    },
+    "reuniclus": {
+      "icon": "0579_reuniclus/reuniclus",
+      "shiny": "0579_reuniclus/reuniclus_shiny"
+    },
+    "revavroom": {
+      "icon": "0966_revavroom/revavroom",
+      "shiny": "0966_revavroom/revavroom_shiny"
+    },
+    "rhydon": {
+      "icon": "0112_rhydon/rhydon",
+      "shiny": "0112_rhydon/rhydon_shiny"
+    },
+    "rhyhorn": {
+      "icon": "0111_rhyhorn/rhyhorn",
+      "shiny": "0111_rhyhorn/rhyhorn_shiny"
+    },
+    "rhyperior": {
+      "icon": "0464_rhyperior/rhyperior",
+      "shiny": "0464_rhyperior/rhyperior_shiny"
+    },
+    "ribombee": {
+      "icon": "0743_ribombee/ribombee",
+      "shiny": "0743_ribombee/ribombee_shiny"
+    },
+    "rillaboom": {
+      "icon": "0812_rillaboom/rillaboom",
+      "shiny": "0812_rillaboom/rillaboom_shiny"
+    },
+    "riolu": {
+      "icon": "0447_riolu/riolu",
+      "shiny": "0447_riolu/riolu_shiny"
+    },
+    "roaringmoon": {
+      "icon": "1005_roaringmoon/roaringmoon",
+      "shiny": "1005_roaringmoon/roaringmoon_shiny"
+    },
+    "rockruff": {
+      "icon": "0744_rockruff/rockruff",
+      "shiny": "0744_rockruff/rockruff_shiny"
+    },
+    "roggenrola": {
+      "icon": "0524_roggenrola/roggenrola",
+      "shiny": "0524_roggenrola/roggenrola_shiny"
+    },
+    "rolycoly": {
+      "icon": "0837_rolycoly/rolycoly",
+      "shiny": "0837_rolycoly/rolycoly_shiny"
+    },
+    "rookidee": {
+      "icon": "0821_rookidee/rookidee",
+      "shiny": "0821_rookidee/rookidee_shiny"
+    },
+    "roselia": {
+      "icon": "0315_roselia/roselia",
+      "shiny": "0315_roselia/roselia_shiny"
+    },
+    "roserade": {
+      "icon": "0407_roserade/roserade",
+      "shiny": "0407_roserade/roserade_shiny"
+    },
+    "rotom": {
+      "icon": "0479_rotom/rotom",
+      "shiny": "0479_rotom/rotom_shiny"
+    },
+    "rowlet": {
+      "icon": "0722_rowlet/rowlet",
+      "shiny": "0722_rowlet/rowlet_shiny"
+    },
+    "rufflet": {
+      "icon": "0627_rufflet/rufflet",
+      "shiny": "0627_rufflet/rufflet_shiny"
+    },
+    "runerigus": {
+      "icon": "0867_runerigus/runerigus_shadow"
+    },
+    "sableye": {
+      "icon": "0302_sableye/sableye",
+      "shiny": "0302_sableye/sableye_shiny"
+    },
+    "salamence": {
+      "icon": "0373_salamence/salamence",
+      "shiny": "0373_salamence/salamence_shiny"
+    },
+    "salandit": {
+      "icon": "0757_salandit/salandit",
+      "shiny": "0757_salandit/salandit_shiny"
+    },
+    "salazzle": {
+      "icon": "0758_salazzle/salazzle",
+      "shiny": "0758_salazzle/salazzle_shiny"
+    },
+    "samurott": {
+      "icon": "0503_samurott/samurott",
+      "shiny": "0503_samurott/samurott_shiny"
+    },
+    "sandaconda": {
+      "icon": "0844_sandaconda/sandaconda",
+      "shiny": "0844_sandaconda/sandaconda_shiny"
+    },
+    "sandile": {
+      "icon": "0551_sandile/sandile",
+      "shiny": "0551_sandile/sandile_shiny"
+    },
+    "sandshrew": {
+      "icon": "0027_sandshrew/sandshrew",
+      "shiny": "0027_sandshrew/sandshrew_shiny"
+    },
+    "sandslash": {
+      "icon": "0028_sandslash/sandslash",
+      "shiny": "0028_sandslash/sandslash_shiny"
+    },
+    "sandygast": {
+      "icon": "0769_sandygast/sandygast",
+      "shiny": "0769_sandygast/sandygast_shiny"
+    },
+    "sandyshocks": {
+      "icon": "0989_sandyshocks/sandyshocks",
+      "shiny": "0989_sandyshocks/sandyshocks_shiny"
+    },
+    "sawk": {
+      "icon": "0539_sawk/sawk",
+      "shiny": "0539_sawk/sawk_shiny"
+    },
+    "sawsbuck": {
+      "icon": "0586_sawsbuck/sawsbuck_spring",
+      "shiny": "0586_sawsbuck/sawsbuck_spring_shiny"
+    },
+    "scatterbug": {
+      "icon": "0664_scatterbug/scatterbug",
+      "shiny": "0664_scatterbug/scatterbug_shiny"
+    },
+    "sceptile": {
+      "icon": "0254_sceptile/sceptile",
+      "shiny": "0254_sceptile/sceptile_shiny"
+    },
+    "scizor": {
+      "icon": "0212_scizor/scizor",
+      "shiny": "0212_scizor/scizor_shiny"
+    },
+    "scolipede": {
+      "icon": "0545_scolipede/scolipede",
+      "shiny": "0545_scolipede/scolipede_shiny"
+    },
+    "scorbunny": {
+      "icon": "0813_scorbunny/scorbunny",
+      "shiny": "0813_scorbunny/scorbunny_shiny"
+    },
+    "scovillain": {
+      "icon": "0952_scovillain/scovillain",
+      "shiny": "0952_scovillain/scovillain_shiny"
+    },
+    "scrafty": {
+      "icon": "0560_scrafty/scrafty",
+      "shiny": "0560_scrafty/scrafty_shiny"
+    },
+    "scraggy": {
+      "icon": "0559_scraggy/scraggy",
+      "shiny": "0559_scraggy/scraggy_shiny"
+    },
+    "screamtail": {
+      "icon": "0985_screamtail/screamtail",
+      "shiny": "0985_screamtail/screamtail_shiny"
+    },
+    "scyther": {
+      "icon": "0123_scyther/scyther",
+      "shiny": "0123_scyther/scyther_shiny"
+    },
+    "seadra": {
+      "icon": "0117_seadra/seadra",
+      "shiny": "0117_seadra/seadra_shiny"
+    },
+    "seaking": {
+      "icon": "0119_seaking/seaking",
+      "shiny": "0119_seaking/seaking_shiny"
+    },
+    "sealeo": {
+      "icon": "0364_sealeo/sealeo",
+      "shiny": "0364_sealeo/sealeo_shiny"
+    },
+    "seedot": {
+      "icon": "0273_seedot/seedot",
+      "shiny": "0273_seedot/seedot_shiny"
+    },
+    "seel": {
+      "icon": "0086_seel/seel",
+      "shiny": "0086_seel/seel_shiny"
+    },
+    "seismitoad": {
+      "icon": "0537_seismitoad/seismitoad",
+      "shiny": "0537_seismitoad/seismitoad_shiny"
+    },
+    "sentret": {
+      "icon": "0161_sentret/sentret",
+      "shiny": "0161_sentret/sentret_shiny"
+    },
+    "serperior": {
+      "icon": "0497_serperior/serperior",
+      "shiny": "0497_serperior/serperior_shiny"
+    },
+    "servine": {
+      "icon": "0496_servine/servine",
+      "shiny": "0496_servine/servine_shiny"
+    },
+    "seviper": {
+      "icon": "0336_seviper/seviper",
+      "shiny": "0336_seviper/seviper_shiny"
+    },
+    "sewaddle": {
+      "icon": "0540_sewaddle/sewaddle",
+      "shiny": "0540_sewaddle/sewaddle_shiny"
+    },
+    "sharpedo": {
+      "icon": "0319_sharpedo/sharpedo",
+      "shiny": "0319_sharpedo/sharpedo_shiny"
+    },
+    "shaymin": {
+      "icon": "0492_shaymin/shaymin",
+      "shiny": "0492_shaymin/shaymin_shiny"
+    },
+    "shedinja": {
+      "icon": "0292_shedinja/shedinja",
+      "shiny": "0292_shedinja/shedinja_shiny"
+    },
+    "shelgon": {
+      "icon": "0372_shelgon/shelgon",
+      "shiny": "0372_shelgon/shelgon_shiny"
+    },
+    "shellder": {
+      "icon": "0090_shellder/shellder",
+      "shiny": "0090_shellder/shellder_shiny"
+    },
+    "shellos": {
+      "icon": "0422_shellos/shellos_east",
+      "shiny": "0422_shellos/shellos_east_shiny"
+    },
+    "shelmet": {
+      "icon": "0616_shelmet/shelmet",
+      "shiny": "0616_shelmet/shelmet_shiny"
+    },
+    "shieldon": {
+      "icon": "0410_shieldon/shieldon",
+      "shiny": "0410_shieldon/shieldon_shiny"
+    },
+    "shiftry": {
+      "icon": "0275_shiftry/shiftry",
+      "shiny": "0275_shiftry/shiftry_shiny"
+    },
+    "shiinotic": {
+      "icon": "0756_shiinotic/shiinotic",
+      "shiny": "0756_shiinotic/shiinotic_shiny"
+    },
+    "shinx": {
+      "icon": "0403_shinx/shinx",
+      "shiny": "0403_shinx/shinx_shiny"
+    },
+    "shroodle": {
+      "icon": "0944_shroodle/shroodle",
+      "shiny": "0944_shroodle/shroodle_shiny"
+    },
+    "shroomish": {
+      "icon": "0285_shroomish/shroomish",
+      "shiny": "0285_shroomish/shroomish_shiny"
+    },
+    "shuckle": {
+      "icon": "0213_shuckle/shuckle",
+      "shiny": "0213_shuckle/shuckle_shiny"
+    },
+    "shuppet": {
+      "icon": "0353_shuppet/shuppet",
+      "shiny": "0353_shuppet/shuppet_shiny"
+    },
+    "sigilyph": {
+      "icon": "0561_sigilyph/sigilyph",
+      "shiny": "0561_sigilyph/sigilyph_shiny"
+    },
+    "silcoon": {
+      "icon": "0266_silcoon/silcoon",
+      "shiny": "0266_silcoon/silcoon_shiny"
+    },
+    "silicobra": {
+      "icon": "0843_silicobra/silicobra",
+      "shiny": "0843_silicobra/silicobra_shiny"
+    },
+    "silvally": {
+      "icon": "0773_silvally/silvally",
+      "shiny": "0773_silvally/silvally_shiny"
+    },
+    "simipour": {
+      "icon": "0516_simipour/simipour",
+      "shiny": "0516_simipour/simipour_shiny"
+    },
+    "simisage": {
+      "icon": "0512_simisage/simisage",
+      "shiny": "0512_simisage/simisage_shiny"
+    },
+    "simisear": {
+      "icon": "0514_simisear/simisear",
+      "shiny": "0514_simisear/simisear_shiny"
+    },
+    "sinistcha": {
+      "icon": "1013_sinistcha/sinistcha",
+      "shiny": "1013_sinistcha/sinistcha_shiny"
+    },
+    "sinistea": {
+      "icon": "0854_sinistea/sinistea",
+      "shiny": "0854_sinistea/sinistea_shiny"
+    },
+    "sirfetchd": {
+      "icon": "0865_sirfetchd/sirfetchd",
+      "shiny": "0865_sirfetchd/sirfetchd_shiny"
+    },
+    "sizzlipede": {
+      "icon": "0850_sizzlipede/sizzlipede",
+      "shiny": "0850_sizzlipede/sizzlipede_shiny"
+    },
+    "skarmory": {
+      "icon": "0227_skarmory/skarmory",
+      "shiny": "0227_skarmory/skarmory_shiny"
+    },
+    "skeledirge": {
+      "icon": "0911_skeledirge/skeledirge",
+      "shiny": "0911_skeledirge/skeledirge_shiny"
+    },
+    "skiddo": {
+      "icon": "0672_skiddo/skiddo",
+      "shiny": "0672_skiddo/skiddo_shiny"
+    },
+    "skiploom": {
+      "icon": "0188_skiploom/skiploom",
+      "shiny": "0188_skiploom/skiploom_shiny"
+    },
+    "skitty": {
+      "icon": "0300_skitty/skitty",
+      "shiny": "0300_skitty/skitty_shiny"
+    },
+    "skorupi": {
+      "icon": "0451_skorupi/skorupi",
+      "shiny": "0451_skorupi/skorupi_shiny"
+    },
+    "skrelp": {
+      "icon": "0690_skrelp/skrelp",
+      "shiny": "0690_skrelp/skrelp_shiny"
+    },
+    "skuntank": {
+      "icon": "0435_skuntank/skuntank",
+      "shiny": "0435_skuntank/skuntank_shiny"
+    },
+    "skwovet": {
+      "icon": "0819_skwovet/skwovet",
+      "shiny": "0819_skwovet/skwovet_shiny"
+    },
+    "slaking": {
+      "icon": "0289_slaking/slaking",
+      "shiny": "0289_slaking/slaking_shiny"
+    },
+    "slakoth": {
+      "icon": "0287_slakoth/slakoth",
+      "shiny": "0287_slakoth/slakoth_shiny"
+    },
+    "sliggoo": {
+      "icon": "0705_sliggoo/sliggoo",
+      "shiny": "0705_sliggoo/sliggoo_shiny"
+    },
+    "slitherwing": {
+      "icon": "0988_slitherwing/slitherwing",
+      "shiny": "0988_slitherwing/slitherwing_shiny"
+    },
+    "slowbro": {
+      "icon": "0080_slowbro/slowbro",
+      "shiny": "0080_slowbro/slowbro_shiny"
+    },
+    "slowking": {
+      "icon": "0199_slowking/slowking",
+      "shiny": "0199_slowking/slowking_shiny"
+    },
+    "slowpoke": {
+      "icon": "0079_slowpoke/slowpoke",
+      "shiny": "0079_slowpoke/slowpoke_shiny"
+    },
+    "slugma": {
+      "icon": "0218_slugma/slugma",
+      "shiny": "0218_slugma/slugma_shiny"
+    },
+    "slurpuff": {
+      "icon": "0685_slurpuff/slurpuff",
+      "shiny": "0685_slurpuff/slurpuff_shiny"
+    },
+    "smeargle": {
+      "icon": "0235_smeargle/smeargle",
+      "shiny": "0235_smeargle/smeargle_shiny"
+    },
+    "smoliv": {
+      "icon": "0928_smoliv/smoliv",
+      "shiny": "0928_smoliv/smoliv_shiny"
+    },
+    "smoochum": {
+      "icon": "0238_smoochum/smoochum",
+      "shiny": "0238_smoochum/smoochum_shiny"
+    },
+    "sneasel": {
+      "icon": "0215_sneasel/sneasel",
+      "shiny": "0215_sneasel/sneasel_shiny"
+    },
+    "sneasler": {
+      "icon": "0903_sneasler/sneasler",
+      "shiny": "0903_sneasler/sneasler_shiny"
+    },
+    "snivy": {
+      "icon": "0495_snivy/snivy",
+      "shiny": "0495_snivy/snivy_shiny"
+    },
+    "snom": {
+      "icon": "0872_snom/snom",
+      "shiny": "0872_snom/snom_shiny"
+    },
+    "snorlax": {
+      "icon": "0143_snorlax/snorlax",
+      "shiny": "0143_snorlax/snorlax_shiny"
+    },
+    "snorunt": {
+      "icon": "0361_snorunt/snorunt",
+      "shiny": "0361_snorunt/snorunt_shiny"
+    },
+    "snover": {
+      "icon": "0459_snover/snover",
+      "shiny": "0459_snover/snover_shiny"
+    },
+    "snubbull": {
+      "icon": "0209_snubbull/snubbull",
+      "shiny": "0209_snubbull/snubbull_shiny"
+    },
+    "sobble": {
+      "icon": "0816_sobble/sobble",
+      "shiny": "0816_sobble/sobble_shiny"
+    },
+    "solgaleo": {
+      "icon": "0791_solgaleo/solgaleo",
+      "shiny": "0791_solgaleo/solgaleo_shiny"
+    },
+    "solosis": {
+      "icon": "0577_solosis/solosis",
+      "shiny": "0577_solosis/solosis_shiny"
+    },
+    "solrock": {
+      "icon": "0338_solrock/solrock",
+      "shiny": "0338_solrock/solrock_shiny"
+    },
+    "spearow": {
+      "icon": "0021_spearow/spearow",
+      "shiny": "0021_spearow/spearow_shiny"
+    },
+    "spectrier": {
+      "icon": "0897_spectrier/spectrier",
+      "shiny": "0897_spectrier/spectrier_shiny"
+    },
+    "spewpa": {
+      "icon": "0665_spewpa/spewpa",
+      "shiny": "0665_spewpa/spewpa_shiny"
+    },
+    "spheal": {
+      "icon": "0363_spheal/spheal",
+      "shiny": "0363_spheal/spheal_shiny"
+    },
+    "spidops": {
+      "icon": "0918_spidops/spidops",
+      "shiny": "0918_spidops/spidops_shiny"
+    },
+    "spinarak": {
+      "icon": "0167_spinarak/spinarak",
+      "shiny": "0167_spinarak/spinarak_shiny"
+    },
+    "spinda": {
+      "icon": "0327_spinda/spinda",
+      "shiny": "0327_spinda/spinda_shiny"
+    },
+    "spiritomb": {
+      "icon": "0442_spiritomb/spiritomb",
+      "shiny": "0442_spiritomb/spiritomb_shiny"
+    },
+    "spoink": {
+      "icon": "0325_spoink/spoink",
+      "shiny": "0325_spoink/spoink_shiny"
+    },
+    "sprigatito": {
+      "icon": "0906_sprigatito/sprigatito",
+      "shiny": "0906_sprigatito/sprigatito_shiny"
+    },
+    "spritzee": {
+      "icon": "0682_spritzee/spritzee",
+      "shiny": "0682_spritzee/spritzee_shiny"
+    },
+    "squawkabilly": {
+      "icon": "0931_squawkabilly/squawkabilly_blue",
+      "shiny": "0931_squawkabilly/squawkabilly_blue_shiny"
+    },
+    "squirtle": {
+      "icon": "0007_squirtle/squirtle",
+      "shiny": "0007_squirtle/squirtle_shiny"
+    },
+    "stakataka": {
+      "icon": "0805_stakataka/stakataka",
+      "shiny": "0805_stakataka/stakataka_shiny"
+    },
+    "stantler": {
+      "icon": "0234_stantler/stantler",
+      "shiny": "0234_stantler/stantler_shiny"
+    },
+    "staraptor": {
+      "icon": "0398_staraptor/staraptor",
+      "shiny": "0398_staraptor/staraptor_shiny"
+    },
+    "staravia": {
+      "icon": "0397_staravia/staravia",
+      "shiny": "0397_staravia/staravia_shiny"
+    },
+    "starly": {
+      "icon": "0396_starly/starly",
+      "shiny": "0396_starly/starly_shiny"
+    },
+    "starmie": {
+      "icon": "0121_starmie/starmie",
+      "shiny": "0121_starmie/starmie_shiny"
+    },
+    "staryu": {
+      "icon": "0120_staryu/staryu",
+      "shiny": "0120_staryu/staryu_shiny"
+    },
+    "steelix": {
+      "icon": "0208_steelix/steelix",
+      "shiny": "0208_steelix/steelix_shiny"
+    },
+    "steenee": {
+      "icon": "0762_steenee/steenee",
+      "shiny": "0762_steenee/steenee_shiny"
+    },
+    "stonjourner": {
+      "icon": "0874_stonjourner/stonjourner",
+      "shiny": "0874_stonjourner/stonjourner_shiny"
+    },
+    "stoutland": {
+      "icon": "0508_stoutland/stoutland",
+      "shiny": "0508_stoutland/stoutland_shiny"
+    },
+    "stufful": {
+      "icon": "0759_stufful/stufful",
+      "shiny": "0759_stufful/stufful_shiny"
+    },
+    "stunfisk": {
+      "icon": "0618_stunfisk/stunfisk",
+      "shiny": "0618_stunfisk/stunfisk_shiny"
+    },
+    "stunky": {
+      "icon": "0434_stunky/stunky",
+      "shiny": "0434_stunky/stunky_shiny"
+    },
+    "sudowoodo": {
+      "icon": "0185_sudowoodo/sudowoodo",
+      "shiny": "0185_sudowoodo/sudowoodo_shiny"
+    },
+    "suicune": {
+      "icon": "0245_suicune/suicune",
+      "shiny": "0245_suicune/suicune_shiny"
+    },
+    "sunflora": {
+      "icon": "0192_sunflora/sunflora",
+      "shiny": "0192_sunflora/sunflora_shiny"
+    },
+    "sunkern": {
+      "icon": "0191_sunkern/sunkern",
+      "shiny": "0191_sunkern/sunkern_shiny"
+    },
+    "surskit": {
+      "icon": "0283_surskit/surskit",
+      "shiny": "0283_surskit/surskit_shiny"
+    },
+    "swablu": {
+      "icon": "0333_swablu/swablu",
+      "shiny": "0333_swablu/swablu_shiny"
+    },
+    "swadloon": {
+      "icon": "0541_swadloon/swadloon",
+      "shiny": "0541_swadloon/swadloon_shiny"
+    },
+    "swalot": {
+      "icon": "0317_swalot/swalot",
+      "shiny": "0317_swalot/swalot_shiny"
+    },
+    "swampert": {
+      "icon": "0260_swampert/swampert",
+      "shiny": "0260_swampert/swampert_shiny"
+    },
+    "swanna": {
+      "icon": "0581_swanna/swanna",
+      "shiny": "0581_swanna/swanna_shiny"
+    },
+    "swellow": {
+      "icon": "0277_swellow/swellow",
+      "shiny": "0277_swellow/swellow_shiny"
+    },
+    "swinub": {
+      "icon": "0220_swinub/swinub",
+      "shiny": "0220_swinub/swinub_shiny"
+    },
+    "swirlix": {
+      "icon": "0684_swirlix/swirlix",
+      "shiny": "0684_swirlix/swirlix_shiny"
+    },
+    "swoobat": {
+      "icon": "0528_swoobat/swoobat",
+      "shiny": "0528_swoobat/swoobat_shiny"
+    },
+    "sylveon": {
+      "icon": "0700_sylveon/sylveon",
+      "shiny": "0700_sylveon/sylveon_shiny"
+    },
+    "tadbulb": {
+      "icon": "0938_tadbulb/tadbulb",
+      "shiny": "0938_tadbulb/tadbulb_shiny"
+    },
+    "taillow": {
+      "icon": "0276_taillow/taillow",
+      "shiny": "0276_taillow/taillow_shiny"
+    },
+    "talonflame": {
+      "icon": "0663_talonflame/talonflame",
+      "shiny": "0663_talonflame/talonflame_shiny"
+    },
+    "tandemaus": {
+      "icon": "0924_tandemaus/tandemaus",
+      "shiny": "0924_tandemaus/tandemaus_shiny"
+    },
+    "tangela": {
+      "icon": "0114_tangela/tangela",
+      "shiny": "0114_tangela/tangela_shiny"
+    },
+    "tangrowth": {
+      "icon": "0465_tangrowth/tangrowth",
+      "shiny": "0465_tangrowth/tangrowth_shiny"
+    },
+    "tapubulu": {
+      "icon": "0787_tapubulu/tapubulu",
+      "shiny": "0787_tapubulu/tapubulu_shiny"
+    },
+    "tapufini": {
+      "icon": "0788_tapufini/tapufini",
+      "shiny": "0788_tapufini/tapufini_shiny"
+    },
+    "tapukoko": {
+      "icon": "0785_tapukoko/tapukoko",
+      "shiny": "0785_tapukoko/tapukoko_shiny"
+    },
+    "tapulele": {
+      "icon": "0786_tapulele/tapulele",
+      "shiny": "0786_tapulele/tapulele_shiny"
+    },
+    "tarountula": {
+      "icon": "0917_tarountula/tarountula",
+      "shiny": "0917_tarountula/tarountula_shiny"
+    },
+    "tatsugiri": {
+      "icon": "0978_tatsugiri/tatsugiri_curly",
+      "shiny": "0978_tatsugiri/tatsugiri_curly_shiny"
+    },
+    "tauros": {
+      "icon": "0128_tauros/tauros",
+      "shiny": "0128_tauros/tauros_shiny"
+    },
+    "teddiursa": {
+      "icon": "0216_teddiursa/teddiursa",
+      "shiny": "0216_teddiursa/teddiursa_shiny"
+    },
+    "tentacool": {
+      "icon": "0072_tentacool/tentacool",
+      "shiny": "0072_tentacool/tentacool_shiny"
+    },
+    "tentacruel": {
+      "icon": "0073_tentacruel/tentacruel",
+      "shiny": "0073_tentacruel/tentacruel_shiny"
+    },
+    "tepig": {
+      "icon": "0498_tepig/tepig",
+      "shiny": "0498_tepig/tepig_shiny"
+    },
+    "terapagos": {
+      "icon": "1024_terapagos/terapagos",
+      "shiny": "1024_terapagos/terapagos_shiny"
+    },
+    "terrakion": {
+      "icon": "0639_terrakion/terrakion",
+      "shiny": "0639_terrakion/terrakion_shiny"
+    },
+    "thievul": {
+      "icon": "0828_thievul/thievul",
+      "shiny": "0828_thievul/thievul_shiny"
+    },
+    "throh": {
+      "icon": "0538_throh/throh",
+      "shiny": "0538_throh/throh_shiny"
+    },
+    "thundurus": {
+      "icon": "0642_thundurus/thundurus",
+      "shiny": "0642_thundurus/thundurus_shiny"
+    },
+    "thwackey": {
+      "icon": "0811_thwackey/thwackey",
+      "shiny": "0811_thwackey/thwackey_shiny"
+    },
+    "timburr": {
+      "icon": "0532_timburr/timburr",
+      "shiny": "0532_timburr/timburr_shiny"
+    },
+    "tinglu": {
+      "icon": "1003_tinglu/tinglu",
+      "shiny": "1003_tinglu/tinglu_shiny"
+    },
+    "tinkatink": {
+      "icon": "0957_tinkatink/tinkatink",
+      "shiny": "0957_tinkatink/tinkatink_shiny"
+    },
+    "tinkaton": {
+      "icon": "0959_tinkaton/tinkaton",
+      "shiny": "0959_tinkaton/tinkaton_shiny"
+    },
+    "tinkatuff": {
+      "icon": "0958_tinkatuff/tinkatuff",
+      "shiny": "0958_tinkatuff/tinkatuff_shiny"
+    },
+    "tirtouga": {
+      "icon": "0564_tirtouga/tirtouga",
+      "shiny": "0564_tirtouga/tirtouga_shiny"
+    },
+    "toedscool": {
+      "icon": "0948_toedscool/toedscool",
+      "shiny": "0948_toedscool/toedscool_shiny"
+    },
+    "toedscruel": {
+      "icon": "0949_toedscruel/toedscruel",
+      "shiny": "0949_toedscruel/toedscruel_shiny"
+    },
+    "togedemaru": {
+      "icon": "0777_togedemaru/togedemaru",
+      "shiny": "0777_togedemaru/togedemaru_shiny"
+    },
+    "togekiss": {
+      "icon": "0468_togekiss/togekiss",
+      "shiny": "0468_togekiss/togekiss_shiny"
+    },
+    "togepi": {
+      "icon": "0175_togepi/togepi",
+      "shiny": "0175_togepi/togepi_shiny"
+    },
+    "togetic": {
+      "icon": "0176_togetic/togetic",
+      "shiny": "0176_togetic/togetic_shiny"
+    },
+    "torchic": {
+      "icon": "0255_torchic/torchic",
+      "shiny": "0255_torchic/torchic_shiny"
+    },
+    "torkoal": {
+      "icon": "0324_torkoal/torkoal",
+      "shiny": "0324_torkoal/torkoal_shiny"
+    },
+    "tornadus": {
+      "icon": "0641_tornadus/tornadus",
+      "shiny": "0641_tornadus/tornadus_shiny"
+    },
+    "torracat": {
+      "icon": "0726_torracat/torracat",
+      "shiny": "0726_torracat/torracat_shiny"
+    },
+    "torterra": {
+      "icon": "0389_torterra/torterra",
+      "shiny": "0389_torterra/torterra_shiny"
+    },
+    "totodile": {
+      "icon": "0158_totodile/totodile",
+      "shiny": "0158_totodile/totodile_shiny"
+    },
+    "toucannon": {
+      "icon": "0733_toucannon/toucannon",
+      "shiny": "0733_toucannon/toucannon_shiny"
+    },
+    "toxapex": {
+      "icon": "0748_toxapex/toxapex",
+      "shiny": "0748_toxapex/toxapex_shiny"
+    },
+    "toxel": {
+      "icon": "0848_toxel/toxel",
+      "shiny": "0848_toxel/toxel_shiny"
+    },
+    "toxicroak": {
+      "icon": "0454_toxicroak/toxicroak",
+      "shiny": "0454_toxicroak/toxicroak_shiny"
+    },
+    "toxtricity": {
+      "icon": "0849_toxtricity/toxtricity_amped",
+      "shiny": "0849_toxtricity/toxtricity_amped_shiny"
+    },
+    "tranquill": {
+      "icon": "0520_tranquill/tranquill",
+      "shiny": "0520_tranquill/tranquill_shiny"
+    },
+    "trapinch": {
+      "icon": "0328_trapinch/trapinch",
+      "shiny": "0328_trapinch/trapinch_shiny"
+    },
+    "treecko": {
+      "icon": "0252_treecko/treecko",
+      "shiny": "0252_treecko/treecko_shiny"
+    },
+    "trevenant": {
+      "icon": "0709_trevenant/trevenant",
+      "shiny": "0709_trevenant/trevenant_shiny"
+    },
+    "tropius": {
+      "icon": "0357_tropius/tropius",
+      "shiny": "0357_tropius/tropius_shiny"
+    },
+    "trubbish": {
+      "icon": "0568_trubbish/trubbish",
+      "shiny": "0568_trubbish/trubbish_shiny"
+    },
+    "trumbeak": {
+      "icon": "0732_trumbeak/trumbeak",
+      "shiny": "0732_trumbeak/trumbeak_shiny"
+    },
+    "tsareena": {
+      "icon": "0763_tsareena/tsareena",
+      "shiny": "0763_tsareena/tsareena_shiny"
+    },
+    "turtonator": {
+      "icon": "0776_turtonator/turtonator",
+      "shiny": "0776_turtonator/turtonator_shiny"
+    },
+    "turtwig": {
+      "icon": "0387_turtwig/turtwig",
+      "shiny": "0387_turtwig/turtwig_shiny"
+    },
+    "tympole": {
+      "icon": "0535_tympole/tympole",
+      "shiny": "0535_tympole/tympole_shiny"
+    },
+    "tynamo": {
+      "icon": "0602_tynamo/tynamo",
+      "shiny": "0602_tynamo/tynamo_shiny"
+    },
+    "typenull": {
+      "icon": "0772_typenull/typenull",
+      "shiny": "0772_typenull/typenull_shiny"
+    },
+    "typhlosion": {
+      "icon": "0157_typhlosion/typhlosion",
+      "shiny": "0157_typhlosion/typhlosion_shiny"
+    },
+    "tyranitar": {
+      "icon": "0248_tyranitar/tyranitar",
+      "shiny": "0248_tyranitar/tyranitar_shiny"
+    },
+    "tyrantrum": {
+      "icon": "0697_tyrantrum/tyrantrum",
+      "shiny": "0697_tyrantrum/tyrantrum_shiny"
+    },
+    "tyrogue": {
+      "icon": "0236_tyrogue/tyrogue",
+      "shiny": "0236_tyrogue/tyrogue_shiny"
+    },
+    "tyrunt": {
+      "icon": "0696_tyrunt/tyrunt",
+      "shiny": "0696_tyrunt/tyrunt_shiny"
+    },
+    "umbreon": {
+      "icon": "0197_umbreon/umbreon",
+      "shiny": "0197_umbreon/umbreon_shiny"
+    },
+    "unfezant": {
+      "icon": "0521_unfezant/unfezant_male",
+      "shiny": "0521_unfezant/unfezant_male_shiny"
+    },
+    "unown": {
+      "icon": "0201_unown/unown_a",
+      "shiny": "0201_unown/unown_a_shiny"
+    },
+    "ursaluna": {
+      "icon": "0901_ursaluna/ursaluna",
+      "shiny": "0901_ursaluna/ursaluna_shiny"
+    },
+    "ursaring": {
+      "icon": "0217_ursaring/ursaring",
+      "shiny": "0217_ursaring/ursaring_shiny"
+    },
+    "urshifu": {
+      "icon": "0892_urshifu/urshifu",
+      "shiny": "0892_urshifu/urshifu_shiny"
+    },
+    "uxie": {
+      "icon": "0480_uxie/uxie",
+      "shiny": "0480_uxie/uxie_shiny"
+    },
+    "vanillish": {
+      "icon": "0583_vanillish/vanillish",
+      "shiny": "0583_vanillish/vanillish_shiny"
+    },
+    "vanillite": {
+      "icon": "0582_vanillite/vanillite",
+      "shiny": "0582_vanillite/vanillite_shiny"
+    },
+    "vanilluxe": {
+      "icon": "0584_vanilluxe/vanilluxe",
+      "shiny": "0584_vanilluxe/vanilluxe_shiny"
+    },
+    "vaporeon": {
+      "icon": "0134_vaporeon/vaporeon",
+      "shiny": "0134_vaporeon/vaporeon_shiny"
+    },
+    "varoom": {
+      "icon": "0965_varoom/varoom",
+      "shiny": "0965_varoom/varoom_shiny"
+    },
+    "veluza": {
+      "icon": "0976_veluza/veluza",
+      "shiny": "0976_veluza/veluza_shiny"
+    },
+    "venipede": {
+      "icon": "0543_venipede/venipede",
+      "shiny": "0543_venipede/venipede_shiny"
+    },
+    "venomoth": {
+      "icon": "0049_venomoth/venomoth",
+      "shiny": "0049_venomoth/venomoth_shiny"
+    },
+    "venonat": {
+      "icon": "0048_venonat/venonat",
+      "shiny": "0048_venonat/venonat_shiny"
+    },
+    "venusaur": {
+      "icon": "0003_venusaur/venusaur_male",
+      "shiny": "0003_venusaur/venusaur_male_shiny"
+    },
+    "vespiquen": {
+      "icon": "0416_vespiquen/vespiquen",
+      "shiny": "0416_vespiquen/vespiquen_shiny"
+    },
+    "vibrava": {
+      "icon": "0329_vibrava/vibrava",
+      "shiny": "0329_vibrava/vibrava_shiny"
+    },
+    "victini": {
+      "icon": "0494_victini/victini",
+      "shiny": "0494_victini/victini_shiny"
+    },
+    "victreebel": {
+      "icon": "0071_victreebel/victreebel",
+      "shiny": "0071_victreebel/victreebel_shiny"
+    },
+    "vigoroth": {
+      "icon": "0288_vigoroth/vigoroth",
+      "shiny": "0288_vigoroth/vigoroth_shiny"
+    },
+    "vikavolt": {
+      "icon": "0738_vikavolt/vikavolt",
+      "shiny": "0738_vikavolt/vikavolt_shiny"
+    },
+    "vileplume": {
+      "icon": "0045_vileplume/vileplume_male",
+      "shiny": "0045_vileplume/vileplume_male_shiny"
+    },
+    "virizion": {
+      "icon": "0640_virizion/virizion",
+      "shiny": "0640_virizion/virizion_shiny"
+    },
+    "vivillon": {
+      "icon": "0666_vivillon/vivillon",
+      "shiny": "0666_vivillon/vivillon_shiny"
+    },
+    "volbeat": {
+      "icon": "0313_volbeat/volbeat",
+      "shiny": "0313_volbeat/volbeat_shiny"
+    },
+    "volcanion": {
+      "icon": "0721_volcanion/volcanion",
+      "shiny": "0721_volcanion/volcanion_shiny"
+    },
+    "volcarona": {
+      "icon": "0637_volcarona/volcarona",
+      "shiny": "0637_volcarona/volcarona_shiny"
+    },
+    "voltorb": {
+      "icon": "0100_voltorb/voltorb",
+      "shiny": "0100_voltorb/voltorb_shiny"
+    },
+    "vullaby": {
+      "icon": "0629_vullaby/vullaby",
+      "shiny": "0629_vullaby/vullaby_shiny"
+    },
+    "vulpix": {
+      "icon": "0037_vulpix/vulpix",
+      "shiny": "0037_vulpix/vulpix_shiny"
+    },
+    "wailmer": {
+      "icon": "0320_wailmer/wailmer",
+      "shiny": "0320_wailmer/wailmer_shiny"
+    },
+    "wailord": {
+      "icon": "0321_wailord/wailord",
+      "shiny": "0321_wailord/wailord_shiny"
+    },
+    "walkingwake": {
+      "icon": "1009_walkingwake/walkingwake",
+      "shiny": "1009_walkingwake/walkingwake_shiny"
+    },
+    "walrein": {
+      "icon": "0365_walrein/walrein",
+      "shiny": "0365_walrein/walrein_shiny"
+    },
+    "wartortle": {
+      "icon": "0008_wartortle/wartortle",
+      "shiny": "0008_wartortle/wartortle_shiny"
+    },
+    "watchog": {
+      "icon": "0505_watchog/watchog",
+      "shiny": "0505_watchog/watchog_shiny"
+    },
+    "wattrel": {
+      "icon": "0940_wattrel/wattrel",
+      "shiny": "0940_wattrel/wattrel_shiny"
+    },
+    "weavile": {
+      "icon": "0461_weavile/weavile",
+      "shiny": "0461_weavile/weavile_shiny"
+    },
+    "weedle": {
+      "icon": "0013_weedle/weedle",
+      "shiny": "0013_weedle/weedle_shiny"
+    },
+    "weepinbell": {
+      "icon": "0070_weepinbell/weepinbell",
+      "shiny": "0070_weepinbell/weepinbell_shiny"
+    },
+    "weezing": {
+      "icon": "0110_weezing/weezing",
+      "shiny": "0110_weezing/weezing_shiny"
+    },
+    "whimsicott": {
+      "icon": "0547_whimsicott/whimsicott",
+      "shiny": "0547_whimsicott/whimsicott_shiny"
+    },
+    "whirlipede": {
+      "icon": "0544_whirlipede/whirlipede",
+      "shiny": "0544_whirlipede/whirlipede_shiny"
+    },
+    "whiscash": {
+      "icon": "0340_whiscash/whiscash",
+      "shiny": "0340_whiscash/whiscash_shiny"
+    },
+    "whismur": {
+      "icon": "0293_whismur/whismur",
+      "shiny": "0293_whismur/whismur_shiny"
+    },
+    "wigglytuff": {
+      "icon": "0040_wigglytuff/wigglytuff",
+      "shiny": "0040_wigglytuff/wigglytuff_shiny"
+    },
+    "wiglett": {
+      "icon": "0960_wiglett/wiglett",
+      "shiny": "0960_wiglett/wiglett_shiny"
+    },
+    "wimpod": {
+      "icon": "0767_wimpod/wimpod",
+      "shiny": "0767_wimpod/wimpod_shiny"
+    },
+    "wingull": {
+      "icon": "0278_wingull/wingull",
+      "shiny": "0278_wingull/wingull_shiny"
+    },
+    "wishiwashi": {
+      "icon": "0746_wishiwashi/wishiwashi_solo",
+      "shiny": "0746_wishiwashi/wishiwashi_solo_shiny"
+    },
+    "wobbuffet": {
+      "icon": "0202_wobbuffet/wobbuffet",
+      "shiny": "0202_wobbuffet/wobbuffet_shiny"
+    },
+    "wochien": {
+      "icon": "1001_wochien/wochien",
+      "shiny": "1001_wochien/wochien_shiny"
+    },
+    "woobat": {
+      "icon": "0527_woobat/woobat",
+      "shiny": "0527_woobat/woobat_shiny"
+    },
+    "wooloo": {
+      "icon": "0831_wooloo/wooloo",
+      "shiny": "0831_wooloo/wooloo_shiny"
+    },
+    "wooper": {
+      "icon": "0194_wooper/wooper",
+      "shiny": "0194_wooper/wooper_shiny"
+    },
+    "wormadam": {
+      "icon": "0413_wormadam/wormadam",
+      "shiny": "0413_wormadam/wormadam_shiny"
+    },
+    "wugtrio": {
+      "icon": "0961_wugtrio/wugtrio",
+      "shiny": "0961_wugtrio/wugtrio_shiny"
+    },
+    "wurmple": {
+      "icon": "0265_wurmple/wurmple",
+      "shiny": "0265_wurmple/wurmple_shiny"
+    },
+    "wynaut": {
+      "icon": "0360_wynaut/wynaut",
+      "shiny": "0360_wynaut/wynaut_shiny"
+    },
+    "wyrdeer": {
+      "icon": "0899_wyrdeer/wyrdeer",
+      "shiny": "0899_wyrdeer/wyrdeer_shiny"
+    },
+    "xatu": {
+      "icon": "0178_xatu/xatu",
+      "shiny": "0178_xatu/xatu_shiny"
+    },
+    "xerneas": {
+      "icon": "0716_xerneas/xerneas",
+      "shiny": "0716_xerneas/xerneas_shiny"
+    },
+    "xurkitree": {
+      "icon": "0796_xurkitree/xurkitree",
+      "shiny": "0796_xurkitree/xurkitree_shiny"
+    },
+    "yamask": {
+      "icon": "0562_yamask/yamask",
+      "shiny": "0562_yamask/yamask_shiny"
+    },
+    "yamper": {
+      "icon": "0835_yamper/yamper",
+      "shiny": "0835_yamper/yamper_shiny"
+    },
+    "yanma": {
+      "icon": "0193_yanma/yanma",
+      "shiny": "0193_yanma/yanma_shiny"
+    },
+    "yanmega": {
+      "icon": "0469_yanmega/yanmega",
+      "shiny": "0469_yanmega/yanmega_shiny"
+    },
+    "yungoos": {
+      "icon": "0734_yungoos/yungoos",
+      "shiny": "0734_yungoos/yungoos_shiny"
+    },
+    "yveltal": {
+      "icon": "0717_yveltal/yveltal",
+      "shiny": "0717_yveltal/yveltal_shiny"
+    },
+    "zacian": {
+      "icon": "0888_zacian/zacian",
+      "shiny": "0888_zacian/zacian_shiny"
+    },
+    "zamazenta": {
+      "icon": "0889_zamazenta/zamazenta",
+      "shiny": "0889_zamazenta/zamazenta_shiny"
+    },
+    "zangoose": {
+      "icon": "0335_zangoose/zangoose",
+      "shiny": "0335_zangoose/zangoose_shiny"
+    },
+    "zapdos": {
+      "icon": "0145_zapdos/zapdos",
+      "shiny": "0145_zapdos/zapdos_shiny"
+    },
+    "zarude": {
+      "icon": "0893_zarude/zarude",
+      "shiny": "0893_zarude/zarude_shiny"
+    },
+    "zebstrika": {
+      "icon": "0523_zebstrika/zebstrika",
+      "shiny": "0523_zebstrika/zebstrika_shiny"
+    },
+    "zekrom": {
+      "icon": "0644_zekrom/zekrom",
+      "shiny": "0644_zekrom/zekrom_shiny"
+    },
+    "zeraora": {
+      "icon": "0807_zeraora/zeraora",
+      "shiny": "0807_zeraora/zeraora_shiny"
+    },
+    "zigzagoon": {
+      "icon": "0263_zigzagoon/zigzagoon",
+      "shiny": "0263_zigzagoon/zigzagoon_shiny"
+    },
+    "zoroark": {
+      "icon": "0571_zoroark/zoroark",
+      "shiny": "0571_zoroark/zoroark_shiny"
+    },
+    "zorua": {
+      "icon": "0570_zorua/zorua",
+      "shiny": "0570_zorua/zorua_shiny"
+    },
+    "zubat": {
+      "icon": "0041_zubat/zubat",
+      "shiny": "0041_zubat/zubat_shiny"
+    },
+    "zweilous": {
+      "icon": "0634_zweilous/zweilous",
+      "shiny": "0634_zweilous/zweilous_shiny"
+    },
+    "zygarde": {
+      "icon": "0718_zygarde/zygarde",
+      "shiny": "0718_zygarde/zygarde_shiny"
+    }
+  },
+  "version": 1
+}

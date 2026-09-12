@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.84-post-key-audit'
+version = '0.8.85-shop-species-icons'
 group = 'com.cobbleraids'
 
 base {
