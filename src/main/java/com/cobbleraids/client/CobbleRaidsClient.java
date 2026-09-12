@@ -1,9 +1,11 @@
 package com.cobbleraids.client;
 
 import com.cobbleraids.client.reveal.RaidRewardRevealScreen;
+import com.cobbleraids.client.shop.RaidShopScreen;
 import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobbleraids.network.PendingRewardRevealPayload;
 import com.cobbleraids.network.RewardResultPayload;
+import com.cobbleraids.network.ShopPagePayload;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 
@@ -21,5 +23,8 @@ public final class CobbleRaidsClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(RewardResultPayload.TYPE, (payload, context) ->
                 context.client().execute(() -> RaidFaultBarrier.guard("reveal-screen:result",
                         () -> RaidRewardRevealScreen.applyResult(payload))));
+        ClientPlayNetworking.registerGlobalReceiver(ShopPagePayload.TYPE, (payload, context) ->
+                context.client().execute(() -> RaidFaultBarrier.guard("shop-screen:page",
+                        () -> RaidShopScreen.show(payload))));
     }
 }

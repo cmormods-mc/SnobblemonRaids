@@ -18,6 +18,7 @@ import com.cobbleraids.lifecycle.RaidRewardService;
 import com.cobbleraids.lobby.RaidLobbyManager;
 import com.cobbleraids.network.RaidRewardPayloads;
 import com.cobbleraids.network.RewardChoicePayload;
+import com.cobbleraids.network.ShopActionPayload;
 import com.cobbleraids.placeholder.RaidPlaceholders;
 import com.cobbleraids.presentation.RaidBossGlowService;
 import com.cobbleraids.raid.RaidRegistry;
@@ -25,6 +26,7 @@ import com.cobbleraids.reward.NativeRewardScreenGateway;
 import com.cobbleraids.reward.RaidRewardCommand;
 import com.cobbleraids.reward.RewardGuiBackends;
 import com.cobbleraids.reward.currency.RaidCurrencyBackends;
+import com.cobbleraids.shop.RaidShopGateway;
 import com.cobbleraids.shop.ShopCatalogManager;
 import com.cobbleraids.showdown.RaidInstructionRegistrar;
 import com.cobbleraids.showdown.ShowdownIntegrationInstaller;
@@ -56,6 +58,10 @@ public final class CobbleRaids implements ModInitializer {
         ServerPlayNetworking.registerGlobalReceiver(RewardChoicePayload.TYPE, (payload, context) ->
                 context.server().execute(() -> RaidFaultBarrier.guard("reward-choice-packet",
                         () -> NativeRewardScreenGateway.handleChoice(context.player(), payload))));
+
+        ServerPlayNetworking.registerGlobalReceiver(ShopActionPayload.TYPE, (payload, context) ->
+                context.server().execute(() -> RaidFaultBarrier.guard("shop-action-packet",
+                        () -> RaidShopGateway.handle(context.player(), payload))));
 
         RaidInstructionRegistrar.register();
         RaidBattleEventCoordinator.register();
