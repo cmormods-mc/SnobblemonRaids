@@ -117,16 +117,23 @@ public final class RewardPlanResolver {
         } else {
             tables.add(megaCapable ? bossTable : policy.specialtyTableFor(tier));
         }
-        int generalRolls = policy.standardGeneralRolls() + Math.max(0, bonusRolls);
-        String general = policy.generalTableFor(tier);
-        for (int index = 0; index < generalRolls; index++) tables.add(general);
         // Key fragments are a selection like any other, whose table happens to have exactly one
-        // outcome. Appending them here rather than adding a guaranteed-items channel to the plan
+        // outcome. Rolling them through the plan rather than adding a guaranteed-items channel
         // means the roller, the reveal screen and the consistency audit all handle them already,
         // and there is still only one list for anything to disagree about.
+        //
+        // They go BEFORE the general rolls, and that ordering is load-bearing: the grant engine
+        // reports the last `bonusGeneralRolls` entries as what contribution earned, so anything
+        // appended after them is silently relabelled as the contribution bonus. Appending here was
+        // the first version of this, and it put key fragments in the bonus line of every claim log.
+        // planOrderKeepsBonusRollsLast pins it.
         String fragmentTable = policy.keyFragmentTableFor(tier);
         int fragments = policy.keyFragmentsFor(Math.max(0, bonusRolls));
         for (int index = 0; index < fragments; index++) tables.add(fragmentTable);
+
+        int generalRolls = policy.standardGeneralRolls() + Math.max(0, bonusRolls);
+        String general = policy.generalTableFor(tier);
+        for (int index = 0; index < generalRolls; index++) tables.add(general);
         return new RewardPlan.Policy(tables, Math.max(0, bonusRolls), currency, megaCapable);
     }
 

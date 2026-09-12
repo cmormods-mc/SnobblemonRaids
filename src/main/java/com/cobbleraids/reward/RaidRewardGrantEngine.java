@@ -114,9 +114,11 @@ public final class RaidRewardGrantEngine {
                                                  RewardPlan.Policy plan, Random claimRandom) {
         List<RaidDefinition.RewardItem> standard = new ArrayList<>();
         List<RaidDefinition.RewardItem> bonus = new ArrayList<>();
-        // The plan lists the specialty table first, then one general table per selection. The last
-        // `bonusGeneralRolls` of those are what contribution earned, and are reported separately so
-        // the claim message can say what the player's damage share actually bought them.
+        // The general rolls are the tail of the plan's list, and the last `bonusGeneralRolls` of
+        // them are what contribution earned -- reported separately so a claim log can say what a
+        // player's damage share actually bought. This reads position, so it is only correct while
+        // the resolver keeps the general rolls last; RewardPlan.Policy says so, and
+        // planOrderKeepsBonusRollsLast fails if that stops being true.
         int firstBonusIndex = plan.lootTables().size() - plan.bonusGeneralRolls();
         for (int index = 0; index < plan.lootTables().size(); index++) {
             ResourceLocation tableId = parse(plan.lootTables().get(index), definitionId);

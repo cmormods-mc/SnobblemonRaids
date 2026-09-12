@@ -1,6 +1,7 @@
 package com.cobbleraids.item;
 
 import com.cobbleraids.config.RaidRarityTier;
+import com.cobbleraids.RaidLog;
 import com.cobbleraids.presentation.RaidTierPresentation;
 import java.util.List;
 import net.minecraft.ChatFormatting;
@@ -9,6 +10,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -61,16 +63,34 @@ public class RaidKeyFragmentItem extends Item {
             // Reporting success on both sides is what keeps the arm swing from desyncing.
             return InteractionResultHolder.success(held);
         }
+        // Built before anything is spent, the same order the shop purchase path uses: everything
+        // that can fail happens before the irreversible step, so there is no state where the
+        // fragments are gone and the key was never made.
+        ItemStack made = new ItemStack(RaidKeyItems.key(tier), keys);
+        if (made.isEmpty()) {
+            RaidLog.error("No registered key for tier " + tier.serializedName()
+                    + "; leaving the fragments alone");
+            return InteractionResultHolder.fail(held);
+        }
         take(player, keys * RaidKeyItems.FRAGMENTS_PER_KEY);
-        give(player, new ItemStack(RaidKeyItems.key(tier), keys));
+        give(player, made);
         level.playSound(null, player.blockPosition(), SoundEvents.AMETHYST_BLOCK_CHIME,
                 SoundSource.PLAYERS, 0.7F, 1.0F);
         return InteractionResultHolder.consume(held);
     }
 
+    /**
+     * Every slot, walked through the container interface rather than {@code getInventory().items}.
+     *
+     * <p>That field is only the 36 main slots: armour and the offhand are separate compartments.
+     * Reading it meant a player holding six fragments in their offhand and nothing elsewhere was
+     * told they needed six more, while right-clicking the six they were holding.
+     */
     private int countOwned(Player player) {
+        Inventory inventory = player.getInventory();
         int total = 0;
-        for (ItemStack stack : player.getInventory().items) {
+        for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
+            ItemStack stack = inventory.getItem(slot);
             if (stack.getItem() == this) total += stack.getCount();
         }
         return total;
@@ -78,9 +98,10 @@ public class RaidKeyFragmentItem extends Item {
 
     /** Removes exactly {@code wanted}; the caller has already proved that many exist. */
     private void take(Player player, int wanted) {
+        Inventory inventory = player.getInventory();
         int left = wanted;
-        for (ItemStack stack : player.getInventory().items) {
-            if (left <= 0) break;
+        for (int slot = 0; slot < inventory.getContainerSize() && left > 0; slot++) {
+            ItemStack stack = inventory.getItem(slot);
             if (stack.getItem() != this) continue;
             int taken = Math.min(left, stack.getCount());
             stack.shrink(taken);

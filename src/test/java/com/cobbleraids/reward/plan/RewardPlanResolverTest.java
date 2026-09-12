@@ -111,16 +111,18 @@ class RewardPlanResolverTest {
     // --- policy path -----------------------------------------------------------------------------
 
     @Test
-    @DisplayName("a claim is one specialty selection, two general ones and a key fragment")
+    @DisplayName("a claim is one specialty selection, a key fragment and two general ones")
     void policyPlanIsThreeSelections() {
         RewardPlan plan = resolve(rewards(List.of(), noBonus()), emptyChoice(),
                 RaidRarityTier.STARTER, "charizard", 0, NO_BOSS_TABLES);
 
         RewardPlan.Policy policy = assertInstanceOf(RewardPlan.Policy.class, plan);
+        // Order matters and is asserted, not just membership: the general rolls have to be last.
+        // See planOrderKeepsBonusRollsLast.
         assertEquals(List.of("cobbleraids:specialty/starter",
+                        "cobbleraids:keys/starter",
                         "cobbleraids:general/starter",
-                        "cobbleraids:general/starter",
-                        "cobbleraids:keys/starter"),
+                        "cobbleraids:general/starter"),
                 policy.lootTables());
     }
 
@@ -159,6 +161,27 @@ class RewardPlanResolverTest {
             assertTrue(plan.lootTables().stream().filter(t -> t.startsWith("cobbleraids:keys/"))
                             .allMatch(t -> t.equals("cobbleraids:keys/mythical")),
                     "fragments match the raid's own tier at B=" + bonus);
+        }
+    }
+
+    @Test
+    @DisplayName("the general rolls are last in the plan, which is what the bonus split reads")
+    void planOrderKeepsBonusRollsLast() {
+        // RaidRewardGrantEngine classifies the final bonusGeneralRolls entries as what contribution
+        // earned. That is positional, so anything appended after the general rolls is reported as
+        // the contribution bonus instead -- which is exactly what key fragments did when they were
+        // first added. This pins the ordering rather than the appearance of any one table.
+        for (int bonus = 0; bonus <= 3; bonus++) {
+            RewardPlan.Policy plan = assertInstanceOf(RewardPlan.Policy.class,
+                    resolve(rewards(List.of(), noBonus()), emptyChoice(),
+                            RaidRarityTier.MYTHICAL, "mewtwo", bonus, NO_BOSS_TABLES));
+
+            List<String> tables = plan.lootTables();
+            for (int index = tables.size() - plan.bonusGeneralRolls(); index < tables.size(); index++) {
+                assertEquals("cobbleraids:general/mythical", tables.get(index),
+                        "entry " + index + " is inside the contribution-bonus tail at B=" + bonus
+                                + " but is not a general roll");
+            }
         }
     }
 
@@ -241,7 +264,9 @@ class RewardPlanResolverTest {
                     resolve(rewards(List.of(), noBonus()), emptyChoice(), tier, null, 0, NO_BOSS_TABLES));
 
             assertEquals("cobbleraids:specialty/" + tier.serializedName(), plan.lootTables().get(0));
-            assertEquals("cobbleraids:general/" + tier.serializedName(), plan.lootTables().get(1));
+            assertEquals("cobbleraids:keys/" + tier.serializedName(), plan.lootTables().get(1));
+            assertEquals("cobbleraids:general/" + tier.serializedName(),
+                    plan.lootTables().get(plan.lootTables().size() - 1));
         }
     }
 

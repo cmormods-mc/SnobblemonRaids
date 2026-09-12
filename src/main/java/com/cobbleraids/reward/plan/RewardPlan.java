@@ -34,8 +34,12 @@ public sealed interface RewardPlan permits RewardPlan.Policy, RewardPlan.Legacy 
      * A definition that names no rewards of its own. The tables come from the server-wide policy,
      * keyed by rarity tier and, where such a table exists, by species.
      *
-     * @param lootTables one specialty table followed by the general table repeated
-     *                   {@code standardGeneralRolls + bonusGeneralRolls} times
+     * @param lootTables the specialty table, then the key fragment table once per fragment the
+     *                   claim earns, then the general table repeated
+     *                   {@code standardGeneralRolls + bonusGeneralRolls} times. The general rolls
+     *                   are last because the grant engine reports the final
+     *                   {@code bonusGeneralRolls} of the list as contribution-earned -- anything
+     *                   added after them is reported as the contribution bonus instead.
      */
     record Policy(List<String> lootTables, int bonusGeneralRolls, BigInteger currency,
                   boolean megaCapable) implements RewardPlan {

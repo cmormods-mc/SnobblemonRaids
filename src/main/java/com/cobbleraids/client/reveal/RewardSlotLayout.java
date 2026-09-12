@@ -35,8 +35,9 @@ record RewardSlotLayout(int x, int y, int cell, int gap, int count) {
         int cell = Math.max(MIN_CELL, Math.round(chamberHeight * CELL_OF_HEIGHT));
         int gap = Math.max(1, Math.round(cell * GAP_OF_CELL));
 
-        // A long row is squeezed rather than allowed to overflow: six selections plus a payout is
-        // seven, but a legacy definition could hand out more, and the row must still fit.
+        // A long row is squeezed rather than allowed to overflow. A policy claim is now up to
+        // nine selections -- one specialty, three key fragments and five general -- plus a payout
+        // chip, and a legacy definition can hand out more than that, so the row must still fit.
         //
         // Shrunk by stepping down rather than by one multiply, because rounding a scaled cell and
         // a scaled gap both upward can leave the row wider than the space it was squeezed into --
