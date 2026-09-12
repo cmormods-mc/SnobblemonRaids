@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "#cobbleraids:raid_keys/starter",
+    "#cobbleraids:raid_keys/powerhouse",
+    "#cobbleraids:raid_keys/legendary",
+    "#cobbleraids:raid_keys/mythical"
+  ]
+}

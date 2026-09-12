@@ -18,7 +18,8 @@ class RaidRewardPolicyTest {
     private static RaidRewardPolicy withThresholds(List<ContributionMath.Threshold> thresholds) {
         RaidRewardPolicy defaults = RaidRewardPolicy.defaults();
         return new RaidRewardPolicy(defaults.version(), defaults.standardGeneralRolls(), thresholds,
-                defaults.generalTable(), defaults.specialtyTable(), defaults.bossSpecialtyTable());
+                defaults.generalTable(), defaults.specialtyTable(), defaults.bossSpecialtyTable(),
+                defaults.keyFragmentTable(), defaults.keyFragmentsByBonusRolls());
     }
 
     @Test
@@ -104,13 +105,16 @@ class RaidRewardPolicyTest {
 
         assertThrows(IllegalArgumentException.class, () -> new RaidRewardPolicy(
                 defaults.version(), 2, defaults.contributionThresholds(),
-                "cobbleraids:general/starter", defaults.specialtyTable(), defaults.bossSpecialtyTable()));
+                "cobbleraids:general/starter", defaults.specialtyTable(), defaults.bossSpecialtyTable(),
+                defaults.keyFragmentTable(), defaults.keyFragmentsByBonusRolls()));
         assertThrows(IllegalArgumentException.class, () -> new RaidRewardPolicy(
                 defaults.version(), 2, defaults.contributionThresholds(),
-                defaults.generalTable(), "cobbleraids:specialty/starter", defaults.bossSpecialtyTable()));
+                defaults.generalTable(), "cobbleraids:specialty/starter", defaults.bossSpecialtyTable(),
+                defaults.keyFragmentTable(), defaults.keyFragmentsByBonusRolls()));
         assertThrows(IllegalArgumentException.class, () -> new RaidRewardPolicy(
                 defaults.version(), 2, defaults.contributionThresholds(),
-                defaults.generalTable(), defaults.specialtyTable(), "cobbleraids:specialty/boss/charizard"));
+                defaults.generalTable(), defaults.specialtyTable(), "cobbleraids:specialty/boss/charizard",
+                defaults.keyFragmentTable(), defaults.keyFragmentsByBonusRolls()));
     }
 
     @Test
@@ -120,7 +124,8 @@ class RaidRewardPolicyTest {
 
         assertThrows(IllegalArgumentException.class, () -> new RaidRewardPolicy(
                 RaidRewardPolicy.CURRENT_VERSION + 1, 2, defaults.contributionThresholds(),
-                defaults.generalTable(), defaults.specialtyTable(), defaults.bossSpecialtyTable()));
+                defaults.generalTable(), defaults.specialtyTable(), defaults.bossSpecialtyTable(),
+                defaults.keyFragmentTable(), defaults.keyFragmentsByBonusRolls()));
     }
 
     @Test

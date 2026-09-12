@@ -28,7 +28,9 @@ public record RaidRewardPolicy(
         List<ContributionMath.Threshold> contributionThresholds,
         String generalTable,
         String specialtyTable,
-        String bossSpecialtyTable
+        String bossSpecialtyTable,
+        String keyFragmentTable,
+        List<Integer> keyFragmentsByBonusRolls
 ) {
     /** Bumped when the schema changes in a way an older file cannot be read as. */
     public static final int CURRENT_VERSION = 1;
@@ -49,6 +51,8 @@ public record RaidRewardPolicy(
         requireToken(generalTable, TIER_TOKEN, "general_table");
         requireToken(specialtyTable, TIER_TOKEN, "specialty_table");
         requireToken(bossSpecialtyTable, SPECIES_TOKEN, "boss_specialty_table");
+        requireToken(keyFragmentTable, TIER_TOKEN, "key_fragment_table");
+        keyFragmentsByBonusRolls = validateFragments(keyFragmentsByBonusRolls);
     }
 
     public static RaidRewardPolicy defaults() {
@@ -60,7 +64,45 @@ public record RaidRewardPolicy(
                         new ContributionMath.Threshold(50.0, 3)),
                 "cobbleraids:general/" + TIER_TOKEN,
                 "cobbleraids:specialty/" + TIER_TOKEN,
-                "cobbleraids:specialty/boss/" + SPECIES_TOKEN);
+                "cobbleraids:specialty/boss/" + SPECIES_TOKEN,
+                "cobbleraids:keys/" + TIER_TOKEN,
+                // One for turning up, and more for carrying the fight, indexed by the same bonus
+                // roll count the contribution thresholds already produce. Six fragments make a
+                // key, so this is the pacing dial: a passenger needs six raids, someone doing half
+                // the damage needs two.
+                List.of(1, 2, 2, 3));
+    }
+
+    public String keyFragmentTableFor(RaidRarityTier tier) {
+        return keyFragmentTable.replace(TIER_TOKEN, tier.serializedName());
+    }
+
+    /** How many fragments a claim grants when the player earned {@code bonusRolls} bonus rolls. */
+    public int keyFragmentsFor(int bonusRolls) {
+        int index = Math.clamp(bonusRolls, 0, keyFragmentsByBonusRolls.size() - 1);
+        return keyFragmentsByBonusRolls.get(index);
+    }
+
+    /**
+     * One entry per reachable bonus-roll count, none negative and none smaller than the one below.
+     *
+     * <p>Descending would mean contributing more earned fewer fragments, which is the kind of
+     * inversion a hand-edited config produces and nobody notices until a player reports it.
+     */
+    private static List<Integer> validateFragments(List<Integer> counts) {
+        if (counts == null || counts.size() != MAX_BONUS_ROLLS + 1)
+            throw new IllegalArgumentException("reward_policy.key_fragments_by_bonus_rolls must have "
+                    + (MAX_BONUS_ROLLS + 1) + " entries, one per bonus-roll count 0.." + MAX_BONUS_ROLLS);
+        int previous = 0;
+        for (int count : counts) {
+            if (count < 0)
+                throw new IllegalArgumentException("reward_policy.key_fragments_by_bonus_rolls cannot be negative");
+            if (count < previous)
+                throw new IllegalArgumentException(
+                        "reward_policy.key_fragments_by_bonus_rolls must not decrease: " + counts);
+            previous = count;
+        }
+        return List.copyOf(counts);
     }
 
     public String generalTableFor(RaidRarityTier tier) {
@@ -134,7 +176,23 @@ public record RaidRewardPolicy(
                 thresholds,
                 Json.string(tables, "general", defaults.generalTable()),
                 Json.string(tables, "specialty", defaults.specialtyTable()),
-                Json.string(tables, "boss_specialty", defaults.bossSpecialtyTable()));
+                Json.string(tables, "boss_specialty", defaults.bossSpecialtyTable()),
+                Json.string(tables, "key_fragment", defaults.keyFragmentTable()),
+                fragments(root, defaults));
+    }
+
+    /**
+     * Missing or malformed leaves the default. A file written before key fragments existed has no
+     * such array, and an operator who deletes it means "as shipped", not "no fragments" -- so this
+     * is one of the places where falling back beats refusing the file.
+     */
+    private static List<Integer> fragments(JsonObject root, RaidRewardPolicy defaults) {
+        if (!root.has("key_fragments_by_bonus_rolls")) return defaults.keyFragmentsByBonusRolls();
+        List<Integer> counts = new ArrayList<>();
+        for (JsonElement element : Json.array(root, "key_fragments_by_bonus_rolls")) {
+            counts.add(element.getAsInt());
+        }
+        return counts.isEmpty() ? defaults.keyFragmentsByBonusRolls() : counts;
     }
 
     public JsonObject toJson() {
@@ -153,7 +211,11 @@ public record RaidRewardPolicy(
         tables.addProperty("general", generalTable);
         tables.addProperty("specialty", specialtyTable);
         tables.addProperty("boss_specialty", bossSpecialtyTable);
+        tables.addProperty("key_fragment", keyFragmentTable);
         root.add("tables", tables);
+        JsonArray fragments = new JsonArray();
+        for (int count : keyFragmentsByBonusRolls) fragments.add(count);
+        root.add("key_fragments_by_bonus_rolls", fragments);
         return root;
     }
 }

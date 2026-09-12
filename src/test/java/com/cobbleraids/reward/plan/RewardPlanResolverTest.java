@@ -111,7 +111,7 @@ class RewardPlanResolverTest {
     // --- policy path -----------------------------------------------------------------------------
 
     @Test
-    @DisplayName("a claim is one specialty selection plus two general ones, before contribution")
+    @DisplayName("a claim is one specialty selection, two general ones and a key fragment")
     void policyPlanIsThreeSelections() {
         RewardPlan plan = resolve(rewards(List.of(), noBonus()), emptyChoice(),
                 RaidRarityTier.STARTER, "charizard", 0, NO_BOSS_TABLES);
@@ -119,7 +119,8 @@ class RewardPlanResolverTest {
         RewardPlan.Policy policy = assertInstanceOf(RewardPlan.Policy.class, plan);
         assertEquals(List.of("cobbleraids:specialty/starter",
                         "cobbleraids:general/starter",
-                        "cobbleraids:general/starter"),
+                        "cobbleraids:general/starter",
+                        "cobbleraids:keys/starter"),
                 policy.lootTables());
     }
 
@@ -131,7 +132,6 @@ class RewardPlanResolverTest {
                     resolve(rewards(List.of(), noBonus()), emptyChoice(),
                             RaidRarityTier.LEGENDARY, "mewtwo", bonus, NO_BOSS_TABLES));
 
-            assertEquals(3 + bonus, plan.lootTables().size(), "selection count at B=" + bonus);
             assertEquals(1, plan.lootTables().stream().filter(t -> t.contains("specialty")).count(),
                     "specialty selections at B=" + bonus);
             assertEquals(2 + bonus, plan.lootTables().stream().filter(t -> t.contains("general")).count(),
@@ -139,6 +139,37 @@ class RewardPlanResolverTest {
             assertEquals("cobbleraids:specialty/legendary", plan.lootTables().get(0),
                     "the specialty selection is always first at B=" + bonus);
         }
+    }
+
+    @Test
+    @DisplayName("key fragments follow the contribution ladder and never drop below one")
+    void keyFragmentsFollowContribution() {
+        // The policy's own numbers, not a copy of them: a retune of the ladder should move this
+        // test's expectation with it, because what is being asserted is that the resolver honours
+        // the policy -- not that the policy holds any particular value.
+        RaidRewardPolicy policy = RaidRewardPolicy.defaults();
+        for (int bonus = 0; bonus <= 3; bonus++) {
+            RewardPlan.Policy plan = assertInstanceOf(RewardPlan.Policy.class,
+                    resolve(rewards(List.of(), noBonus()), emptyChoice(),
+                            RaidRarityTier.MYTHICAL, "mewtwo", bonus, NO_BOSS_TABLES));
+
+            long fragments = plan.lootTables().stream().filter(t -> t.startsWith("cobbleraids:keys/")).count();
+            assertEquals(policy.keyFragmentsFor(bonus), fragments, "fragments at B=" + bonus);
+            assertTrue(fragments >= 1, "every claim earns at least one fragment, at B=" + bonus);
+            assertTrue(plan.lootTables().stream().filter(t -> t.startsWith("cobbleraids:keys/"))
+                            .allMatch(t -> t.equals("cobbleraids:keys/mythical")),
+                    "fragments match the raid's own tier at B=" + bonus);
+        }
+    }
+
+    @Test
+    @DisplayName("a legacy definition earns no key fragments, because it names its own rewards")
+    void legacyPlansHaveNoFragments() {
+        RewardPlan.Legacy plan = assertInstanceOf(RewardPlan.Legacy.class,
+                resolve(rewards(List.of(ResourceLocation.parse("cobbleraids:custom")), noBonus()),
+                        emptyChoice(), RaidRarityTier.STARTER, "charizard", 0, NO_BOSS_TABLES));
+
+        assertTrue(plan.lootTables().stream().noneMatch(t -> t.startsWith("cobbleraids:keys/")));
     }
 
     @Test

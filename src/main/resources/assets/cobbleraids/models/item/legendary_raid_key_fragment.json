@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "cobbleraids:item/legendary_raid_key_fragment"
+  }
+}

@@ -120,6 +120,13 @@ public final class RewardPlanResolver {
         int generalRolls = policy.standardGeneralRolls() + Math.max(0, bonusRolls);
         String general = policy.generalTableFor(tier);
         for (int index = 0; index < generalRolls; index++) tables.add(general);
+        // Key fragments are a selection like any other, whose table happens to have exactly one
+        // outcome. Appending them here rather than adding a guaranteed-items channel to the plan
+        // means the roller, the reveal screen and the consistency audit all handle them already,
+        // and there is still only one list for anything to disagree about.
+        String fragmentTable = policy.keyFragmentTableFor(tier);
+        int fragments = policy.keyFragmentsFor(Math.max(0, bonusRolls));
+        for (int index = 0; index < fragments; index++) tables.add(fragmentTable);
         return new RewardPlan.Policy(tables, Math.max(0, bonusRolls), currency, megaCapable);
     }
 

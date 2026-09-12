@@ -202,8 +202,10 @@ SPECIALTY_ROWS = [
 MEGA_WEIGHT = 1000
 
 # Namespaces guaranteed present. Everything else is an optional mod, and an item from one can
-# never be named directly in a pool -- see optional_item_table().
-ALWAYS_PRESENT = ("minecraft", "cobblemon")
+# never be named directly in a pool -- see optional_item_table(). "cobbleraids" is here because the
+# key fragments are registered by this mod: if they are missing the mod is missing, and the loot
+# tables are not being read at all.
+ALWAYS_PRESENT = ("minecraft", "cobblemon", "cobbleraids")
 
 
 # --- loot table construction -------------------------------------------------------------------
@@ -282,6 +284,12 @@ def build_tables(manifest):
     # base/<tier> -- the curated catalog, weights and quantities both by tier
     for index, tier in enumerate(TIERS):
         tables["base/%s.json" % tier] = single_pool(build_base_pool(index, tier))
+
+    # keys/<tier> -- one outcome, so a selection pointed at it is a guaranteed fragment. The
+    # resolver decides how many selections to point here; this table only says what one is worth.
+    for tier in TIERS:
+        tables["keys/%s.json" % tier] = single_pool(
+            [item_entry("cobbleraids:%s_raid_key_fragment" % tier)])
 
     # general leaves -- one result each
     tables["general/leaf/cards.json"] = single_pool(
