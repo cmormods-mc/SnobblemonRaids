@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.13.6'
 }
 
-version = '0.8.83-raid-key-fragments'
+version = '0.8.84-post-key-audit'
 group = 'com.cobbleraids'
 
 base {

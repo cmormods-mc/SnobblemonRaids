@@ -52,14 +52,24 @@ final class ShopPokemonPortraits {
     private static final float STACK_SCALE = 2.5F / 25.0F;
     private static final float PROFILE_SCALE = 4.5F;
 
-    /** Cobblemon's own slot angle: a three-quarter view, not the flat side-on identity gives. */
-    private static final Vector3f ANGLE = new Vector3f(13.0F, 35.0F, 0.0F);
+    /**
+     * Cobblemon's own slot angle, a three-quarter view rather than the flat side-on that identity
+     * gives, solved once at class-init.
+     *
+     * <p>Once, because fromEulerXYZDegrees allocates three Quaternionf internally -- one per axis,
+     * hamilton-multiplied together, visible in its bytecode. Calling it per cell per frame is
+     * roughly fourteen hundred allocations a second on a full row, which is the kind of frame-path
+     * churn the shop audit went through this class to remove.
+     */
+    private static final Quaternionf ANGLE = QuaternionUtilsKt.fromEulerXYZDegrees(
+            new Quaternionf(), new Vector3f(13.0F, 35.0F, 0.0F));
 
     /**
-     * Scratch, and reset before every call, because drawProfilePokemon conjugates the quaternion it
-     * is handed -- in place, discarding the result -- and hands the same object to the entity render
-     * dispatcher. Cobblemon gets away with allocating a fresh one per slot per frame; reusing one
-     * without the reset would flip every model's orientation on alternate frames.
+     * Scratch, copied from {@link #ANGLE} before every call, because drawProfilePokemon conjugates
+     * the quaternion it is handed -- in place, discarding the result -- and then hands that same
+     * object to the entity render dispatcher. Cobblemon gets away with allocating a fresh one per
+     * slot per frame; reusing one without the copy would flip every model's orientation on
+     * alternate frames. set() is a field copy and allocates nothing.
      */
     private static final Quaternionf ROTATION = new Quaternionf();
 
@@ -99,7 +109,7 @@ final class ShopPokemonPortraits {
             PokemonGuiUtilsKt.drawProfilePokemon(
                     entry.pokemon(),
                     graphics.pose(),
-                    QuaternionUtilsKt.fromEulerXYZDegrees(ROTATION.identity(), ANGLE),
+                    ROTATION.set(ANGLE),
                     PoseType.PROFILE,
                     entry.state(),
                     partialTicks,
