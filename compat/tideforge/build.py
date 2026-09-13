@@ -12,12 +12,11 @@ Everything is derived from Cobblemon's own data rather than retyped:
   chassis (stats, EVs, catch rate, growth, drops, hitbox)  <- the Beldum line, inherited
   typing, moves, evolution levels                          <- the Piplup line
 
-Usage:  python build.py [--jar <Cobblemon jar>] [--server-pack <zip>] [--zip]
+Usage:  python build.py [--jar <Cobblemon jar>] [--zip]
 """
 from __future__ import annotations
 
 import argparse
-import glob
 import json
 import re
 import shutil
@@ -31,10 +30,6 @@ DP, RP = HERE / "datapack", HERE / "resourcepack"
 
 DEFAULT_JAR = Path("L:/Modrinth Instances/profiles/Snobblemon Regions Season 1"
                    "/mods/Cobblemon-fabric-1.7.3+1.21.1.jar")
-# The server's remodel pack, as the client cached it. It carries the Tideforge art.
-DEFAULT_SERVER_PACK = ("L:/Modrinth Instances/profiles/Snobblemon Regions Season 1"
-                       "/downloads/**/6cbf469*")
-
 DATA_PACK_FORMAT, RESOURCE_PACK_FORMAT = 48, 34      # Minecraft 1.21.1 version.json
 
 ASPECT = "tideforge"
@@ -45,42 +40,6 @@ CHAIN = [
     ("metang",    "prinplup", "0375_metang",    ("metagross", 36, ["aquajet"])),
     ("metagross", "empoleon", "0376_metagross", None),
 ]
-
-# Art the server's remodel pack already ships, keyed by the base species it now
-# decorates. Beldum has none, so it falls back to vanilla Beldum's.
-ART = {
-    "beldum": {"poser": "cobblemon:beldum", "model": "cobblemon:beldum.geo",
-               "texture": "cobblemon:textures/pokemon/0374_beldum/beldum.png",
-               "shiny": "cobblemon:textures/pokemon/0374_beldum/beldum_shiny.png",
-               "placeholder": True},
-    "metang": {"poser": "cobblemon:tideforge_metang", "model": "cobblemon:tideforge_metang.geo",
-               "texture": "cobblemon:textures/pokemon/0375_tideforge_metang/tideforge_metang.png",
-               "shiny": "cobblemon:textures/pokemon/0375_tideforge_metang/tideforge_metang_shiny.png",
-               "placeholder": False},
-    "metagross": {"poser": "cobblemon:tideforge_metagross",
-                  "model": "cobblemon:tideforge_metagross.geo",
-                  "texture": "cobblemon:textures/pokemon/0376_tideforge_metagross/tideforge_metagross.png",
-                  "shiny": "cobblemon:textures/pokemon/0376_tideforge_metagross/tideforge_metagross_shiny.png",
-                  "placeholder": False},
-}
-
-# Cobblemon keys animation groups by bare filename, directories discarded, so the
-# remodel pack's 0376_tideforge_metagross/metagross.animation.json registers as
-# "metagross" and evicts Cobblemon's own. That crashed clients on 2026-09-13, and it
-# also means the group tideforge_metagross -- which the Tideforge poser asks for --
-# is never registered at all. Re-file both under a directory that sorts last.
-ANIMATION_FIX_DIR = "assets/cobblemon/bedrock/pokemon/animations/zz_animation_key_fix"
-ANIMATION_FIX_FROM_JAR = {
-    "metagross.animation.json":
-        "assets/cobblemon/bedrock/pokemon/animations/0376_metagross/metagross.animation.json",
-    "dewott_hisui_bias.animation.json":
-        "assets/cobblemon/bedrock/pokemon/animations/0502_dewott/dewott_hisui_bias.animation.json",
-}
-ANIMATION_FIX_FROM_PACK = {
-    "tideforge_metagross.animation.json":
-        "assets/cobblemon/bedrock/pokemon/animations/0376_tideforge_metagross/metagross.animation.json",
-}
-
 
 def cobblemon_species(jar: Path) -> dict:
     """Every species Cobblemon ships, keyed the way Cobblemon keys them: by bare
@@ -269,7 +228,7 @@ def dump(path: Path, obj) -> None:
     write(path, json.dumps(obj, indent=2, ensure_ascii=False) + "\n")
 
 
-def validate(additions: dict, vanilla: dict, server_pack: zipfile.ZipFile | None) -> list:
+def validate(additions: dict, vanilla: dict) -> list:
     problems = []
     legal_moves = {m for s in vanilla.values() for m in s["moves"]}
 
@@ -320,22 +279,12 @@ def validate(additions: dict, vanilla: dict, server_pack: zipfile.ZipFile | None
             problems.append("lang is missing " + key)
     problems += ability_script_problems(SILENT_RUNNING)
 
-    # the Tideforge posers are useless without their animation group, and the group is
-    # only defined by the misnamed file inside the server's pack
-    if server_pack is None:
-        problems.append("server pack not found: the Tideforge Metagross animations cannot be "
-                        "re-filed, and its poser will fail to load on every client")
-    else:
-        for src in ANIMATION_FIX_FROM_PACK.values():
-            if src not in server_pack.namelist():
-                problems.append("server pack is missing " + src)
     return problems
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--jar", type=Path, default=DEFAULT_JAR)
-    ap.add_argument("--server-pack", default=DEFAULT_SERVER_PACK)
     ap.add_argument("--zip", action="store_true", help="also write the two distributable zips")
     args = ap.parse_args()
 
@@ -343,13 +292,10 @@ def main() -> int:
         print("Cobblemon jar not found: %s" % args.jar, file=sys.stderr)
         return 2
 
-    matches = glob.glob(args.server_pack, recursive=True)
-    server_pack = zipfile.ZipFile(matches[0]) if matches else None
-
     vanilla = cobblemon_species(args.jar)
     additions = build_additions(vanilla)
 
-    problems = validate(additions, vanilla, server_pack)
+    problems = validate(additions, vanilla)
     if problems:
         print("VALIDATION FAILED")
         for p in problems:
@@ -375,37 +321,16 @@ def main() -> int:
     # ---- resource pack --------------------------------------------------------
     dump(RP / "pack.mcmeta", {"pack": {
         "pack_format": RESOURCE_PACK_FORMAT,
-        "description": "Tideforge forms - art bindings, dex entries, animation key fix"}})
-    dump(RP / "assets/cobblemon/lang/en_us.json", LANG)
-
-    for base_name, _donor, dex_dir, _evo in CHAIN:
-        art = ART[base_name]
-        dump(RP / "assets/cobblemon/bedrock/pokemon/resolvers" / dex_dir
-             / ("5_%s_tideforge.json" % base_name), {
-            "species": "cobblemon:" + base_name,
-            "order": 5,
-            "variations": [
-                {"aspects": [ASPECT], "poser": art["poser"], "model": art["model"],
-                 "texture": art["texture"], "layers": []},
-                {"aspects": ["shiny", ASPECT], "texture": art["shiny"]},
-            ],
-        })
-
-    with zipfile.ZipFile(args.jar) as z:
-        for dest, src in ANIMATION_FIX_FROM_JAR.items():
-            (RP / ANIMATION_FIX_DIR).mkdir(parents=True, exist_ok=True)
-            (RP / ANIMATION_FIX_DIR / dest).write_bytes(z.read(src))
-    for dest, src in ANIMATION_FIX_FROM_PACK.items():
-        (RP / ANIMATION_FIX_DIR / dest).write_bytes(server_pack.read(src))
+        "description": "Tideforge forms - names and descriptions"}})
+    dump(RP / "assets/tideforge/lang/en_us.json", LANG)
 
     for base_name, donor, _dex_dir, evo in CHAIN:
         form = additions[base_name]["forms"][0]
         evo_txt = form["evolutions"][0]["result"] + " @ " + str(
             form["evolutions"][0]["requirements"][0]["minLevel"]) if form["evolutions"] else "-"
-        note = "  (placeholder art)" if ART[base_name]["placeholder"] else ""
-        print("%-10s + aspect %-10s %s/%s  %3d moves (from %s)  -> %s%s"
+        print("%-10s + aspect %-10s %s/%s  %3d moves (from %s)  -> %s"
               % (base_name, ASPECT, form["primaryType"], form["secondaryType"],
-                 len(form["moves"]), donor, evo_txt, note))
+                 len(form["moves"]), donor, evo_txt))
 
     if args.zip:
         for src, out in ((DP, HERE / "tideforge-datapack.zip"),

@@ -69,35 +69,32 @@ ability count above went from 389 to 390.
   merging into Cobblemon's species rather than replacing the file
 - `abilities/silentrunning.js` — the ability, shipped into Showdown
 
-**Resource pack** — `global_packs/required_resources/` so every client gets it:
+**Resource pack** — `global_packs/required_resources/` so every client gets it. It is
+only a language file: the three Pokedex entries plus the ability's name and description.
+Without it the summary screen shows raw keys (`cobblemon.ability.silentrunning`).
 
-- resolvers binding the `tideforge` aspect to the remodel pack's existing Tideforge art
-- the three Pokedex entries and the ability's name and description
-- **the animation key fix** (see below)
+It lives at `assets/**tideforge**/lang/en_us.json`, not under `assets/cobblemon/`, even
+though every key is a `cobblemon.*` one. `ClientLanguage.loadFrom` walks **every**
+namespace in the resource manager and merges all of their `lang/en_us.json` files into a
+single map, so the keys resolve either way — but our own namespace cannot collide with the
+remodel pack's `assets/cobblemon/lang/en_us.json` when Polymer merges the packs in
+`required_resources/` into one zip.
 
 Restart the server; Cobblemon does not reload species (*"data registries are only loaded
 once per server instance"*).
 
-## The animation key fix, folded in
+## The remodel pack now covers the art
 
-Cobblemon keys animation groups by **bare filename, directories discarded**. The remodel
-pack ships
+As of its 17:19 build the server's remodel pack ships its own `tideforge` aspect
+resolvers for all three species -- including a Beldum, which it spells `tideforge_beldom`
+-- and it has renamed `0376_tideforge_metagross/metagross.animation.json` to
+`tideforge_metagross.animation.json`. That fixes the animation-key collision at source and
+registers the group its own poser asks for, so **this pack no longer ships resolvers or an
+animation fix**. Delete any local `Animation-Key-Fix.zip`.
 
-    animations/0376_tideforge_metagross/metagross.animation.json
-
-which registers as `metagross` and evicts Cobblemon's own — that is what crashed clients
-rendering a party Metagross on 2026-09-13. It also means the group `tideforge_metagross`,
-which the Tideforge Metagross poser asks for, was never registered at all: the art could
-not have worked even once.
-
-This resource pack re-files both under `animations/zz_animation_key_fix/`, a directory
-that sorts after every `0*` one, so Cobblemon's loader writes them last and they win. It
-supersedes the standalone `Animation-Key-Fix.zip` — **delete that local pack once this
-one is installed.** (It also restores `dewott_hisui_bias`, shadowed the same way.)
-
-The real fix still belongs upstream: the pack author should rename that one file to
-`tideforge_metagross.animation.json`, the way its own sibling `tideforge_metang.animation.json`
-already is.
+One collision survives in that pack, dormant because no poser asks for the group:
+`0502_dewott/dewott_hisui_bias.animation.json` keys as `dewott_hisui_bias` but contains
+`animation.dewott.*`, shadowing Cobblemon's real one. Worth passing to the pack author.
 
 ## Silent Running
 
