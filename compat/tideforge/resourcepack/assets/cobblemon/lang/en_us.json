@@ -1,10 +1,7 @@
 {
-  "cobblemon.species.tideforge_beldum.name": "Tideforge Beldum",
-  "cobblemon.species.tideforge_beldum.desc": "Ballast floods its shell so it can sink out of sight. It hangs motionless on the seabed for days, tracking the magnetic wake of anything that swims overhead.",
-  "cobblemon.species.tideforge_metang.name": "Tideforge Metang",
-  "cobblemon.species.tideforge_metang.desc": "Two Tideforge Beldum fused under pressure. The seam between them vents jets of water, letting it turn in place without disturbing the silt.",
-  "cobblemon.species.tideforge_metagross.name": "Tideforge Metagross",
-  "cobblemon.species.tideforge_metagross.desc": "Its four hulls close into a single ram. Sailors read the sudden calm above it as a warning, because the water only goes still once it has chosen a target.",
+  "cobblemon.species.beldum-tideforge.desc": "Ballast floods its shell so it can sink out of sight. It hangs motionless on the seabed for days, tracking the magnetic wake of anything that swims overhead.",
+  "cobblemon.species.metang-tideforge.desc": "Two Tideforge Beldum fused under pressure. The seam between them vents jets of water, letting it turn in place without disturbing the silt.",
+  "cobblemon.species.metagross-tideforge.desc": "Its four hulls close into a single ram. Sailors read the sudden calm above it as a warning, because the water only goes still once it has chosen a target.",
   "cobblemon.ability.silentrunning": "Silent Running",
   "cobblemon.ability.silentrunning.desc": "It slips beneath the surface, concealing its next attack."
 }

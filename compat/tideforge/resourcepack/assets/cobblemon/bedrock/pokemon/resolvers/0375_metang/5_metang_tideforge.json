@@ -1,0 +1,22 @@
+{
+  "species": "cobblemon:metang",
+  "order": 5,
+  "variations": [
+    {
+      "aspects": [
+        "tideforge"
+      ],
+      "poser": "cobblemon:tideforge_metang",
+      "model": "cobblemon:tideforge_metang.geo",
+      "texture": "cobblemon:textures/pokemon/0375_tideforge_metang/tideforge_metang.png",
+      "layers": []
+    },
+    {
+      "aspects": [
+        "shiny",
+        "tideforge"
+      ],
+      "texture": "cobblemon:textures/pokemon/0375_tideforge_metang/tideforge_metang_shiny.png"
+    }
+  ]
+}

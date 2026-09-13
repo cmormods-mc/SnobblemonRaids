@@ -1,0 +1,205 @@
+{
+  "target": "beldum",
+  "forms": [
+    {
+      "name": "Tideforge",
+      "aspects": [
+        "tideforge"
+      ],
+      "labels": [
+        "gen3",
+        "tideforge_form"
+      ],
+      "primaryType": "water",
+      "secondaryType": "steel",
+      "abilities": [
+        "clearbody",
+        "h:silentrunning"
+      ],
+      "pokedex": [
+        "cobblemon.species.beldum-tideforge.desc"
+      ],
+      "moves": [
+        "1:pound",
+        "1:bubble",
+        "1:watersport",
+        "4:growl",
+        "8:watergun",
+        "11:charm",
+        "15:peck",
+        "18:bubblebeam",
+        "22:bide",
+        "25:furyattack",
+        "29:brine",
+        "32:whirlpool",
+        "36:mist",
+        "39:drillpeck",
+        "43:hydropump",
+        "egg:aquaring",
+        "egg:bide",
+        "egg:doublehit",
+        "egg:featherdance",
+        "egg:flail",
+        "egg:mudsport",
+        "egg:powertrip",
+        "egg:roost",
+        "egg:snore",
+        "egg:supersonic",
+        "egg:swagger",
+        "egg:yawn",
+        "tm:aerialace",
+        "tm:agility",
+        "tm:babydolleyes",
+        "tm:blizzard",
+        "tm:brickbreak",
+        "tm:brine",
+        "tm:charm",
+        "tm:chillingwater",
+        "tm:covet",
+        "tm:cut",
+        "tm:defog",
+        "tm:disarmingvoice",
+        "tm:dive",
+        "tm:echoedvoice",
+        "tm:endure",
+        "tm:facade",
+        "tm:featherdance",
+        "tm:fling",
+        "tm:flipturn",
+        "tm:grassknot",
+        "tm:hail",
+        "tm:haze",
+        "tm:headbutt",
+        "tm:helpinghand",
+        "tm:hydropump",
+        "tm:icebeam",
+        "tm:icespinner",
+        "tm:icywind",
+        "tm:liquidation",
+        "tm:pluck",
+        "tm:protect",
+        "tm:psychup",
+        "tm:quash",
+        "tm:raindance",
+        "tm:rest",
+        "tm:rocktomb",
+        "tm:roost",
+        "tm:signalbeam",
+        "tm:sleeptalk",
+        "tm:snore",
+        "tm:snowscape",
+        "tm:substitute",
+        "tm:surf",
+        "tm:swagger",
+        "tm:swift",
+        "tm:terablast",
+        "tm:tripleaxel",
+        "tm:waterfall",
+        "tm:waterpledge",
+        "tm:waterpulse",
+        "tm:weatherball",
+        "tm:whirlpool",
+        "tm:workup",
+        "tutor:aerialace",
+        "tutor:babydolleyes",
+        "tutor:covet",
+        "tutor:defog",
+        "tutor:dive",
+        "tutor:flipturn",
+        "tutor:helpinghand",
+        "tutor:icebeam",
+        "tutor:icywind",
+        "tutor:liquidation",
+        "tutor:rest",
+        "tutor:roost",
+        "tutor:signalbeam",
+        "tutor:sleeptalk",
+        "tutor:snore",
+        "tutor:swift",
+        "tutor:tripleaxel",
+        "tutor:waterpledge",
+        "tutor:waterpulse",
+        "legacy:attract",
+        "legacy:captivate",
+        "legacy:confide",
+        "legacy:dig",
+        "legacy:doubleteam",
+        "legacy:frustration",
+        "legacy:hiddenpower",
+        "legacy:mudslap",
+        "legacy:naturalgift",
+        "legacy:return",
+        "legacy:round",
+        "legacy:scald",
+        "legacy:secretpower",
+        "legacy:stealthrock",
+        "legacy:toxic",
+        "special:sing"
+      ],
+      "behaviour": {
+        "moving": {
+          "fly": {
+            "canFly": true
+          },
+          "swim": {
+            "avoidsWater": false,
+            "canBreatheUnderwater": true,
+            "swimSpeed": "0.2"
+          },
+          "walk": {
+            "canWalk": false
+          }
+        },
+        "resting": {
+          "canSleep": true,
+          "light": "0-4",
+          "willSleepOnBed": true,
+          "times": [
+            "any"
+          ],
+          "drowsyChance": 0.0014,
+          "rouseChance": 0.0042
+        },
+        "herd": {
+          "maxSize": "4",
+          "toleratedLeaders": [
+            {
+              "pokemon": "beldum tideforge",
+              "tier": 1
+            },
+            {
+              "pokemon": "metang tideforge",
+              "tier": 2
+            },
+            {
+              "pokemon": "metagross tideforge",
+              "tier": 3
+            }
+          ]
+        },
+        "combat": {
+          "willDefendSelf": true,
+          "willDefendOwner": true,
+          "willFlee": false
+        }
+      },
+      "evolutions": [
+        {
+          "id": "beldum_metang_tideforge",
+          "variant": "level_up",
+          "result": "metang tideforge",
+          "consumeHeldItem": false,
+          "learnableMoves": [
+            "metalclaw"
+          ],
+          "requirements": [
+            {
+              "variant": "level",
+              "minLevel": 16
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
