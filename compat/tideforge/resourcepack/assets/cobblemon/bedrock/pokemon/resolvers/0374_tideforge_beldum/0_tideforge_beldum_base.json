@@ -1,0 +1,19 @@
+{
+  "species": "cobblemon:tideforge_beldum",
+  "order": 0,
+  "variations": [
+    {
+      "aspects": [],
+      "poser": "cobblemon:beldum",
+      "model": "cobblemon:beldum.geo",
+      "texture": "cobblemon:textures/pokemon/0374_beldum/beldum.png",
+      "layers": []
+    },
+    {
+      "aspects": [
+        "shiny"
+      ],
+      "texture": "cobblemon:textures/pokemon/0374_beldum/beldum_shiny.png"
+    }
+  ]
+}
