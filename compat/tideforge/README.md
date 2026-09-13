@@ -21,25 +21,43 @@ Evolution levels are Piplup's (16 / 36), not the Beldum line's (20 / 45).
 
 ## Why forms and not new species
 
-The first cut of this pack defined `tideforge_beldum` / `tideforge_metang` /
-`tideforge_metagross` as three new species. That is how the server's existing remodel
-content does it too, and it is why `/pc` crashed a client on 2026-09-13:
-
-    PokemonSpecies.getByIdentifier(...) -> null
-    Intrinsics.checkNotNull(...)        -> NPE   (PokemonGuiUtilsKt.drawProfilePokemon:99)
-
-A species that lives only in a server datapack has to survive a registry sync to reach
-clients. That server loads 1027 species while its clients' own files define 1025, and
-the two extras were exactly `tideforge_metang` and `tideforge_metagross` — so anything
-rendering one client-side had nothing to look up.
-
-An **aspect** adds no species id. `metang tideforge` is still `cobblemon:metang`, which
-every client already has, so there is nothing that can go missing. It is also how
-Cobblemon ships its own regional variants: Alolan Raichu is `raichu` with the `alolan`
-aspect, defined by a `flag` species feature exactly like `tideforge.json` here.
+Server-side datapacks are the right way to add Pokemon, and they work: Cobblemon syncs
+species, features and abilities to clients on join. Forms are still the better shape for
+a regional variant, for the same reason Cobblemon uses them itself -- Alolan Raichu is
+`raichu` with the `alolan` aspect, defined by a `flag` species feature exactly like
+`tideforge.json` here. One species id, one Pokedex entry, and evolutions that carry the
+aspect along.
 
 Trade-off: like Alolan Raichu, these display under the base species name. A Tideforge
 Metang reads as "Metang" in the party and PC; the form name appears in the Pokedex.
+
+## What one client mod does to all of this
+
+On this modpack the sync arrives and is then thrown away. Proved from the client log:
+
+    16:48:17  [EMI] Starting EMI reload...                      [Thread-21]
+    16:48:17  Loaded 23 fossils / 307 marks                     (the server's sync, applied)
+    16:48:18  CMor3zombies joined the server!
+    16:48:19  [EMI] Loading plugin from cobbleemi               [Thread-21]
+    16:48:19  Reloading world spawn pool for EMI spawn info...  [Thread-21]
+    16:48:19  Found new data pack cobblemon, loading it automatically ...
+    16:48:22  Loaded 390 abilities                              (the server has 321)
+    16:48:23  Loaded 1025 Pokemon species
+
+**`cobbleemi`** builds its own pack repository on the client to read Cobblemon's spawn
+pool for EMI, and that re-runs *every* Cobblemon data registry against the client's local
+files -- overwriting the species, forms, features and abilities the server had just sent.
+Anything that exists only on the server is gone one second after joining.
+
+That is what crashed `/pc` on the old `tideforge_*` species, and what kicked a player
+mid-evolution with `DecoderException: Failed to decode packet 'clientbound/minecraft:custom_payload'`
+once the form and the custom ability were server-only.
+
+**Fix it on the client, not in the datapack:** remove `cobbleemi` (1.1.4 has no config
+switch -- the reload is unconditional), or have its author scope the reload to
+`spawn_pool_world` instead of the whole registry set. Dropping this datapack into a
+client's own `datapacks/` folder also works as a per-player workaround; that is how the
+ability count above went from 389 to 390.
 
 ## What is in the two packs
 
