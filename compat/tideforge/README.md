@@ -69,7 +69,18 @@ ability count above went from 389 to 390.
   merging into Cobblemon's species rather than replacing the file
 - `abilities/silentrunning.js` — the ability, shipped into Showdown
 
-**Resource pack** — `global_packs/required_resources/` so every client gets it:
+**Resource pack** — **not** `global_packs/required_resources/`. That folder feeds the
+local game's pack repository, and a dedicated server has no client-facing one, so nothing
+there ever reaches a player. (globalpacks' `[datapacks]` section *is* server-side; its
+`[resourcepacks]` section is not.)
+
+What clients actually receive is `polymer/resource_pack.zip`, generated at boot and served
+by polymer-autohost. Add this pack to that build, either way:
+
+- list it in `include_zips` in the server's `config/polymer/resource-pack.json`, or
+- unzip its `assets/` into `polymer/source_assets/` (or `polymer/override_assets/`)
+
+then restart so Polymer regenerates. It contains:
 
 - a language file: the three Pokedex entries plus the ability's name and description.
   Without it the summary screen shows raw keys (`cobblemon.ability.silentrunning`).
