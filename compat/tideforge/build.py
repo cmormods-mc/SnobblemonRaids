@@ -3,10 +3,9 @@
 
 The Tideforge line is a set of regional FORMS of the Beldum line, reached through
 the aspect `tideforge` -- the way Cobblemon does Alolan and Hisuian variants -- not
-a set of new species. That matters: a species that exists only in a server datapack
-has to survive a registry sync to reach clients, and when it doesn't, every client
-that renders one crashes in drawProfilePokemon. An aspect adds no new species id, so
-there is nothing that can go missing.
+a set of new species. The pack is server-side; Cobblemon syncs species, features and
+abilities to clients on join. See the README for the one client mod (cobbleemi) that
+throws that sync away a second later, and what to do about it.
 
 Everything is derived from Cobblemon's own data rather than retyped:
 
