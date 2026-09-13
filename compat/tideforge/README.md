@@ -106,6 +106,17 @@ Every handler used here appears in Cobblemon's bundled `showdown.zip`. `onAfterM
 the obvious hook for "ends when it attacks" — appears there **zero** times, which is why
 surfacing happens in `onBasePower` instead.
 
+**Never put a `//` comment in an ability script.** Cobblemon flattens the file to a
+single line before handing it to Showdown, so a line comment swallows the rest of the
+script and the server dies during data load:
+
+    PolyglotException: SyntaxError: <eval>:1:2058 Expected ident but found eof
+
+That is a failed boot, not a warning — it took this server down on 2026-09-13. Use
+`/* ... */`, which survives flattening. `build.py` now rejects `//` outright and, when
+`node` is on PATH, actually parses the flattened script the way Showdown will see it;
+both checks were verified by reintroducing the comment.
+
 ## Decisions worth knowing
 
 - **Stats, EVs, catch rate, growth, egg group, drops and hitbox are inherited** from the
