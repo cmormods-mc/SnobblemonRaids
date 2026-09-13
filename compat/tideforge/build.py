@@ -17,6 +17,7 @@ Usage:  python build.py [--jar <Cobblemon jar>] [--zip]
 from __future__ import annotations
 
 import argparse
+import glob
 import json
 import re
 import shutil
@@ -30,6 +31,9 @@ DP, RP = HERE / "datapack", HERE / "resourcepack"
 
 DEFAULT_JAR = Path("L:/Modrinth Instances/profiles/Snobblemon Regions Season 1"
                    "/mods/Cobblemon-fabric-1.7.3+1.21.1.jar")
+# The server's remodel pack as the client cached it, source of the Tideforge posers.
+DEFAULT_SERVER_PACK = ("L:/Modrinth Instances/profiles/Snobblemon Regions Season 1"
+                       "/downloads/**/47d985e4*")
 DATA_PACK_FORMAT, RESOURCE_PACK_FORMAT = 48, 34      # Minecraft 1.21.1 version.json
 
 ASPECT = "tideforge"
@@ -219,6 +223,37 @@ def ability_script_problems(script: str) -> list:
     return problems
 
 
+# The remodel pack's posers frame the portrait too far out and never shift it sideways,
+# so the party widget shows a small centred body instead of a head. Cobblemon's own
+# numbers for the same body plan are the right target; copy them over. Posers are keyed
+# by bare filename, directories discarded (FilesKt.getNameWithoutExtension), so a copy in
+# a directory that sorts after "posers/t..." wins.
+POSER_FIX_DIR = "assets/cobblemon/bedrock/pokemon/posers/zz_tideforge_portrait_fix"
+POSER_SOURCES = {          # their poser file      <- portrait framing taken from
+    "tideforge_beldom.json":    ("assets/cobblemon/bedrock/pokemon/posers/tideforge_beldom.json",
+                                 "assets/cobblemon/bedrock/pokemon/posers/0374_beldum/beldum.json"),
+    "tideforge_metang.json":    ("assets/cobblemon/bedrock/pokemon/posers/tideforge_metang.json",
+                                 "assets/cobblemon/bedrock/pokemon/posers/0375_metang/metang.json"),
+    "tideforge_metagross.json": ("assets/cobblemon/bedrock/pokemon/posers/tideforge_metagross.json",
+                                 "assets/cobblemon/bedrock/pokemon/posers/0376_metagross/metagross.json"),
+}
+
+
+def reframe_posers(server_pack, jar: Path) -> dict:
+    """Their poser, with Cobblemon's portraitScale/portraitTranslation."""
+    out = {}
+    with zipfile.ZipFile(jar) as cob:
+        for dest, (theirs, reference) in POSER_SOURCES.items():
+            if theirs not in server_pack.namelist():
+                continue
+            d = json.loads(server_pack.read(theirs).decode("utf-8-sig"))
+            ref = json.loads(cob.read(reference).decode("utf-8-sig"))
+            d["portraitScale"] = ref["portraitScale"]
+            d["portraitTranslation"] = ref["portraitTranslation"]
+            out[dest] = d
+    return out
+
+
 def write(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
@@ -285,12 +320,16 @@ def validate(additions: dict, vanilla: dict) -> list:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--jar", type=Path, default=DEFAULT_JAR)
+    ap.add_argument("--server-pack", default=DEFAULT_SERVER_PACK)
     ap.add_argument("--zip", action="store_true", help="also write the two distributable zips")
     args = ap.parse_args()
 
     if not args.jar.exists():
         print("Cobblemon jar not found: %s" % args.jar, file=sys.stderr)
         return 2
+
+    matches = glob.glob(args.server_pack, recursive=True)
+    server_pack = zipfile.ZipFile(matches[0]) if matches else None
 
     vanilla = cobblemon_species(args.jar)
     additions = build_additions(vanilla)
@@ -324,6 +363,12 @@ def main() -> int:
         "description": "Tideforge forms - names and descriptions"}})
     dump(RP / "assets/tideforge/lang/en_us.json", LANG)
 
+    posers = reframe_posers(server_pack, args.jar) if server_pack else {}
+    for dest, d in posers.items():
+        dump(RP / POSER_FIX_DIR / dest, d)
+    if not posers:
+        print("NOTE: server pack not found, portrait framing not corrected", file=sys.stderr)
+
     for base_name, donor, _dex_dir, evo in CHAIN:
         form = additions[base_name]["forms"][0]
         evo_txt = form["evolutions"][0]["result"] + " @ " + str(
@@ -343,6 +388,9 @@ def main() -> int:
                         z.write(f, f.relative_to(src).as_posix())
             print("wrote %s (%d bytes)" % (out.name, out.stat().st_size))
 
+    for dest, d in posers.items():
+        print("%-26s portraitScale %-5s translation %s"
+              % (dest, d["portraitScale"], d["portraitTranslation"]))
     print("validation: OK")
     return 0
 
