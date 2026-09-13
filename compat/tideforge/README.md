@@ -69,9 +69,11 @@ ability count above went from 389 to 390.
   merging into Cobblemon's species rather than replacing the file
 - `abilities/silentrunning.js` — the ability, shipped into Showdown
 
-**Resource pack** — `global_packs/required_resources/` so every client gets it. It is
-only a language file: the three Pokedex entries plus the ability's name and description.
-Without it the summary screen shows raw keys (`cobblemon.ability.silentrunning`).
+**Resource pack** — `global_packs/required_resources/` so every client gets it:
+
+- a language file: the three Pokedex entries plus the ability's name and description.
+  Without it the summary screen shows raw keys (`cobblemon.ability.silentrunning`).
+- three reframed posers, so the party portrait shows a head (see below).
 
 It lives at `assets/**tideforge**/lang/en_us.json`, not under `assets/cobblemon/`, even
 though every key is a `cobblemon.*` one. `ClientLanguage.loadFrom` walks **every**
@@ -95,6 +97,29 @@ animation fix**. Delete any local `Animation-Key-Fix.zip`.
 One collision survives in that pack, dormant because no poser asks for the group:
 `0502_dewott/dewott_hisui_bias.animation.json` keys as `dewott_hisui_bias` but contains
 `animation.dewott.*`, shadowing Cobblemon's real one. Worth passing to the pack author.
+
+## The portrait framing fix
+
+The remodel pack's posers frame the portrait too far out and never shift it sideways, so
+the party widget draws a small centred body instead of a head. Cobblemon's own numbers for
+the same body plan are the right target:
+
+| poser | remodel pack | Cobblemon's own |
+|---|---|---|
+| beldum | 1.9, `[0, 0.25, 0]` | **2.3, `[-0.3, -1.2, 0]`** |
+| metang | 1.25, `[0, -0.05, 0]` | **1.8, `[-0.35, 0, 0]`** |
+| metagross | 0.78, `[0, 0.1, 0]` | **1.1, `[-0.45, 0.279, 0]`** |
+
+`build.py` takes each Tideforge poser out of the server pack, swaps in those two values and
+re-files the copy under `posers/zz_tideforge_portrait_fix/`. Posers are keyed by bare
+filename with directories discarded, and that directory sorts after `posers/t...`, so the
+copy wins. Simulated against the real mod folder and the real server pack before shipping.
+
+**This is a stopgap and it carries a stale-copy risk**: it is a whole copy of their poser,
+so if they change one -- new poses, new animations -- our copy keeps winning with the old
+content until `build.py` is re-run. The right fix is for the pack author to set those six
+values in their own files, after which delete `posers/zz_tideforge_portrait_fix/` from
+this pack.
 
 ## Silent Running
 
