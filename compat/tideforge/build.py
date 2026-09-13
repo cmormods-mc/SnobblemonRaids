@@ -22,6 +22,7 @@ import glob
 import json
 import re
 import shutil
+import subprocess
 import sys
 import zipfile
 from pathlib import Path
@@ -147,14 +148,18 @@ def build_additions(vanilla: dict) -> dict:
 SILENT_RUNNING = r'''{
   name: "Silent Running",
 
-  // Enters battle Submerged. Status moves keep it; the first damaging hit it
-  // takes, or the first damaging move it uses, surfaces it.
+  /* Enters battle Submerged. Status moves keep it; the first damaging hit it
+     takes, or the first damaging move it uses, surfaces it.
+
+     Block comments, not line comments: Cobblemon flattens this file to a single
+     line before handing it to Showdown, so a // comment would swallow the rest
+     of the script. That is a server-boot crash, not a warning. */
   onStart(pokemon) {
     pokemon.tideforgeSubmerged = true;
     this.add("-message", pokemon.name + " slipped beneath the surface!");
   },
 
-  // Switching out resets the ability; onStart submerges it again on the way back in.
+  /* Switching out resets the ability; onStart submerges it again on the way back in. */
   onSwitchOut(pokemon) {
     pokemon.tideforgeSubmerged = false;
   },
@@ -162,8 +167,8 @@ SILENT_RUNNING = r'''{
     pokemon.tideforgeSubmerged = false;
   },
 
-  // Absorb the hit: the first damaging hit taken while Submerged lands 25% lighter.
-  // The handler lives on the defender, the same way Multiscale's does.
+  /* Absorb the hit: the first damaging hit taken while Submerged lands 25%
+     lighter. The handler lives on the defender, the same way Multiscale's does. */
   onSourceModifyDamage(damage, source, target, move) {
     if (target.tideforgeSubmerged) {
       this.debug("Silent Running weaken");
@@ -176,18 +181,20 @@ SILENT_RUNNING = r'''{
     this.add("-message", target.name + " was forced to the surface!");
   },
 
-  // Or launch the torpedo: strike first and the Water move hits 30% harder.
-  // Surfacing happens here rather than in a later hook so the boost above is
-  // still applied to the very move that spends it.
+  /* Or launch the torpedo: strike first and the Water move hits 30% harder.
+     Surfacing happens here rather than in a later hook so the boost below is
+     still applied to the very move that spends it. 5325/4096 is 1.3x, the
+     ratio Sheer Force uses. */
   onBasePower(basePower, attacker, defender, move) {
     if (!attacker.tideforgeSubmerged) return;
     var torpedo = move.type === "Water";
     attacker.tideforgeSubmerged = false;
     this.add("-message", attacker.name + " broke the surface!");
-    if (torpedo) return this.chainModify([5325, 4096]);   // 1.3x, the Sheer Force ratio
+    if (torpedo) return this.chainModify([5325, 4096]);
   },
-  // Fixed-damage moves (Seismic Toss, Night Shade) never reach the base power
-  // chain, so they surface it here instead.
+
+  /* Fixed-damage moves (Seismic Toss, Night Shade) never reach the base power
+     chain, so they surface it here instead. */
   onModifyMove(move, pokemon) {
     if (pokemon.tideforgeSubmerged && move.category !== "Status" && !move.basePower) {
       pokemon.tideforgeSubmerged = false;
@@ -215,6 +222,43 @@ LANG = {
     "cobblemon.ability.silentrunning.desc":
         "It slips beneath the surface, concealing its next attack.",
 }
+
+
+def ability_script_problems(script: str) -> list:
+    """Cobblemon hands the ability script to Showdown as a single line, so a `//`
+    comment swallows everything after it and the server dies during data load with
+    `SyntaxError: Expected ident but found eof`. Check the script the way Cobblemon
+    will actually see it."""
+    problems = []
+    stripped = re.sub(r"/\*.*?\*/", " ", script, flags=re.S)
+    stripped = re.sub(r'"(?:[^"\\]|\\.)*"', '""', stripped)
+    if "//" in stripped:
+        problems.append("ability script uses a // comment; it is flattened to one line "
+                        "before Showdown sees it, so that comments out the rest of the file")
+
+    wrapped = '({"silentrunning": %s })' % script.replace("\n", " ")
+    node = shutil.which("node")
+    if node:
+        r = subprocess.run([node, "--check"], input=wrapped, text=True, encoding="utf-8",
+                           capture_output=True)
+        if r.returncode != 0:
+            lines = [l.strip() for l in r.stderr.splitlines() if l.strip()]
+            detail = next((l for l in lines if "Error" in l), lines[-1] if lines else "?")
+            problems.append("flattened ability script does not parse: " + detail)
+    else:
+        depth = {"(": 0, "[": 0, "{": 0}
+        pairs = {")": "(", "]": "[", "}": "{"}
+        body = re.sub(r'"(?:[^"\\]|\\.)*"', '""',
+                      re.sub(r"/\*.*?\*/", " ", wrapped, flags=re.S))
+        for ch in body:
+            if ch in depth:
+                depth[ch] += 1
+            elif ch in pairs:
+                depth[pairs[ch]] -= 1
+        if any(v for v in depth.values()):
+            problems.append("flattened ability script is unbalanced: %s (no node on PATH, "
+                            "so this is a bracket count rather than a real parse)" % depth)
+    return problems
 
 
 def write(path: Path, text: str) -> None:
@@ -275,6 +319,7 @@ def validate(additions: dict, vanilla: dict, server_pack: zipfile.ZipFile | None
     for key in ("cobblemon.ability." + showdown_id, "cobblemon.ability." + showdown_id + ".desc"):
         if key not in LANG:
             problems.append("lang is missing " + key)
+    problems += ability_script_problems(SILENT_RUNNING)
 
     # the Tideforge posers are useless without their animation group, and the group is
     # only defined by the misnamed file inside the server's pack
