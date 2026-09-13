@@ -1,17 +1,24 @@
 #!/usr/bin/env python3
 """Build and validate the Tideforge datapack + resource pack.
 
-Everything is derived from Cobblemon's own data rather than retyped, so no move
-name, stat or growth rate can drift from the game's:
+The Tideforge line is a set of regional FORMS of the Beldum line, reached through
+the aspect `tideforge` -- the way Cobblemon does Alolan and Hisuian variants -- not
+a set of new species. That matters: a species that exists only in a server datapack
+has to survive a registry sync to reach clients, and when it doesn't, every client
+that renders one crashes in drawProfilePokemon. An aspect adds no new species id, so
+there is nothing that can go missing.
 
-  chassis (stats, EVs, catch rate, growth, drops, hitbox)  <- the Beldum line
+Everything is derived from Cobblemon's own data rather than retyped:
+
+  chassis (stats, EVs, catch rate, growth, drops, hitbox)  <- the Beldum line, inherited
   typing, moves, evolution levels                          <- the Piplup line
 
-Usage:  python build.py [--jar <Cobblemon jar>] [--zip]
+Usage:  python build.py [--jar <Cobblemon jar>] [--server-pack <zip>] [--zip]
 """
 from __future__ import annotations
 
 import argparse
+import glob
 import json
 import re
 import shutil
@@ -24,23 +31,55 @@ DP, RP = HERE / "datapack", HERE / "resourcepack"
 
 DEFAULT_JAR = Path("L:/Modrinth Instances/profiles/Snobblemon Regions Season 1"
                    "/mods/Cobblemon-fabric-1.7.3+1.21.1.jar")
+# The server's remodel pack, as the client cached it. It carries the Tideforge art.
+DEFAULT_SERVER_PACK = ("L:/Modrinth Instances/profiles/Snobblemon Regions Season 1"
+                       "/downloads/**/6cbf469*")
 
 DATA_PACK_FORMAT, RESOURCE_PACK_FORMAT = 48, 34      # Minecraft 1.21.1 version.json
 
-# our id                base         moves from  dex     evolves to (id, level, moves learnt)
+ASPECT = "tideforge"
+
+# base species  moves from   dex dir   evolves to (species, level, moves learnt)
 CHAIN = [
-    ("tideforge_beldum",    "beldum",    "piplup",   10374, ("tideforge_metang",    16, ["metalclaw"])),
-    ("tideforge_metang",    "metang",    "prinplup", 10375, ("tideforge_metagross", 36, ["aquajet"])),
-    ("tideforge_metagross", "metagross", "empoleon", 10376, None),
+    ("beldum",    "piplup",   "0374_beldum",    ("metang",    16, ["metalclaw"])),
+    ("metang",    "prinplup", "0375_metang",    ("metagross", 36, ["aquajet"])),
+    ("metagross", "empoleon", "0376_metagross", None),
 ]
-DISPLAY = {"tideforge_beldum": "Tideforge Beldum",
-           "tideforge_metang": "Tideforge Metang",
-           "tideforge_metagross": "Tideforge Metagross"}
-PRE_EVOLUTION = {"tideforge_metang": "tideforge_beldum",
-                 "tideforge_metagross": "tideforge_metang"}
-HERD = [{"pokemon": "tideforge_beldum", "tier": 1},
-        {"pokemon": "tideforge_metang", "tier": 2},
-        {"pokemon": "tideforge_metagross", "tier": 3}]
+
+# Art the server's remodel pack already ships, keyed by the base species it now
+# decorates. Beldum has none, so it falls back to vanilla Beldum's.
+ART = {
+    "beldum": {"poser": "cobblemon:beldum", "model": "cobblemon:beldum.geo",
+               "texture": "cobblemon:textures/pokemon/0374_beldum/beldum.png",
+               "shiny": "cobblemon:textures/pokemon/0374_beldum/beldum_shiny.png",
+               "placeholder": True},
+    "metang": {"poser": "cobblemon:tideforge_metang", "model": "cobblemon:tideforge_metang.geo",
+               "texture": "cobblemon:textures/pokemon/0375_tideforge_metang/tideforge_metang.png",
+               "shiny": "cobblemon:textures/pokemon/0375_tideforge_metang/tideforge_metang_shiny.png",
+               "placeholder": False},
+    "metagross": {"poser": "cobblemon:tideforge_metagross",
+                  "model": "cobblemon:tideforge_metagross.geo",
+                  "texture": "cobblemon:textures/pokemon/0376_tideforge_metagross/tideforge_metagross.png",
+                  "shiny": "cobblemon:textures/pokemon/0376_tideforge_metagross/tideforge_metagross_shiny.png",
+                  "placeholder": False},
+}
+
+# Cobblemon keys animation groups by bare filename, directories discarded, so the
+# remodel pack's 0376_tideforge_metagross/metagross.animation.json registers as
+# "metagross" and evicts Cobblemon's own. That crashed clients on 2026-09-13, and it
+# also means the group tideforge_metagross -- which the Tideforge poser asks for --
+# is never registered at all. Re-file both under a directory that sorts last.
+ANIMATION_FIX_DIR = "assets/cobblemon/bedrock/pokemon/animations/zz_animation_key_fix"
+ANIMATION_FIX_FROM_JAR = {
+    "metagross.animation.json":
+        "assets/cobblemon/bedrock/pokemon/animations/0376_metagross/metagross.animation.json",
+    "dewott_hisui_bias.animation.json":
+        "assets/cobblemon/bedrock/pokemon/animations/0502_dewott/dewott_hisui_bias.animation.json",
+}
+ANIMATION_FIX_FROM_PACK = {
+    "tideforge_metagross.animation.json":
+        "assets/cobblemon/bedrock/pokemon/animations/0376_tideforge_metagross/metagross.animation.json",
+}
 
 
 def cobblemon_species(jar: Path) -> dict:
@@ -54,50 +93,55 @@ def cobblemon_species(jar: Path) -> dict:
     return out
 
 
-def aquatic(behaviour: dict) -> dict:
+def aquatic(behaviour: dict, base_name: str) -> dict:
     """The Beldum line avoids water. A Water type must not."""
     b = json.loads(json.dumps(behaviour))
     b.setdefault("moving", {})["swim"] = {
         "avoidsWater": False, "canBreatheUnderwater": True, "swimSpeed": "0.2",
     }
     if "toleratedLeaders" in b.get("herd", {}):
-        b["herd"]["toleratedLeaders"] = json.loads(json.dumps(HERD))
+        b["herd"]["toleratedLeaders"] = [
+            {"pokemon": "beldum " + ASPECT, "tier": 1},
+            {"pokemon": "metang " + ASPECT, "tier": 2},
+            {"pokemon": "metagross " + ASPECT, "tier": 3},
+        ]
     return b
 
 
-def build_species(vanilla: dict) -> dict:
-    built = {}
-    for sid, base_name, donor_name, dex, evo in CHAIN:
+def build_additions(vanilla: dict) -> dict:
+    """One species_addition per base species, each adding the Tideforge form."""
+    out = {}
+    for base_name, donor_name, _dex_dir, evo in CHAIN:
         base, donor = vanilla[base_name], vanilla[donor_name]
-        s = json.loads(json.dumps(base))
 
-        s["name"] = DISPLAY[sid]
-        s["nationalPokedexNumber"] = dex
-        s["primaryType"], s["secondaryType"] = "water", "steel"
-        s["abilities"] = ["clearbody", "h:silentrunning"]
-        s["labels"] = [l for l in base.get("labels", []) if l != "gen3"] + ["gen3", "tideforge"]
-        s["pokedex"] = ["cobblemon.species.%s.desc" % sid]
-        s["moves"] = list(donor["moves"])
-        s["behaviour"] = aquatic(base["behaviour"])
-        s.pop("forms", None)          # no Mega Tideforge Metagross
-        s.pop("features", None)
-
-        if sid in PRE_EVOLUTION:
-            s["preEvolution"] = PRE_EVOLUTION[sid]
-        else:
-            s.pop("preEvolution", None)
-
+        form = {
+            "name": "Tideforge",
+            "aspects": [ASPECT],
+            "labels": ["gen3", "tideforge_form"],
+            "primaryType": "water",
+            "secondaryType": "steel",
+            "abilities": ["clearbody", "h:silentrunning"],
+            "pokedex": ["cobblemon.species.%s-tideforge.desc" % base_name],
+            "moves": list(donor["moves"]),
+            "behaviour": aquatic(base["behaviour"], base_name),
+        }
+        # A form inherits the species' evolutions unless it declares its own, so the
+        # Tideforge forms must state theirs or they would evolve into vanilla Metang.
         if evo:
             result, level, learnable = evo
-            s["evolutions"] = [{
-                "id": "%s_%s" % (sid, result), "variant": "level_up", "result": result,
-                "consumeHeldItem": False, "learnableMoves": learnable,
+            form["evolutions"] = [{
+                "id": "%s_%s_tideforge" % (base_name, result),
+                "variant": "level_up",
+                "result": "%s %s" % (result, ASPECT),
+                "consumeHeldItem": False,
+                "learnableMoves": learnable,
                 "requirements": [{"variant": "level", "minLevel": level}],
             }]
         else:
-            s["evolutions"] = []
-        built[sid] = s
-    return built
+            form["evolutions"] = []
+
+        out[base_name] = {"target": base_name, "forms": [form]}
+    return out
 
 
 SILENT_RUNNING = r'''{
@@ -158,35 +202,18 @@ SILENT_RUNNING = r'''{
 '''
 
 LANG = {
-    "cobblemon.species.tideforge_beldum.name": "Tideforge Beldum",
-    "cobblemon.species.tideforge_beldum.desc":
+    "cobblemon.species.beldum-tideforge.desc":
         "Ballast floods its shell so it can sink out of sight. It hangs motionless on the "
         "seabed for days, tracking the magnetic wake of anything that swims overhead.",
-    "cobblemon.species.tideforge_metang.name": "Tideforge Metang",
-    "cobblemon.species.tideforge_metang.desc":
+    "cobblemon.species.metang-tideforge.desc":
         "Two Tideforge Beldum fused under pressure. The seam between them vents jets of "
         "water, letting it turn in place without disturbing the silt.",
-    "cobblemon.species.tideforge_metagross.name": "Tideforge Metagross",
-    "cobblemon.species.tideforge_metagross.desc":
+    "cobblemon.species.metagross-tideforge.desc":
         "Its four hulls close into a single ram. Sailors read the sudden calm above it as a "
         "warning, because the water only goes still once it has chosen a target.",
     "cobblemon.ability.silentrunning": "Silent Running",
     "cobblemon.ability.silentrunning.desc":
         "It slips beneath the surface, concealing its next attack.",
-}
-
-# Placeholder art: the server's remodel pack has no Tideforge Beldum model, and a
-# species with no resolver renders as the substitute doll. Point it at the vanilla
-# Beldum art until real art exists.
-BELDUM_RESOLVER = {
-    "species": "cobblemon:tideforge_beldum",
-    "order": 0,
-    "variations": [
-        {"aspects": [], "poser": "cobblemon:beldum", "model": "cobblemon:beldum.geo",
-         "texture": "cobblemon:textures/pokemon/0374_beldum/beldum.png", "layers": []},
-        {"aspects": ["shiny"],
-         "texture": "cobblemon:textures/pokemon/0374_beldum/beldum_shiny.png"},
-    ],
 }
 
 
@@ -199,54 +226,72 @@ def dump(path: Path, obj) -> None:
     write(path, json.dumps(obj, indent=2, ensure_ascii=False) + "\n")
 
 
-def validate(built: dict, vanilla: dict) -> list:
+def validate(additions: dict, vanilla: dict, server_pack: zipfile.ZipFile | None) -> list:
     problems = []
     legal_moves = {m for s in vanilla.values() for m in s["moves"]}
-    used_dex = {s["nationalPokedexNumber"] for s in vanilla.values()}
 
-    for sid, s in built.items():
-        if sid in vanilla:
-            problems.append("%s: id collides with a Cobblemon species -- Cobblemon keys species "
-                            "by bare filename, so this would shadow it" % sid)
-        if s["nationalPokedexNumber"] in used_dex:
-            problems.append("%s: dex %d is already taken; speciesByDex holds one species per "
-                            "(namespace, number)" % (sid, s["nationalPokedexNumber"]))
-        for m in s["moves"]:
-            if m not in legal_moves:
-                problems.append("%s: move %r appears in no Cobblemon species" % (sid, m))
-        for e in s["evolutions"]:
-            if e["result"] not in built:
-                problems.append("%s: evolves into %r, which this pack does not define"
-                                % (sid, e["result"]))
-        for a in s["abilities"]:
-            bare = a[2:] if a.startswith("h:") else a
-            if bare == "silentrunning":
-                continue
-            if not any(bare in v["abilities"] or ("h:" + bare) in v["abilities"]
-                       for v in vanilla.values()):
-                problems.append("%s: ability %r is not used by any Cobblemon species" % (sid, bare))
-        if s.get("secondaryType") == s.get("primaryType"):
-            problems.append("%s: primary and secondary type are the same" % sid)
+    for base_name, addition in additions.items():
+        if base_name not in vanilla:
+            problems.append("%s: species_addition targets a species Cobblemon does not ship"
+                            % base_name)
+        for f in addition["forms"]:
+            if ASPECT not in f["aspects"]:
+                problems.append("%s: form does not carry the %r aspect" % (base_name, ASPECT))
+            # a form without its own evolutions inherits the base species', which for
+            # Beldum and Metang means evolving out of the Tideforge line entirely
+            if "evolutions" not in f:
+                problems.append("%s: form does not override evolutions" % base_name)
+            for e in f.get("evolutions", []):
+                if not e["result"].endswith(" " + ASPECT):
+                    problems.append("%s: evolution result %r drops the aspect"
+                                    % (base_name, e["result"]))
+                target = e["result"].split()[0]
+                if target not in vanilla:
+                    problems.append("%s: evolves into unknown species %r" % (base_name, target))
+            for m in f["moves"]:
+                if m not in legal_moves:
+                    problems.append("%s: move %r appears in no Cobblemon species"
+                                    % (base_name, m))
+            for a in f["abilities"]:
+                bare = a[2:] if a.startswith("h:") else a
+                if bare == "silentrunning":
+                    continue
+                if not any(bare in v["abilities"] or ("h:" + bare) in v["abilities"]
+                           for v in vanilla.values()):
+                    problems.append("%s: ability %r is not used by any Cobblemon species"
+                                    % (base_name, bare))
+            if f.get("primaryType") == f.get("secondaryType"):
+                problems.append("%s: primary and secondary type are the same" % base_name)
+            for key in f["pokedex"]:
+                if key not in LANG:
+                    problems.append("lang is missing " + key)
 
-    # the id Showdown computes from the script's name must match what the species ask for
+    # the id Showdown computes from the script's name must match what the forms ask for
     name = re.search(r'name:\s*"([^"]+)"', SILENT_RUNNING).group(1)
     showdown_id = re.sub(r"[^a-z0-9]", "", name.lower())
     if showdown_id != "silentrunning":
-        problems.append("ability name %r gives Showdown id %r, but the species reference "
+        problems.append("ability name %r gives Showdown id %r, but the forms reference "
                         "'h:silentrunning'" % (name, showdown_id))
     for key in ("cobblemon.ability." + showdown_id, "cobblemon.ability." + showdown_id + ".desc"):
         if key not in LANG:
             problems.append("lang is missing " + key)
-    for sid in built:
-        for key in ("cobblemon.species.%s.name" % sid, "cobblemon.species.%s.desc" % sid):
-            if key not in LANG:
-                problems.append("lang is missing " + key)
+
+    # the Tideforge posers are useless without their animation group, and the group is
+    # only defined by the misnamed file inside the server's pack
+    if server_pack is None:
+        problems.append("server pack not found: the Tideforge Metagross animations cannot be "
+                        "re-filed, and its poser will fail to load on every client")
+    else:
+        for src in ANIMATION_FIX_FROM_PACK.values():
+            if src not in server_pack.namelist():
+                problems.append("server pack is missing " + src)
     return problems
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--jar", type=Path, default=DEFAULT_JAR)
+    ap.add_argument("--server-pack", default=DEFAULT_SERVER_PACK)
     ap.add_argument("--zip", action="store_true", help="also write the two distributable zips")
     args = ap.parse_args()
 
@@ -254,10 +299,13 @@ def main() -> int:
         print("Cobblemon jar not found: %s" % args.jar, file=sys.stderr)
         return 2
 
-    vanilla = cobblemon_species(args.jar)
-    built = build_species(vanilla)
+    matches = glob.glob(args.server_pack, recursive=True)
+    server_pack = zipfile.ZipFile(matches[0]) if matches else None
 
-    problems = validate(built, vanilla)
+    vanilla = cobblemon_species(args.jar)
+    additions = build_additions(vanilla)
+
+    problems = validate(additions, vanilla, server_pack)
     if problems:
         print("VALIDATION FAILED")
         for p in problems:
@@ -268,30 +316,52 @@ def main() -> int:
         if d.exists():
             shutil.rmtree(d)
 
+    # ---- datapack -------------------------------------------------------------
     dump(DP / "pack.mcmeta", {"pack": {
         "pack_format": DATA_PACK_FORMAT,
-        "description": "Tideforge Beldum line - Water/Steel regional forms"}})
-    for sid, s in built.items():
-        dump(DP / "data/cobblemon/species/tideforge" / (sid + ".json"), s)
+        "description": "Tideforge forms of the Beldum line - Water/Steel"}})
+    dump(DP / "data/cobblemon/species_features/tideforge.json",
+         {"keys": [ASPECT], "type": "flag", "isAspect": True, "default": False})
+    dump(DP / "data/cobblemon/species_feature_assignments/regional_tideforge.json",
+         {"pokemon": [b for b, _, _, _ in CHAIN], "features": [ASPECT]})
+    for base_name, addition in additions.items():
+        dump(DP / "data/cobblemon/species_additions/tideforge" / (base_name + ".json"), addition)
     write(DP / "data/tideforge/abilities/silentrunning.js", SILENT_RUNNING)
 
+    # ---- resource pack --------------------------------------------------------
     dump(RP / "pack.mcmeta", {"pack": {
         "pack_format": RESOURCE_PACK_FORMAT,
-        "description": "Tideforge Beldum line - names, dex entries, placeholder Beldum art"}})
+        "description": "Tideforge forms - art bindings, dex entries, animation key fix"}})
     dump(RP / "assets/cobblemon/lang/en_us.json", LANG)
-    dump(RP / "assets/cobblemon/bedrock/pokemon/resolvers/0374_tideforge_beldum"
-         / "0_tideforge_beldum_base.json", BELDUM_RESOLVER)
 
-    for sid, s in built.items():
-        levels = [m for m in s["moves"] if m[0].isdigit()]
-        if s["evolutions"]:
-            evo = "%s @ %d" % (s["evolutions"][0]["result"],
-                               s["evolutions"][0]["requirements"][0]["minLevel"])
-        else:
-            evo = "-"
-        print("%-22s dex %-6d %s/%s  %3d moves (%d level-up)  -> %s"
-              % (sid, s["nationalPokedexNumber"], s["primaryType"], s["secondaryType"],
-                 len(s["moves"]), len(levels), evo))
+    for base_name, _donor, dex_dir, _evo in CHAIN:
+        art = ART[base_name]
+        dump(RP / "assets/cobblemon/bedrock/pokemon/resolvers" / dex_dir
+             / ("5_%s_tideforge.json" % base_name), {
+            "species": "cobblemon:" + base_name,
+            "order": 5,
+            "variations": [
+                {"aspects": [ASPECT], "poser": art["poser"], "model": art["model"],
+                 "texture": art["texture"], "layers": []},
+                {"aspects": ["shiny", ASPECT], "texture": art["shiny"]},
+            ],
+        })
+
+    with zipfile.ZipFile(args.jar) as z:
+        for dest, src in ANIMATION_FIX_FROM_JAR.items():
+            (RP / ANIMATION_FIX_DIR).mkdir(parents=True, exist_ok=True)
+            (RP / ANIMATION_FIX_DIR / dest).write_bytes(z.read(src))
+    for dest, src in ANIMATION_FIX_FROM_PACK.items():
+        (RP / ANIMATION_FIX_DIR / dest).write_bytes(server_pack.read(src))
+
+    for base_name, donor, _dex_dir, evo in CHAIN:
+        form = additions[base_name]["forms"][0]
+        evo_txt = form["evolutions"][0]["result"] + " @ " + str(
+            form["evolutions"][0]["requirements"][0]["minLevel"]) if form["evolutions"] else "-"
+        note = "  (placeholder art)" if ART[base_name]["placeholder"] else ""
+        print("%-10s + aspect %-10s %s/%s  %3d moves (from %s)  -> %s%s"
+              % (base_name, ASPECT, form["primaryType"], form["secondaryType"],
+                 len(form["moves"]), donor, evo_txt, note))
 
     if args.zip:
         for src, out in ((DP, HERE / "tideforge-datapack.zip"),

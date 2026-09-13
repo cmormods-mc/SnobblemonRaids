@@ -1,0 +1,2461 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.tideforge_metagross.ground_idle": {
+      "loop": true,
+      "animation_length": 4,
+      "bones": {
+        "torso": {
+          "rotation": [
+            "0+0.6*math.sin(q.anim_time*90)",
+            0,
+            "0.65*math.sin(q.anim_time*90)"
+          ],
+          "position": [
+            0,
+            "0.22*math.sin(q.anim_time*90)",
+            0
+          ]
+        },
+        "periscope": {
+          "rotation": [
+            0,
+            "4*math.sin(q.anim_time*90)",
+            0
+          ]
+        },
+        "stern_rudder": {
+          "rotation": [
+            0,
+            "2.5*math.sin(q.anim_time*90)",
+            0
+          ]
+        },
+        "dive_fin_left": {
+          "rotation": [
+            "1.2*math.sin(q.anim_time*90)",
+            0,
+            0
+          ]
+        },
+        "dive_fin_right": {
+          "rotation": [
+            "1.2*math.sin(q.anim_time*90)",
+            0,
+            0
+          ]
+        },
+        "engine_left_front_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*90"
+          ]
+        },
+        "engine_left_rear_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*90"
+          ]
+        },
+        "engine_right_front_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*-90"
+          ]
+        },
+        "engine_right_rear_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*-90"
+          ]
+        },
+        "viewport_lens_left": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "viewport_lens_right": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "sonar_array": {
+          "rotation": [
+            0,
+            "q.anim_time*90",
+            0
+          ]
+        }
+      }
+    },
+    "animation.tideforge_metagross.ground_run": {
+      "loop": true,
+      "animation_length": 4,
+      "bones": {
+        "torso": {
+          "rotation": [
+            "-1.2+0.6*math.sin(q.anim_time*90)",
+            0,
+            "0.65*math.sin(q.anim_time*90)"
+          ],
+          "position": [
+            0,
+            "0.22*math.sin(q.anim_time*90)",
+            0
+          ]
+        },
+        "periscope": {
+          "rotation": [
+            0,
+            "4*math.sin(q.anim_time*90)",
+            0
+          ]
+        },
+        "stern_rudder": {
+          "rotation": [
+            0,
+            "2.5*math.sin(q.anim_time*90)",
+            0
+          ]
+        },
+        "dive_fin_left": {
+          "rotation": [
+            "1.2*math.sin(q.anim_time*90)",
+            0,
+            0
+          ]
+        },
+        "dive_fin_right": {
+          "rotation": [
+            "1.2*math.sin(q.anim_time*90)",
+            0,
+            0
+          ]
+        },
+        "engine_left_front_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*720"
+          ]
+        },
+        "engine_left_rear_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*720"
+          ]
+        },
+        "engine_right_front_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*-720"
+          ]
+        },
+        "engine_right_rear_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*-720"
+          ]
+        },
+        "viewport_lens_left": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "viewport_lens_right": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "sonar_array": {
+          "rotation": [
+            0,
+            "q.anim_time*90",
+            0
+          ]
+        }
+      }
+    },
+    "animation.tideforge_metagross.ground_walk": {
+      "loop": true,
+      "animation_length": 4,
+      "bones": {
+        "torso": {
+          "rotation": [
+            "-1.2+0.6*math.sin(q.anim_time*90)",
+            0,
+            "0.65*math.sin(q.anim_time*90)"
+          ],
+          "position": [
+            0,
+            "0.22*math.sin(q.anim_time*90)",
+            0
+          ]
+        },
+        "periscope": {
+          "rotation": [
+            0,
+            "4*math.sin(q.anim_time*90)",
+            0
+          ]
+        },
+        "stern_rudder": {
+          "rotation": [
+            0,
+            "2.5*math.sin(q.anim_time*90)",
+            0
+          ]
+        },
+        "dive_fin_left": {
+          "rotation": [
+            "1.2*math.sin(q.anim_time*90)",
+            0,
+            0
+          ]
+        },
+        "dive_fin_right": {
+          "rotation": [
+            "1.2*math.sin(q.anim_time*90)",
+            0,
+            0
+          ]
+        },
+        "engine_left_front_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*360"
+          ]
+        },
+        "engine_left_rear_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*360"
+          ]
+        },
+        "engine_right_front_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*-360"
+          ]
+        },
+        "engine_right_rear_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*-360"
+          ]
+        },
+        "viewport_lens_left": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "viewport_lens_right": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "sonar_array": {
+          "rotation": [
+            0,
+            "q.anim_time*90",
+            0
+          ]
+        }
+      }
+    },
+    "animation.tideforge_metagross.ride_ground_run": {
+      "loop": true,
+      "animation_length": 4,
+      "bones": {
+        "deck_hatch": {
+          "position": [
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.tideforge_metagross.ride_ground_walk": {
+      "loop": true,
+      "animation_length": 4,
+      "bones": {
+        "deck_hatch": {
+          "position": [
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.tideforge_metagross.ride_jump": {
+      "loop": false,
+      "animation_length": 1.2,
+      "bones": {
+        "torso": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.25": [
+              -2,
+              0,
+              0
+            ],
+            "0.7": [
+              2,
+              0,
+              0
+            ],
+            "1.2": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "viewport_lens_left": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "viewport_lens_right": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      }
+    },
+    "animation.tideforge_metagross.battle_idle": {
+      "loop": true,
+      "animation_length": 4,
+      "bones": {
+        "torso": {
+          "rotation": [
+            "0+0.6*math.sin(q.anim_time*90)",
+            0,
+            "0.65*math.sin(q.anim_time*90)"
+          ],
+          "position": [
+            0,
+            "0.22*math.sin(q.anim_time*90)",
+            0
+          ]
+        },
+        "periscope": {
+          "rotation": [
+            0,
+            "4*math.sin(q.anim_time*90)",
+            0
+          ]
+        },
+        "stern_rudder": {
+          "rotation": [
+            0,
+            "2.5*math.sin(q.anim_time*90)",
+            0
+          ]
+        },
+        "dive_fin_left": {
+          "rotation": [
+            "1.2*math.sin(q.anim_time*90)",
+            0,
+            0
+          ]
+        },
+        "dive_fin_right": {
+          "rotation": [
+            "1.2*math.sin(q.anim_time*90)",
+            0,
+            0
+          ]
+        },
+        "engine_left_front_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*90"
+          ]
+        },
+        "engine_left_rear_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*90"
+          ]
+        },
+        "engine_right_front_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*-90"
+          ]
+        },
+        "engine_right_rear_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*-90"
+          ]
+        },
+        "viewport_lens_left": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "viewport_lens_right": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "sonar_array": {
+          "rotation": [
+            0,
+            "q.anim_time*90",
+            0
+          ]
+        }
+      }
+    },
+    "animation.tideforge_metagross.physical": {
+      "loop": false,
+      "animation_length": 1.2,
+      "bones": {
+        "torso": {
+          "position": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.24": [
+              0,
+              0,
+              1.6
+            ],
+            "0.4": [
+              0,
+              0,
+              -3.6
+            ],
+            "0.58": [
+              0,
+              0,
+              -2.8
+            ],
+            "0.86": [
+              0,
+              0,
+              0.4
+            ],
+            "1.2": [
+              0,
+              0,
+              0
+            ]
+          },
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.24": [
+              -2,
+              0,
+              0
+            ],
+            "0.4": [
+              2.5,
+              0,
+              0
+            ],
+            "0.7": [
+              1,
+              0,
+              0
+            ],
+            "1.2": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "viewport_lens_left": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "viewport_lens_right": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      }
+    },
+    "animation.tideforge_metagross.special": {
+      "loop": false,
+      "animation_length": 1.2,
+      "bones": {
+        "torso": {
+          "position": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.3": [
+              0,
+              0.7,
+              0
+            ],
+            "0.65": [
+              0,
+              1,
+              0
+            ],
+            "0.85": [
+              0,
+              0.3,
+              1
+            ],
+            "1.2": [
+              0,
+              0,
+              0
+            ]
+          },
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.4": [
+              -2,
+              0,
+              0
+            ],
+            "0.85": [
+              1.5,
+              0,
+              0
+            ],
+            "1.2": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "periscope": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.3": [
+              0,
+              -12,
+              0
+            ],
+            "0.75": [
+              0,
+              12,
+              0
+            ],
+            "1.2": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "deck_hatch": {
+          "position": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.3": [
+              0,
+              0.7,
+              0
+            ],
+            "0.85": [
+              0,
+              0.7,
+              0
+            ],
+            "1.2": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "viewport_lens_left": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "viewport_lens_right": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      }
+    },
+    "animation.tideforge_metagross.status": {
+      "loop": false,
+      "animation_length": 1.2,
+      "bones": {
+        "torso": {
+          "position": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.3": [
+              0,
+              0.7,
+              0
+            ],
+            "0.65": [
+              0,
+              1,
+              0
+            ],
+            "0.85": [
+              0,
+              0.3,
+              1
+            ],
+            "1.2": [
+              0,
+              0,
+              0
+            ]
+          },
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.4": [
+              -2,
+              0,
+              0
+            ],
+            "0.85": [
+              1.5,
+              0,
+              0
+            ],
+            "1.2": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "periscope": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.3": [
+              0,
+              -12,
+              0
+            ],
+            "0.75": [
+              0,
+              12,
+              0
+            ],
+            "1.2": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "deck_hatch": {
+          "position": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.3": [
+              0,
+              0.7,
+              0
+            ],
+            "0.85": [
+              0,
+              0.7,
+              0
+            ],
+            "1.2": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "viewport_lens_left": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "viewport_lens_right": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      }
+    },
+    "animation.tideforge_metagross.battle_cry": {
+      "loop": false,
+      "animation_length": 1.2,
+      "bones": {
+        "torso": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.25": [
+              -2,
+              0,
+              0
+            ],
+            "0.45": [
+              1,
+              0,
+              -1
+            ],
+            "0.7": [
+              -1,
+              0,
+              1
+            ],
+            "1.2": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "periscope": {
+          "position": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.25": [
+              0,
+              0.5,
+              0
+            ],
+            "0.8": [
+              0,
+              0.5,
+              0
+            ],
+            "1.2": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "viewport_lens_left": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "viewport_lens_right": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      }
+    },
+    "animation.tideforge_metagross.air_battle_idle": {
+      "loop": true,
+      "animation_length": 4,
+      "bones": {
+        "torso": {
+          "rotation": [
+            "0+0.6*math.sin(q.anim_time*90)",
+            0,
+            "0.65*math.sin(q.anim_time*90)"
+          ],
+          "position": [
+            0,
+            "0.22*math.sin(q.anim_time*90)",
+            0
+          ]
+        },
+        "periscope": {
+          "rotation": [
+            0,
+            "4*math.sin(q.anim_time*90)",
+            0
+          ]
+        },
+        "stern_rudder": {
+          "rotation": [
+            0,
+            "2.5*math.sin(q.anim_time*90)",
+            0
+          ]
+        },
+        "dive_fin_left": {
+          "rotation": [
+            "1.2*math.sin(q.anim_time*90)",
+            0,
+            0
+          ]
+        },
+        "dive_fin_right": {
+          "rotation": [
+            "1.2*math.sin(q.anim_time*90)",
+            0,
+            0
+          ]
+        },
+        "engine_left_front_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*90"
+          ]
+        },
+        "engine_left_rear_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*90"
+          ]
+        },
+        "engine_right_front_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*-90"
+          ]
+        },
+        "engine_right_rear_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*-90"
+          ]
+        },
+        "viewport_lens_left": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "viewport_lens_right": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "sonar_array": {
+          "rotation": [
+            0,
+            "q.anim_time*90",
+            0
+          ]
+        }
+      }
+    },
+    "animation.tideforge_metagross.air_physical": {
+      "loop": false,
+      "animation_length": 1.2,
+      "bones": {
+        "torso": {
+          "position": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.24": [
+              0,
+              0,
+              1.6
+            ],
+            "0.4": [
+              0,
+              0,
+              -3.6
+            ],
+            "0.58": [
+              0,
+              0,
+              -2.8
+            ],
+            "0.86": [
+              0,
+              0,
+              0.4
+            ],
+            "1.2": [
+              0,
+              0,
+              0
+            ]
+          },
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.24": [
+              -2,
+              0,
+              0
+            ],
+            "0.4": [
+              2.5,
+              0,
+              0
+            ],
+            "0.7": [
+              1,
+              0,
+              0
+            ],
+            "1.2": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "viewport_lens_left": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "viewport_lens_right": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      }
+    },
+    "animation.tideforge_metagross.air_special": {
+      "loop": false,
+      "animation_length": 1.2,
+      "bones": {
+        "torso": {
+          "position": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.3": [
+              0,
+              0.7,
+              0
+            ],
+            "0.65": [
+              0,
+              1,
+              0
+            ],
+            "0.85": [
+              0,
+              0.3,
+              1
+            ],
+            "1.2": [
+              0,
+              0,
+              0
+            ]
+          },
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.4": [
+              -2,
+              0,
+              0
+            ],
+            "0.85": [
+              1.5,
+              0,
+              0
+            ],
+            "1.2": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "periscope": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.3": [
+              0,
+              -12,
+              0
+            ],
+            "0.75": [
+              0,
+              12,
+              0
+            ],
+            "1.2": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "deck_hatch": {
+          "position": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.3": [
+              0,
+              0.7,
+              0
+            ],
+            "0.85": [
+              0,
+              0.7,
+              0
+            ],
+            "1.2": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "viewport_lens_left": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "viewport_lens_right": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      }
+    },
+    "animation.tideforge_metagross.air_status": {
+      "loop": false,
+      "animation_length": 1.2,
+      "bones": {
+        "torso": {
+          "position": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.3": [
+              0,
+              0.7,
+              0
+            ],
+            "0.65": [
+              0,
+              1,
+              0
+            ],
+            "0.85": [
+              0,
+              0.3,
+              1
+            ],
+            "1.2": [
+              0,
+              0,
+              0
+            ]
+          },
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.4": [
+              -2,
+              0,
+              0
+            ],
+            "0.85": [
+              1.5,
+              0,
+              0
+            ],
+            "1.2": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "periscope": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.3": [
+              0,
+              -12,
+              0
+            ],
+            "0.75": [
+              0,
+              12,
+              0
+            ],
+            "1.2": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "deck_hatch": {
+          "position": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.3": [
+              0,
+              0.7,
+              0
+            ],
+            "0.85": [
+              0,
+              0.7,
+              0
+            ],
+            "1.2": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "viewport_lens_left": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "viewport_lens_right": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      }
+    },
+    "animation.tideforge_metagross.air_battle_cry": {
+      "loop": false,
+      "animation_length": 1.2,
+      "bones": {
+        "torso": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.25": [
+              -2,
+              0,
+              0
+            ],
+            "0.45": [
+              1,
+              0,
+              -1
+            ],
+            "0.7": [
+              -1,
+              0,
+              1
+            ],
+            "1.2": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "periscope": {
+          "position": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.25": [
+              0,
+              0.5,
+              0
+            ],
+            "0.8": [
+              0,
+              0.5,
+              0
+            ],
+            "1.2": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "viewport_lens_left": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "viewport_lens_right": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      }
+    },
+    "animation.tideforge_metagross.recoil": {
+      "loop": false,
+      "animation_length": 0.65,
+      "bones": {
+        "torso": {
+          "position": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.1": [
+              0,
+              0,
+              2
+            ],
+            "0.28": [
+              0,
+              0,
+              0.8
+            ],
+            "0.65": [
+              0,
+              0,
+              0
+            ]
+          },
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.1": [
+              -2.5,
+              0,
+              -2
+            ],
+            "0.28": [
+              1,
+              0,
+              1
+            ],
+            "0.65": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "viewport_lens_left": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "viewport_lens_right": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      }
+    },
+    "animation.tideforge_metagross.blink": {
+      "loop": false,
+      "animation_length": 0.24,
+      "bones": {
+        "viewport_lens_left": {
+          "scale": {
+            "0": [
+              1,
+              1,
+              1
+            ],
+            "0.08": [
+              1,
+              0.001,
+              1
+            ],
+            "0.14": [
+              1,
+              0.001,
+              1
+            ],
+            "0.24": [
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "viewport_lens_right": {
+          "scale": {
+            "0": [
+              1,
+              1,
+              1
+            ],
+            "0.08": [
+              1,
+              0.001,
+              1
+            ],
+            "0.14": [
+              1,
+              0.001,
+              1
+            ],
+            "0.24": [
+              1,
+              1,
+              1
+            ]
+          }
+        }
+      }
+    },
+    "animation.tideforge_metagross.air_idle": {
+      "loop": true,
+      "animation_length": 4,
+      "bones": {
+        "torso": {
+          "rotation": [
+            "0+0.6*math.sin(q.anim_time*90)",
+            0,
+            "0.65*math.sin(q.anim_time*90)"
+          ],
+          "position": [
+            0,
+            "0.22*math.sin(q.anim_time*90)",
+            0
+          ]
+        },
+        "periscope": {
+          "rotation": [
+            0,
+            "4*math.sin(q.anim_time*90)",
+            0
+          ]
+        },
+        "stern_rudder": {
+          "rotation": [
+            0,
+            "2.5*math.sin(q.anim_time*90)",
+            0
+          ]
+        },
+        "dive_fin_left": {
+          "rotation": [
+            "1.2*math.sin(q.anim_time*90)",
+            0,
+            0
+          ]
+        },
+        "dive_fin_right": {
+          "rotation": [
+            "1.2*math.sin(q.anim_time*90)",
+            0,
+            0
+          ]
+        },
+        "engine_left_front_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*90"
+          ]
+        },
+        "engine_left_rear_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*90"
+          ]
+        },
+        "engine_right_front_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*-90"
+          ]
+        },
+        "engine_right_rear_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*-90"
+          ]
+        },
+        "viewport_lens_left": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "viewport_lens_right": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "sonar_array": {
+          "rotation": [
+            0,
+            "q.anim_time*90",
+            0
+          ]
+        }
+      }
+    },
+    "animation.tideforge_metagross.air_fly": {
+      "loop": true,
+      "animation_length": 4,
+      "bones": {
+        "torso": {
+          "rotation": [
+            "-1.2+0.6*math.sin(q.anim_time*90)",
+            0,
+            "0.65*math.sin(q.anim_time*90)"
+          ],
+          "position": [
+            0,
+            "0.22*math.sin(q.anim_time*90)",
+            0
+          ]
+        },
+        "periscope": {
+          "rotation": [
+            0,
+            "4*math.sin(q.anim_time*90)",
+            0
+          ]
+        },
+        "stern_rudder": {
+          "rotation": [
+            0,
+            "2.5*math.sin(q.anim_time*90)",
+            0
+          ]
+        },
+        "dive_fin_left": {
+          "rotation": [
+            "1.2*math.sin(q.anim_time*90)",
+            0,
+            0
+          ]
+        },
+        "dive_fin_right": {
+          "rotation": [
+            "1.2*math.sin(q.anim_time*90)",
+            0,
+            0
+          ]
+        },
+        "engine_left_front_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*720"
+          ]
+        },
+        "engine_left_rear_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*720"
+          ]
+        },
+        "engine_right_front_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*-720"
+          ]
+        },
+        "engine_right_rear_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*-720"
+          ]
+        },
+        "viewport_lens_left": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "viewport_lens_right": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "sonar_array": {
+          "rotation": [
+            0,
+            "q.anim_time*90",
+            0
+          ]
+        }
+      }
+    },
+    "animation.tideforge_metagross.ride_air_idle": {
+      "loop": true,
+      "animation_length": 4,
+      "bones": {
+        "deck_hatch": {
+          "position": [
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.tideforge_metagross.ride_air_fly": {
+      "loop": true,
+      "animation_length": 4,
+      "bones": {
+        "deck_hatch": {
+          "position": [
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.tideforge_metagross.cry": {
+      "loop": false,
+      "animation_length": 1.2,
+      "bones": {
+        "torso": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.25": [
+              -2,
+              0,
+              0
+            ],
+            "0.45": [
+              1,
+              0,
+              -1
+            ],
+            "0.7": [
+              -1,
+              0,
+              1
+            ],
+            "1.2": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "periscope": {
+          "position": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.25": [
+              0,
+              0.5,
+              0
+            ],
+            "0.8": [
+              0,
+              0.5,
+              0
+            ],
+            "1.2": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "viewport_lens_left": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "viewport_lens_right": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      }
+    },
+    "animation.tideforge_metagross.sleep": {
+      "loop": true,
+      "animation_length": 4,
+      "bones": {
+        "torso": {
+          "rotation": [
+            "0+0.15*math.sin(q.anim_time*90)",
+            0,
+            "0.1*math.sin(q.anim_time*90)"
+          ],
+          "position": [
+            0,
+            "0.08*math.sin(q.anim_time*90)",
+            0
+          ]
+        },
+        "periscope": {
+          "rotation": [
+            0,
+            0,
+            0
+          ]
+        },
+        "stern_rudder": {
+          "rotation": [
+            0,
+            "0.3*math.sin(q.anim_time*90)",
+            0
+          ]
+        },
+        "dive_fin_left": {
+          "rotation": [
+            "0.2*math.sin(q.anim_time*90)",
+            0,
+            0
+          ]
+        },
+        "dive_fin_right": {
+          "rotation": [
+            "0.2*math.sin(q.anim_time*90)",
+            0,
+            0
+          ]
+        },
+        "engine_left_front_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*0"
+          ]
+        },
+        "engine_left_rear_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*0"
+          ]
+        },
+        "engine_right_front_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*0"
+          ]
+        },
+        "engine_right_rear_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*0"
+          ]
+        },
+        "viewport_lens_left": {
+          "scale": [
+            1,
+            0.001,
+            1
+          ]
+        },
+        "viewport_lens_right": {
+          "scale": [
+            1,
+            0.001,
+            1
+          ]
+        },
+        "sonar_array": {
+          "rotation": [
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.tideforge_metagross.walkspeedtest": {
+      "loop": true,
+      "animation_length": 4,
+      "bones": {
+        "torso": {
+          "rotation": [
+            "-1.2+0.6*math.sin(q.anim_time*90)",
+            0,
+            "0.65*math.sin(q.anim_time*90)"
+          ],
+          "position": [
+            0,
+            "0.22*math.sin(q.anim_time*90)",
+            0
+          ]
+        },
+        "periscope": {
+          "rotation": [
+            0,
+            "4*math.sin(q.anim_time*90)",
+            0
+          ]
+        },
+        "stern_rudder": {
+          "rotation": [
+            0,
+            "2.5*math.sin(q.anim_time*90)",
+            0
+          ]
+        },
+        "dive_fin_left": {
+          "rotation": [
+            "1.2*math.sin(q.anim_time*90)",
+            0,
+            0
+          ]
+        },
+        "dive_fin_right": {
+          "rotation": [
+            "1.2*math.sin(q.anim_time*90)",
+            0,
+            0
+          ]
+        },
+        "engine_left_front_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*360"
+          ]
+        },
+        "engine_left_rear_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*360"
+          ]
+        },
+        "engine_right_front_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*-360"
+          ]
+        },
+        "engine_right_rear_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*-360"
+          ]
+        },
+        "viewport_lens_left": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "viewport_lens_right": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "sonar_array": {
+          "rotation": [
+            0,
+            "q.anim_time*90",
+            0
+          ]
+        }
+      }
+    },
+    "animation.tideforge_metagross.runspeedtest": {
+      "loop": true,
+      "animation_length": 4,
+      "bones": {
+        "torso": {
+          "rotation": [
+            "-1.2+0.6*math.sin(q.anim_time*90)",
+            0,
+            "0.65*math.sin(q.anim_time*90)"
+          ],
+          "position": [
+            0,
+            "0.22*math.sin(q.anim_time*90)",
+            0
+          ]
+        },
+        "periscope": {
+          "rotation": [
+            0,
+            "4*math.sin(q.anim_time*90)",
+            0
+          ]
+        },
+        "stern_rudder": {
+          "rotation": [
+            0,
+            "2.5*math.sin(q.anim_time*90)",
+            0
+          ]
+        },
+        "dive_fin_left": {
+          "rotation": [
+            "1.2*math.sin(q.anim_time*90)",
+            0,
+            0
+          ]
+        },
+        "dive_fin_right": {
+          "rotation": [
+            "1.2*math.sin(q.anim_time*90)",
+            0,
+            0
+          ]
+        },
+        "engine_left_front_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*720"
+          ]
+        },
+        "engine_left_rear_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*720"
+          ]
+        },
+        "engine_right_front_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*-720"
+          ]
+        },
+        "engine_right_rear_propeller": {
+          "rotation": [
+            0,
+            0,
+            "q.anim_time*-720"
+          ]
+        },
+        "viewport_lens_left": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "viewport_lens_right": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "sonar_array": {
+          "rotation": [
+            0,
+            "q.anim_time*90",
+            0
+          ]
+        }
+      }
+    },
+    "animation.tideforge_metagross.shock": {
+      "loop": false,
+      "animation_length": 0.65,
+      "bones": {
+        "torso": {
+          "position": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.1": [
+              0,
+              0,
+              2
+            ],
+            "0.28": [
+              0,
+              0,
+              0.8
+            ],
+            "0.65": [
+              0,
+              0,
+              0
+            ]
+          },
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.1": [
+              -2.5,
+              0,
+              -2
+            ],
+            "0.28": [
+              1,
+              0,
+              1
+            ],
+            "0.65": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "viewport_lens_left": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "viewport_lens_right": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      }
+    },
+    "animation.tideforge_metagross.angry": {
+      "loop": false,
+      "animation_length": 1.2,
+      "bones": {
+        "torso": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.25": [
+              -2,
+              0,
+              0
+            ],
+            "0.45": [
+              1,
+              0,
+              -1
+            ],
+            "0.7": [
+              -1,
+              0,
+              1
+            ],
+            "1.2": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "periscope": {
+          "position": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.25": [
+              0,
+              0.5,
+              0
+            ],
+            "0.8": [
+              0,
+              0.5,
+              0
+            ],
+            "1.2": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "viewport_lens_left": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "viewport_lens_right": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      }
+    },
+    "animation.tideforge_metagross.sad": {
+      "loop": false,
+      "animation_length": 1.2,
+      "bones": {
+        "torso": {
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.4": [
+              2.5,
+              0,
+              0
+            ],
+            "0.8": [
+              2.5,
+              0,
+              0
+            ],
+            "1.2": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "viewport_lens_left": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "viewport_lens_right": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      }
+    },
+    "animation.tideforge_metagross.happy": {
+      "loop": false,
+      "animation_length": 1.2,
+      "bones": {
+        "torso": {
+          "position": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.3": [
+              0,
+              0.8,
+              0
+            ],
+            "0.6": [
+              0,
+              0,
+              0
+            ],
+            "0.9": [
+              0,
+              0.5,
+              0
+            ],
+            "1.2": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "viewport_lens_left": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "viewport_lens_right": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      }
+    },
+    "animation.tideforge_metagross.hurt": {
+      "loop": false,
+      "animation_length": 0.65,
+      "bones": {
+        "torso": {
+          "position": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.1": [
+              0,
+              0,
+              2
+            ],
+            "0.28": [
+              0,
+              0,
+              0.8
+            ],
+            "0.65": [
+              0,
+              0,
+              0
+            ]
+          },
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.1": [
+              -2.5,
+              0,
+              -2
+            ],
+            "0.28": [
+              1,
+              0,
+              1
+            ],
+            "0.65": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "viewport_lens_left": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "viewport_lens_right": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      }
+    },
+    "animation.tideforge_metagross.scale": {
+      "loop": false,
+      "animation_length": 1.2,
+      "bones": {
+        "torso": {
+          "rotation": [
+            0,
+            0,
+            0
+          ]
+        },
+        "viewport_lens_left": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "viewport_lens_right": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      }
+    },
+    "animation.tideforge_metagross.render": {
+      "loop": false,
+      "animation_length": 1.2,
+      "bones": {
+        "torso": {
+          "rotation": [
+            0,
+            0,
+            0
+          ]
+        },
+        "viewport_lens_left": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "viewport_lens_right": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      }
+    },
+    "animation.tideforge_metagross.behold:man": {
+      "loop": false,
+      "animation_length": 1.2,
+      "bones": {
+        "torso": {
+          "position": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.24": [
+              0,
+              0,
+              1.6
+            ],
+            "0.4": [
+              0,
+              0,
+              -3.6
+            ],
+            "0.58": [
+              0,
+              0,
+              -2.8
+            ],
+            "0.86": [
+              0,
+              0,
+              0.4
+            ],
+            "1.2": [
+              0,
+              0,
+              0
+            ]
+          },
+          "rotation": {
+            "0": [
+              0,
+              0,
+              0
+            ],
+            "0.24": [
+              -2,
+              0,
+              0
+            ],
+            "0.4": [
+              2.5,
+              0,
+              0
+            ],
+            "0.7": [
+              1,
+              0,
+              0
+            ],
+            "1.2": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "viewport_lens_left": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "viewport_lens_right": {
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      }
+    }
+  }
+}

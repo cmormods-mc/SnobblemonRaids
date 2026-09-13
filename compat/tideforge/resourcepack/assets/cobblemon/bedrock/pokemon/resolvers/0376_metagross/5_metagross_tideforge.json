@@ -1,0 +1,22 @@
+{
+  "species": "cobblemon:metagross",
+  "order": 5,
+  "variations": [
+    {
+      "aspects": [
+        "tideforge"
+      ],
+      "poser": "cobblemon:tideforge_metagross",
+      "model": "cobblemon:tideforge_metagross.geo",
+      "texture": "cobblemon:textures/pokemon/0376_tideforge_metagross/tideforge_metagross.png",
+      "layers": []
+    },
+    {
+      "aspects": [
+        "shiny",
+        "tideforge"
+      ],
+      "texture": "cobblemon:textures/pokemon/0376_tideforge_metagross/tideforge_metagross_shiny.png"
+    }
+  ]
+}
