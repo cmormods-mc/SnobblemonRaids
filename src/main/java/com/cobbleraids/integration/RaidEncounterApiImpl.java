@@ -53,7 +53,7 @@ public final class RaidEncounterApiImpl implements RaidEncounterApi {
             double healthMultiplier,
             Consumer<RaidEncounterResult> completion
     ) {
-        RaidThreadGuard.expectServerThread("api:start-external-encounter");
+        requireServerThread("api:start-external-encounter");
         Objects.requireNonNull(level, "level");
         Objects.requireNonNull(bossPosition, "bossPosition");
         Objects.requireNonNull(participants, "participants");
@@ -72,7 +72,6 @@ public final class RaidEncounterApiImpl implements RaidEncounterApi {
             throw new IllegalArgumentException("Participant snapshot exceeds raid capacity");
         }
         for (ServerPlayer player : players) {
-            if (player == null) throw new IllegalArgumentException("participants may not contain null");
             if (player.level() != level) throw new IllegalStateException("All participants must be in the encounter level");
         }
 
@@ -94,18 +93,15 @@ public final class RaidEncounterApiImpl implements RaidEncounterApi {
                     session.getDefinitionId()
             );
         } catch (RuntimeException ex) {
-            if (session != null) {
-                RaidLifecycleCoordinator.abort(session);
-            } else if (!bossEntity.isRemoved()) {
-                bossEntity.discard();
-            }
+            if (session != null) RaidLifecycleCoordinator.abort(session);
+            else if (!bossEntity.isRemoved()) bossEntity.discard();
             throw ex;
         }
     }
 
     @Override
     public boolean withdraw(RaidEncounterHandle handle, ServerPlayer player) {
-        RaidThreadGuard.expectServerThread("api:withdraw-external-encounter");
+        requireServerThread("api:withdraw-external-encounter");
         Objects.requireNonNull(handle, "handle");
         Objects.requireNonNull(player, "player");
         RaidSession raid = resolve(handle);
@@ -114,12 +110,18 @@ public final class RaidEncounterApiImpl implements RaidEncounterApi {
 
     @Override
     public boolean abort(RaidEncounterHandle handle) {
-        RaidThreadGuard.expectServerThread("api:abort-external-encounter");
+        requireServerThread("api:abort-external-encounter");
         Objects.requireNonNull(handle, "handle");
         RaidSession raid = resolve(handle);
         if (raid == null) return false;
         RaidLifecycleCoordinator.abort(raid);
         return true;
+    }
+
+    private static void requireServerThread(String context) {
+        if (!RaidThreadGuard.expectServerThread(context)) {
+            throw new IllegalStateException("CobbleRaids encounter API must be called on the Minecraft server thread");
+        }
     }
 
     private static RaidSession resolve(RaidEncounterHandle handle) {
