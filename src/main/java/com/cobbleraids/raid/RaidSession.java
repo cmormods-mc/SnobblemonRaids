@@ -30,16 +30,25 @@ public final class RaidSession {
     private final UUID bossActorId;
     private final ResourceLocation definitionId;
     private final boolean allowFlee;
+    private final RaidCompletionPolicy completionPolicy;
     private final RaidProgress progress;
 
     public RaidSession(PokemonBattle battle, Collection<ServerPlayer> players, float maxHealth,
                        PokemonEntity bossEntity, UUID bossActorId, ResourceLocation definitionId,
                        int timeLimitSeconds, boolean allowFlee) {
+        this(battle, players, maxHealth, bossEntity, bossActorId, definitionId, timeLimitSeconds,
+                allowFlee, RaidCompletionPolicy.STANDARD);
+    }
+
+    public RaidSession(PokemonBattle battle, Collection<ServerPlayer> players, float maxHealth,
+                       PokemonEntity bossEntity, UUID bossActorId, ResourceLocation definitionId,
+                       int timeLimitSeconds, boolean allowFlee, RaidCompletionPolicy completionPolicy) {
         this.battle = Objects.requireNonNull(battle, "battle");
         this.bossEntity = Objects.requireNonNull(bossEntity, "bossEntity");
         this.bossActorId = Objects.requireNonNull(bossActorId, "bossActorId");
         this.definitionId = Objects.requireNonNull(definitionId, "definitionId");
         this.allowFlee = allowFlee;
+        this.completionPolicy = Objects.requireNonNull(completionPolicy, "completionPolicy");
         List<UUID> playerIds = new ArrayList<>(players.size());
         for (ServerPlayer player : players) playerIds.add(player.getUUID());
         this.progress = new RaidProgress(maxHealth, timeLimitSeconds, playerIds);
@@ -51,6 +60,8 @@ public final class RaidSession {
     public UUID getBossActorId() { return bossActorId; }
     public ResourceLocation getDefinitionId() { return definitionId; }
     public boolean isFleeAllowed() { return allowFlee; }
+    public RaidCompletionPolicy getCompletionPolicy() { return completionPolicy; }
+    public boolean isExternalEncounter() { return completionPolicy == RaidCompletionPolicy.EXTERNAL; }
 
     public Set<UUID> getParticipants() { return progress.participants(); }
     public Set<UUID> getActiveParticipants() { return progress.activeParticipants(); }
