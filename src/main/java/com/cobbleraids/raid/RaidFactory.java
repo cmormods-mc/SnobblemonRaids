@@ -29,8 +29,15 @@ public final class RaidFactory {
 
     public static RaidSession startFromWildBoss(Collection<ServerPlayer> players, RaidDefinition definition,
                                                  PokemonEntity bossEntity, long raidMaxHealth) {
+        return startFromWildBoss(players, definition, bossEntity, raidMaxHealth, RaidCompletionPolicy.STANDARD);
+    }
+
+    public static RaidSession startFromWildBoss(Collection<ServerPlayer> players, RaidDefinition definition,
+                                                 PokemonEntity bossEntity, long raidMaxHealth,
+                                                 RaidCompletionPolicy completionPolicy) {
         Objects.requireNonNull(definition, "definition");
         Objects.requireNonNull(bossEntity, "bossEntity");
+        Objects.requireNonNull(completionPolicy, "completionPolicy");
         if (!RaidBossEntityMarker.isRaidBoss(bossEntity)) throw new IllegalArgumentException("Boss entity is not marked as a CobbleRaids boss");
         if (bossEntity.isRemoved() || bossEntity.isBattling()) throw new IllegalStateException("Boss is unavailable or already battling");
         if (players == null || players.isEmpty()) throw new IllegalArgumentException("Raid requires at least one player");
@@ -70,7 +77,8 @@ public final class RaidFactory {
                 bossActor.getUuid(),
                 definition.id(),
                 definition.timeLimitSeconds(),
-                definition.allowFlee()
+                definition.allowFlee(),
+                completionPolicy
         );
         RaidRegistry.bind(session);
         session.activate();
