@@ -7,6 +7,7 @@ import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.config.RaidDefinitionRegistry;
 import com.cobbleraids.fault.RaidThreadGuard;
+import com.cobbleraids.raid.ExternalEncounterCallbacks;
 import com.cobbleraids.raid.RaidRegistry;
 import com.cobbleraids.raid.RaidSession;
 import com.cobbleraids.reward.ContributionMath;
@@ -35,18 +36,14 @@ public final class RaidLifecycleCoordinator {
 
     private RaidLifecycleCoordinator() {}
 
-    /** Called after RaidSession reaches COMPLETED. */
     public static void requestVictory(RaidSession raid) {
         if (raid == null || raid.getStatus() != RaidSession.Status.COMPLETED) return;
         if (!VICTORY_REQUESTED.add(raid.getId())) return;
-
         PokemonBattle battle = raid.getBattle();
         String winners = raid.getActiveParticipants().stream()
                 .map(UUID::toString)
                 .collect(Collectors.joining("&"));
-        if (!winners.isEmpty() && !battle.getEnded()) {
-            battle.writeShowdownAction(">raidwin " + winners);
-        }
+        if (!winners.isEmpty() && !battle.getEnded()) battle.writeShowdownAction(">raidwin " + winners);
     }
 
     public static void onBattleVictory(com.cobblemon.mod.common.api.events.battles.BattleVictoryEvent event) {
@@ -69,12 +66,11 @@ public final class RaidLifecycleCoordinator {
 
         if (!event.getWinners().isEmpty()) {
             if (raid.completeViaRealFaint()) finalizeVictory(raid);
-        } else {
-            if (raid.fail()) finalizeAfterBattleEnded(raid);
+        } else if (raid.fail()) {
+            finalizeAfterBattleEnded(raid);
         }
     }
 
-    /** Fallback for a Cobblemon flee event that escaped the explicit raid-forfeit interception. */
     public static void onPlayerFled(PokemonBattle battle, UUID playerId) {
         RaidSession raid = RaidRegistry.get(battle);
         if (raid == null || raid.getStatus() != RaidSession.Status.ACTIVE) return;
@@ -82,10 +78,6 @@ public final class RaidLifecycleCoordinator {
         if (raid.failIfNoActiveParticipants()) finalizeNonVictory(raid);
     }
 
-    /**
-     * Explicit player withdrawal. Cobblemon keeps the actor until the shared battle ends, while the
-     * raid makes that side inert and closes only that player's battle UI.
-     */
     public static boolean withdrawPlayer(RaidSession raid, ServerPlayer player) {
         if (raid == null || player == null || raid.getStatus() != RaidSession.Status.ACTIVE) return false;
         UUID playerId = player.getUUID();
@@ -113,11 +105,9 @@ public final class RaidLifecycleCoordinator {
         return true;
     }
 
-    /** Disconnects cannot be rejected, so they are treated as a withdrawal. */
     public static void onPlayerDisconnected(RaidSession raid, UUID playerId) {
         if (raid == null || playerId == null || raid.getStatus() != RaidSession.Status.ACTIVE) return;
         if (!raid.removeParticipant(playerId)) return;
-
         PokemonBattle battle = raid.getBattle();
         BattleActor actor = battle.getActor(playerId);
         if (actor != null) {
@@ -149,10 +139,8 @@ public final class RaidLifecycleCoordinator {
     public static void onBattleFainted(PokemonBattle battle) {
         RaidSession raid = RaidRegistry.get(battle);
         if (raid == null || raid.getStatus() != RaidSession.Status.ACTIVE) return;
-        // A single faint is intentionally non-terminal. Showdown requests replacement normally.
     }
 
-    /** Administrative cancellation; it never counts as a failed boss attempt. */
     public static void abort(RaidSession raid) {
         if (raid == null || !raid.abort()) return;
         finalizeNonVictory(raid, false);
@@ -165,8 +153,6 @@ public final class RaidLifecycleCoordinator {
 
         FINALIZATION.finalizeOnce(raid.getId(), () -> {
             if (raid.isExternalEncounter()) {
-                // External encounters own rewards/progression. CobbleRaids still owns party-state
-                // carryover because it owns the shared Cobblemon battle and its BattlePokemon clones.
                 RaidBattleStateCarryover.apply(raid);
             } else {
                 RaidProgressionTransfer.grant(raid, server);
@@ -178,13 +164,13 @@ public final class RaidLifecycleCoordinator {
             RaidRegistry.remove(raid.getBattle());
             cleanupBossEntity(raid);
             VICTORY_REQUESTED.remove(raid.getId());
+            ExternalEncounterCallbacks.complete(raid);
         });
     }
 
     private static void recordAndOfferCatch(RaidSession raid, MinecraftServer server) {
         RaidDefinition definition = RaidDefinitionRegistry.get(raid.getDefinitionId());
         if (definition == null) return;
-
         var boss = raid.getBossEntity();
         Pokemon bossPokemon = boss == null ? null : boss.getPokemon();
         Set<UUID> victors = raid.getActiveParticipants();
@@ -193,9 +179,7 @@ public final class RaidLifecycleCoordinator {
                 raid.getContributionSnapshot(), victors);
 
         Map<UUID, Double> earned = new LinkedHashMap<>();
-        for (UUID playerId : victors) {
-            earned.put(playerId, contributions.getOrDefault(playerId, 0.0));
-        }
+        for (UUID playerId : victors) earned.put(playerId, contributions.getOrDefault(playerId, 0.0));
         RaidPlayerRecords.recordWins(server, definition.rarityTier(), definition.id(), earned);
 
         for (UUID playerId : victors) {
@@ -206,7 +190,6 @@ public final class RaidLifecycleCoordinator {
         }
     }
 
-    /** Used when Cobblemon/Showdown already ended the battle and then emitted BATTLE_VICTORY. */
     private static void finalizeAfterBattleEnded(RaidSession raid) {
         RaidCombatRuleService.forget(raid.getId());
         FINALIZATION.finalizeOnce(raid.getId(),
@@ -215,15 +198,14 @@ public final class RaidLifecycleCoordinator {
                     RaidRegistry.remove(raid.getBattle());
                     cleanupAfterFailure(raid, true);
                     VICTORY_REQUESTED.remove(raid.getId());
+                    ExternalEncounterCallbacks.complete(raid);
                 });
     }
 
-    /** Every ordinary way a raid is lost. */
     private static void finalizeNonVictory(RaidSession raid) {
         finalizeNonVictory(raid, true);
     }
 
-    /** Used for timeout/flee/abort paths where no normal Showdown win packet is guaranteed. */
     private static void finalizeNonVictory(RaidSession raid, boolean countsAsFailedAttempt) {
         RaidCombatRuleService.forget(raid.getId());
         PokemonBattle battle = raid.getBattle();
@@ -234,19 +216,13 @@ public final class RaidLifecycleCoordinator {
                     RaidRegistry.remove(battle);
                     cleanupAfterFailure(raid, countsAsFailedAttempt);
                     VICTORY_REQUESTED.remove(raid.getId());
+                    ExternalEncounterCallbacks.complete(raid);
                 });
     }
 
-    /**
-     * External encounters are single-use by definition, so their boss is always discarded. Standard
-     * raids retain the existing failed-attempt/retry behavior.
-     */
     private static void cleanupAfterFailure(RaidSession raid, boolean countsAsFailedAttempt) {
-        if (raid.isExternalEncounter() || !countsAsFailedAttempt) {
-            cleanupBossEntity(raid);
-        } else {
-            releaseBossAfterFailure(raid);
-        }
+        if (raid.isExternalEncounter() || !countsAsFailedAttempt) cleanupBossEntity(raid);
+        else releaseBossAfterFailure(raid);
     }
 
     private static void releaseBossAfterFailure(RaidSession raid) {
@@ -259,8 +235,8 @@ public final class RaidLifecycleCoordinator {
         int attempts = RaidBossEntityMarker.recordFailedAttempt(boss);
         CobbleRaidsConfig.CombatDefaults combat = CobbleRaidsConfigManager.get().combatDefaults();
         boolean spent = combat.attemptsAreLimited() && attempts >= combat.maxFailedAttempts();
-
         MinecraftServer server = ((ServerLevel) boss.level()).getServer();
+
         if (spent) {
             announce(server, raid, Component.literal("The raid boss has driven off enough challengers and departs.")
                     .withStyle(ChatFormatting.RED));
@@ -291,12 +267,11 @@ public final class RaidLifecycleCoordinator {
         if (boss != null && !boss.isRemoved()) boss.discard();
     }
 
-    public static int finalizationsInFlight() {
-        return FINALIZATION.size();
-    }
+    public static int finalizationsInFlight() { return FINALIZATION.size(); }
 
     public static void onServerStopped() {
         FINALIZATION.clear();
         VICTORY_REQUESTED.clear();
+        ExternalEncounterCallbacks.onServerStopped();
     }
 }
