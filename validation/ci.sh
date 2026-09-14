@@ -25,6 +25,7 @@ run "Real texture art" python3 validation/validate_phase40.py
 run "Logging discipline" python3 validation/validate_logging.py
 run "Callback fault barriers" python3 validation/validate_callback_guards.py
 run "Tower integration API boundary" python3 validation/validate_tower_integration_api.py
+run "External encounter lifecycle isolation" python3 validation/validate_external_encounter_lifecycle.py
 run "Reward economy manifest" python3 validation/economy/validate_economy_manifest.py
 run "Generated reward tables" python3 validation/economy/build_tables.py --check
 run "Exact reward probabilities" python3 validation/economy/validate_economy_probabilities.py
