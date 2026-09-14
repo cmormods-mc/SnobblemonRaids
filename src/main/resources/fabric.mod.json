@@ -13,7 +13,10 @@
   "license": "MIT",
   "environment": "*",
   "entrypoints": {
-    "main": ["com.cobbleraids.CobbleRaids"],
+    "main": [
+      "com.cobbleraids.CobbleRaids",
+      "com.cobbleraids.integration.CobbleRaidsApiBootstrap"
+    ],
     "client": ["com.cobbleraids.client.CobbleRaidsClient"]
   },
   "mixins": ["mixins/cobbleraids.mixins.json"],
