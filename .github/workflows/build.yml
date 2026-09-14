@@ -2,7 +2,9 @@ name: Fabric Loom Build
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - feature/tower-integration-api
   pull_request:
   workflow_dispatch:
 
@@ -55,6 +57,9 @@ jobs:
       - name: Validate callback fault barriers
         run: python3 validation/validate_callback_guards.py
 
+      - name: Validate tower integration API boundary
+        run: python3 validation/validate_tower_integration_api.py
+
       - name: Validate reward-economy manifest
         run: python3 validation/economy/validate_economy_manifest.py
 
@@ -70,13 +75,10 @@ jobs:
       - name: Compile and remap
         run: gradle --no-daemon clean build --stacktrace --warning-mode all
 
-      # After the build on purpose: this reads compiled bytecode, so there is nothing to inspect
-      # until the classes exist. `clean` above also wipes anything a previous run left behind.
       - name: Validate mixin fault barriers
         run: python3 validation/validate_mixin_guards.py
 
       - name: Validate runtime JAR
-        # Derived from build.gradle so a version bump cannot silently skip JAR validation.
         run: |
           version=$(sed -n "s/^version = '\(.*\)'$/\1/p" build.gradle)
           jar="build/libs/CobbleRaids-${version}.jar"
