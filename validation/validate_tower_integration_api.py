@@ -1,24 +1,9 @@
 #!/usr/bin/env python3
 """
-Validation notes
-================
-Exact functionality:
-- Verifies the dedicated `com.cobbleraids.api` package exists and contains the initial public
-  Tower integration contract types.
-- Rejects imports from CobbleRaids implementation packages inside those public API files.
-- Rejects mutable runtime implementation types such as RaidSession, PokemonBattle, and
-  PokemonEntity from the API surface.
+Validates the public CobbleRaids addon boundary without loading Minecraft.
 
-Architectural role:
-- Enforces the anti-corruption boundary mechanically in CI so addon-facing contracts remain stable
-  even while CobbleRaids internals evolve.
-
-Performance impact:
-- CI-only filesystem validation; zero runtime server cost.
-
-Assumptions and constraints:
-- This validates API shape, not runtime encounter semantics. External encounter reward/cleanup
-  behavior is covered by lifecycle tests as that implementation is added.
+This deliberately checks public surface shape only. Runtime lifecycle semantics are validated by
+validate_external_encounter_lifecycle.py and by the full build/server regression workflow.
 """
 
 from pathlib import Path
@@ -29,7 +14,9 @@ ROOT = Path(__file__).resolve().parents[1]
 API_DIR = ROOT / "src/main/java/com/cobbleraids/api"
 
 REQUIRED = {
+    "CobbleRaidsApi.java",
     "RaidBossDescriptor.java",
+    "RaidEncounterApi.java",
     "RaidEncounterHandle.java",
     "RaidEncounterOutcome.java",
     "RaidEncounterResult.java",
@@ -65,7 +52,6 @@ if missing:
 
 for path in sorted(API_DIR.glob("*.java")):
     text = path.read_text(encoding="utf-8")
-
     package_match = re.search(r"^package\s+([^;]+);", text, re.MULTILINE)
     if not package_match or package_match.group(1) != "com.cobbleraids.api":
         fail(f"{path.name} is not declared in com.cobbleraids.api")
@@ -77,5 +63,14 @@ for path in sorted(API_DIR.glob("*.java")):
     for type_name in FORBIDDEN_TYPES:
         if re.search(rf"\b{re.escape(type_name)}\b", text):
             fail(f"{path.name} exposes forbidden runtime type {type_name}")
+
+api_text = (API_DIR / "RaidEncounterApi.java").read_text(encoding="utf-8")
+for method in ("bosses(", "boss(", "start(", "withdraw(", "abort("):
+    if method not in api_text:
+        fail(f"RaidEncounterApi is missing required method {method[:-1]}")
+
+facade_text = (API_DIR / "CobbleRaidsApi.java").read_text(encoding="utf-8")
+if "RaidEncounterApi encounters()" not in facade_text:
+    fail("CobbleRaidsApi does not expose the encounter service")
 
 print(f"tower integration API boundary OK ({len(present)} public API source files checked)")
