@@ -1,48 +1,62 @@
 package com.cobbleraids.raid;
 
 import com.cobblemon.mod.common.api.battles.model.PokemonBattle;
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** Thread-safe association between one Cobblemon battle and one raid session. */
+/** Thread-safe association between battle ids, raid ids, and active raid sessions. */
 public final class RaidRegistry {
     private static final Map<UUID, RaidSession> BY_BATTLE = new ConcurrentHashMap<>();
+    private static final Map<UUID, RaidSession> BY_RAID = new ConcurrentHashMap<>();
+
     private RaidRegistry() {}
 
     public static void bind(RaidSession session) {
-        Objects.requireNonNull(session);
-        BY_BATTLE.put(session.getBattle().getBattleId(), session);
+        Objects.requireNonNull(session, "session");
+        RaidSession previousBattle = BY_BATTLE.putIfAbsent(session.getBattle().getBattleId(), session);
+        if (previousBattle != null) throw new IllegalStateException("Battle already has a raid session");
+
+        RaidSession previousRaid = BY_RAID.putIfAbsent(session.getId(), session);
+        if (previousRaid != null) {
+            BY_BATTLE.remove(session.getBattle().getBattleId(), session);
+            throw new IllegalStateException("Raid id already registered: " + session.getId());
+        }
     }
 
     public static RaidSession get(PokemonBattle battle) {
         return battle == null ? null : BY_BATTLE.get(battle.getBattleId());
     }
 
+    public static RaidSession get(UUID raidId) {
+        return raidId == null ? null : BY_RAID.get(raidId);
+    }
+
     public static Collection<RaidSession> all() {
         return List.copyOf(BY_BATTLE.values());
     }
 
-    /** Cheap pre-check so a tick-driven caller can skip the defensive copy in all() when idle. */
     public static boolean isEmpty() {
         return BY_BATTLE.isEmpty();
     }
 
     public static void remove(PokemonBattle battle) {
-        if (battle != null) BY_BATTLE.remove(battle.getBattleId());
+        if (battle == null) return;
+        RaidSession removed = BY_BATTLE.remove(battle.getBattleId());
+        if (removed != null) BY_RAID.remove(removed.getId(), removed);
     }
 
-    public static boolean contains(PokemonBattle battle) { return get(battle) != null; }
+    public static boolean contains(PokemonBattle battle) {
+        return get(battle) != null;
+    }
 
-    /**
-     * Drops every session once the server is gone. A RaidSession holds its PokemonBattle and its
-     * boss PokemonEntity, and an entity reaches its ServerLevel, so a session left here after a
-     * world closes pins that entire world in memory. An integrated (single-player) client reuses
-     * this JVM for every world it opens, so the leak is per world visited, and the stale battle ids
-     * would also be consulted against the next world's battles.
-     */
     public static int onServerStopped() {
         int dropped = BY_BATTLE.size();
         BY_BATTLE.clear();
+        BY_RAID.clear();
         return dropped;
     }
 }
