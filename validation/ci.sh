@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Provider-independent CobbleRaids validation entrypoint.
-# Keep this script as the canonical sequence used locally and by hosted CI wrappers.
-
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
+
+GRADLE=(gradle)
+if [[ -x ./gradlew ]]; then GRADLE=(./gradlew); fi
 
 pass() { printf '[PASS] %s\n' "$1"; }
 run() {
@@ -30,7 +30,7 @@ run "Reward economy manifest" python3 validation/economy/validate_economy_manife
 run "Generated reward tables" python3 validation/economy/build_tables.py --check
 run "Exact reward probabilities" python3 validation/economy/validate_economy_probabilities.py
 run "Shop test catalogue" python3 validation/shop/build_test_catalog.py --check
-run "Clean compile, tests, and remap" gradle --no-daemon clean build --stacktrace --warning-mode all
+run "Clean compile, tests, and remap" "${GRADLE[@]}" --no-daemon clean build --stacktrace --warning-mode all
 run "Compiled mixin fault barriers" python3 validation/validate_mixin_guards.py
 
 version=$(sed -n "s/^version = '\(.*\)'$/\1/p" build.gradle)
