@@ -1,8 +1,9 @@
 plugins {
     id 'fabric-loom' version '1.13.6'
+    id 'maven-publish'
 }
 
-version = '0.8.93-renown'
+version = '0.8.94-encounter-api'
 group = 'com.cobbleraids'
 
 base {
@@ -73,6 +74,17 @@ processResources {
     inputs.property 'version', modVersion
     filesMatching('fabric.mod.json') {
         expand version: modVersion
+    }
+}
+
+// Consumed by CobbleTowers through `gradlew publishToMavenLocal`. The java component carries the
+// remapped jar and the sources jar; the two data-only add-on jars are not published.
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId = 'cobbleraids'
+            from components.java
+        }
     }
 }
 
