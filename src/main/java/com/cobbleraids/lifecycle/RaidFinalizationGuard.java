@@ -33,27 +33,44 @@ public final class RaidFinalizationGuard {
     private final Set<UUID> claimed = ConcurrentHashMap.newKeySet();
 
     /**
-     * Claims {@code raidId}, runs {@code sideEffects}, then always runs {@code cleanup} and releases
-     * the claim. Does nothing at all if the raid is already being finalized.
+     * Claims {@code raidId}, runs {@code sideEffects}, then runs every one of {@code cleanupSteps}
+     * and releases the claim. Does nothing at all if the raid is already being finalized.
+     *
+     * <p>Each cleanup step runs even when an earlier one throws. Cleanup is a list of separate
+     * obligations -- end the battle, drop the registry entry, release the boss -- and when it was one
+     * block, a throw from ending the battle skipped the rest and stranded the raid exactly as a
+     * skipped cleanup would have. The first failure, side effects included, propagates once
+     * everything has run; later ones are attached to it as suppressed so the report loses nothing.
      *
      * @return true if this call owned the finalization, false if another already did
      */
-    public boolean finalizeOnce(UUID raidId, Runnable sideEffects, Runnable cleanup) {
+    public boolean finalizeOnce(UUID raidId, Runnable sideEffects, Runnable... cleanupSteps) {
         if (!claimed.add(raidId)) return false;
+        Throwable failure = null;
         try {
-            sideEffects.run();
+            failure = attempt(sideEffects, null);
+            for (Runnable step : cleanupSteps) failure = attempt(step, failure);
         } finally {
-            // Nested, so a failure in cleanup itself cannot leak the claim either. A leaked claim is
-            // the worst outcome available here: it makes the raid permanently unfinalizable, and
-            // unlike the boss entity or the registry entry there is nothing else that would ever
-            // release it.
-            try {
-                cleanup.run();
-            } finally {
-                claimed.remove(raidId);
-            }
+            // A leaked claim is the worst outcome available here: it makes the raid permanently
+            // unfinalizable, and unlike the boss entity or the registry entry there is nothing else
+            // that would ever release it.
+            claimed.remove(raidId);
         }
+        if (failure instanceof RuntimeException runtime) throw runtime;
+        if (failure instanceof Error error) throw error;
+        if (failure != null) throw new IllegalStateException(failure);
         return true;
+    }
+
+    /** Runs {@code step}, returning the first failure seen so far with any new one suppressed onto it. */
+    private static Throwable attempt(Runnable step, Throwable failure) {
+        try {
+            step.run();
+        } catch (Throwable thrown) {
+            if (failure == null) return thrown;
+            if (thrown != failure) failure.addSuppressed(thrown);
+        }
+        return failure;
     }
 
     /** True while a finalization is in flight for this raid. */
