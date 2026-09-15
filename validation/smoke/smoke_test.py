@@ -37,6 +37,7 @@ CobbleRaids jar, so you are always testing what you just built.
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
 import shutil
@@ -44,6 +45,7 @@ import signal
 import subprocess
 import sys
 import time
+import zipfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -239,11 +241,24 @@ def project_version() -> str:
     raise AssertionError("build.gradle has no version assignment")
 
 
+def is_cobbleraids_jar(path: Path) -> bool:
+    try:
+        with zipfile.ZipFile(path) as jar:
+            meta = json.loads(jar.read("fabric.mod.json"))
+    except (KeyError, OSError, ValueError, zipfile.BadZipFile):
+        return False
+    return meta.get("id") == "cobbleraids"
+
+
 def install_jar(server_dir: Path, jar: Path) -> None:
     mods = server_dir / "mods"
     mods.mkdir(exist_ok=True)
-    for existing in mods.glob("CobbleRaids-*.jar"):
+    for existing in mods.glob("*.jar"):
         # Only ever one CobbleRaids in the folder; two would load and fight over the same mixins.
+        # Match on the mod id, not the filename: the CobbleRaids-AddonRewards data jar shares the
+        # filename prefix and an earlier glob deleted it from the rig.
+        if not is_cobbleraids_jar(existing):
+            continue
         existing.unlink()
         print(f"  removed stale {existing.name}")
     shutil.copy2(jar, mods / jar.name)
