@@ -142,11 +142,10 @@ public final class RaidPlayerRecords extends SavedData {
      * log out, crash the server, and the item is in the inventory while the record that says it was
      * bought is not -- which is a once-per-player entry bought twice.
      */
-    public static void recordPurchase(MinecraftServer server, UUID playerId, String entryId, long window) {
+    public static void recordPurchase(MinecraftServer server, UUID playerId, String entryId, long window, long today) {
         LIVE.compute(playerId, (ignored, existing) ->
                 (existing == null ? RaidPlayerRecord.EMPTY : existing)
-                        .prunePurchases(window)
-                        .withPurchase(entryId, window));
+                        .withPurchaseOn(entryId, window, today));
         persist(server);
     }
 
