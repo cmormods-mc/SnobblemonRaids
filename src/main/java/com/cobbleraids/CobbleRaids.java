@@ -172,6 +172,10 @@ public final class CobbleRaids implements ModInitializer {
         // in a previously unloaded chunk becomes reachable.
         ServerEntityEvents.ENTITY_LOAD.register(
                 RaidFaultBarrier.entityLoad("entity-load", RaidSpawnScheduler::onNaturalBossLoaded));
+        // The same gap for owned encounters: a boss left by a crash usually loads after the
+        // SERVER_STARTED sweep has already run.
+        ServerEntityEvents.ENTITY_LOAD.register(RaidFaultBarrier.entityLoad("entity-load:owned-encounter",
+                com.cobbleraids.encounter.EncounterService::onEntityLoaded));
         // The converse: release a tracked boss's raid slot as soon as the entity is destroyed.
         // discard() removes it from ServerLevel's UUID lookup synchronously, so the scheduler's
         // once-a-second maintenance pass can never observe the removal itself and would hold the
