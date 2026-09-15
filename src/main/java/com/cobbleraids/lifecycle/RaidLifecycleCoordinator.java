@@ -188,11 +188,11 @@ public final class RaidLifecycleCoordinator {
             // read the same per-player history, so they run together and before it.
             recordAndOfferCatch(raid, server);
             RaidRewardService.grant(RaidRewardEligibility.victory(raid), server);
-        }, () -> {
-            RaidRegistry.remove(raid.getBattle());
-            cleanupBossEntity(raid);
-            VICTORY_REQUESTED.remove(raid.getId());
-        });
+        },
+                // Separate steps, so one that throws cannot skip the others; see RaidFinalizationGuard.
+                () -> RaidRegistry.remove(raid.getBattle()),
+                () -> cleanupBossEntity(raid),
+                () -> VICTORY_REQUESTED.remove(raid.getId()));
     }
 
     /**
@@ -232,11 +232,10 @@ public final class RaidLifecycleCoordinator {
         RaidCombatRuleService.forget(raid.getId());
         FINALIZATION.finalizeOnce(raid.getId(),
                 () -> RaidBattleStateCarryover.apply(raid),
-                () -> {
-                    RaidRegistry.remove(raid.getBattle());
-                    releaseBossAfterFailure(raid);
-                    VICTORY_REQUESTED.remove(raid.getId());
-                });
+                // Separate steps, so one that throws cannot skip the others; see RaidFinalizationGuard.
+                () -> RaidRegistry.remove(raid.getBattle()),
+                () -> releaseBossAfterFailure(raid),
+                () -> VICTORY_REQUESTED.remove(raid.getId()));
     }
 
     /** Every ordinary way a raid is lost: the players failed, so the boss records the attempt. */
@@ -251,17 +250,17 @@ public final class RaidLifecycleCoordinator {
         FINALIZATION.finalizeOnce(raid.getId(),
                 // Read the clones before end(), which retires the actors this walks.
                 () -> RaidBattleStateCarryover.apply(raid),
-                () -> {
-                    // Ending the battle is cleanup, not a side effect: skipping it strands
-                    // Cobblemon's actors and leaves every player sitting in a battle UI they cannot
-                    // leave. PokemonBattle.end() sends BattleEndPacket, lets entity-backed actors
-                    // clear battleId, and calls BattleRegistry.closeBattle(this) -- so it must run
-                    // before RaidRegistry.remove, and the registry must not be closed first.
-                    if (!battle.getEnded()) battle.end();
-                    RaidRegistry.remove(battle);
-                    if (countsAsFailedAttempt) releaseBossAfterFailure(raid); else cleanupBossEntity(raid);
-                    VICTORY_REQUESTED.remove(raid.getId());
-                });
+                // Ending the battle is cleanup, not a side effect: skipping it strands Cobblemon's
+                // actors and leaves every player sitting in a battle UI they cannot leave.
+                // PokemonBattle.end() sends BattleEndPacket, lets entity-backed actors clear
+                // battleId, and calls BattleRegistry.closeBattle(this) -- so it runs before
+                // RaidRegistry.remove. Each step is separate: if end() throws, the registry entry
+                // and the boss are still released, since a battle that failed to end is not one
+                // this raid can resume.
+                () -> { if (!battle.getEnded()) battle.end(); },
+                () -> RaidRegistry.remove(battle),
+                () -> { if (countsAsFailedAttempt) releaseBossAfterFailure(raid); else cleanupBossEntity(raid); },
+                () -> VICTORY_REQUESTED.remove(raid.getId()));
     }
 
     /**

@@ -80,6 +80,36 @@ class RaidFinalizationGuardTest {
     }
 
     @Test
+    @DisplayName("every cleanup step runs even when an earlier one throws")
+    void laterCleanupStepsRunAfterAFailure() {
+        List<String> ran = new ArrayList<>();
+
+        assertThrows(IllegalStateException.class, () -> guard.finalizeOnce(raid,
+                () -> ran.add("effects"),
+                () -> { ran.add("end battle"); throw new IllegalStateException("battle.end() failed"); },
+                () -> ran.add("remove from registry"),
+                () -> ran.add("release boss")));
+
+        assertEquals(List.of("effects", "end battle", "remove from registry", "release boss"), ran,
+                "a throw from ending the battle must not leave the session registered and the boss standing");
+        assertFalse(guard.isFinalizing(raid));
+    }
+
+    @Test
+    @DisplayName("the first failure propagates, and later ones ride along as suppressed")
+    void firstFailureWinsLaterOnesAreSuppressed() {
+        RuntimeException effects = new RuntimeException("reward grant failed");
+        RuntimeException cleanup = new RuntimeException("discard failed");
+
+        RuntimeException caught = assertThrows(RuntimeException.class, () -> guard.finalizeOnce(raid,
+                () -> { throw effects; }, () -> {}, () -> { throw cleanup; }));
+
+        assertEquals(effects, caught, "the side-effect failure is the original cause");
+        assertEquals(List.of(cleanup), List.of(caught.getSuppressed()),
+                "the cleanup failure must still reach the barrier's report");
+    }
+
+    @Test
     @DisplayName("the exception propagates after cleanup, so the caller's barrier still reports it")
     void exceptionPropagates() {
         RuntimeException thrown = new RuntimeException("the original cause");
@@ -137,8 +167,9 @@ class RaidFinalizationGuardTest {
     @Test
     @DisplayName("concurrent terminal paths: only one is admitted while a finalization is in flight")
     void concurrentPathsElectOneWhileInFlight() throws Exception {
-        // Damage is interpreted off the server thread, so a pool hitting zero can race the combat
-        // timer expiring on the tick. Exactly one may be inside finalization at a time.
+        // Cobblemon 1.7.3 runs damage on the server thread, but the guard must not rely on that: an
+        // update or another mod could move it, and then a pool hitting zero races the combat timer.
+        // Exactly one path may be inside finalization at a time.
         //
         // Note what this does NOT claim. The claim is released when finalization ends, on purpose,
         // so a later terminal path can still close out a raid whose first attempt failed. What stops
