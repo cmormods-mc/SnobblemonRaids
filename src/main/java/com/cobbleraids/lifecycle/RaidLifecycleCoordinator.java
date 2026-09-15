@@ -1,5 +1,8 @@
 package com.cobbleraids.lifecycle;
 
+import com.cobbleraids.api.encounter.EncounterPolicy;
+import com.cobbleraids.api.encounter.LeaveReason;
+import com.cobbleraids.encounter.EncounterService;
 import com.cobbleraids.fault.RaidThreadGuard;
 import com.cobbleraids.catching.RaidCatchService;
 import com.cobbleraids.catching.RaidPlayerRecords;
@@ -87,7 +90,9 @@ public final class RaidLifecycleCoordinator {
     public static void onPlayerFled(PokemonBattle battle, UUID playerId) {
         RaidSession raid = RaidRegistry.get(battle);
         if (raid == null || raid.getStatus() != RaidSession.Status.ACTIVE) return;
-        raid.removeParticipant(playerId);
+        // Before any finalization below, so an owner hears who left ahead of how it ended. Only when
+        // this call removed them: a player who already withdrew has been reported once.
+        if (raid.removeParticipant(playerId)) EncounterService.notifyLeft(raid, playerId, LeaveReason.FLED);
         if (raid.failIfNoActiveParticipants()) finalizeNonVictory(raid);
     }
 
@@ -116,6 +121,7 @@ public final class RaidLifecycleCoordinator {
         // Close this player's battle UI immediately. Future actor updates are suppressed by the
         // PlayerBattleActor mixin while the shared battle safely retains the actor until final cleanup.
         new BattleEndPacket().sendToPlayer(player);
+        EncounterService.notifyLeft(raid, playerId, LeaveReason.WITHDREW);
 
         if (raid.failIfNoActiveParticipants()) {
             finalizeNonVictory(raid);
@@ -138,6 +144,7 @@ public final class RaidLifecycleCoordinator {
             actor.setRequest(null);
             actor.setMustChoose(false);
         }
+        EncounterService.notifyLeft(raid, playerId, LeaveReason.DISCONNECTED);
         if (raid.failIfNoActiveParticipants()) {
             finalizeNonVictory(raid);
             return;
@@ -178,21 +185,26 @@ public final class RaidLifecycleCoordinator {
         RaidThreadGuard.expectServerThread("finalize-victory");
         RaidCombatRuleService.forget(raid.getId());
         MinecraftServer server = ((net.minecraft.server.level.ServerLevel) raid.getBossEntity().level()).getServer();
+        // Null for an ordinary raid, which has every side effect exactly as before owned encounters
+        // existed. An owned encounter has only the ones its owner asked for.
+        EncounterPolicy policy = raid.isOwned() ? raid.getOwnership().policy() : null;
         FINALIZATION.finalizeOnce(raid.getId(), () -> {
             // Before the reward screen is queued, so a level-up and its evolution offer reach the
             // chat ahead of the screen rather than arriving behind it. Victory paths only: a lost,
             // timed-out or aborted raid pays nothing, exactly as it pays no items.
-            RaidProgressionTransfer.grant(raid, server);
+            if (policy == null || policy.progression()) RaidProgressionTransfer.grant(raid, server);
             RaidBattleStateCarryover.apply(raid);
             // Both need the boss's Pokemon, which the cleanup below is about to discard, and both
             // read the same per-player history, so they run together and before it.
-            recordAndOfferCatch(raid, server);
-            RaidRewardService.grant(RaidRewardEligibility.victory(raid), server);
+            recordAndOfferCatch(raid, server, policy);
+            if (policy == null || policy.raidRewards()) RaidRewardService.grant(RaidRewardEligibility.victory(raid), server);
         },
                 // Separate steps, so one that throws cannot skip the others; see RaidFinalizationGuard.
                 () -> RaidRegistry.remove(raid.getBattle()),
                 () -> cleanupBossEntity(raid),
-                () -> VICTORY_REQUESTED.remove(raid.getId()));
+                () -> VICTORY_REQUESTED.remove(raid.getId()),
+                // Last: an owner is told once the battle is closed and the boss is gone.
+                () -> EncounterService.notifyEnded(raid));
     }
 
     /**
@@ -201,8 +213,16 @@ public final class RaidLifecycleCoordinator {
      * <p>History is recorded for everyone who stayed, whether or not catching is switched on: the
      * record is the substrate a catch mechanic is chosen from later, so it has to have been
      * accumulating before the choice is made, or the feature launches with every player at zero.
+     *
+     * <p>An owned encounter records history and rolls the catch only if its policy says so. The
+     * catch copies the boss and removes its uncatchable flag, so for a boss that must never be
+     * obtainable, skipping the roll is the only thing standing between it and a player's PC.
      */
-    private static void recordAndOfferCatch(RaidSession raid, MinecraftServer server) {
+    private static void recordAndOfferCatch(RaidSession raid, MinecraftServer server, EncounterPolicy policy) {
+        boolean history = policy == null || policy.raidHistory();
+        boolean catching = policy == null || policy.catchable();
+        if (!history && !catching) return;
+
         RaidDefinition definition = RaidDefinitionRegistry.get(raid.getDefinitionId());
         if (definition == null) return;
         var boss = raid.getBossEntity();
@@ -215,10 +235,13 @@ public final class RaidLifecycleCoordinator {
 
         // History first, for every victor, in one persist. Catching reads that history, so it has to
         // be written before any of the rolls below.
-        Map<UUID, Double> earned = new LinkedHashMap<>();
-        for (UUID playerId : victors) earned.put(playerId, contributions.getOrDefault(playerId, 0.0));
-        RaidPlayerRecords.recordWins(server, definition.rarityTier(), definition.id(), earned);
+        if (history) {
+            Map<UUID, Double> earned = new LinkedHashMap<>();
+            for (UUID playerId : victors) earned.put(playerId, contributions.getOrDefault(playerId, 0.0));
+            RaidPlayerRecords.recordWins(server, definition.rarityTier(), definition.id(), earned);
+        }
 
+        if (!catching) return;
         for (UUID playerId : victors) {
             ServerPlayer player = server.getPlayerList().getPlayer(playerId);
             if (player == null) continue;
@@ -235,7 +258,8 @@ public final class RaidLifecycleCoordinator {
                 // Separate steps, so one that throws cannot skip the others; see RaidFinalizationGuard.
                 () -> RaidRegistry.remove(raid.getBattle()),
                 () -> releaseBossAfterFailure(raid),
-                () -> VICTORY_REQUESTED.remove(raid.getId()));
+                () -> VICTORY_REQUESTED.remove(raid.getId()),
+                () -> EncounterService.notifyEnded(raid));
     }
 
     /** Every ordinary way a raid is lost: the players failed, so the boss records the attempt. */
@@ -260,17 +284,10 @@ public final class RaidLifecycleCoordinator {
                 () -> { if (!battle.getEnded()) battle.end(); },
                 () -> RaidRegistry.remove(battle),
                 () -> { if (countsAsFailedAttempt) releaseBossAfterFailure(raid); else cleanupBossEntity(raid); },
-                () -> VICTORY_REQUESTED.remove(raid.getId()));
+                () -> VICTORY_REQUESTED.remove(raid.getId()),
+                () -> EncounterService.notifyEnded(raid));
     }
 
-    /**
-     * Every terminal path ends here, so this is the single place that hands a natural boss's raid
-     * slot back to the scheduler. RaidSpawnScheduler.onEntityUnloaded would also catch the discard
-     * below, but only while the boss is in a loaded chunk; forgetting it explicitly makes the
-     * release a property of the raid ending rather than of Minecraft's entity-removal plumbing, and
-     * covers the case where the entity is already gone and discard() is skipped. Forgetting a UUID
-     * the scheduler never tracked (an admin-spawned boss) is a no-op.
-     */
     /**
      * A raid that ended in defeat leaves the boss standing for another attempt, until it has beaten
      * enough parties. Before this, every terminal path discarded the boss, so any loss consumed it
@@ -285,10 +302,13 @@ public final class RaidLifecycleCoordinator {
      * so the damage from the failed raid is really on it, and a second party would otherwise walk
      * into a boss at whatever HP the last one left -- while the raid's own health pool restarts at
      * full, making the bar disagree with the entity.
+     *
+     * <p>An owned encounter's boss is always removed instead: nobody else can fight it, and its
+     * owner decides whether there is a next attempt.
      */
     private static void releaseBossAfterFailure(RaidSession raid) {
         var boss = raid.getBossEntity();
-        if (boss == null || boss.isRemoved()) {
+        if (raid.isOwned() || boss == null || boss.isRemoved()) {
             cleanupBossEntity(raid);
             return;
         }
@@ -323,6 +343,14 @@ public final class RaidLifecycleCoordinator {
         }
     }
 
+    /**
+     * Every terminal path ends here, so this is the single place that hands a natural boss's raid
+     * slot back to the scheduler. RaidSpawnScheduler.onEntityUnloaded would also catch the discard
+     * below, but only while the boss is in a loaded chunk; forgetting it explicitly makes the
+     * release a property of the raid ending rather than of Minecraft's entity-removal plumbing, and
+     * covers the case where the entity is already gone and discard() is skipped. Forgetting a UUID
+     * the scheduler never tracked (an admin-spawned boss) is a no-op.
+     */
     private static void cleanupBossEntity(RaidSession raid) {
         var boss = raid.getBossEntity();
         if (boss != null) RaidSpawnScheduler.forget(boss.getUUID());
@@ -330,17 +358,17 @@ public final class RaidLifecycleCoordinator {
     }
 
     /**
-     * Both guards are released per raid inside the must-run cleanup of every terminal path, so
-     * neither grows with the number of raids played. This covers the remaining case: a server that
-     * stops with raids still in flight never reaches a terminal path at all, and an integrated
-     * (single-player) client reuses this JVM for every world it opens.
-     */
-    /**
      * Raids currently mid-finalization. Outside a finalization call this must be zero: a claim that
      * outlives its call is the leak that stranded raids before RaidFinalizationGuard existed.
      */
     public static int finalizationsInFlight() { return FINALIZATION.size(); }
 
+    /**
+     * Both guards are released per raid inside the must-run cleanup of every terminal path, so
+     * neither grows with the number of raids played. This covers the remaining case: a server that
+     * stops with raids still in flight never reaches a terminal path at all, and an integrated
+     * (single-player) client reuses this JVM for every world it opens.
+     */
     public static void onServerStopped() {
         FINALIZATION.clear();
         VICTORY_REQUESTED.clear();

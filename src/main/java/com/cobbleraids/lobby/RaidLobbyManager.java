@@ -36,10 +36,16 @@ public final class RaidLobbyManager {
     private static final int LOBBY_EXPIRY_MARGIN_SECONDS = 30;
     private RaidLobbyManager() {}
 
-    public enum JoinResult { STARTED_RECRUITMENT, JOINED, ALREADY_JOINED, FULL, TOO_FAR, UNAVAILABLE, NOT_A_RAID_BOSS }
+    public enum JoinResult { STARTED_RECRUITMENT, JOINED, ALREADY_JOINED, FULL, TOO_FAR, UNAVAILABLE, NOT_A_RAID_BOSS, OWNED_ENCOUNTER }
 
     public static JoinResult interact(ServerPlayer player, PokemonEntity boss) {
         if (!RaidBossEntityMarker.isRaidBoss(boss)) return JoinResult.NOT_A_RAID_BOSS;
+        // Its participants were chosen by the mod that owns it; nobody else can recruit into it.
+        if (RaidBossEntityMarker.isOwned(boss)) {
+            player.sendSystemMessage(Component.literal("This boss belongs to another encounter and cannot be joined.")
+                    .withStyle(ChatFormatting.RED));
+            return JoinResult.OWNED_ENCOUNTER;
+        }
         if (boss.isRemoved() || boss.isBattling()) return JoinResult.UNAVAILABLE;
 
         RaidDefinition definition = RaidBossEntityMarker.definitionId(boss).map(RaidDefinitionRegistry::get).orElse(null);

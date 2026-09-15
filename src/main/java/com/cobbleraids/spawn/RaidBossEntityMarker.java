@@ -13,6 +13,7 @@ public final class RaidBossEntityMarker {
     private static final String NATURAL = "cobbleraids_natural_spawn";
     private static final String SPAWN_TICK_PREFIX = "cobbleraids_spawn_tick=";
     private static final String ATTEMPTS_PREFIX = "cobbleraids_failed_attempts=";
+    private static final String OWNER_PREFIX = "cobbleraids_owner=";
 
     private RaidBossEntityMarker() {}
 
@@ -34,6 +35,28 @@ public final class RaidBossEntityMarker {
 
     public static boolean isRaidBoss(PokemonEntity entity) {
         return entity != null && entity.getTags().contains(ROOT);
+    }
+
+    /**
+     * Marks a boss as belonging to an encounter another mod owns (see CobbleRaidsEncounters).
+     *
+     * <p>An owned boss is never recruited by passers-by and never survives a restart. A tag rather
+     * than a lookup for the same reason as the rest of this class: it has exactly the boss's lifetime,
+     * so a boss found at boot is still recognisable after the encounter that owned it is long gone.
+     */
+    public static void markOwned(PokemonEntity entity, ResourceLocation owner) {
+        for (String tag : List.copyOf(entity.getTags())) {
+            if (tag.startsWith(OWNER_PREFIX)) entity.removeTag(tag);
+        }
+        entity.addTag(OWNER_PREFIX + owner);
+    }
+
+    public static boolean isOwned(PokemonEntity entity) {
+        if (entity == null) return false;
+        for (String tag : entity.getTags()) {
+            if (tag.startsWith(OWNER_PREFIX)) return true;
+        }
+        return false;
     }
 
     /** Recorded once at spawn (natural or admin) so age can be reported without relying on

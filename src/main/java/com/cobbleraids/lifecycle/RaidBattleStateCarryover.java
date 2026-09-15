@@ -42,7 +42,7 @@ public final class RaidBattleStateCarryover {
     /** Call once, on any terminal raid transition, while the battle's actors are still readable. */
     public static void apply(RaidSession raid) {
         if (raid == null) return;
-        CobbleRaidsConfig.BattleCarryover carryover = CobbleRaidsConfigManager.get().battleCarryover();
+        CobbleRaidsConfig.BattleCarryover carryover = carryoverFor(raid);
         // The common configuration for a server that wants raids to stay free; skip the whole walk.
         if (carryover.isNoOp()) return;
 
@@ -59,6 +59,17 @@ public final class RaidBattleStateCarryover {
                 }
             }
         }
+    }
+
+    /**
+     * What to carry for this raid: an owned encounter's own rules, or the server config for an
+     * ordinary raid. An owned encounter never carries status -- the public policy does not offer it.
+     */
+    static CobbleRaidsConfig.BattleCarryover carryoverFor(RaidSession raid) {
+        RaidSession.Ownership ownership = raid.getOwnership();
+        if (ownership == null) return CobbleRaidsConfigManager.get().battleCarryover();
+        return new CobbleRaidsConfig.BattleCarryover(
+                ownership.policy().carryHealth(), ownership.policy().carryPp(), false);
     }
 
     private static void applyTo(BattlePokemon battlePokemon, CobbleRaidsConfig.BattleCarryover carryover) {
