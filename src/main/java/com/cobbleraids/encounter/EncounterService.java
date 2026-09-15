@@ -24,6 +24,8 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
 
 /**
  * The implementation behind {@link com.cobbleraids.api.encounter.CobbleRaidsEncounters}.
@@ -122,6 +124,35 @@ public final class EncounterService {
                 raid.getActiveParticipants(), raid.getElapsedCombatTicks());
         RaidLog.info("Owned encounter {} for {} ended: {}", ownership.encounterId(), ownership.owner(), result.outcome());
         RaidFaultBarrier.guard("encounter:listener-ended", () -> ownership.listener().onEnded(result));
+    }
+
+    /**
+     * Removes the boss of an owned encounter that no longer exists, when its chunk loads.
+     *
+     * <p>The SERVER_STARTED sweep in RaidSpawnScheduler only sees entities already loaded, and entity
+     * sections load asynchronously after the server reports ready. So a boss left behind by a crash
+     * usually reaches the world here, after that sweep has run -- proven on a live server, where the
+     * sweep alone let one survive a hard kill and restart.
+     *
+     * <p>Bound to ServerEntityEvents.ENTITY_LOAD, which fires for every entity entering every loaded
+     * chunk, so the tests run cheapest first. A freshly spawned owned boss is never caught: the event
+     * fires inside sendOut, before start() tags it as owned. A boss whose encounter is still running
+     * -- a chunk unloaded and reloaded mid-fight -- is battling and indexed, and is left alone.
+     */
+    public static void onEntityLoaded(Entity entity, ServerLevel level) {
+        if (!(entity instanceof PokemonEntity pokemon)) return;
+        if (!RaidBossEntityMarker.isRaidBoss(pokemon) || !RaidBossEntityMarker.isOwned(pokemon)) return;
+        if (pokemon.isBattling() || ownsBoss(pokemon.getUUID())) return;
+        RaidLog.info("Removed the boss of an owned encounter that no longer exists ({} in {})",
+                pokemon.getUUID(), level.dimension().location());
+        pokemon.discard();
+    }
+
+    private static boolean ownsBoss(UUID bossId) {
+        for (RaidSession session : ACTIVE.values()) {
+            if (session.getBossEntity() != null && bossId.equals(session.getBossEntity().getUUID())) return true;
+        }
+        return false;
     }
 
     /** Cleared with the other per-server statics; see CobbleRaids' SERVER_STOPPED block. */
