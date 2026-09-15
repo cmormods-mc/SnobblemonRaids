@@ -74,10 +74,10 @@ public final class RaidRewardService {
     }
 
     /**
-     * Mirrors the queue into its SavedData and marks it dirty after every mutation, so it is written
-     * at the next world save. It does not write to disk itself: a crash before that save loses any
-     * reward granted since the last one. Consuming a claim, where the risk is duplication rather
-     * than loss, uses {@link #persistNow} instead.
+     * Mirrors the queue into its SavedData and marks it dirty, so it is written at the next world
+     * save. It does not write to disk itself, which is fine for an admin clearing a queue and not
+     * fine for anything a crash must not undo: granting and consuming a claim both use
+     * {@link #persistNow} instead.
      */
     private static void persist(MinecraftServer server) {
         if (server != null) PendingRewardStore.get(server).update(PENDING);
@@ -86,7 +86,8 @@ public final class RaidRewardService {
     /**
      * Persists the queue and writes it to disk now, rather than at the next world save.
      *
-     * <p>Used when a claim is consumed, and the reason is a duplication window. {@link #persist}
+     * <p>Used when a reward is granted, so a crash cannot lose it (see {@link #grant}), and when a
+     * claim is consumed, where the reason is a duplication window. {@link #persist}
      * only marks the SavedData dirty; Minecraft flushes it on the autosave, minutes away. A
      * player's inventory, however, reaches disk the moment they log out. So: claim, receive the
      * items, log out -- inventory written -- then a hard crash before the next autosave, and the
@@ -158,7 +159,10 @@ public final class RaidRewardService {
             PENDING.computeIfAbsent(playerId, ignored -> new ArrayDeque<>()).addLast(pending);
             if (server.getPlayerList().getPlayer(playerId) != null) OPEN_DELAY.putIfAbsent(playerId, GUI_OPEN_DELAY_TICKS);
         }
-        persist(server);
+        // Written now, not at the next autosave: the reward screen is about to open, and a crash
+        // before that save used to lose a reward the player had already been shown. Once per won
+        // raid, and the same write also carries the raid history recorded just before this.
+        persistNow(server);
     }
 
     /** Called from END_SERVER_TICK so the battle-end screen packet is processed before the reward chest opens. */
