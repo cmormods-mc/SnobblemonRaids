@@ -46,6 +46,17 @@ public final class RaidCatchService {
         // message for a tier that was never catchable is just noise after every raid.
         if (chance <= 0.0) return false;
 
+        // Checked before the roll, so a player with nowhere to put the boss hears that instead of
+        // winning a roll for a Pokemon that then cannot be kept.
+        var storage = Cobblemon.INSTANCE.getStorage();
+        if (storage.getParty(player).getFirstAvailablePosition() == null
+                && storage.getPC(player).getFirstAvailablePosition() == null) {
+            player.sendSystemMessage(Component.literal(
+                            "Your party and PC are both full, so there was no room to catch the raid boss.")
+                    .withStyle(ChatFormatting.YELLOW));
+            return false;
+        }
+
         boolean caught = ThreadLocalRandom.current().nextDouble() < chance;
         if (CobbleRaidsConfigManager.get().debugLogging()) {
             RaidLog.info("Catch roll for {} on {}: chance={}, caught={}",
@@ -70,20 +81,22 @@ public final class RaidCatchService {
             caught.heal();
 
             PlayerPartyStore party = Cobblemon.INSTANCE.getStorage().getParty(player);
-            boolean intoParty = party.add(caught);
-            if (!intoParty) {
-                // add() refuses a full party, and silently dropping a caught raid boss would be the
-                // worst possible failure here.
-                Cobblemon.INSTANCE.getStorage().getPC(player).add(caught);
+            // Cobblemon's PlayerPartyStore.add already sends a full party's Pokemon to the PC and
+            // tells the player so. False means the PC refused too, which tryCatch checks for before
+            // rolling -- so reaching here means storage filled up in between. Nothing was delivered,
+            // so nothing may be counted or announced as a catch.
+            if (!party.add(caught)) {
+                RaidLog.error("Caught boss {} could not be stored for {}: party and PC are full",
+                        definition.id(), player.getGameProfile().getName());
+                player.sendSystemMessage(Component.literal(
+                                "You caught the boss, but your party and PC are full, so it could not be kept.")
+                        .withStyle(ChatFormatting.RED));
+                return false;
             }
 
             RaidPlayerRecords.recordCatch(player.getServer(), player.getUUID());
             player.sendSystemMessage(Component.literal("You caught the raid boss!")
                     .withStyle(ChatFormatting.GOLD));
-            if (!intoParty) {
-                player.sendSystemMessage(Component.literal("Your party was full, so it went to your PC.")
-                        .withStyle(ChatFormatting.YELLOW));
-            }
             return true;
         } catch (RuntimeException ex) {
             // A failed award must not take the reward screen or the raid's finalization with it.
