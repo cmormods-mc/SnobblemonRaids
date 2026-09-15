@@ -67,9 +67,12 @@ java {
 }
 
 processResources {
-    inputs.property 'version', project.version
+    // Read at configuration time: touching `project` inside filesMatching runs during execution,
+    // which Gradle deprecates and the configuration cache forbids.
+    def modVersion = project.version
+    inputs.property 'version', modVersion
     filesMatching('fabric.mod.json') {
-        expand version: project.version
+        expand version: modVersion
     }
 }
 
