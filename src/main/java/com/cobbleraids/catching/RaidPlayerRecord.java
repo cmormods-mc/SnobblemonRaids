@@ -112,16 +112,27 @@ public record RaidPlayerRecord(
     }
 
     /**
-     * Drops tallies whose window has passed, so a long-lived record does not accumulate a row for
-     * every daily entry a player has ever touched.
+     * One purchase of {@code entryId}, counted against {@code window}, with stale tallies pruned.
      *
-     * <p>Purely housekeeping: {@link RaidPurchaseTally#countOn} already reads a stale tally as zero,
-     * so this changes what is stored and never what is allowed.
+     * <p>{@code today} is the current UTC day, separate from {@code window} on purpose. A lifetime
+     * entry's window is always 0, and pruning against that used to delete every daily tally from
+     * today -- so buying one lifetime entry refilled every daily limit the player had already spent.
      */
-    public RaidPlayerRecord prunePurchases(long window) {
+    public RaidPlayerRecord withPurchaseOn(String entryId, long window, long today) {
+        return prunePurchases(today).withPurchase(entryId, window);
+    }
+
+    /**
+     * Drops daily tallies from before {@code today}, so a long-lived record does not accumulate a
+     * row for every daily entry a player has ever touched. Lifetime tallies (day 0) are kept.
+     *
+     * <p>Housekeeping: {@link RaidPurchaseTally#countOn} already reads a stale daily tally as zero,
+     * so this changes what is stored and not what is allowed.
+     */
+    public RaidPlayerRecord prunePurchases(long today) {
         LinkedHashMap<String, RaidPurchaseTally> kept = new LinkedHashMap<>();
         purchases.forEach((id, tally) -> {
-            if (tally.day() == window || tally.day() == 0L) kept.put(id, tally);
+            if (tally.day() == today || tally.day() == 0L) kept.put(id, tally);
         });
         return kept.size() == purchases.size() ? this
                 : new RaidPlayerRecord(raidsWon, winsByTier, defeatsBySpecies, totalContribution,

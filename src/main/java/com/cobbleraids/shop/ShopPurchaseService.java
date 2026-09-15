@@ -109,7 +109,7 @@ public final class ShopPurchaseService {
         RaidPointsStore.spend(player.getServer(), player.getUUID(), entry.cost());
         if (entry.isLimited()) {
             RaidPlayerRecords.recordPurchase(player.getServer(), player.getUUID(), entry.id(),
-                    ShopPurchaseRules.windowOf(entry, now));
+                    ShopPurchaseRules.windowOf(entry, now), ShopResetPeriod.DAILY.windowOf(now));
         }
         // One flush, after both writes rather than inside each, and for every purchase rather than
         // only the limited ones. Points and tallies share a SavedData, so a single write covers

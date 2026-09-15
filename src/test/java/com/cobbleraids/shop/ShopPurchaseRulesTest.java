@@ -193,6 +193,32 @@ class ShopPurchaseRulesTest {
         assertEquals(5, ShopPurchaseRules.remaining(BALLS, pruned.purchasesOf("balls"), NEXT_DAY));
     }
 
+    /** One purchase, through the same record method RaidPlayerRecords.recordPurchase uses. */
+    private static RaidPlayerRecord buy(RaidPlayerRecord record, ShopEntry entry, Instant when) {
+        return record.withPurchaseOn(entry.id(), ShopPurchaseRules.windowOf(entry, when),
+                ShopResetPeriod.DAILY.windowOf(when));
+    }
+
+    @Test
+    @DisplayName("buying a lifetime entry does not refill a daily limit spent the same day")
+    void lifetimePurchaseKeepsTodaysDailyTallies() {
+        RaidPlayerRecord record = RaidPlayerRecord.EMPTY;
+        for (int i = 0; i < 5; i++) record = buy(record, BALLS, NOON);
+        assertEquals(0, ShopPurchaseRules.remaining(BALLS, record.purchasesOf("balls"), NOON));
+
+        record = buy(record, UNIQUE, NOON);
+
+        assertEquals(0, ShopPurchaseRules.remaining(BALLS, record.purchasesOf("balls"), LATE),
+                "a lifetime purchase must not hand back today's daily stock");
+        assertEquals(0, ShopPurchaseRules.remaining(UNIQUE, record.purchasesOf("unique"), LATE));
+
+        // Midnight refills the daily entry and nothing else.
+        record = buy(record, BALLS, NEXT_DAY);
+        assertEquals(4, ShopPurchaseRules.remaining(BALLS, record.purchasesOf("balls"), NEXT_DAY));
+        assertEquals(0, ShopPurchaseRules.remaining(UNIQUE, record.purchasesOf("unique"), NEXT_DAY),
+                "a daily purchase must not forget a lifetime one");
+    }
+
     @Test
     @DisplayName("purchase tallies survive every other update to the record")
     void talliesSurviveOtherWrites() {
