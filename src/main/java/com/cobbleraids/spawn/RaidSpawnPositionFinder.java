@@ -2,6 +2,7 @@ package com.cobbleraids.spawn;
 
 import com.cobbleraids.config.CobbleRaidsConfig;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -25,8 +26,7 @@ public final class RaidSpawnPositionFinder {
             double radius = Math.sqrt(random.nextDouble(min * min, max * max));
             int x = center.getX() + (int) Math.round(Math.cos(angle) * radius);
             int z = center.getZ() + (int) Math.round(Math.sin(angle) * radius);
-            BlockPos probe = new BlockPos(x, center.getY(), z);
-            if (!level.hasChunkAt(probe)) continue;
+            if (!level.getChunkSource().hasChunk(SectionPos.blockToSectionCoord(x), SectionPos.blockToSectionCoord(z))) continue;
             int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
             BlockPos candidate = new BlockPos(x, y, z);
 
