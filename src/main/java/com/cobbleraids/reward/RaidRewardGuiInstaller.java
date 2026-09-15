@@ -1,11 +1,13 @@
 package com.cobbleraids.reward;
 
 import com.cobbleraids.CobbleRaids;
+import com.cobbleraids.RaidLog;
 import com.pokeskies.skiesguis.SkiesGUIs;
 import com.pokeskies.skiesguis.api.SkiesGUIsAPI;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import net.fabricmc.loader.api.FabricLoader;
 
 /** Installs the safe default CobbleRaids reward GUI into SkiesGUIs without overwriting operator edits. */
@@ -20,12 +22,16 @@ public final class RaidRewardGuiInstaller {
         try {
             Files.createDirectories(target.getParent());
             boolean created = false;
-            if (!Files.exists(target)) {
+            boolean exists = Files.exists(target);
+            // An unedited copy of an older default is replaced too; see RewardGuiDefaults. A file
+            // an operator changed in any way is never touched.
+            if (!exists || RewardGuiDefaults.isSupersededDefault(Files.readAllBytes(target))) {
                 try (InputStream in = CobbleRaids.class.getResourceAsStream(RESOURCE)) {
                     if (in == null) throw new IllegalStateException("Missing bundled reward GUI resource " + RESOURCE);
-                    Files.copy(in, target);
+                    Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
                     created = true;
                 }
+                if (exists) RaidLog.info("Replaced the unedited default reward GUI at " + target + " with the current one.");
             }
 
             if (created || SkiesGUIsAPI.INSTANCE.getGUIConfig(DEFAULT_GUI_ID) == null) {
