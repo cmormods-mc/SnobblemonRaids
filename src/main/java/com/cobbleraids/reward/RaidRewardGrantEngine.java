@@ -12,6 +12,7 @@ import com.cobbleraids.reward.currency.RaidCurrencyBackends;
 import com.cobbleraids.reward.points.RaidPointsStore;
 import com.cobbleraids.reward.plan.RewardPlan;
 import com.cobbleraids.reward.plan.RewardPlanResolver;
+import com.cobbleraids.renown.RenownRewards;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
@@ -52,10 +53,11 @@ public final class RaidRewardGrantEngine {
         // selection. Reusing the claim seed directly for every roll would make all of a bundle's
         // general selections identical -- reproducible, and useless.
         Random claimRandom = new Random(pending.rewardSeed());
+        BigInteger currency = renownCurrency(plan.currency(), pending);
         RewardGrantResult result;
         result = switch (plan) {
-            case RewardPlan.Policy policy -> grantPolicy(player, definitionId, policy, claimRandom);
-            case RewardPlan.Legacy legacy -> grantLegacy(player, definitionId, legacy, claimRandom);
+            case RewardPlan.Policy policy -> grantPolicy(player, definitionId, policy, claimRandom, currency);
+            case RewardPlan.Legacy legacy -> grantLegacy(player, definitionId, legacy, claimRandom, currency);
         };
         result = result.withPoints(awardPoints(player, pending));
         if (plan instanceof RewardPlan.Policy policy && policy.megaCapable()) {
@@ -79,7 +81,10 @@ public final class RaidRewardGrantEngine {
     private static int awardPoints(ServerPlayer player, PendingRaidReward pending) {
         CobbleRaidsConfig.RaidPoints config = CobbleRaidsConfigManager.get().raidPoints();
         if (!config.enabled() || config.isNoOp()) return 0;
-        int amount = config.pointsFor(pending.rarityTier());
+        int base = config.pointsFor(pending.rarityTier());
+        int amount = pending.renowned()
+                ? RenownRewards.points(base, CobbleRaidsConfigManager.get().renown().pointsMultiplier())
+                : base;
         if (amount <= 0) return 0;
 
         int[] awarded = { 0 };
@@ -110,8 +115,19 @@ public final class RaidRewardGrantEngine {
     }
 
     /** Policy path: roll each table in the plan once, then pay. Every selection is one table roll. */
+    /**
+     * Renown's currency multiplier, applied to whatever the plan decided. Here rather than in
+     * RewardPlanResolver so the resolver keeps answering "what does this tier pay" and renown stays
+     * one visible step on top of it.
+     */
+    private static BigInteger renownCurrency(BigInteger base, PendingRaidReward pending) {
+        return pending.renowned()
+                ? RenownRewards.currency(base, CobbleRaidsConfigManager.get().renown().currencyMultiplier())
+                : base;
+    }
+
     private static RewardGrantResult grantPolicy(ServerPlayer player, ResourceLocation definitionId,
-                                                 RewardPlan.Policy plan, Random claimRandom) {
+                                                 RewardPlan.Policy plan, Random claimRandom, BigInteger currency) {
         List<RaidDefinition.RewardItem> standard = new ArrayList<>();
         List<RaidDefinition.RewardItem> bonus = new ArrayList<>();
         // The general rolls are the tail of the plan's list, and the last `bonusGeneralRolls` of
@@ -128,12 +144,12 @@ public final class RaidRewardGrantEngine {
             (index >= firstBonusIndex ? bonus : standard).addAll(rolled);
         }
         return new RewardGrantResult(standard, List.of(), bonus,
-                payCurrency(player, definitionId, plan.currency()), 0);
+                payCurrency(player, definitionId, currency), 0);
     }
 
     /** Legacy path: exactly what a hand-written definition did before the policy existed. */
     private static RewardGrantResult grantLegacy(ServerPlayer player, ResourceLocation definitionId,
-                                                 RewardPlan.Legacy plan, Random claimRandom) {
+                                                 RewardPlan.Legacy plan, Random claimRandom, BigInteger currency) {
         List<RaidDefinition.RewardItem> base = new ArrayList<>();
         for (RaidDefinition.RewardItem item : plan.items()) {
             if (give(player, item, definitionId)) base.add(item);
@@ -158,7 +174,7 @@ public final class RaidRewardGrantEngine {
             if (give(player, rolled, definitionId)) bonusGranted.add(rolled);
         }
         return new RewardGrantResult(base, chanceGranted, bonusGranted,
-                payCurrency(player, definitionId, plan.currency()), 0);
+                payCurrency(player, definitionId, currency), 0);
     }
 
     private static ResourceLocation parse(String tableId, ResourceLocation definitionId) {

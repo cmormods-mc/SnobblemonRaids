@@ -19,6 +19,7 @@ public record CobbleRaidsConfig(
         TierScaling tierScaling,
         BossGlow bossGlow,
         BossMovement bossMovement,
+        Renown renown,
         boolean debugLogging
 ) {
     public static final int VALIDATED_MAX_HUMAN_PLAYERS = 4;
@@ -432,6 +433,63 @@ public record CobbleRaidsConfig(
         }
     }
 
+    /**
+     * Renowned bosses: a per-tier chance for a spawn to carry a title such as "Kaelen, the
+     * Relentless", a moderate boon from its epithet, and a better payout for beating it.
+     *
+     * <p>Every boon's strength is here and nowhere else. A datapack epithet only picks which kind
+     * of boon it grants (see RenownBoon), so the operator decides how much harder renown is, and
+     * retunes it in one place:
+     * <ul>
+     *   <li>{@code health_bonus} -- share added to the raid health pool, after player count and level;
+     *       capped at +50%.</li>
+     *   <li>{@code stat_focus_evs} -- EVs added to the focused stat, alongside a maximum IV; never
+     *       past Cobblemon's 252 per stat or 510 total.</li>
+     * </ul>
+     *
+     * <p>The payout multipliers apply to Raid Points and currency. Contribution bonus rolls are
+     * deliberately left alone: renown pays in the shop currency, not in extra loot selections. Both
+     * floor, and neither can go below 1 -- renown never pays less than an ordinary boss.
+     *
+     * <p>The shipped strengths are a starting point that has not been balanced in live play yet.
+     */
+    public record Renown(boolean enabled, double starter, double powerhouse, double legendary, double mythical,
+                         double healthBonus, int statFocusEvs, double pointsMultiplier, double currencyMultiplier) {
+        public Renown {
+            validateChance("starter", starter);
+            validateChance("powerhouse", powerhouse);
+            validateChance("legendary", legendary);
+            validateChance("mythical", mythical);
+            if (!(healthBonus >= 0.0) || healthBonus > 0.5)
+                throw new IllegalArgumentException("renown.health_bonus must be 0..0.5");
+            if (statFocusEvs < 0 || statFocusEvs > 252)
+                throw new IllegalArgumentException("renown.stat_focus_evs must be 0..252");
+            validateMultiplier("points_multiplier", pointsMultiplier);
+            validateMultiplier("currency_multiplier", currencyMultiplier);
+        }
+
+        public static Renown defaults() { return new Renown(true, 0.05, 0.07, 0.10, 0.12, 0.15, 128, 1.25, 1.25); }
+
+        public double chanceFor(RaidRarityTier tier) {
+            return switch (tier) {
+                case STARTER -> starter;
+                case POWERHOUSE -> powerhouse;
+                case LEGENDARY -> legendary;
+                case MYTHICAL -> mythical;
+            };
+        }
+
+        private static void validateChance(String name, double chance) {
+            if (!(chance >= 0.0) || chance > 1.0)
+                throw new IllegalArgumentException("renown.chance." + name + " must be 0..1");
+        }
+
+        private static void validateMultiplier(String name, double multiplier) {
+            if (!(multiplier >= 1.0) || multiplier > 3.0)
+                throw new IllegalArgumentException("renown." + name + " must be 1..3");
+        }
+    }
+
     public record TierMultipliers(double health, double timeLimit, double reward) {
         public TierMultipliers {
             if (health < 0.1 || health > 10.0)
@@ -489,6 +547,7 @@ public record CobbleRaidsConfig(
                 TierScaling.defaults(),
                 BossGlow.defaults(),
                 BossMovement.defaults(),
+                Renown.defaults(),
                 false
         );
     }
@@ -635,9 +694,23 @@ public record CobbleRaidsConfig(
                 Json.integer(bossMovementObject, "slowness_amplifier", bm.slownessAmplifier()),
                 Json.bool(bossMovementObject, "prevent_knockback", bm.preventKnockback()));
 
+        JsonObject renownObject = Json.object(root, "renown");
+        JsonObject renownChance = Json.object(renownObject, "chance");
+        Renown rn = defaults.renown();
+        Renown renown = new Renown(
+                Json.bool(renownObject, "enabled", rn.enabled()),
+                Json.decimal(renownChance, "starter", rn.starter()),
+                Json.decimal(renownChance, "powerhouse", rn.powerhouse()),
+                Json.decimal(renownChance, "legendary", rn.legendary()),
+                Json.decimal(renownChance, "mythical", rn.mythical()),
+                Json.decimal(renownObject, "health_bonus", rn.healthBonus()),
+                Json.integer(renownObject, "stat_focus_evs", rn.statFocusEvs()),
+                Json.decimal(renownObject, "points_multiplier", rn.pointsMultiplier()),
+                Json.decimal(renownObject, "currency_multiplier", rn.currencyMultiplier()));
+
         return new CobbleRaidsConfig(naturalSpawning, recruitmentDefaults, combatDefaults, battleCarryover,
                 bossTraits, catching, currency, dynamicLevel, megaPity, raidPoints, tierScaling, bossGlow, bossMovement,
-                Json.bool(root, "debug_logging", defaults.debugLogging()));
+                renown, Json.bool(root, "debug_logging", defaults.debugLogging()));
     }
 
     private static TierMultipliers readTierMultipliers(JsonObject tierScaling, String key, TierMultipliers fallback) {
@@ -759,6 +832,20 @@ public record CobbleRaidsConfig(
         bossMovementJson.addProperty("slowness_amplifier", bossMovement.slownessAmplifier());
         bossMovementJson.addProperty("prevent_knockback", bossMovement.preventKnockback());
         root.add("boss_movement", bossMovementJson);
+
+        JsonObject renownJson = new JsonObject();
+        renownJson.addProperty("enabled", renown.enabled());
+        JsonObject renownChanceJson = new JsonObject();
+        renownChanceJson.addProperty("starter", renown.starter());
+        renownChanceJson.addProperty("powerhouse", renown.powerhouse());
+        renownChanceJson.addProperty("legendary", renown.legendary());
+        renownChanceJson.addProperty("mythical", renown.mythical());
+        renownJson.add("chance", renownChanceJson);
+        renownJson.addProperty("health_bonus", renown.healthBonus());
+        renownJson.addProperty("stat_focus_evs", renown.statFocusEvs());
+        renownJson.addProperty("points_multiplier", renown.pointsMultiplier());
+        renownJson.addProperty("currency_multiplier", renown.currencyMultiplier());
+        root.add("renown", renownJson);
 
         root.addProperty("debug_logging", debugLogging);
         return root;

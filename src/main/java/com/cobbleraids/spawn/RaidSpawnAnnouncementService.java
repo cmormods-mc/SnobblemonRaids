@@ -1,7 +1,10 @@
 package com.cobbleraids.spawn;
 
 import com.cobbleraids.config.RaidRarityTier;
+import com.cobbleraids.presentation.RaidBossNameplate;
 import com.cobbleraids.presentation.RaidBroadcast;
+import com.cobbleraids.renown.RaidRenown;
+import com.cobbleraids.renown.RaidRenownMarker;
 import com.cobbleraids.presentation.RaidTierPresentation;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 
@@ -34,14 +37,24 @@ final class RaidSpawnAnnouncementService {
         int hintZ = coordinateHint(position.getZ());
         MutableComponent speciesName = entity.getPokemon().getSpecies().getTranslatedName();
         String biomeName = biomeId == null ? "Unknown Biome" : friendlyName(biomeId);
+        RaidRenown renown = RaidRenownMarker.read(entity).orElse(null);
 
         MutableComponent message = Component.literal("[CobbleRaids] ")
-                .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD)
-                .append(Component.literal("A wild ").withStyle(ChatFormatting.YELLOW))
-                .append(Component.literal(tier.displayName() + " ").withStyle(RaidTierPresentation.color(tier)))
-                .append(speciesName.copy().withStyle(ChatFormatting.WHITE))
-                .append(Component.literal(" raid has appeared in ").withStyle(ChatFormatting.YELLOW))
-                .append(Component.literal(biomeName).withStyle(ChatFormatting.GREEN))
+                .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD);
+        if (renown == null) {
+            message.append(Component.literal("A wild ").withStyle(ChatFormatting.YELLOW))
+                    .append(Component.literal(tier.displayName() + " ").withStyle(RaidTierPresentation.color(tier)))
+                    .append(speciesName.copy().withStyle(ChatFormatting.WHITE))
+                    .append(Component.literal(" raid has appeared in ").withStyle(ChatFormatting.YELLOW));
+        } else {
+            // Led by the title, in the same styling as the boss's nameplate, so the name a player
+            // reads in chat is the one they find floating over the boss.
+            message.append(RaidBossNameplate.of(tier, speciesName, renown, 0))
+                    .append(Component.literal(", a renowned ").withStyle(ChatFormatting.YELLOW))
+                    .append(Component.literal(tier.displayName()).withStyle(RaidTierPresentation.color(tier)))
+                    .append(Component.literal(" raid, has appeared in ").withStyle(ChatFormatting.YELLOW));
+        }
+        message.append(Component.literal(biomeName).withStyle(ChatFormatting.GREEN))
                 .append(Component.literal("! Coordinate hint: near X " + hintX + ", Z " + hintZ)
                         .withStyle(ChatFormatting.YELLOW))
                 .append(Component.literal(" (" + friendlyName(dimensionId) + ").")

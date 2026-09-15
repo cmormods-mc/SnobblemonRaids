@@ -5,6 +5,7 @@ import com.cobbleraids.network.PendingRewardRevealPayload;
 import com.cobbleraids.network.RewardChoicePayload;
 import com.cobbleraids.network.RewardItemPayload;
 import com.cobbleraids.network.RewardResultPayload;
+import com.cobbleraids.presentation.RaidBossNameplate;
 import com.cobbleraids.presentation.RaidTierPresentation;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -68,6 +69,10 @@ public final class RaidRewardRevealScreen extends Screen {
     private static final int VALUE_Y_DAMAGE = 404;
     private static final int VALUE_Y_PARTICIPANTS = 478;
     private static final float SIDEBAR_TEXT_SCALE = 3.0f;
+    /** Largest the renown banner draws, in font pixels per screen pixel; a short title must not balloon. */
+    private static final float CHAMBER_BANNER_MAX_SCALE = 2.0f;
+    /** Top of the banner as a share of the chamber's height: just inside the corner brackets, above the halo. */
+    private static final float CHAMBER_BANNER_TOP = 0.045f;
 
     private record NativeRect(int x, int y, int width, int height) {}
     private record Rect(int x, int y, int width, int height) {
@@ -135,6 +140,8 @@ public final class RaidRewardRevealScreen extends Screen {
     private final Component sidebarTime;
     private final Component sidebarDamage;
     private final Component sidebarParticipants;
+    /** A renowned boss's title, or null. */
+    private final Component chamberBanner;
 
     // Rebuilt in init(), which vanilla also calls on window resize -- the only thing that moves it.
     private Layout layout;
@@ -175,6 +182,7 @@ public final class RaidRewardRevealScreen extends Screen {
         this.sidebarDamage = Component.literal(String.format(Locale.ROOT, "%.1f%%",
                 pending.contributionPercentage()));
         this.sidebarParticipants = Component.literal(Integer.toString(pending.participantCount()));
+        this.chamberBanner = RaidBossNameplate.banner(pending.renownTitle());
     }
 
     public static void openFor(PendingRewardRevealPayload payload) {
@@ -400,6 +408,7 @@ public final class RaidRewardRevealScreen extends Screen {
 
         graphics.blit(CHAMBER_BACKGROUND, chamber.x(), chamber.y(), chamber.width(), chamber.height(),
                 0f, 0f, CHAMBER_RECT.width(), CHAMBER_RECT.height(), CHAMBER_RECT.width(), CHAMBER_RECT.height());
+        if (chamberBanner != null) drawChamberBanner(graphics, chamber);
 
         if (state == State.RESULT && resultIcon != null) {
             int iconSize = Math.round(chamber.width() * 0.16f);
@@ -422,6 +431,31 @@ public final class RaidRewardRevealScreen extends Screen {
         }
 
         if (state == State.RESULT) renderResult(graphics, chamber);
+    }
+
+    /**
+     * A renowned boss's title across the top of the chamber.
+     *
+     * <p>Here rather than in the sidebar: the Boss Defeated band is one line sized for a species, and
+     * "Kaelen, the Relentless" at the sidebar's text scale is wider than the whole panel. Scaled to
+     * fit the chamber and drawn on a dark plate, so the gold and red read against the blue art the
+     * way a nameplate reads against the sky.
+     */
+    private void drawChamberBanner(GuiGraphics graphics, Rect chamber) {
+        int textWidth = this.font.width(chamberBanner);
+        if (textWidth <= 0) return;
+        float scale = Math.min(CHAMBER_BANNER_MAX_SCALE, chamber.width() * 0.8f / textWidth);
+        int top = chamber.y() + Math.round(chamber.height() * CHAMBER_BANNER_TOP);
+        int halfWidth = Math.round(textWidth * scale / 2f);
+        int height = Math.round(this.font.lineHeight * scale);
+        int pad = Math.max(2, Math.round(3 * scale));
+        graphics.fill(chamber.centerX() - halfWidth - pad, top - pad,
+                chamber.centerX() + halfWidth + pad, top + height, 0xA0000000);
+        graphics.pose().pushPose();
+        graphics.pose().translate(chamber.centerX(), top, 0);
+        graphics.pose().scale(scale, scale, 1f);
+        graphics.drawString(this.font, chamberBanner, -textWidth / 2, 0, 0xFFFFFFFF, true);
+        graphics.pose().popPose();
     }
 
     /**

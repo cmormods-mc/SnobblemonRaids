@@ -5,6 +5,8 @@ import com.cobbleraids.config.RaidDefinitionRegistry;
 import com.cobbleraids.config.RaidRarityTier;
 import com.cobbleraids.presentation.CommandFormat;
 import com.cobbleraids.presentation.RaidTierPresentation;
+import com.cobbleraids.renown.RaidRenownMarker;
+import com.cobbleraids.renown.RenownRequest;
 import com.cobbleraids.spawn.RaidBossSpawner;
 import com.cobbleraids.spawn.RaidSpawnScheduler;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
@@ -13,6 +15,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
@@ -103,7 +106,7 @@ final class RaidAdminSpawnOps {
                 .sorted(Comparator.comparing(definition -> definition.species().getPath())).toList();
     }
 
-    static int spawnNearPlayer(CommandSourceStack source, String rawId) {
+    static int spawnNearPlayer(CommandSourceStack source, String rawId, String rawRenown) {
         ServerPlayer player;
         try { player = source.getPlayerOrException(); }
         catch (Exception ex) {
@@ -111,10 +114,17 @@ final class RaidAdminSpawnOps {
             return 0;
         }
         Vec3 look = player.getLookAngle();
-        return spawnAt(source, rawId, player.position().add(look.x * 3.0, 0.0, look.z * 3.0));
+        return spawnAt(source, rawId, player.position().add(look.x * 3.0, 0.0, look.z * 3.0), rawRenown);
     }
 
-    static int spawnAt(CommandSourceStack source, String rawPokemonName, Vec3 position) {
+    /** @param rawRenown roll, force or none; null rolls the configured chance like a natural spawn. */
+    static int spawnAt(CommandSourceStack source, String rawPokemonName, Vec3 position, String rawRenown) {
+        Optional<RenownRequest> parsedRenown = rawRenown == null ? Optional.of(RenownRequest.ROLL) : RenownRequest.parse(rawRenown);
+        if (parsedRenown.isEmpty()) {
+            source.sendFailure(Component.literal("Unknown renown mode '" + rawRenown + "'. Use roll, force or none."));
+            return 0;
+        }
+        RenownRequest renownRequest = parsedRenown.get();
         String pokemonName = rawPokemonName.trim().toLowerCase(Locale.ROOT);
         if (pokemonName.isEmpty() || pokemonName.contains(":")) {
             source.sendFailure(Component.literal("Use the Cobblemon species name only, for example: /cobbleraids spawn garchomp"));
@@ -137,10 +147,16 @@ final class RaidAdminSpawnOps {
 
         RaidDefinition definition = matches.getFirst();
         try {
-            PokemonEntity boss = RaidBossSpawner.spawnAt(source.getLevel(), position, definition);
+            PokemonEntity boss = RaidBossSpawner.spawnAt(source.getLevel(), position, definition, renownRequest);
+            // Says what renown did, including when a forced title could not be drawn -- otherwise a
+            // test of the renown path that silently produced an ordinary boss would look like a pass.
+            String renownNote = RaidRenownMarker.read(boss)
+                    .map(renown -> " as " + renown.title() + " [" + renown.boon().encode() + "]")
+                    .orElse(renownRequest == RenownRequest.FORCE
+                            ? " without renown: the word lists have nothing for this boss" : "");
             source.sendSuccess(() -> Component.literal("Spawned " + pokemonName + " raid at "
                     + CommandFormat.coords(boss.getX(), boss.getY(), boss.getZ()) + " in "
-                    + CommandFormat.shortId(source.getLevel().dimension().location()))
+                    + CommandFormat.shortId(source.getLevel().dimension().location()) + renownNote)
                     .withStyle(ChatFormatting.GREEN), true);
             return 1;
         } catch (RuntimeException ex) {

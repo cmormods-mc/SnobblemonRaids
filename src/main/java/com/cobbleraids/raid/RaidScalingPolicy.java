@@ -40,6 +40,20 @@ public final class RaidScalingPolicy {
      * definition reaches CobbleRaidsConfigManager for its defaults, whose static initializer wants
      * a Fabric config directory that no unit test has.
      */
+    /**
+     * The pool for a renowned boss whose epithet carries the hp_pool boon.
+     *
+     * <p>Applied last, to the pool the party actually faces after player count and level, so the
+     * bonus is the same share of the fight however many players turned up or how far the boss was
+     * raised.
+     */
+    public static long forRenown(long pool, double bonus) {
+        if (!(bonus > 0.0)) return pool;
+        double scaled = pool * (1.0 + bonus);
+        if (!Double.isFinite(scaled) || scaled >= Long.MAX_VALUE) return Long.MAX_VALUE;
+        return Math.max(1L, Math.round(scaled));
+    }
+
     public static long forLevel(long participantScaledHealth, int definitionLevel, int bossLevel) {
         if (definitionLevel <= 0 || bossLevel <= definitionLevel) return participantScaledHealth;
 

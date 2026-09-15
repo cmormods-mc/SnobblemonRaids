@@ -56,6 +56,7 @@ class CobbleRaidsConfigRoundTripTest {
                 CobbleRaidsConfig.defaults().tierScaling(),
                 CobbleRaidsConfig.defaults().bossGlow(),
                 CobbleRaidsConfig.defaults().bossMovement(),
+                new CobbleRaidsConfig.Renown(false, 0.2, 0.3, 0.4, 0.5, 0.25, 64, 1.5, 2.0),
                 true);
 
         CobbleRaidsConfig reparsed = CobbleRaidsConfig.fromJson(custom.toJson());
@@ -78,6 +79,31 @@ class CobbleRaidsConfigRoundTripTest {
         assertEquals(90, reparsed.dynamicLevel().maxLevel());
         assertEquals(20, reparsed.megaPity().threshold());
         assertEquals(30, reparsed.raidPoints().legendary());
+        assertFalse(reparsed.renown().enabled());
+        assertEquals(0.4, reparsed.renown().chanceFor(RaidRarityTier.LEGENDARY), 0.0);
+        assertEquals(0.25, reparsed.renown().healthBonus(), 0.0);
+        assertEquals(64, reparsed.renown().statFocusEvs());
+        assertEquals(2.0, reparsed.renown().currencyMultiplier(), 0.0);
+    }
+
+    @Test
+    @DisplayName("renown ships on at 5/7/10/12%, and its strengths stay moderate")
+    void renownDefaults() {
+        CobbleRaidsConfig.Renown renown = CobbleRaidsConfig.defaults().renown();
+
+        assertTrue(renown.enabled());
+        assertEquals(0.05, renown.chanceFor(RaidRarityTier.STARTER), 0.0);
+        assertEquals(0.07, renown.chanceFor(RaidRarityTier.POWERHOUSE), 0.0);
+        assertEquals(0.10, renown.chanceFor(RaidRarityTier.LEGENDARY), 0.0);
+        assertEquals(0.12, renown.chanceFor(RaidRarityTier.MYTHICAL), 0.0);
+        assertThrows(IllegalArgumentException.class,
+                () -> new CobbleRaidsConfig.Renown(true, 0, 0, 0, 0, 0.6, 128, 1.25, 1.25), "health bonus cap");
+        assertThrows(IllegalArgumentException.class,
+                () -> new CobbleRaidsConfig.Renown(true, 0, 0, 0, 0, 0.15, 253, 1.25, 1.25), "EV cap");
+        assertThrows(IllegalArgumentException.class,
+                () -> new CobbleRaidsConfig.Renown(true, 0, 0, 0, 0, 0.15, 128, 0.9, 1.25), "renown never pays less");
+        assertThrows(IllegalArgumentException.class,
+                () -> new CobbleRaidsConfig.Renown(true, 12.0, 0, 0, 0, 0.15, 128, 1.25, 1.25), "a chance is not a percentage");
     }
 
     @Test
@@ -94,10 +120,12 @@ class CobbleRaidsConfigRoundTripTest {
         old.remove("dynamic_level");
         old.remove("mega_pity");
         old.remove("raid_points");
+        old.remove("renown");
         old.getAsJsonObject("combat_defaults").remove("max_failed_attempts");
 
         CobbleRaidsConfig loaded = CobbleRaidsConfig.fromJson(old);
 
+        assertEquals(CobbleRaidsConfig.defaults().renown(), loaded.renown());
         assertEquals(CobbleRaidsConfig.defaults().battleCarryover(), loaded.battleCarryover());
         assertEquals(CobbleRaidsConfig.defaults().combatDefaults().maxFailedAttempts(),
                 loaded.combatDefaults().maxFailedAttempts());

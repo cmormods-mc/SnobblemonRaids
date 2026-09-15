@@ -31,10 +31,12 @@ public final class RaidSession {
     private final ResourceLocation definitionId;
     private final boolean allowFlee;
     private final RaidProgress progress;
+    private final String renownTitle;
 
     public RaidSession(PokemonBattle battle, Collection<ServerPlayer> players, float maxHealth,
                        PokemonEntity bossEntity, UUID bossActorId, ResourceLocation definitionId,
-                       int timeLimitSeconds, boolean allowFlee) {
+                       int timeLimitSeconds, boolean allowFlee, String renownTitle) {
+        this.renownTitle = renownTitle == null ? "" : renownTitle;
         this.battle = Objects.requireNonNull(battle, "battle");
         this.bossEntity = Objects.requireNonNull(bossEntity, "bossEntity");
         this.bossActorId = Objects.requireNonNull(bossActorId, "bossActorId");
@@ -51,6 +53,8 @@ public final class RaidSession {
     public UUID getBossActorId() { return bossActorId; }
     public ResourceLocation getDefinitionId() { return definitionId; }
     public boolean isFleeAllowed() { return allowFlee; }
+    /** "Kaelen, the Relentless", or empty. Captured at start: the boss entity is discarded on victory. */
+    public String getRenownTitle() { return renownTitle; }
 
     public Set<UUID> getParticipants() { return progress.participants(); }
     public Set<UUID> getActiveParticipants() { return progress.activeParticipants(); }
