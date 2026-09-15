@@ -74,9 +74,10 @@ public final class RaidRewardService {
     }
 
     /**
-     * Writes the queue back to disk. Called after every mutation rather than on a timer: claims are
-     * rare (once per player per raid), so this is far cheaper than it looks, and it means a crash
-     * cannot lose a reward that the player has already been told they have.
+     * Mirrors the queue into its SavedData and marks it dirty after every mutation, so it is written
+     * at the next world save. It does not write to disk itself: a crash before that save loses any
+     * reward granted since the last one. Consuming a claim, where the risk is duplication rather
+     * than loss, uses {@link #persistNow} instead.
      */
     private static void persist(MinecraftServer server) {
         if (server != null) PendingRewardStore.get(server).update(PENDING);

@@ -32,7 +32,8 @@ Needs a Fabric server for the Minecraft version in `build.gradle`, plus in `mods
 
 - `fabric-api` matching `build.gradle`
 - `Cobblemon-fabric-<version>.jar`
-- `SkiesGUIs` — easy to miss; it is a hard dependency and the server refuses to start without it
+- `SkiesGUIs` — optional (`fabric.mod.json` lists it under `recommends`, and reward claims fall back
+  to chat without it), but keep it in the rig so the SkiesGUIs path is the one being exercised
 
 Pointing it at a directory that also has the live modpack's other mods (mega_showdown, accessories,
 architectury, owo-lib) is better than a clean room: that is the combination players actually run, and

@@ -45,9 +45,8 @@ abstract class RaidPoolInstruction implements InterpreterInstruction {
 
         applyToPool(raid, battle, amount);
         // syncBossHealth writes a Pokemon's health and sends packets, neither of which is safe off
-        // the server thread. Cobblemon reaches this code without marshalling, so whether we are on
-        // it is a property of the installed Cobblemon version rather than of anything we control.
-        // Ask, report, and carry on -- behaviour is unchanged either way.
+        // the server thread. Cobblemon 1.7.3 runs instructions there (interpretMessage goes through
+        // runOnServer); this reports it if a Cobblemon update or another mod's mixin changes that.
         RaidThreadGuard.expectServerThread("showdown-instruction");
         syncBossHealth(raid, battle);
         afterPool(raid, battle);

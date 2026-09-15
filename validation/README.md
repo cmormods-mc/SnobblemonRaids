@@ -57,12 +57,17 @@ The steps individually, if you want to run just one:
 
 ```sh
 bash validation/validate_phase31.sh
-for n in 32 36 37 38 39 40 41; do python validation/validate_phase$n.py; done
+for n in 32 36 37 38 39 40; do python validation/validate_phase$n.py; done
 python validation/validate_logging.py
 python validation/validate_callback_guards.py
+python validation/sprites/build_icon_manifest.py --check
+python validation/economy/validate_economy_manifest.py
+python validation/economy/build_tables.py --check
+python validation/economy/validate_economy_probabilities.py
+python validation/shop/build_test_catalog.py --check
 gradlew clean build
 python validation/validate_mixin_guards.py
-for n in 31 32 36 37 38 39 40 41; do python validation/validate_phase$n.py build/libs/CobbleRaids-<version>.jar; done
+for n in 31 32 36 37 38 39 40; do python validation/validate_phase$n.py build/libs/CobbleRaids-<version>.jar; done
 python validation/validate_mixin_guards.py build/libs/CobbleRaids-<version>.jar
 ```
 

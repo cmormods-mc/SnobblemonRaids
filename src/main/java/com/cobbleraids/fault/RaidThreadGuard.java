@@ -9,17 +9,17 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Records whether this mod's world-touching code is running on the server thread.
  *
- * <p>It exists because of a question that cannot be answered by reading Cobblemon.
- * {@code GraalShowdownService.sendFromShowdown} calls {@code ShowdownInterpreter.interpretMessage}
- * with no marshalling at all -- verified in its bytecode -- so a {@code -raiddamage} instruction runs
- * on whatever thread drives Showdown's output pump. Our own raid state is safe either way, because
- * RaidProgress is synchronised, but the same call path also does
- * {@code Pokemon.setCurrentHealth(...)} and {@code battle.sendSidedUpdate(...)}, which are Minecraft
- * state and are not safe to touch from an arbitrary thread.
+ * <p>The {@code -raiddamage} path does {@code Pokemon.setCurrentHealth(...)} and
+ * {@code battle.sendSidedUpdate(...)}, which are Minecraft state and not safe to touch from an
+ * arbitrary thread. Whether it runs on the server thread is Cobblemon's choice, not ours. In
+ * Cobblemon 1.7.3 it does: {@code ShowdownInterpreter.interpretMessage} hands its work to
+ * {@code DistributionUtilsKt.runOnServer}, which calls {@code MinecraftServer.execute} (read from
+ * the bytecode on 2026-09-15; an earlier version of this comment said there was no marshalling,
+ * which was wrong).
  *
- * <p>Proving the answer statically would settle it for exactly one Cobblemon version. Asking the
- * running server settles it for whichever version is actually installed, keeps answering after an
- * update, and costs one reference comparison on paths that already do far more work than that.
+ * <p>The check stays because that answer holds for one Cobblemon version and no mixin into the
+ * interpreter. Asking the running server keeps answering after an update, and costs one reference
+ * comparison on paths that already do far more work than that.
  *
  * <p>Nothing here changes behaviour. It observes and reports, so a violation shows up as a log line
  * and an audit finding rather than as a corrupted entity three weeks later.
