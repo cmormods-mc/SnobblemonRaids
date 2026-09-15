@@ -67,8 +67,10 @@ python validation/economy/validate_economy_probabilities.py
 python validation/shop/build_test_catalog.py --check
 gradlew clean build
 python validation/validate_mixin_guards.py
+python validation/validate_api_boundary.py
 for n in 31 32 36 37 38 39 40; do python validation/validate_phase$n.py build/libs/CobbleRaids-<version>.jar; done
 python validation/validate_mixin_guards.py build/libs/CobbleRaids-<version>.jar
+python validation/validate_api_boundary.py build/libs/CobbleRaids-<version>.jar
 ```
 
 ## Two kinds of check, and only one of them is worth writing

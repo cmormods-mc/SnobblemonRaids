@@ -212,6 +212,37 @@ failure is contained to the raid that caused it and logged (rate-limited) rather
 taking the server down. Because of that, **a broken build can look healthy from outside** —
 grep the log for `[CobbleRaids]` before declaring a run good.
 
+## Encounter API for other mods
+
+Another mod can start a raid boss battle it owns through `com.cobbleraids.api.encounter`
+(experimental, `CobbleRaidsEncounters.API_VERSION` 1; first consumer: CobbleTowers). An owned
+encounter is a real raid battle — shared health pool, boss AI, the same Showdown integration —
+whose side effects belong to the caller:
+
+```java
+StartResult result = CobbleRaidsEncounters.start(new EncounterRequest(
+        ResourceLocation.fromNamespaceAndPath("mymod", "arena"), UUID.randomUUID(), players,
+        ResourceLocation.fromNamespaceAndPath("cobbleraids", "decidueye"), level, position,
+        bossLevel, OptionalLong.empty(),
+        EncounterPolicy.none().withCarryover(true, true)),
+    listener);   // onParticipantLeft, onEnded(EncounterResult)
+```
+
+- **Nothing happens unless the policy asks.** Catching, raid rewards, raid history, experience
+  and HP/PP carryover are each off by default, independent of the server config.
+- **The boss belongs to the encounter.** Nobody else can recruit into it, it is removed when the
+  encounter ends however it ends, and one left behind by a crash is purged at the next boot.
+- **Call on the server thread.** Listener exceptions are contained and logged; they never stop
+  cleanup.
+
+Signatures in that package use only `java.*`, `net.minecraft.*` and the package itself, which
+`validate_api_boundary.py` enforces on the bytecode. Consumers compile against the published
+artifact `com.cobbleraids:cobbleraids:<version>`:
+
+```text
+./gradlew publishToMavenLocal
+```
+
 ## Build
 
 ```text
@@ -219,9 +250,10 @@ gradle --no-daemon clean build
 ```
 
 Outputs the mod JAR, a sources JAR and the two optional data JARs to `build/libs`, and runs
-the 196-test unit suite over the Minecraft-free core: spawn-rate and contribution maths,
+the 409-test unit suite over the Minecraft-free core: spawn-rate and contribution maths,
 config round-trip, lobby recruitment and raid progress rules, fault containment, the
-consistency audit's reporting rules, and the Showdown file patcher.
+consistency audit's reporting rules, the shop and reward economy, the encounter API's request
+and policy rules, and the Showdown file patcher.
 
 ## Validation
 
@@ -230,16 +262,17 @@ validation/validate_phase31.sh
 python3 validation/validate_phase{32,36,37,38,39,40}.py [jar]
 python3 validation/validate_{logging,callback_guards}.py
 python3 validation/validate_mixin_guards.py [jar]      # after a build: reads bytecode
+python3 validation/validate_api_boundary.py [jar]      # after a build: reads bytecode
 python3 validation/economy/validate_economy_manifest.py
 python3 validation/economy/build_tables.py --check
 ```
 
 Structural checks over the 130 definitions, tier membership, biome-compat separation,
 optional-mod manifests, the mixin registry, the shared-HP packet path, and the tier loot
-table each definition rolls — plus three property checks that re-derive their subject from
+table each definition rolls — plus four property checks that re-derive their subject from
 the tree each run: every Fabric callback and every mixin injection is wrapped in a fault
-barrier, and all logging goes through `RaidLog`. They run against both the source tree and
-the built JAR.
+barrier, all logging goes through `RaidLog`, and no public API signature names an internal or
+Cobblemon type. They run against both the source tree and the built JAR.
 
 The whole sequence — validators, `gradlew clean build` with the unit suite, then the
 validators again over the produced JAR — is one script, which is exactly what

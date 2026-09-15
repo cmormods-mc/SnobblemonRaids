@@ -79,6 +79,9 @@ jobs:
       - name: Validate mixin fault barriers
         run: python3 validation/validate_mixin_guards.py
 
+      - name: Validate public API boundary
+        run: python3 validation/validate_api_boundary.py
+
       - name: Validate runtime JAR
         # Derived from build.gradle so a version bump cannot silently skip JAR validation.
         run: |
@@ -93,6 +96,7 @@ jobs:
           python3 validation/validate_phase39.py "$jar"
           python3 validation/validate_phase40.py "$jar"
           python3 validation/validate_mixin_guards.py "$jar"
+          python3 validation/validate_api_boundary.py "$jar"
 
       - name: Upload build outputs
         if: always()

@@ -31,6 +31,13 @@ public final class RaidFactory {
 
     public static RaidSession startFromWildBoss(Collection<ServerPlayer> players, RaidDefinition definition,
                                                  PokemonEntity bossEntity, long raidMaxHealth) {
+        return startFromWildBoss(players, definition, bossEntity, raidMaxHealth, null);
+    }
+
+    /** As above; {@code ownership} is set for an encounter another mod owns and null for an ordinary raid. */
+    public static RaidSession startFromWildBoss(Collection<ServerPlayer> players, RaidDefinition definition,
+                                                 PokemonEntity bossEntity, long raidMaxHealth,
+                                                 RaidSession.Ownership ownership) {
         Objects.requireNonNull(definition, "definition");
         Objects.requireNonNull(bossEntity, "bossEntity");
         if (!RaidBossEntityMarker.isRaidBoss(bossEntity)) throw new IllegalArgumentException("Boss entity is not marked as a CobbleRaids boss");
@@ -73,7 +80,8 @@ public final class RaidFactory {
                 definition.id(),
                 definition.timeLimitSeconds(),
                 definition.allowFlee(),
-                RaidRenownMarker.read(bossEntity).map(RaidRenown::title).orElse("")
+                RaidRenownMarker.read(bossEntity).map(RaidRenown::title).orElse(""),
+                ownership
         );
         RaidRegistry.bind(session);
         session.activate();

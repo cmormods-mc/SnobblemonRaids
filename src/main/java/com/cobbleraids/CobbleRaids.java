@@ -151,6 +151,7 @@ public final class CobbleRaids implements ModInitializer {
             RaidFaultBarrier.guard("shutdown:raids", () -> counts[0] = RaidRegistry.onServerStopped());
             RaidFaultBarrier.guard("shutdown:lobbies", () -> counts[1] = RaidLobbyManager.onServerStopped());
             RaidFaultBarrier.guard("shutdown:lifecycle", RaidLifecycleCoordinator::onServerStopped);
+            RaidFaultBarrier.guard("shutdown:encounters", com.cobbleraids.encounter.EncounterService::onServerStopped);
             RaidFaultBarrier.guard("shutdown:combat-rules", RaidCombatRuleService::onServerStopped);
             RaidFaultBarrier.guard("shutdown:rewards", RaidRewardService::onServerStopped);
             RaidFaultBarrier.guard("shutdown:spawn-history", RaidSpawnHistory::onServerStopped);

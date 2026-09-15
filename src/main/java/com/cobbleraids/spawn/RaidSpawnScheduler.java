@@ -369,17 +369,25 @@ public final class RaidSpawnScheduler {
         }
     }
 
-    /** Removes stale natural raid entities after a crash/restart. */
+    /**
+     * Removes stale natural raid entities after a crash/restart, and the bosses of owned encounters.
+     *
+     * <p>An owned encounter cannot resume: its battle and its listener died with the old server. Its
+     * owner rebuilds it, so the old boss would only be an unfightable leftover.
+     */
     public static void onServerStarted(MinecraftServer server) {
         TRACKER.clear();
         COOLDOWNS.clear();
         schedulerTick = 0L;
         int purged = 0;
+        int owned = 0;
         for (ServerLevel level : server.getAllLevels()) {
             for (var entity : level.getAllEntities()) {
-                if (entity instanceof PokemonEntity pokemon
-                        && RaidBossEntityMarker.isNatural(pokemon)
-                        && RaidBossEntityMarker.isRaidBoss(pokemon)) {
+                if (!(entity instanceof PokemonEntity pokemon) || !RaidBossEntityMarker.isRaidBoss(pokemon)) continue;
+                if (RaidBossEntityMarker.isOwned(pokemon)) {
+                    pokemon.discard();
+                    owned++;
+                } else if (RaidBossEntityMarker.isNatural(pokemon)) {
                     pokemon.discard();
                     purged++;
                 }
@@ -388,6 +396,10 @@ public final class RaidSpawnScheduler {
         if (purged > 0) {
             RaidLog.info("Removed " + purged
                     + " stale natural raid boss(es) from a prior server session.");
+        }
+        if (owned > 0) {
+            RaidLog.info("Removed " + owned
+                    + " boss(es) of owned encounters from a prior server session.");
         }
     }
 

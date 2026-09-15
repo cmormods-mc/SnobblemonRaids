@@ -59,10 +59,13 @@ step "Validate the shop test catalogue"
 step "Compile, test and remap"
 ./gradlew clean build --stacktrace --warning-mode all
 
-# After the build on purpose: this reads compiled bytecode, so there is nothing to inspect until
+# After the build on purpose: these read compiled bytecode, so there is nothing to inspect until
 # the classes exist. `clean` above also wipes anything a previous run left behind.
 step "Validate mixin fault barriers (bytecode)"
 "$py" validation/validate_mixin_guards.py
+
+step "Validate public API boundary (bytecode)"
+"$py" validation/validate_api_boundary.py
 
 # Derived from build.gradle so a version bump cannot silently skip JAR validation.
 version="$(sed -n "s/^version = '\(.*\)'$/\1/p" build.gradle)"
@@ -80,5 +83,8 @@ done
 
 step "Validate mixin fault barriers (jar)"
 "$py" validation/validate_mixin_guards.py "$jar"
+
+step "Validate public API boundary (jar)"
+"$py" validation/validate_api_boundary.py "$jar"
 
 printf '\n\033[32mci_local: all checks passed for %s\033[0m\n' "$version"
