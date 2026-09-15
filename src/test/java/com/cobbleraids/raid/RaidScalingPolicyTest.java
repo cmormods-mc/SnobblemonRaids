@@ -27,6 +27,18 @@ class RaidScalingPolicyTest {
     }
 
     @Test
+    @DisplayName("a renowned hp_pool boon raises the final pool by its share, and no bonus changes nothing")
+    void renownRaisesThePool() {
+        assertEquals(1455L, RaidScalingPolicy.forRenown(STARTER_TRIO, 0.15));
+        assertEquals(STARTER_TRIO, RaidScalingPolicy.forRenown(STARTER_TRIO, 0.0));
+        assertEquals(STARTER_TRIO, RaidScalingPolicy.forRenown(STARTER_TRIO, Double.NaN));
+        assertEquals(Long.MAX_VALUE, RaidScalingPolicy.forRenown(Long.MAX_VALUE - 1_000, 0.5), "saturates, never wraps");
+        // Applied after the level factor, so the bonus stays the same share of whatever pool results.
+        long raised = RaidScalingPolicy.forLevel(STARTER_TRIO, STARTER_LEVEL, 100);
+        assertEquals(Math.round(raised * 1.15), RaidScalingPolicy.forRenown(raised, 0.15));
+    }
+
+    @Test
     @DisplayName("raising the level raises the pool in proportion")
     void poolFollowsTheLevel() {
         // Four times the level, four times the pool -- the party that raised it hits about four

@@ -6,9 +6,17 @@ import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.config.RaidBossTraits;
 import com.cobbleraids.pokemon.PokemonStatNames;
 import com.cobbleraids.config.RaidDefinition;
+import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobbleraids.presentation.RaidBossGlowService;
-import com.cobbleraids.presentation.RaidTierPresentation;
+import com.cobbleraids.presentation.RaidBossNameplate;
+import com.cobbleraids.renown.RaidRenown;
+import com.cobbleraids.renown.RaidRenownMarker;
+import com.cobbleraids.renown.RenownBoon;
+import com.cobbleraids.renown.RenownRegistry;
+import com.cobbleraids.renown.RenownRequest;
+import com.cobbleraids.renown.RenownRewards;
 import com.cobbleraids.showdown.ShowdownIntegrationInstaller;
+import com.cobblemon.mod.common.api.types.ElementalType;
 import com.cobblemon.mod.common.api.moves.Move;
 import com.cobblemon.mod.common.api.moves.MoveTemplate;
 import com.cobblemon.mod.common.api.moves.Moves;
@@ -25,7 +33,9 @@ import com.cobblemon.mod.common.pokemon.Species;
 import com.cobblemon.mod.common.pokemon.properties.UncatchableProperty;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 import kotlin.Unit;
 import net.minecraft.server.level.ServerLevel;
@@ -40,6 +50,11 @@ public final class RaidBossSpawner {
     private RaidBossSpawner() {}
 
     public static PokemonEntity spawnAt(ServerLevel level, Vec3 position, RaidDefinition definition) {
+        return spawnAt(level, position, definition, RenownRequest.ROLL);
+    }
+
+    public static PokemonEntity spawnAt(ServerLevel level, Vec3 position, RaidDefinition definition,
+                                        RenownRequest renownRequest) {
         Objects.requireNonNull(level, "level");
         Objects.requireNonNull(position, "position");
         Objects.requireNonNull(definition, "definition");
@@ -61,6 +76,9 @@ public final class RaidBossSpawner {
         // Strictly before the health line below: IVs, EVs and nature all change getMaxHealth(), so
         // applying them afterwards would spawn every boss already damaged.
         applyTraits(pokemon, definition);
+        // After traits and before the health line too: a stat focus adds to whatever EVs the
+        // definition pinned, and a traits form can change the types an epithet is drawn against.
+        RaidRenown renown = rollRenown(pokemon, definition, renownRequest);
         pokemon.setCurrentHealth(pokemon.getMaxHealth());
         UncatchableProperty.INSTANCE.uncatchable().apply(pokemon);
 
@@ -70,7 +88,9 @@ public final class RaidBossSpawner {
             spawned.setPersistenceRequired();
             spawned.setCountsTowardsSpawnCap(false);
             spawned.setInvulnerable(true);
-            spawned.setCustomName(RaidTierPresentation.styledName(definition.rarityTier(), spawned.getPokemon().getSpecies().getTranslatedName()));
+            if (renown != null) RaidRenownMarker.mark(spawned, renown);
+            spawned.setCustomName(RaidBossNameplate.of(definition.rarityTier(),
+                    spawned.getPokemon().getSpecies().getTranslatedName(), renown, 0));
             spawned.setCustomNameVisible(true);
             return Unit.INSTANCE;
         });
@@ -160,6 +180,43 @@ public final class RaidBossSpawner {
         }
 
         if (any) properties.apply(pokemon);
+    }
+
+    /**
+     * Decides whether this boss is renowned and, if it is, applies the stat focus its epithet grants.
+     *
+     * <p>Guarded as one unit and silent on failure: renown is a garnish on a raid, never a reason for
+     * one not to appear. A failure leaves an ordinary boss rather than a half-renowned one whose title
+     * promises a boon it never received.
+     *
+     * <p>FORCE skips both the enabled switch and the chance -- it exists so an operator can test the
+     * whole path on demand -- but still needs the word lists to have something for this boss.
+     */
+    private static RaidRenown rollRenown(Pokemon pokemon, RaidDefinition definition, RenownRequest request) {
+        if (request == RenownRequest.NONE) return null;
+        RaidRenown[] rolled = { null };
+        RaidFaultBarrier.guard("spawn:renown", () -> {
+            CobbleRaidsConfig.Renown config = CobbleRaidsConfigManager.get().renown();
+            ThreadLocalRandom random = ThreadLocalRandom.current();
+            if (request == RenownRequest.ROLL
+                    && !(config.enabled() && RenownRewards.rolls(config.chanceFor(definition.rarityTier()), random))) {
+                return;
+            }
+            List<String> types = new ArrayList<>();
+            for (ElementalType type : pokemon.getTypes()) types.add(type.getShowdownId().toLowerCase(Locale.ROOT));
+            Optional<RaidRenown> drawn = RenownRegistry.pools().draw(definition.rarityTier(), types, random);
+            if (drawn.isEmpty()) return;
+
+            RenownBoon boon = drawn.get().boon();
+            if (boon.kind() == RenownBoon.Kind.STAT_FOCUS) {
+                Stat stat = PokemonStatNames.statFor(boon.stat());
+                pokemon.setIV(stat, IVs.MAX_VALUE);
+                pokemon.setEV(stat, RenownRewards.focusEvs(
+                        pokemon.getEvs().getOrDefault(stat), pokemon.getEvs().total(), config.statFocusEvs()));
+            }
+            rolled[0] = drawn.get();
+        });
+        return rolled[0];
     }
 
     private static Gender parseGender(String value, RaidDefinition definition) {

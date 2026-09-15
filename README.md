@@ -168,6 +168,31 @@ requires permission level 2.
 `testwild` bypasses the spawn roll and species cooldown while keeping placement,
 biome checks, tracking, announcements and active caps.
 
+## Renowned bosses
+
+Each spawn has a per-tier chance (5% / 7% / 10% / 12% by default) to be **renowned**: it
+carries a generated title such as **☠ Kaelen, the Relentless Gyarados ☠** on its nameplate,
+in the spawn announcement and across the top of the reward screen, and its epithet grants one
+moderate boon:
+
+| Boon | Effect | Config |
+|---|---|---|
+| `hp_pool` | Larger raid health pool, after player count and level | `renown.health_bonus` (0.15, max 0.5) |
+| `stat_focus:<stat>` | Max IV plus extra EVs in one stat, within Cobblemon's 252/510 limits | `renown.stat_focus_evs` (128) |
+
+Beating one pays `renown.points_multiplier` Raid Points and `renown.currency_multiplier`
+currency (1.25x each, floored). Contribution bonus rolls are unchanged.
+
+Names and epithets are datapack word lists, loadable from any namespace at
+`data/<namespace>/renown/*.json`; see `data/cobbleraids/renown/` for the format. An epithet
+picks a boon *kind*; the strength always comes from the server config. Typed epithets
+(`"types": ["water"]`) join the general pool for bosses of that type, and `"tiers"` restricts
+an entry to rarer bosses. Bad entries are skipped with a warning.
+
+`/cobbleraids spawn <species> [x y z] renown <roll|force|none>` forces the outcome for testing.
+The reward-screen packet is `pending_reward_reveal_v2`: clients on an older CobbleRaids build
+fall back to the chat claim path instead of disconnecting.
+
 ## Configuration
 
 `config/cobbleraids/server.json` is created on first run and migrated forward on

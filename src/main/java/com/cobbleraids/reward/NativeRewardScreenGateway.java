@@ -27,6 +27,7 @@ public final class NativeRewardScreenGateway {
                 pending.definitionId(),
                 pending.rarityTier().serializedName(),
                 speciesDisplayName(definition),
+                pending.renownTitle(),
                 List.copyOf(pending.rewards().choices().keySet()),
                 pending.contributionPercentage(),
                 pending.contributionBonusRolls(),

@@ -2,6 +2,7 @@ package com.cobbleraids.command;
 
 import com.cobbleraids.config.RaidDefinitionRegistry;
 import com.cobbleraids.config.RaidRarityTier;
+import com.cobbleraids.renown.RenownRequest;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import java.util.Arrays;
 import java.util.Locale;
@@ -53,6 +54,10 @@ final class RaidSuggestions {
         }
         return builder.buildFuture();
     };
+
+    static final SuggestionProvider<CommandSourceStack> RENOWN_MODES = (context, builder) ->
+            SharedSuggestionProvider.suggest(
+                    Arrays.stream(RenownRequest.values()).map(RenownRequest::serializedName), builder);
 
     static final SuggestionProvider<CommandSourceStack> TIERS = (context, builder) ->
             SharedSuggestionProvider.suggest(

@@ -117,7 +117,9 @@ public final class PendingRewardStore extends SavedData {
                 tag.getInt("bonus_rolls"),
                 tag.getInt("elapsed_ticks"),
                 tag.getInt("participants"),
-                seed);
+                seed,
+                // Absent on every claim saved before renown existed, which reads as "" -- an ordinary boss.
+                tag.getString("renown"));
     }
 
     @Override
@@ -145,6 +147,7 @@ public final class PendingRewardStore extends SavedData {
         tag.putInt("elapsed_ticks", pending.elapsedCombatTicks());
         tag.putInt("participants", pending.participantCount());
         tag.putLong("seed", pending.rewardSeed());
+        if (pending.renowned()) tag.putString("renown", pending.renownTitle());
         return tag;
     }
 

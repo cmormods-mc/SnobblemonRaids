@@ -1,0 +1,19 @@
+{
+  "names": [
+    {
+      "values": [
+        "Kaelen", "Vorra", "Sable", "Brask", "Morrow", "Tavish", "Ysolde", "Corvin", "Maelis", "Draven",
+        "Rurik", "Senna", "Talon", "Varek", "Wren", "Ashka", "Bramm", "Cinder", "Dagny", "Elowen",
+        "Garrick", "Hesper", "Ilya", "Jorun", "Kestrel", "Lysander", "Mordra", "Nyx", "Orrin", "Pyra",
+        "Quillon", "Soren", "Thorne", "Ulric", "Vesper", "Wystan", "Xara", "Yorick", "Zephra", "Grimwald",
+        "Hollis", "Kaida", "Mireth", "Oskar", "Revna", "Skarn", "Torvald", "Brisk", "Calder", "Ember"
+      ]
+    },
+    {
+      "tiers": ["legendary", "mythical"],
+      "values": [
+        "Aurex", "Caelum", "Empyra", "Ozymar", "Seraphine", "Valdris", "Nocturne", "Solenne", "Tiamara", "Zarathine"
+      ]
+    }
+  ]
+}

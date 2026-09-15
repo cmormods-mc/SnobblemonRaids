@@ -15,6 +15,9 @@ import net.minecraft.resources.ResourceLocation;
  * ItemStack, and logging off does not reroll what you already earned. It is only as stable as the
  * loot tables behind it -- edit a table between the win and the claim and the same seed yields
  * something else, which is the trade this makes against freezing the stacks outright.
+ *
+ * <p>{@code renownTitle} is "Kaelen, the Relentless" for a renowned boss and empty otherwise. It
+ * is both what the reward screen shows and what makes the claim pay renown's multipliers.
  */
 public record PendingRaidReward(
         UUID raidId,
@@ -25,5 +28,14 @@ public record PendingRaidReward(
         int contributionBonusRolls,
         int elapsedCombatTicks,
         int participantCount,
-        long rewardSeed
-) {}
+        long rewardSeed,
+        String renownTitle
+) {
+    public PendingRaidReward {
+        renownTitle = renownTitle == null ? "" : renownTitle;
+    }
+
+    public boolean renowned() {
+        return !renownTitle.isEmpty();
+    }
+}

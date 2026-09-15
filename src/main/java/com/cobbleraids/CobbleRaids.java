@@ -23,6 +23,7 @@ import com.cobbleraids.network.ShopActionPayload;
 import com.cobbleraids.placeholder.RaidPlaceholders;
 import com.cobbleraids.presentation.RaidBossGlowService;
 import com.cobbleraids.raid.RaidRegistry;
+import com.cobbleraids.renown.RenownRegistry;
 import com.cobbleraids.reward.NativeRewardScreenGateway;
 import com.cobbleraids.reward.RaidRewardCommand;
 import com.cobbleraids.reward.RewardGuiBackends;
@@ -188,5 +189,6 @@ public final class CobbleRaids implements ModInitializer {
         ServerWorldEvents.UNLOAD.register((server, level) ->
                 RaidFaultBarrier.guard("level-unload", () -> RaidSpawnScheduler.onLevelUnloaded(server, level)));
         ResourceManagerHelper.get(PackType.SERVER_DATA).registerReloadListener(new RaidDefinitionRegistry());
+        ResourceManagerHelper.get(PackType.SERVER_DATA).registerReloadListener(new RenownRegistry());
     }
 }

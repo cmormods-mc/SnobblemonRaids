@@ -326,6 +326,37 @@ def scenarios() -> list[Check]:
             note="the 0.8.33 regression: destroying a boss must free its max_active_raids slot at once",
         ),
 
+        # --- renown ----------------------------------------------------------------------------
+        Check(
+            "a forced renowned spawn reports its title and boon",
+            "cobbleraids spawn garchomp 0 80 0 renown force",
+            expect=re.compile(r" as [A-Z][a-z]+, the [A-Z][A-Za-z -]+ \[(?:hp_pool|stat_focus:[a-z_]+)\]"),
+            reject=re.compile(COMMAND_ERROR.pattern + "|without renown", re.I),
+            note="FORCE skips the chance, so a missing title means the word lists or the roll are broken",
+        ),
+        Check(
+            "the renowned boss carries its title as entity tags",
+            "data get entity @e[type=cobblemon:pokemon,tag=cobbleraids_raid_boss,limit=1] Tags",
+            expect=re.compile(r"cobbleraids_renown_name=.*cobbleraids_renown_epithet=the |"
+                              r"cobbleraids_renown_epithet=the .*cobbleraids_renown_name=", re.S),
+            note="the tags are what the lock, the reward and a restart read the title back from",
+        ),
+        Check(
+            "renown none spawns an ordinary boss",
+            "cobbleraids spawn garchomp 40 80 0 renown none",
+            reject=re.compile(COMMAND_ERROR.pattern + "| as [A-Z]", re.I),
+        ),
+        Check(
+            "an unknown renown mode is refused",
+            "cobbleraids spawn garchomp 0 80 40 renown maybe",
+            expect=re.compile(r"Unknown renown mode"),
+        ),
+        Check(
+            "renowned bosses despawn like any other",
+            "cobbleraids despawn all",
+            reject=COMMAND_ERROR,
+        ),
+
         # --- cooldowns and reload ------------------------------------------------------------
         Check(
             "cooldown listing is reachable",
@@ -423,6 +454,13 @@ def audit_log(log: str) -> list[Result]:
         "no exception with CobbleRaids in the stack",
         not suspect,
         "\n      ".join(suspect[:5]),
+    ))
+
+    renown_warnings = [line for line in log.splitlines() if "Renown word lists" in line or "renown file" in line]
+    results.append(Result(
+        "renown word lists loaded without a warning",
+        not renown_warnings and re.search(r"\d+ renown name\(s\) and \d+ epithet\(s\) loaded", log) is not None,
+        "\n      ".join(renown_warnings[:5]) or "no 'renown name(s) and epithet(s) loaded' line",
     ))
 
     results.append(Result(

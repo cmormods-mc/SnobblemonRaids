@@ -8,7 +8,9 @@ import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.config.RaidDefinitionRegistry;
 import com.cobbleraids.raid.RaidFactory;
-import com.cobbleraids.presentation.RaidTierPresentation;
+import com.cobbleraids.presentation.RaidBossNameplate;
+import com.cobbleraids.renown.RaidRenownMarker;
+import com.cobbleraids.renown.RenownBoon;
 import com.cobbleraids.raid.RaidLevelPolicy;
 import com.cobbleraids.raid.RaidScalingPolicy;
 import com.cobbleraids.spawn.RaidBossEntityMarker;
@@ -139,7 +141,7 @@ public final class RaidLobbyManager {
         // Level first: the health pool is scaled by the level the boss ends up at, so a party that
         // raises a boss also raises what it has to chew through.
         int bossLevel = applyDynamicLevel(boss, definition, eligible);
-        long scaledHealth = RaidScalingPolicy.maxHealth(definition, eligible.size(), bossLevel);
+        long scaledHealth = withRenownHealth(boss, RaidScalingPolicy.maxHealth(definition, eligible.size(), bossLevel));
         try {
             RaidFactory.startFromWildBoss(eligible, definition, boss, scaledHealth);
             lobby.started();
@@ -204,15 +206,32 @@ public final class RaidLobbyManager {
             // advertises. Cobblemon already draws a level on its own entity label, so saying it
             // again on an unscaled boss would be pure duplication -- whereas a boss that has been
             // raised to meet the party is the one case where the number is worth stating outright.
-            boss.setCustomName(RaidTierPresentation.styledName(definition.rarityTier(),
-                    Component.literal(boss.getPokemon().getSpecies().getTranslatedName().getString()
-                            + " Lv. " + level)));
+            // Through RaidBossNameplate, which also carries a renowned boss's title -- rebuilding the
+            // name from the species here used to be the one place that title would have been lost.
+            boss.setCustomName(RaidBossNameplate.of(definition.rarityTier(),
+                    boss.getPokemon().getSpecies().getTranslatedName(),
+                    RaidRenownMarker.read(boss).orElse(null), level));
             boss.setCustomNameVisible(true);
 
             RaidLog.info("{} scaled from level {} to {}: {} player(s) averaging {} across {} Pokemon",
                     definition.id(), definition.level(), level, eligible.size(), party, levels.size());
         });
         return applied[0];
+    }
+
+    /**
+     * Enlarges the pool of a renowned boss whose epithet carries the hp_pool boon.
+     *
+     * <p>Guarded like the level: a boon that cannot be read leaves an ordinary fight, never a raid
+     * that fails to start.
+     */
+    private static long withRenownHealth(PokemonEntity boss, long pool) {
+        long[] result = { pool };
+        RaidFaultBarrier.guard("lobby:renown-health", () -> RaidRenownMarker.read(boss)
+                .filter(renown -> renown.boon().kind() == RenownBoon.Kind.HP_POOL)
+                .ifPresent(renown -> result[0] = RaidScalingPolicy.forRenown(pool,
+                        CobbleRaidsConfigManager.get().renown().healthBonus())));
+        return result[0];
     }
 
     private static boolean isEligibleAtLock(ServerPlayer player, PokemonEntity boss, RaidDefinition definition) {

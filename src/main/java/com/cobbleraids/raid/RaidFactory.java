@@ -4,6 +4,8 @@ import com.cobbleraids.battle.RaidBattleType;
 import com.cobbleraids.battle.RaidBossBattleActor;
 import com.cobbleraids.battle.RaidBossBattleAI;
 import com.cobbleraids.config.RaidDefinition;
+import com.cobbleraids.renown.RaidRenown;
+import com.cobbleraids.renown.RaidRenownMarker;
 import com.cobbleraids.spawn.RaidBossEntityMarker;
 import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.api.battles.model.PokemonBattle;
@@ -70,7 +72,8 @@ public final class RaidFactory {
                 bossActor.getUuid(),
                 definition.id(),
                 definition.timeLimitSeconds(),
-                definition.allowFlee()
+                definition.allowFlee(),
+                RaidRenownMarker.read(bossEntity).map(RaidRenown::title).orElse("")
         );
         RaidRegistry.bind(session);
         session.activate();

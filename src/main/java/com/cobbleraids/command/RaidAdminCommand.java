@@ -45,12 +45,26 @@ public final class RaidAdminCommand {
                                 .then(Commands.argument("pokemon", StringArgumentType.word())
                                         .suggests(RaidSuggestions.SPECIES)
                                         .executes(ctx -> RaidAdminSpawnOps.spawnNearPlayer(
-                                                ctx.getSource(), StringArgumentType.getString(ctx, "pokemon")))
+                                                ctx.getSource(), StringArgumentType.getString(ctx, "pokemon"), null))
+                                        .then(Commands.literal("renown")
+                                                .then(Commands.argument("mode", StringArgumentType.word())
+                                                        .suggests(RaidSuggestions.RENOWN_MODES)
+                                                        .executes(ctx -> RaidAdminSpawnOps.spawnNearPlayer(
+                                                                ctx.getSource(), StringArgumentType.getString(ctx, "pokemon"),
+                                                                StringArgumentType.getString(ctx, "mode")))))
                                         .then(Commands.argument("pos", Vec3Argument.vec3())
                                                 .executes(ctx -> RaidAdminSpawnOps.spawnAt(
                                                         ctx.getSource(),
                                                         StringArgumentType.getString(ctx, "pokemon"),
-                                                        Vec3Argument.getVec3(ctx, "pos"))))))
+                                                        Vec3Argument.getVec3(ctx, "pos"), null))
+                                                .then(Commands.literal("renown")
+                                                        .then(Commands.argument("mode", StringArgumentType.word())
+                                                                .suggests(RaidSuggestions.RENOWN_MODES)
+                                                                .executes(ctx -> RaidAdminSpawnOps.spawnAt(
+                                                                        ctx.getSource(),
+                                                                        StringArgumentType.getString(ctx, "pokemon"),
+                                                                        Vec3Argument.getVec3(ctx, "pos"),
+                                                                        StringArgumentType.getString(ctx, "mode"))))))))
                         .then(admin("spawninfo")
                                 .executes(ctx -> RaidSpawnCommands.sendSpawnInfo(ctx.getSource())))
                         // Unrestricted on purpose: this is the player-facing "where does X appear?"
