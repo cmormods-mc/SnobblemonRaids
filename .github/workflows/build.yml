@@ -55,6 +55,10 @@ jobs:
       - name: Validate callback fault barriers
         run: python3 validation/validate_callback_guards.py
 
+      - name: Validate shop species icons
+        # No cobblemon-cards jar in CI, so this checks the committed manifest against the raid roster.
+        run: python3 validation/sprites/build_icon_manifest.py --check
+
       - name: Validate reward-economy manifest
         run: python3 validation/economy/validate_economy_manifest.py
 

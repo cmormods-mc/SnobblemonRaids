@@ -16,10 +16,9 @@ import java.util.Collection;
  * the same reasoning as max HP, which has scaled with the group since long before this existed.
  * Joining or leaving mid-fight rewrites neither.
  *
- * <p>Level does not touch raid HP, which comes from the definition's base_health and the
- * participant count. A scaled boss hits harder and moves first; it does not take longer to kill.
- * That is the right direction -- a tankier boss is a longer chore, a stronger one is a harder
- * fight.
+ * <p>Level also raises raid HP: {@link RaidScalingPolicy#forLevel} multiplies the pool by the boss
+ * level over the definition level, because the party that raised the boss hits about that much
+ * harder. A scaled boss hits harder and moves first, and the fight stays about as long.
  *
  * <p>Free of Minecraft types so the arithmetic is testable without a server.
  */
