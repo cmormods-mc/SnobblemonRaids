@@ -145,3 +145,23 @@ It also clears the bot's queue first. The rig keeps its world between runs and t
 and persistent, so a reward left unclaimed by a previous run sits in front of the one this run
 grants -- and the claim pays for that one instead. That cost two failures which looked exactly
 like payout bugs.
+
+## crash_durability_test.py
+
+Grants a reward to a connected player, kills the server process outright -- no `stop`, no save --
+then restarts and checks the reward is still held.
+
+```sh
+python validation/smoke/crash_durability_test.py --server-dir <rig> --java <jdk21>/bin/java.exe [--jar <build>]
+```
+
+`economy_test.py`'s restart check cannot see this, because a clean `stop` saves everything. Before
+2026-09-15 a new reward was only marked dirty and reached disk at the next autosave, up to five
+minutes later, so a crash in that window lost a reward the player had already been shown. Proven
+both ways on 2026-09-15: the old build lost it (2/3), and the build that flushes on grant kept it
+(3/3).
+
+The baseline matters. `reward clear` is itself only marked dirty, so the test clears and then runs
+`save-all flush` before granting; without that, a reward an earlier run left on disk survives the
+kill and passes the test on a broken build. After the restart it looks for the bot's offline-mode
+UUID, since `reward list` shows offline players by UUID rather than name.
