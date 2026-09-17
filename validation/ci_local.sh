@@ -2,9 +2,11 @@
 #
 # The whole of .github/workflows/build.yml, runnable on a developer machine.
 #
-# It exists because GitHub Actions is disabled account-wide (see the repo README / session notes),
-# so nothing has verified a push since 2026-09-10. Until Actions comes back, this script IS the
-# gate: .git/hooks/pre-push runs it, and `bash validation/ci_local.sh` runs it by hand.
+# It was written because GitHub Actions was disabled account-wide, which left nothing verifying a
+# push between 2026-09-10 and 2026-09-17. Actions is back, so this is now the pre-push gate rather
+# than the only gate: .git/hooks/pre-push runs it, and `bash validation/ci_local.sh` runs it by
+# hand. Keep running it -- it is faster than a push, and the first step below is one the workflow
+# structurally cannot perform, because CI builds a clone where an ignored file does not exist.
 #
 # Keep it in step with build.yml. If a step is added there and not here, the hook stops being a
 # faithful stand-in and starts being a false green.
@@ -24,6 +26,22 @@ else
 fi
 
 step() { printf '\n\033[1m== %s\033[0m\n' "$1"; }
+
+step "Check git can see every source file"
+# A .gitignore pattern without a leading slash matches a directory of that name at ANY depth. In
+# CobbleTowers the entry for the dev server's run/ directory also matched a java package named run
+# and hid it completely: the build stayed green, because Gradle compiles what is on disk, and a
+# fresh clone would simply not have had the files. This repo has the same unanchored patterns, so
+# it has the same trap waiting for a package named run, out or build.
+#
+# Scoped to src/: validation/ deliberately ignores the vendored showdown tree and node_modules.
+hidden="$(git ls-files --others --ignored --exclude-standard -- src/ || true)"
+if [ -n "$hidden" ]; then
+  echo "ci_local: git ignores these source files, so a commit would silently leave them behind:" >&2
+  echo "$hidden" | sed 's/^/  /' >&2
+  echo "ci_local: check .gitignore for an unanchored pattern; anchor it with a leading slash." >&2
+  exit 1
+fi
 
 step "Validate core source and resources"
 bash validation/validate_phase31.sh
