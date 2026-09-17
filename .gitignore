@@ -1,7 +1,10 @@
-.gradle/
-build/
-run/
-out/
+# Leading slashes matter: an unanchored 'run/' also matches a java package named run, which in
+# CobbleTowers silently kept a whole package out of git while the build stayed green. Anchor
+# anything that means "a directory the build or the dev server writes at the repo root".
+/.gradle/
+/build/
+/run/
+/out/
 # IDE settings hold machine-specific absolute JDK paths
 .vscode/
 .idea/
@@ -13,7 +16,7 @@ validation/showdown/
 # Log4j output from the JUnit test worker. Minecraft is on the test classpath, so once CobbleRaids
 # started logging through SLF4J instead of System.out these began appearing in the repo root -- and
 # were committed twice before anyone noticed.
-logs/
+/logs/
 
 # mineflayer, vendored from the live-test rig; see validation/smoke/README.md
 validation/smoke/node_modules/
