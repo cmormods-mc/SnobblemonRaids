@@ -412,6 +412,13 @@ Battle.prototype.start = function() {
  * challenge for the whole fight would be an odd thing to have run out after five turns, and the
  * party has no way to renew it.
  *
+ * The boss is passed as the source explicitly. `setWeather`/`setTerrain` fall back to
+ * `battle.event.target` when no source is given, and there is no ambient event this early --
+ * `start()` runs outside any event dispatch -- so an id with a `durationCallback` (every real
+ * weather; terrain always requires one) throws `setting weather/terrain without a source` instead
+ * of applying. The live test caught this: the field was silently never set, and the exception
+ * landed in the catch below instead, reporting a failure with no reader watching for one.
+ *
  * Wrapped, because a weather id that Showdown does not know must cost the battle its weather and
  * nothing else. The alternative is an exception inside `start`, which takes the whole raid with it.
  */
@@ -420,16 +427,17 @@ function applyRaidField(battle) {
   const weather = format.raidWeather;
   const terrain = format.raidTerrain;
   if (!weather && !terrain) return;
+  const source = bossSide(battle)?.pokemon[0] || null;
   try {
     if (weather) {
-      battle.field.setWeather(weather);
+      battle.field.setWeather(weather, source);
       if (battle.field.weatherState) battle.field.weatherState.duration = 0;
       // Read back what the field HOLDS, never what we asked for: an id Showdown does not know
       // fails quietly here, and reporting the request would make that look like success.
       battle.add('-raidfield', 'weather', weather, battle.field.weather || '');
     }
     if (terrain) {
-      battle.field.setTerrain(terrain);
+      battle.field.setTerrain(terrain, source);
       if (battle.field.terrainState) battle.field.terrainState.duration = 0;
       battle.add('-raidfield', 'terrain', terrain, battle.field.terrain || '');
     }
