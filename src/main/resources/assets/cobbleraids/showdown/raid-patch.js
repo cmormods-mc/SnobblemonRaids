@@ -393,10 +393,51 @@ Battle.prototype.start = function() {
   const boss = bossSide(this)?.pokemon[0];
   if (boss) boss.addVolatile('raidboss');
 
+  applyRaidField(this);
+
   this.queue.addChoice({choice: 'start'});
   this.midTurn = true;
   if (!this.requestState) this.go();
 };
+
+/**
+ * The field conditions an owner asked for (EncounterRules.weather / .terrain).
+ *
+ * They arrive as `raidWeather` and `raidTerrain` on the format, which survives because Showdown's
+ * BasicEffect constructor does `Object.assign(this, data)` over the `>start` payload's format
+ * object. The `raid` prefix is not decoration: Format already has its own `weather` field, and
+ * writing to that would mean something quite different.
+ *
+ * Duration is pinned to 0, which is Showdown's "does not expire". A field condition drafted as a
+ * challenge for the whole fight would be an odd thing to have run out after five turns, and the
+ * party has no way to renew it.
+ *
+ * Wrapped, because a weather id that Showdown does not know must cost the battle its weather and
+ * nothing else. The alternative is an exception inside `start`, which takes the whole raid with it.
+ */
+function applyRaidField(battle) {
+  const format = battle.format || {};
+  const weather = format.raidWeather;
+  const terrain = format.raidTerrain;
+  if (!weather && !terrain) return;
+  try {
+    if (weather) {
+      battle.field.setWeather(weather);
+      if (battle.field.weatherState) battle.field.weatherState.duration = 0;
+      // Read back what the field HOLDS, never what we asked for: an id Showdown does not know
+      // fails quietly here, and reporting the request would make that look like success.
+      battle.add('-raidfield', 'weather', weather, battle.field.weather || '');
+    }
+    if (terrain) {
+      battle.field.setTerrain(terrain);
+      if (battle.field.terrainState) battle.field.terrainState.duration = 0;
+      battle.add('-raidfield', 'terrain', terrain, battle.field.terrain || '');
+    }
+  } catch (err) {
+    battle.add('-raidfield', 'error', weather || terrain || '', '');
+    battle.add('message', `Raid field condition could not be applied: ${err && err.message}`);
+  }
+}
 
 // The boss is AI-controlled by CobbleRaids/Cobblemon and never waits on a human input stream.
 const oldMakeRequest = Battle.prototype.makeRequest;

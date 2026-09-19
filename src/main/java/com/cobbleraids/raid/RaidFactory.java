@@ -1,5 +1,7 @@
 package com.cobbleraids.raid;
 
+import com.cobbleraids.api.encounter.EncounterRules;
+import com.cobbleraids.battle.RaidPendingRules;
 import com.cobbleraids.battle.RaidBattleType;
 import com.cobbleraids.battle.RaidBossBattleActor;
 import com.cobbleraids.battle.RaidBossBattleAI;
@@ -62,12 +64,21 @@ public final class RaidFactory {
                 bossEntity.getPokemon().getUuid(), bossPokemon, new RaidBossBattleAI());
 
         BattleFormat format = new BattleFormat("cobblemon", RaidBattleType.INSTANCE, Collections.emptySet(), 9, 0);
-        BattleStartResult result = BattleRegistry.startBattle(
-                format,
-                new BattleSide(playerActors.toArray(BattleActor[]::new)),
-                new BattleSide(bossActor),
-                false
-        );
+        // The payload mixin runs inside startBattle and cannot look up a session that does not exist
+        // yet, so the rules are handed across here. Cleared in the finally: a battle that throws on
+        // the way up must not leave its rules waiting for the next one.
+        BattleStartResult result;
+        RaidPendingRules.set(ownership == null ? EncounterRules.none() : ownership.rules());
+        try {
+            result = BattleRegistry.startBattle(
+                    format,
+                    new BattleSide(playerActors.toArray(BattleActor[]::new)),
+                    new BattleSide(bossActor),
+                    false
+            );
+        } finally {
+            RaidPendingRules.clear();
+        }
         if (!(result instanceof SuccessfulBattleStart successful)) throw new IllegalStateException("Unable to start raid: " + result);
 
         PokemonBattle battle = successful.getBattle();

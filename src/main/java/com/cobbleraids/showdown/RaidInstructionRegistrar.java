@@ -36,6 +36,13 @@ public final class RaidInstructionRegistrar {
         ShowdownInterpreter.registerSplitInstructionParser("-raidheal",
             (Function6<PokemonBattle, BattleActor, InstructionSet, BattleMessage, BattleMessage, Iterator<BattleMessage>, InterpreterInstruction>)
                 (battle, actor, set, publicMessage, privateMessage, iterator) -> new RaidHealInstruction(actor, publicMessage, privateMessage));
+        // Diagnostics only: Showdown reporting back what its field actually holds after an
+        // EncounterRules weather or terrain was applied, so "it worked" is observed rather than
+        // assumed. See RaidFieldInstruction.
+        ShowdownInterpreter.registerUpdateInstructionParser("-raidfield",
+            (Function4<PokemonBattle, InstructionSet, BattleMessage, Iterator<BattleMessage>, InterpreterInstruction>)
+                (battle, set, message, iterator) -> new RaidFieldInstruction(message));
+
         registered = true;
     }
 }

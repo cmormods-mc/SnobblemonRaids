@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.94-encounter-api'
+version = '0.8.95-encounter-rules'
 group = 'com.cobbleraids'
 
 base {
