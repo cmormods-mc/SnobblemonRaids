@@ -2,6 +2,7 @@ package com.cobbleraids.raid;
 
 import com.cobbleraids.api.encounter.EncounterListener;
 import com.cobbleraids.api.encounter.EncounterPolicy;
+import com.cobbleraids.api.encounter.EncounterRules;
 import com.cobbleraids.lifecycle.RaidOutcome;
 import com.cobblemon.mod.common.api.battles.model.PokemonBattle;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
@@ -30,13 +31,26 @@ public final class RaidSession {
      * Present when another mod owns this battle through CobbleRaidsEncounters; absent for every
      * ordinary raid. Its policy replaces the server config for exactly the side effects it names.
      */
-    public record Ownership(UUID encounterId, ResourceLocation owner, EncounterPolicy policy, EncounterListener listener) {
+    public record Ownership(UUID encounterId, ResourceLocation owner, EncounterPolicy policy,
+                            EncounterRules rules, EncounterListener listener) {
         public Ownership {
             Objects.requireNonNull(encounterId, "encounterId");
             Objects.requireNonNull(owner, "owner");
             Objects.requireNonNull(policy, "policy");
+            Objects.requireNonNull(rules, "rules");
             Objects.requireNonNull(listener, "listener");
         }
+    }
+
+    /**
+     * The battle rules this raid is fought under.
+     *
+     * <p>An ordinary raid has no owner and therefore no rules of its own, which is the same thing as
+     * {@link EncounterRules#none()} -- so every caller can ask this and none has to know whether the
+     * raid is owned.
+     */
+    public EncounterRules rules() {
+        return ownership == null ? EncounterRules.none() : ownership.rules();
     }
 
     private final UUID id = UUID.randomUUID();

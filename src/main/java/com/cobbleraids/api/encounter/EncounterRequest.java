@@ -23,6 +23,8 @@ import net.minecraft.world.phys.Vec3;
  * @param maxHealth    the shared health pool; when empty, derived from the definition, the number of
  *                     players and {@code bossLevel} exactly as an ordinary raid derives it
  * @param policy       which side effects the encounter has
+ * @param rules        how the battle itself differs from an ordinary one; {@link
+ *                     EncounterRules#none()} for a battle fought under the usual rules
  */
 public record EncounterRequest(
         ResourceLocation owner,
@@ -33,10 +35,24 @@ public record EncounterRequest(
         Vec3 position,
         int bossLevel,
         OptionalLong maxHealth,
-        EncounterPolicy policy) {
+        EncounterPolicy policy,
+        EncounterRules rules) {
 
     /** The most players one encounter can hold: the largest raid the Showdown integration is validated for. */
     public static final int MAX_PLAYERS = 4;
+
+    /**
+     * The same request under ordinary battle rules.
+     *
+     * <p>Kept so that adding {@code rules} did not break every existing caller. An owner who does
+     * not want to change how the battle is fought should not have to say so.
+     */
+    public EncounterRequest(ResourceLocation owner, UUID encounterId, List<ServerPlayer> players,
+                            ResourceLocation definitionId, ServerLevel level, Vec3 position, int bossLevel,
+                            OptionalLong maxHealth, EncounterPolicy policy) {
+        this(owner, encounterId, players, definitionId, level, position, bossLevel, maxHealth, policy,
+                EncounterRules.none());
+    }
 
     public EncounterRequest {
         Objects.requireNonNull(owner, "owner");
@@ -47,6 +63,7 @@ public record EncounterRequest(
         Objects.requireNonNull(position, "position");
         Objects.requireNonNull(maxHealth, "maxHealth");
         Objects.requireNonNull(policy, "policy");
+        Objects.requireNonNull(rules, "rules");
         validateShape(players.size(), bossLevel, maxHealth);
         players = List.copyOf(players);  // also rejects a null element
         HashSet<UUID> distinct = new HashSet<>();

@@ -1,5 +1,7 @@
 package com.cobbleraids.mixin.battle;
 
+import com.cobbleraids.api.encounter.EncounterRules;
+import com.cobbleraids.battle.RaidPendingRules;
 import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobblemon.mod.common.api.battles.model.PokemonBattle;
 import com.cobblemon.mod.common.api.battles.model.actor.BattleActor;
@@ -124,6 +126,20 @@ public abstract class RaidBattleRegistryMixin {
         return result;
     }
 
+    /**
+     * Writes the raid's shape into the {@code >start} payload's format object.
+     *
+     * <p>{@code playerCount} is what lets the Showdown patch build 1..N sides instead of assuming
+     * p1/p2. The field conditions ride the same road: an owner asking for rain sets
+     * {@code raidWeather}, and raid-patch.js applies it once the battle exists. Going through the
+     * format rather than sending a separate message keeps it in the one payload that is already
+     * version-checked against the patch, so a mismatch is a loud failure rather than weather that
+     * silently never arrives.
+     *
+     * <p>The ids are safe to interpolate because {@link EncounterRules} refuses anything that is
+     * not a plain Showdown id -- Gson would escape a quote, but a corrupted format object would
+     * take the whole battle down rather than one setting.
+     */
     private static String withRaidPlayerCount(String startLine, int playerCount) {
         String json = startLine.substring(">start ".length());
         JsonObject root = JsonParser.parseString(json).getAsJsonObject();
@@ -132,6 +148,9 @@ public abstract class RaidBattleRegistryMixin {
             throw new IllegalStateException("Raid battle start payload is missing gameType=raid: " + startLine);
         }
         format.addProperty("playerCount", playerCount);
+        EncounterRules rules = RaidPendingRules.current();
+        rules.weather().ifPresent(id -> format.addProperty("raidWeather", id));
+        rules.terrain().ifPresent(id -> format.addProperty("raidTerrain", id));
         return ">start " + root;
     }
 }

@@ -73,15 +73,26 @@ public final class EncounterService {
             // even for an instant.
             RaidBossEntityMarker.markOwned(boss, request.owner());
             applyLevel(boss, definition, request.bossLevel());
-            long health = request.maxHealth().isPresent()
+            long derivedHealth = request.maxHealth().isPresent()
                     ? request.maxHealth().getAsLong()
                     : RaidScalingPolicy.maxHealth(definition, request.players().size(), request.bossLevel());
+            // Applied to whichever pool was arrived at, named or derived. An owner scaling a pool
+            // wants a proportion of the fight they would otherwise have had, and that is true either
+            // way -- and it is the only way to scale a derived pool at all, since the owner is never
+            // told the number it worked out.
+            long health = request.rules().applyHealth(derivedHealth);
             RaidSession session = RaidFactory.startFromWildBoss(request.players(), definition, boss, health,
-                    new RaidSession.Ownership(encounterId, request.owner(), request.policy(), listener));
+                    new RaidSession.Ownership(encounterId, request.owner(), request.policy(),
+                            request.rules(), listener));
             ACTIVE.put(encounterId, session);
-            RaidLog.info("Owned encounter {} started for {}: {} at level {}, {} player(s), pool {}",
+            // The pool carries its own baseline when an owner scaled it, so "130% was applied" is
+            // readable from the line rather than needing a second, unscaled run to compare against.
+            RaidLog.info("Owned encounter {} started for {}: {} at level {}, {} player(s), pool {}{}{}",
                     encounterId, request.owner(), definition.id(), request.bossLevel(),
-                    request.players().size(), health);
+                    request.players().size(), health,
+                    request.rules().healthPercent() == 100
+                            ? "" : " (" + request.rules().healthPercent() + "% of " + derivedHealth + ")",
+                    request.rules().restrictsAnything() ? " rules=" + describeRules(request.rules()) : "");
             return new StartResult.Started(encounterId);
         } catch (RuntimeException ex) {
             // A refusal leaves nothing behind. The factory throws before it registers a session, so
@@ -89,6 +100,17 @@ public final class EncounterService {
             if (!boss.isRemoved()) boss.discard();
             return refused(describe(ex));
         }
+    }
+
+    /** A one-line summary of an owner's battle rules, for the start log (TDS #60). */
+    private static String describeRules(com.cobbleraids.api.encounter.EncounterRules rules) {
+        StringBuilder text = new StringBuilder();
+        if (!rules.bannedMoves().isEmpty()) text.append("banned=").append(rules.bannedMoves()).append(' ');
+        if (!rules.switchingAllowed()) text.append("no-switch ");
+        if (!rules.itemsAllowed()) text.append("no-items ");
+        rules.weather().ifPresent(id -> text.append("weather=").append(id).append(' '));
+        rules.terrain().ifPresent(id -> text.append("terrain=").append(id).append(' '));
+        return text.toString().trim();
     }
 
     public static boolean abort(UUID encounterId) {

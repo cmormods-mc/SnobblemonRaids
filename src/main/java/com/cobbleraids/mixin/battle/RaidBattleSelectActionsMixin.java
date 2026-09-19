@@ -1,6 +1,7 @@
 package com.cobbleraids.mixin.battle;
 
 import com.cobbleraids.fault.RaidFaultBarrier;
+import com.cobbleraids.api.encounter.EncounterRules;
 import com.cobbleraids.battle.RaidBannedMoves;
 import com.cobbleraids.lifecycle.RaidLifecycleCoordinator;
 import com.cobbleraids.raid.RaidRegistry;
@@ -8,8 +9,10 @@ import com.cobbleraids.raid.RaidSession;
 import com.cobblemon.mod.common.api.battles.model.PokemonBattle;
 import com.cobblemon.mod.common.api.battles.model.actor.BattleActor;
 import com.cobblemon.mod.common.battles.ActiveBattlePokemon;
+import com.cobblemon.mod.common.battles.BagItemActionResponse;
 import com.cobblemon.mod.common.battles.BattleRegistry;
 import com.cobblemon.mod.common.battles.ForfeitActionResponse;
+import com.cobblemon.mod.common.battles.HealItemActionResponse;
 import com.cobblemon.mod.common.battles.InBattleGimmickMove;
 import com.cobblemon.mod.common.battles.InBattleMove;
 import com.cobblemon.mod.common.battles.MoveActionResponse;
@@ -17,6 +20,7 @@ import com.cobblemon.mod.common.battles.MoveTarget;
 import com.cobblemon.mod.common.battles.ShowdownActionRequest;
 import com.cobblemon.mod.common.battles.ShowdownActionResponse;
 import com.cobblemon.mod.common.battles.ShowdownMoveset;
+import com.cobblemon.mod.common.battles.SwitchActionResponse;
 import com.cobblemon.mod.common.battles.Targetable;
 import com.cobblemon.mod.common.net.messages.client.battle.BattleMakeChoicePacket;
 import com.cobblemon.mod.common.net.messages.client.battle.BattleQueueRequestPacket;
@@ -76,16 +80,36 @@ public abstract class RaidBattleSelectActionsMixin {
         RaidSession raid = RaidRegistry.get(battle);
         if (raid == null || raid.getStatus() != RaidSession.Status.ACTIVE) return;
 
-        String bannedMove = packet.getShowdownActionResponses().stream()
-                .filter(response -> response instanceof MoveActionResponse)
-                .map(response -> ((MoveActionResponse) response).getMoveName())
-                .filter(RaidBannedMoves::isBanned)
-                .findFirst()
-                .orElse(null);
-        if (bannedMove != null) {
+        // An owner's rules ride on top of CobbleRaids' own ban list, never instead of it: the
+        // safety bans exist because those moves faint a Pokemon outside the damage pipeline the
+        // shared health pool is driven by, so letting an owner switch one back on would not make a
+        // harder fight, it would make a stuck one.
+        EncounterRules rules = raid.rules();
+
+        String refusal = null;
+        for (ShowdownActionResponse response : packet.getShowdownActionResponses()) {
+            if (response instanceof MoveActionResponse move) {
+                String id = move.getMoveName();
+                if (RaidBannedMoves.isBanned(id)) {
+                    refusal = RaidBannedMoves.displayName(id) + " is banned in raid battles and cannot be used.";
+                } else if (rules.bans(id)) {
+                    refusal = RaidBannedMoves.displayName(id) + " is not allowed in this battle.";
+                }
+            } else if (response instanceof SwitchActionResponse && !rules.switchingAllowed()) {
+                refusal = "Switching is not allowed in this battle.";
+            } else if ((response instanceof BagItemActionResponse || response instanceof HealItemActionResponse)
+                    && !rules.itemsAllowed()) {
+                refusal = "Items are not allowed in this battle.";
+            }
+            if (refusal != null) break;
+        }
+
+        if (refusal != null) {
+            // Cancelled and the request resent, which is what turns a refusal into "pick again"
+            // rather than a client stuck waiting for a turn that will never resolve. Same path the
+            // safety ban already used; the only thing that changed is what can trigger it.
             ci.cancel();
-            player.sendSystemMessage(Component.literal(RaidBannedMoves.displayName(bannedMove)
-                    + " is banned in raid battles and cannot be used.").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Component.literal(refusal).withStyle(ChatFormatting.RED));
             BattleActor actor = battle.getActor(player);
             if (actor != null && actor.getRequest() != null) {
                 actor.sendUpdate(new BattleQueueRequestPacket(actor.getRequest()));
