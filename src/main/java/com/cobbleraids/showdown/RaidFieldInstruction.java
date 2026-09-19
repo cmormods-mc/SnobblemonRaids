@@ -32,8 +32,15 @@ final class RaidFieldInstruction implements InterpreterInstruction {
 
     @Override
     public void invoke(PokemonBattle battle) {
+        // Field conditions are applied inside Battle#start, called from deep inside
+        // BattleRegistry.startBattle -- which is still on the stack that eventually returns the
+        // RaidSession RaidFactory then binds into RaidRegistry. So for THIS one instruction, unlike
+        // -raiddamage/-raidheal (which only ever fire mid-combat, long after binding), the session
+        // reliably does not exist yet: RaidRegistry.get(battle) is null every time, and the id was
+        // being read from it only to name the raid in the log. The battle's own id names it just as
+        // well and is available immediately, so this no longer depends on registry timing at all.
         RaidSession raid = RaidRegistry.get(battle);
-        if (raid == null) return;
+        Object raidId = raid != null ? raid.getId() : battle.getBattleId();
 
         String kind = argument(0);
         String requested = argument(1);
@@ -41,10 +48,10 @@ final class RaidFieldInstruction implements InterpreterInstruction {
 
         if (applied.isEmpty() || !applied.equalsIgnoreCase(requested)) {
             RaidLog.warn("Raid {} asked Showdown for {} '{}' and it holds '{}' instead",
-                    raid.getId(), kind, requested, applied.isEmpty() ? "nothing" : applied);
+                    raidId, kind, requested, applied.isEmpty() ? "nothing" : applied);
             return;
         }
-        RaidLog.info("Raid {} field: {} '{}' applied", raid.getId(), kind, applied);
+        RaidLog.info("Raid {} field: {} '{}' applied", raidId, kind, applied);
     }
 
     private String argument(int index) {
