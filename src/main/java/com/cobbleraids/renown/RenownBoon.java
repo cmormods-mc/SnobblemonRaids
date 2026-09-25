@@ -60,6 +60,25 @@ public record RenownBoon(Kind kind, String stat) {
         return kind == Kind.STAT_FOCUS ? kind.serializedName() + ":" + stat : kind.serializedName();
     }
 
+    private static final String MARKER_PREFIX = "cobbleraids_boon:";
+
+    /**
+     * A boon encoded for the one channel the actual boss nameplate has to a client: riding along,
+     * invisibly, inside the synced {@code Component} that is the entity's custom name. See
+     * {@link com.cobbleraids.presentation.RaidBossNameplate#of} for where this is tucked into a
+     * {@code Style}'s chat-insertion field (never rendered, never a real insertion action) and
+     * {@link #decodeMarker} for the other end.
+     */
+    public String marker() {
+        return MARKER_PREFIX + encode();
+    }
+
+    /** The inverse of {@link #marker}. Empty for anything else a Style's insertion might hold. */
+    public static Optional<RenownBoon> decodeMarker(String insertion) {
+        if (insertion == null || !insertion.startsWith(MARKER_PREFIX)) return Optional.empty();
+        return decode(insertion.substring(MARKER_PREFIX.length()));
+    }
+
     /** The inverse of {@link #encode}. Empty rather than throwing, since tags and datapacks are both untrusted. */
     public static Optional<RenownBoon> decode(String value) {
         if (value == null) return Optional.empty();

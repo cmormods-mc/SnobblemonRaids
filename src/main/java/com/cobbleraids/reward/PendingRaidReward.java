@@ -18,6 +18,8 @@ import net.minecraft.resources.ResourceLocation;
  *
  * <p>{@code renownTitle} is "Kaelen, the Relentless" for a renowned boss and empty otherwise. It
  * is both what the reward screen shows and what makes the claim pay renown's multipliers.
+ * {@code renownBoon} is that boss's {@link com.cobbleraids.renown.RenownBoon#encode()}, along for
+ * the same reason -- it is what lets the reveal screen pick a stat icon for the title banner.
  */
 public record PendingRaidReward(
         UUID raidId,
@@ -29,10 +31,12 @@ public record PendingRaidReward(
         int elapsedCombatTicks,
         int participantCount,
         long rewardSeed,
-        String renownTitle
+        String renownTitle,
+        String renownBoon
 ) {
     public PendingRaidReward {
         renownTitle = renownTitle == null ? "" : renownTitle;
+        renownBoon = renownBoon == null ? "" : renownBoon;
     }
 
     public boolean renowned() {

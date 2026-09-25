@@ -20,6 +20,7 @@ public record CobbleRaidsConfig(
         BossGlow bossGlow,
         BossMovement bossMovement,
         Renown renown,
+        ReconnectGrace reconnectGrace,
         boolean debugLogging
 ) {
     public static final int VALIDATED_MAX_HUMAN_PLAYERS = 4;
@@ -490,6 +491,25 @@ public record CobbleRaidsConfig(
         }
     }
 
+    /**
+     * How long a disconnected raider's slot is held open before their departure is made permanent.
+     *
+     * <p>Without this, {@code RaidLifecycleCoordinator.onPlayerDisconnected} forfeits a raider's
+     * rewards and drops them from the raid the instant Cobblemon reports the disconnect -- a dropped
+     * connection costs exactly as much as deliberately quitting. {@link RaidReconnectService} holds
+     * their spot for {@code graceSeconds} instead, and only falls through to that same forfeiting
+     * path once the grace period actually lapses without them coming back. See
+     * {@code com.cobbleraids.lifecycle.RaidReconnectService}.
+     */
+    public record ReconnectGrace(boolean enabled, int graceSeconds) {
+        public ReconnectGrace {
+            if (graceSeconds < 1 || graceSeconds > 3600)
+                throw new IllegalArgumentException("reconnect_grace.grace_seconds must be 1..3600");
+        }
+
+        public static ReconnectGrace defaults() { return new ReconnectGrace(true, 300); }
+    }
+
     public record TierMultipliers(double health, double timeLimit, double reward) {
         public TierMultipliers {
             if (health < 0.1 || health > 10.0)
@@ -548,6 +568,7 @@ public record CobbleRaidsConfig(
                 BossGlow.defaults(),
                 BossMovement.defaults(),
                 Renown.defaults(),
+                ReconnectGrace.defaults(),
                 false
         );
     }
@@ -708,9 +729,15 @@ public record CobbleRaidsConfig(
                 Json.decimal(renownObject, "points_multiplier", rn.pointsMultiplier()),
                 Json.decimal(renownObject, "currency_multiplier", rn.currencyMultiplier()));
 
+        JsonObject reconnectGraceObject = Json.object(root, "reconnect_grace");
+        ReconnectGrace rg = defaults.reconnectGrace();
+        ReconnectGrace reconnectGrace = new ReconnectGrace(
+                Json.bool(reconnectGraceObject, "enabled", rg.enabled()),
+                Json.integer(reconnectGraceObject, "grace_seconds", rg.graceSeconds()));
+
         return new CobbleRaidsConfig(naturalSpawning, recruitmentDefaults, combatDefaults, battleCarryover,
                 bossTraits, catching, currency, dynamicLevel, megaPity, raidPoints, tierScaling, bossGlow, bossMovement,
-                renown, Json.bool(root, "debug_logging", defaults.debugLogging()));
+                renown, reconnectGrace, Json.bool(root, "debug_logging", defaults.debugLogging()));
     }
 
     private static TierMultipliers readTierMultipliers(JsonObject tierScaling, String key, TierMultipliers fallback) {
@@ -846,6 +873,11 @@ public record CobbleRaidsConfig(
         renownJson.addProperty("points_multiplier", renown.pointsMultiplier());
         renownJson.addProperty("currency_multiplier", renown.currencyMultiplier());
         root.add("renown", renownJson);
+
+        JsonObject reconnectGraceJson = new JsonObject();
+        reconnectGraceJson.addProperty("enabled", reconnectGrace.enabled());
+        reconnectGraceJson.addProperty("grace_seconds", reconnectGrace.graceSeconds());
+        root.add("reconnect_grace", reconnectGraceJson);
 
         root.addProperty("debug_logging", debugLogging);
         return root;

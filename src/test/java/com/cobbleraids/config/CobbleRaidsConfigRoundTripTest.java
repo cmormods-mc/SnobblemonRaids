@@ -57,6 +57,7 @@ class CobbleRaidsConfigRoundTripTest {
                 CobbleRaidsConfig.defaults().bossGlow(),
                 CobbleRaidsConfig.defaults().bossMovement(),
                 new CobbleRaidsConfig.Renown(false, 0.2, 0.3, 0.4, 0.5, 0.25, 64, 1.5, 2.0),
+                new CobbleRaidsConfig.ReconnectGrace(false, 120),
                 true);
 
         CobbleRaidsConfig reparsed = CobbleRaidsConfig.fromJson(custom.toJson());
@@ -84,6 +85,8 @@ class CobbleRaidsConfigRoundTripTest {
         assertEquals(0.25, reparsed.renown().healthBonus(), 0.0);
         assertEquals(64, reparsed.renown().statFocusEvs());
         assertEquals(2.0, reparsed.renown().currencyMultiplier(), 0.0);
+        assertFalse(reparsed.reconnectGrace().enabled());
+        assertEquals(120, reparsed.reconnectGrace().graceSeconds());
     }
 
     @Test
@@ -121,11 +124,13 @@ class CobbleRaidsConfigRoundTripTest {
         old.remove("mega_pity");
         old.remove("raid_points");
         old.remove("renown");
+        old.remove("reconnect_grace");
         old.getAsJsonObject("combat_defaults").remove("max_failed_attempts");
 
         CobbleRaidsConfig loaded = CobbleRaidsConfig.fromJson(old);
 
         assertEquals(CobbleRaidsConfig.defaults().renown(), loaded.renown());
+        assertEquals(CobbleRaidsConfig.defaults().reconnectGrace(), loaded.reconnectGrace());
         assertEquals(CobbleRaidsConfig.defaults().battleCarryover(), loaded.battleCarryover());
         assertEquals(CobbleRaidsConfig.defaults().combatDefaults().maxFailedAttempts(),
                 loaded.combatDefaults().maxFailedAttempts());
@@ -135,6 +140,19 @@ class CobbleRaidsConfigRoundTripTest {
         assertEquals(CobbleRaidsConfig.defaults().dynamicLevel(), loaded.dynamicLevel());
         assertEquals(CobbleRaidsConfig.defaults().megaPity(), loaded.megaPity());
         assertEquals(CobbleRaidsConfig.defaults().raidPoints(), loaded.raidPoints());
+    }
+
+    @Test
+    @DisplayName("reconnect grace ships on at 5 minutes, bounded 1..3600s")
+    void reconnectGraceDefaults() {
+        CobbleRaidsConfig.ReconnectGrace grace = CobbleRaidsConfig.defaults().reconnectGrace();
+
+        assertTrue(grace.enabled());
+        assertEquals(300, grace.graceSeconds());
+        assertThrows(IllegalArgumentException.class,
+                () -> new CobbleRaidsConfig.ReconnectGrace(true, 0), "must be at least 1 second");
+        assertThrows(IllegalArgumentException.class,
+                () -> new CobbleRaidsConfig.ReconnectGrace(true, 3601), "must be at most an hour");
     }
 
     @Test

@@ -370,36 +370,38 @@ public final class RaidSpawnScheduler {
     }
 
     /**
-     * Removes stale natural raid entities after a crash/restart, and the bosses of owned encounters.
+     * Removes every marked raid boss still standing from a prior server session -- natural, owned,
+     * or admin-spawned alike.
      *
-     * <p>An owned encounter cannot resume: its battle and its listener died with the old server. Its
-     * owner rebuilds it, so the old boss would only be an unfightable leftover.
+     * <p>RaidRegistry and RaidLobbyManager are both empty at this point (SERVER_STOPPED already
+     * cleared them, or the old JVM never got that far), so nothing here is legitimately in a battle
+     * or a lobby: every marked boss this finds is a leftover. This used to discard only natural and
+     * owned bosses -- on the theory that a raid still in battle at shutdown would already have been
+     * ended by the disconnect its own players caused -- but {@link RaidLifecycleCoordinator#abortAll}
+     * now owns that job directly on SERVER_STOPPING, ahead of the world save, so this is purely the
+     * fallback for whatever skips a graceful stop (a crash, a hard kill). An admin-spawned boss is
+     * neither natural nor owned and fell through both checks, which is exactly how one survived a
+     * `/stop` mid-fight, reloaded permanently invulnerable and un-ownable, and was mistaken for a
+     * second copy of the boss it was fought alongside.
+     *
+     * <p>An owned encounter specifically can never resume even when its boss is caught here fresh:
+     * its battle and its listener died with the old server, so its owner has to rebuild it regardless.
      */
     public static void onServerStarted(MinecraftServer server) {
         TRACKER.clear();
         COOLDOWNS.clear();
         schedulerTick = 0L;
         int purged = 0;
-        int owned = 0;
         for (ServerLevel level : server.getAllLevels()) {
             for (var entity : level.getAllEntities()) {
                 if (!(entity instanceof PokemonEntity pokemon) || !RaidBossEntityMarker.isRaidBoss(pokemon)) continue;
-                if (RaidBossEntityMarker.isOwned(pokemon)) {
-                    pokemon.discard();
-                    owned++;
-                } else if (RaidBossEntityMarker.isNatural(pokemon)) {
-                    pokemon.discard();
-                    purged++;
-                }
+                pokemon.discard();
+                purged++;
             }
         }
         if (purged > 0) {
             RaidLog.info("Removed " + purged
-                    + " stale natural raid boss(es) from a prior server session.");
-        }
-        if (owned > 0) {
-            RaidLog.info("Removed " + owned
-                    + " boss(es) of owned encounters from a prior server session.");
+                    + " stale raid boss(es) from a prior server session.");
         }
     }
 

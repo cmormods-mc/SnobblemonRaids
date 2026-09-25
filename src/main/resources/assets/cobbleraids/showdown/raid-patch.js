@@ -518,6 +518,42 @@ BattleStream.prototype._writeLine = function(type, message) {
     return true;
   }
 
+  // A disconnect that may reconnect: the reconnect-grace window in RaidReconnectService (Java).
+  // Reuses raidWithdrawn/passivatePlayerSide -- the exact machinery >raidleave already relies on to
+  // keep a shared turn from stalling on a side that will never answer -- rather than a second
+  // mechanism, since that path is the one this exact battle model has already proven safe. The only
+  // difference from >raidleave is that this is reversible: >raidresume below flips the same flag
+  // back. isChoiceDone() short-circuits on side.requestState, which this never touches, so flipping
+  // raidWithdrawn mid-turn cannot re-stall a turn already past that side's request -- the side simply
+  // gets a normal, real request the next time makeRequest runs, exactly like every other side.
+  if (type === 'raidhold') {
+    const battle = this.battle;
+    if (battle.ended) return false;
+    const side = battle.getSide(message.trim());
+    if (!side || !isPlayerSide(side) || side.raidWithdrawn) return false;
+    side.raidWithdrawn = true;
+    passivatePlayerSide(side);
+    refreshOpponentAnchors(battle);
+    battle.inputLog.push(`>raidhold ${side.id}`);
+    battle.add('-message', `${side.name} lost connection. Holding their raid slot.`);
+    if (battle.requestState && battle.allChoicesDone()) battle.commitDecisions();
+    battle.sendUpdates();
+    return true;
+  }
+
+  if (type === 'raidresume') {
+    const battle = this.battle;
+    if (battle.ended) return false;
+    const side = battle.getSide(message.trim());
+    if (!side || !isPlayerSide(side) || !side.raidWithdrawn) return false;
+    side.raidWithdrawn = false;
+    refreshOpponentAnchors(battle);
+    battle.inputLog.push(`>raidresume ${side.id}`);
+    battle.add('-message', `${side.name} reconnected and rejoined the raid.`);
+    battle.sendUpdates();
+    return true;
+  }
+
   if (type === 'raidwin') {
     const battle = this.battle;
     if (battle.ended) return false;

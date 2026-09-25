@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import net.minecraft.server.level.ServerPlayer;
 
 /** Turns a frozen recruitment snapshot and the physical wild boss into one shared Cobblemon raid battle. */
@@ -82,6 +83,7 @@ public final class RaidFactory {
         if (!(result instanceof SuccessfulBattleStart successful)) throw new IllegalStateException("Unable to start raid: " + result);
 
         PokemonBattle battle = successful.getBattle();
+        Optional<RaidRenown> renown = RaidRenownMarker.read(bossEntity);
         RaidSession session = new RaidSession(
                 battle,
                 ordered,
@@ -91,7 +93,8 @@ public final class RaidFactory {
                 definition.id(),
                 definition.timeLimitSeconds(),
                 definition.allowFlee(),
-                RaidRenownMarker.read(bossEntity).map(RaidRenown::title).orElse(""),
+                renown.map(RaidRenown::title).orElse(""),
+                renown.map(r -> r.boon().encode()).orElse(""),
                 ownership
         );
         RaidRegistry.bind(session);

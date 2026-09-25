@@ -1,5 +1,6 @@
 package com.cobbleraids.client.reveal;
 
+import com.cobbleraids.client.renown.RenownBoonIcons;
 import com.cobbleraids.config.RaidRarityTier;
 import com.cobbleraids.network.PendingRewardRevealPayload;
 import com.cobbleraids.network.RewardChoicePayload;
@@ -7,6 +8,7 @@ import com.cobbleraids.network.RewardItemPayload;
 import com.cobbleraids.network.RewardResultPayload;
 import com.cobbleraids.presentation.RaidBossNameplate;
 import com.cobbleraids.presentation.RaidTierPresentation;
+import com.cobbleraids.renown.RenownBoon;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,25 +52,35 @@ public final class RaidRewardRevealScreen extends Screen {
     private static final ResourceLocation POKEDEX_BACKING = texture("pokedex_backing");
     private static final ResourceLocation SUMMARY_PANEL = texture("summary_panel");
     private static final ResourceLocation CHAMBER_BACKGROUND = texture("chamber_background");
-    private static final ResourceLocation CLAIM_BUTTON = texture("claim_button");
     private static final ResourceLocation CLAIM_BUTTON_BLANK = texture("claim_button_blank");
 
     private static final NativeRect BACKING_RECT = new NativeRect(0, 0, 1672, 941);
     private static final NativeRect SUMMARY_PANEL_RECT = new NativeRect(94, 122, 313, 731);
     private static final NativeRect CHAMBER_RECT = new NativeRect(420, 112, 1172, 675);
-    private static final NativeRect BUTTON_RECT = new NativeRect(762, 787, 488, 83);
-    private static final NativeRect FOOTER_RECT = new NativeRect(430, 787, 1150, 83);
+    private static final NativeRect BUTTON_RECT = new NativeRect(760, 792, 432, 68);
+    private static final NativeRect FOOTER_RECT = new NativeRect(430, 787, 1150, 78);
 
     // Blanked-value row positions, local to SUMMARY_PANEL_RECT's own origin (see summary_panel.png's
     // edit history: masked from the original baked reference at these exact bands).
-    private static final int SIDEBAR_LABEL_X = 8;
-    private static final int SIDEBAR_ICON_LABEL_X = 100;
+    private static final int SIDEBAR_PADDING = 24;
     private static final int VALUE_Y_BOSS = 106;
     private static final int VALUE_Y_TIER = 189;
     private static final int VALUE_Y_TIME = 271;
     private static final int VALUE_Y_DAMAGE = 404;
     private static final int VALUE_Y_PARTICIPANTS = 478;
-    private static final float SIDEBAR_TEXT_SCALE = 3.0f;
+    private static final float SIDEBAR_TEXT_SCALE = 2.5f;
+    // Section headers, drawn rather than baked into summary_panel.png so they can auto-fit the same
+    // way the values beneath them do. Two-tone: the brighter accent marks the two group headers, the
+    // paler one each field beneath them.
+    private static final int SIDEBAR_HEADER_COLOR = 0xFF28F7FF;
+    private static final int SIDEBAR_LABEL_COLOR = 0xFFD0FBFF;
+    private static final Component LABEL_SUMMARY = Component.literal("RAID SUMMARY");
+    private static final Component LABEL_BOSS = Component.literal("Boss Defeated");
+    private static final Component LABEL_TIER = Component.literal("Raid Tier");
+    private static final Component LABEL_TIME = Component.literal("Completion Time");
+    private static final Component LABEL_CONTRIBUTION = Component.literal("YOUR CONTRIBUTION");
+    private static final Component LABEL_DAMAGE = Component.literal("Damage Dealt");
+    private static final Component LABEL_PARTICIPANTS = Component.literal("Raid Participants");
     /** Largest the renown banner draws, in font pixels per screen pixel; a short title must not balloon. */
     private static final float CHAMBER_BANNER_MAX_SCALE = 2.0f;
     /** Top of the banner as a share of the chamber's height: just inside the corner brackets, above the halo. */
@@ -111,14 +123,26 @@ public final class RaidRewardRevealScreen extends Screen {
 
         @Override
         protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-            int alpha = this.isHoveredOrFocused() ? 255 : 220;
-            graphics.setColor(1f, 1f, 1f, alpha / 255f);
+            // A dim instead of a fade: BUTTON_RECT is small enough now that a translucent unhovered
+            // state let the chamber art show through at its edges.
+            float tint = this.isHoveredOrFocused() ? 1f : 0.96f;
+            graphics.setColor(tint, tint, tint, 1f);
             graphics.blit(buttonTexture, getX(), getY(), getWidth(), getHeight(),
                     0f, 0f, textureWidth, textureHeight, textureWidth, textureHeight);
             graphics.setColor(1f, 1f, 1f, 1f);
             if (!this.getMessage().getString().isEmpty()) {
-                graphics.drawCenteredString(RaidRewardRevealScreen.this.font, this.getMessage(),
-                        getX() + getWidth() / 2, getY() + (getHeight() - 8) / 2, 0xFFFFFFFF);
+                // Auto-fit like the sidebar labels: a shrunk BUTTON_RECT clips "Claim Rewards" at a
+                // fixed 1x scale on anything narrower than the widest choice-row buttons.
+                int textWidth = RaidRewardRevealScreen.this.font.width(this.getMessage());
+                float scale = Math.min(getHeight() * 4.2f / 83f,
+                        Math.max(1, getWidth() - 12) / (float) Math.max(1, textWidth));
+                int x = Math.round(getX() + (getWidth() - textWidth * scale) / 2f);
+                int y = Math.round(getY() + (getHeight() - 7f * scale) / 2f);
+                graphics.pose().pushPose();
+                graphics.pose().translate(x, y, 0);
+                graphics.pose().scale(scale, scale, 1f);
+                graphics.drawString(RaidRewardRevealScreen.this.font, this.getMessage(), 0, 0, 0xFFFFFFFF, false);
+                graphics.pose().popPose();
             }
         }
     }
@@ -142,6 +166,8 @@ public final class RaidRewardRevealScreen extends Screen {
     private final Component sidebarParticipants;
     /** A renowned boss's title, or null. */
     private final Component chamberBanner;
+    /** Which stat (or the HP pool) that title's boon buffed, or null for no boon/ordinary boss. */
+    private final ResourceLocation chamberBannerIcon;
 
     // Rebuilt in init(), which vanilla also calls on window resize -- the only thing that moves it.
     private Layout layout;
@@ -183,6 +209,12 @@ public final class RaidRewardRevealScreen extends Screen {
                 pending.contributionPercentage()));
         this.sidebarParticipants = Component.literal(Integer.toString(pending.participantCount()));
         this.chamberBanner = RaidBossNameplate.banner(pending.renownTitle());
+        this.chamberBannerIcon = boonIcon(pending.renownBoon());
+    }
+
+    /** Maps a renowned boss's encoded boon straight to its icon; null for none/unrecognised. */
+    private static ResourceLocation boonIcon(String renownBoon) {
+        return RenownBoon.decode(renownBoon).map(RenownBoonIcons::iconFor).orElse(null);
     }
 
     public static void openFor(PendingRewardRevealPayload payload) {
@@ -260,10 +292,19 @@ public final class RaidRewardRevealScreen extends Screen {
         if (state == State.CHOOSING) {
             List<String> choices = pending.choiceIds();
             int gap = Math.round(12 * layout.scale());
-            int buttonWidth = (layout.footer().width() - gap * (choices.size() - 1)) / Math.max(1, choices.size());
-            int buttonHeight = layout.footer().height();
-            int startX = layout.footer().x;
-            int y = layout.footer().y;
+            // Capped to BUTTON_RECT's own width so two or three choices don't stretch into oversized
+            // buttons just because the footer has room -- only a full row of choices grows to fill it.
+            int buttonWidth = Math.min(Math.round(BUTTON_RECT.width() * layout.scale()),
+                    (layout.footer().width() - gap * (choices.size() - 1)) / Math.max(1, choices.size()));
+            int buttonHeight = Math.max(1,
+                    Math.round((float) (buttonWidth * BUTTON_RECT.height()) / BUTTON_RECT.width()));
+            int rowWidth = buttonWidth * choices.size() + gap * Math.max(0, choices.size() - 1);
+            // A single choice centers on BUTTON_RECT's own native position (where the art was designed
+            // to sit); more than one centers on the chamber instead, since the row as a whole no longer
+            // matches that fixed slot.
+            int rowCenterX = choices.size() == 1 ? layout.toScreen(BUTTON_RECT).centerX() : layout.chamber().centerX();
+            int startX = rowCenterX - rowWidth / 2;
+            int y = Math.round(layout.footer().y() + (layout.footer().height() - buttonHeight) / 2f);
             int index = 0;
             for (String choiceId : choices) {
                 int x = startX + index * (buttonWidth + gap);
@@ -278,8 +319,8 @@ public final class RaidRewardRevealScreen extends Screen {
             // exactly the rectangle the art was designed against, not re-derived footer-relative math.
             Rect buttonRect = layout.toScreen(BUTTON_RECT);
             this.addRenderableWidget(new TexturedButton(buttonRect.x(), buttonRect.y(),
-                    buttonRect.width(), buttonRect.height(), Component.empty(), widget -> this.onClose(),
-                    CLAIM_BUTTON, 488, 83));
+                    buttonRect.width(), buttonRect.height(), Component.literal("Close"), widget -> this.onClose(),
+                    CLAIM_BUTTON_BLANK, 488, 83));
         }
     }
 
@@ -293,7 +334,7 @@ public final class RaidRewardRevealScreen extends Screen {
      * the only name anyone has given them.
      */
     private static Component buttonLabel(String choiceId, int choiceCount) {
-        return Component.literal(choiceCount == 1 ? "Claim" : choiceId);
+        return Component.literal(choiceCount == 1 ? "Claim Rewards" : choiceId);
     }
 
     private void onChoose(String choiceId) {
@@ -357,30 +398,50 @@ public final class RaidRewardRevealScreen extends Screen {
     private void drawSidebar(GuiGraphics graphics, Layout layout) {
         Rect sidebar = layout.sidebar();
         float textScale = layout.scale() * SIDEBAR_TEXT_SCALE;
+        float headerScale = layout.scale() * 2.2f;
+        float smallHeaderScale = layout.scale() * 1.9f;
 
-        drawScaledText(graphics, sidebar, textScale, SIDEBAR_LABEL_X, VALUE_Y_BOSS, sidebarSpecies);
-        drawScaledText(graphics, sidebar, textScale, SIDEBAR_LABEL_X, VALUE_Y_TIER, sidebarTier);
-        drawScaledText(graphics, sidebar, textScale, SIDEBAR_LABEL_X, VALUE_Y_TIME, sidebarTime);
-        drawScaledText(graphics, sidebar, textScale, SIDEBAR_ICON_LABEL_X, VALUE_Y_DAMAGE, sidebarDamage);
-        drawScaledText(graphics, sidebar, textScale, SIDEBAR_ICON_LABEL_X, VALUE_Y_PARTICIPANTS, sidebarParticipants);
+        drawCenteredLabel(graphics, sidebar, headerScale, 20, LABEL_SUMMARY, SIDEBAR_HEADER_COLOR);
+        drawCenteredLabel(graphics, sidebar, headerScale, 67, LABEL_BOSS, SIDEBAR_LABEL_COLOR);
+        drawCenteredLabel(graphics, sidebar, headerScale, 154, LABEL_TIER, SIDEBAR_LABEL_COLOR);
+        drawCenteredLabel(graphics, sidebar, headerScale, 233, LABEL_TIME, SIDEBAR_LABEL_COLOR);
+        drawCenteredLabel(graphics, sidebar, headerScale, 325, LABEL_CONTRIBUTION, SIDEBAR_HEADER_COLOR);
+        drawCenteredLabel(graphics, sidebar, smallHeaderScale, 373, LABEL_DAMAGE, SIDEBAR_LABEL_COLOR);
+        drawCenteredLabel(graphics, sidebar, smallHeaderScale, 451, LABEL_PARTICIPANTS, SIDEBAR_LABEL_COLOR);
+
+        drawScaledText(graphics, sidebar, textScale, VALUE_Y_BOSS, sidebarSpecies);
+        drawScaledText(graphics, sidebar, textScale, VALUE_Y_TIER, sidebarTier);
+        drawScaledText(graphics, sidebar, textScale, VALUE_Y_TIME, sidebarTime);
+        drawScaledText(graphics, sidebar, textScale, VALUE_Y_DAMAGE, sidebarDamage);
+        drawScaledText(graphics, sidebar, textScale, VALUE_Y_PARTICIPANTS, sidebarParticipants);
         // Contribution bonus rolls have no row in this layout (the art's "Support Actions" slot was
         // removed rather than repurposed) -- still shown in the existing claim chat message/debug log.
     }
 
+    private void drawScaledText(GuiGraphics graphics, Rect sidebar, float textScale, int localY, Component text) {
+        drawCenteredLabel(graphics, sidebar, textScale, localY, text, 0xFFFFFFFF);
+    }
+
     /**
-     * Draws text at a position local to the sidebar's own origin, scaled to match the baked label art.
-     * The translate is snapped to whole pixels before the (generally non-integer) scale is applied, and
-     * the built-in drop shadow is disabled -- otherwise the shadow's internal 1px offset lands on a
-     * fractional post-scale pixel that doesn't line up with the main glyph, producing a doubled/ghosted
-     * look under nearest-neighbor sampling.
+     * Draws text centered across the sidebar's own width, at a Y local to its origin, scaled to match
+     * the baked label art but never past what fits: a long species name or renown-tier label at the
+     * panel's narrowest widths would otherwise run past the art's edge, so the scale is capped to
+     * whatever width remains inside SIDEBAR_PADDING on each side. The translate is snapped to whole
+     * pixels before the (generally non-integer) scale is applied, and the built-in drop shadow is
+     * disabled -- otherwise the shadow's internal 1px offset lands on a fractional post-scale pixel
+     * that doesn't line up with the main glyph, producing a doubled/ghosted look under nearest-neighbor
+     * sampling.
      */
-    private void drawScaledText(GuiGraphics graphics, Rect sidebar, float textScale, int localX, int localY, Component text) {
-        int x = Math.round(sidebar.x() + localX * (sidebar.width() / (float) SUMMARY_PANEL_RECT.width()));
+    private void drawCenteredLabel(GuiGraphics graphics, Rect sidebar, float textScale, int localY, Component text, int color) {
+        int textWidth = this.font.width(text);
+        float padding = SIDEBAR_PADDING * (sidebar.width() / (float) SUMMARY_PANEL_RECT.width());
+        float fitScale = Math.min(textScale, Math.max(1f, sidebar.width() - 2 * padding) / Math.max(1, textWidth));
+        int x = Math.round(sidebar.x() + (sidebar.width() - textWidth * fitScale) / 2f);
         int y = Math.round(sidebar.y() + localY * (sidebar.height() / (float) SUMMARY_PANEL_RECT.height()));
         graphics.pose().pushPose();
         graphics.pose().translate(x, y, 0);
-        graphics.pose().scale(textScale, textScale, 1f);
-        graphics.drawString(this.font, text, 0, 0, 0xFFFFFFFF, false);
+        graphics.pose().scale(fitScale, fitScale, 1f);
+        graphics.drawString(this.font, text, 0, 0, color, false);
         graphics.pose().popPose();
     }
 
@@ -440,21 +501,30 @@ public final class RaidRewardRevealScreen extends Screen {
      * "Kaelen, the Relentless" at the sidebar's text scale is wider than the whole panel. Scaled to
      * fit the chamber and drawn on a dark plate, so the gold and red read against the blue art the
      * way a nameplate reads against the sky.
+     *
+     * <p>The boon icon, when there is one, sits inline to the left of the title at the same line
+     * height rather than as a separate badge -- one centered block on one plate, so the banner
+     * still reads as a single unit.
      */
     private void drawChamberBanner(GuiGraphics graphics, Rect chamber) {
         int textWidth = this.font.width(chamberBanner);
         if (textWidth <= 0) return;
         float scale = Math.min(CHAMBER_BANNER_MAX_SCALE, chamber.width() * 0.8f / textWidth);
         int top = chamber.y() + Math.round(chamber.height() * CHAMBER_BANNER_TOP);
-        int halfWidth = Math.round(textWidth * scale / 2f);
         int height = Math.round(this.font.lineHeight * scale);
         int pad = Math.max(2, Math.round(3 * scale));
-        graphics.fill(chamber.centerX() - halfWidth - pad, top - pad,
-                chamber.centerX() + halfWidth + pad, top + height, 0xA0000000);
+        int iconSize = chamberBannerIcon != null ? height : 0;
+        int iconGap = chamberBannerIcon != null ? pad : 0;
+        int halfWidth = Math.round((textWidth * scale + iconSize + iconGap) / 2f);
+        int left = chamber.centerX() - halfWidth;
+        graphics.fill(left - pad, top - pad, chamber.centerX() + halfWidth + pad, top + height, 0xA0000000);
+        if (chamberBannerIcon != null) {
+            graphics.blit(chamberBannerIcon, left, top, iconSize, iconSize, 0f, 0f, 16, 16, 16, 16);
+        }
         graphics.pose().pushPose();
-        graphics.pose().translate(chamber.centerX(), top, 0);
+        graphics.pose().translate(left + iconSize + iconGap, top, 0);
         graphics.pose().scale(scale, scale, 1f);
-        graphics.drawString(this.font, chamberBanner, -textWidth / 2, 0, 0xFFFFFFFF, true);
+        graphics.drawString(this.font, chamberBanner, 0, 0, 0xFFFFFFFF, true);
         graphics.pose().popPose();
     }
 

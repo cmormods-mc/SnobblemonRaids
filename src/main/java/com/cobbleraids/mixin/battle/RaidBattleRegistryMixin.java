@@ -7,9 +7,10 @@ import com.cobblemon.mod.common.api.battles.model.PokemonBattle;
 import com.cobblemon.mod.common.api.battles.model.actor.BattleActor;
 import com.cobblemon.mod.common.battles.BattleRegistry;
 import com.cobblemon.mod.common.battles.runner.ShowdownService;
-import com.cobbleraids.lifecycle.RaidLifecycleCoordinator;
+import com.cobbleraids.lifecycle.RaidReconnectService;
 import com.cobbleraids.raid.RaidRegistry;
 import com.cobbleraids.raid.RaidSession;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -45,7 +46,7 @@ public abstract class RaidBattleRegistryMixin {
             RaidSession raid = RaidRegistry.get(battle);
             isRaid = raid != null;
             if (isRaid && raid.isActiveParticipant(player.getUUID())) {
-                RaidLifecycleCoordinator.onPlayerDisconnected(raid, player.getUUID());
+                RaidReconnectService.onPlayerDisconnected(raid, player, ((ServerLevel) player.level()).getServer());
             }
         } catch (Exception ex) {
             // Returns without cancelling, so Cobblemon's own disconnect handling runs. That ends the

@@ -61,19 +61,22 @@ public final class RaidSession {
     private final boolean allowFlee;
     private final RaidProgress progress;
     private final String renownTitle;
+    private final String renownBoon;
     private final Ownership ownership;
 
     public RaidSession(PokemonBattle battle, Collection<ServerPlayer> players, float maxHealth,
                        PokemonEntity bossEntity, UUID bossActorId, ResourceLocation definitionId,
-                       int timeLimitSeconds, boolean allowFlee, String renownTitle) {
+                       int timeLimitSeconds, boolean allowFlee, String renownTitle, String renownBoon) {
         this(battle, players, maxHealth, bossEntity, bossActorId, definitionId, timeLimitSeconds, allowFlee,
-                renownTitle, null);
+                renownTitle, renownBoon, null);
     }
 
     public RaidSession(PokemonBattle battle, Collection<ServerPlayer> players, float maxHealth,
                        PokemonEntity bossEntity, UUID bossActorId, ResourceLocation definitionId,
-                       int timeLimitSeconds, boolean allowFlee, String renownTitle, Ownership ownership) {
+                       int timeLimitSeconds, boolean allowFlee, String renownTitle, String renownBoon,
+                       Ownership ownership) {
         this.renownTitle = renownTitle == null ? "" : renownTitle;
+        this.renownBoon = renownBoon == null ? "" : renownBoon;
         this.battle = Objects.requireNonNull(battle, "battle");
         this.bossEntity = Objects.requireNonNull(bossEntity, "bossEntity");
         this.bossActorId = Objects.requireNonNull(bossActorId, "bossActorId");
@@ -93,6 +96,8 @@ public final class RaidSession {
     public boolean isFleeAllowed() { return allowFlee; }
     /** "Kaelen, the Relentless", or empty. Captured at start: the boss entity is discarded on victory. */
     public String getRenownTitle() { return renownTitle; }
+    /** {@link com.cobbleraids.renown.RenownBoon#encode()}, or empty. Same capture-at-start reasoning. */
+    public String getRenownBoon() { return renownBoon; }
     /** Null for an ordinary raid. */
     public Ownership getOwnership() { return ownership; }
     public boolean isOwned() { return ownership != null; }

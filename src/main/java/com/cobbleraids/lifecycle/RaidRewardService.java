@@ -155,7 +155,7 @@ public final class RaidRewardService {
             PendingRaidReward pending = new PendingRaidReward(
                     eligibility.raidId(), eligibility.definitionId(), definition.rarityTier(), rewards, percentage, bonusRolls,
                     eligibility.elapsedCombatTicks(), eligibility.participants().size(), rewardSeed,
-                    eligibility.renownTitle());
+                    eligibility.renownTitle(), eligibility.renownBoon());
             PENDING.computeIfAbsent(playerId, ignored -> new ArrayDeque<>()).addLast(pending);
             if (server.getPlayerList().getPlayer(playerId) != null) OPEN_DELAY.putIfAbsent(playerId, GUI_OPEN_DELAY_TICKS);
         }

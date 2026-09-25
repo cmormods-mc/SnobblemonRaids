@@ -28,6 +28,7 @@ public final class NativeRewardScreenGateway {
                 pending.rarityTier().serializedName(),
                 speciesDisplayName(definition),
                 pending.renownTitle(),
+                pending.renownBoon(),
                 List.copyOf(pending.rewards().choices().keySet()),
                 pending.contributionPercentage(),
                 pending.contributionBonusRolls(),
