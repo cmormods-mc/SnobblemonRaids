@@ -119,7 +119,9 @@ public final class PendingRewardStore extends SavedData {
                 tag.getInt("participants"),
                 seed,
                 // Absent on every claim saved before renown existed, which reads as "" -- an ordinary boss.
-                tag.getString("renown"));
+                tag.getString("renown"),
+                // Absent on every claim saved before the boon icon existed, same "" fallback.
+                tag.getString("renown_boon"));
     }
 
     @Override
@@ -147,7 +149,10 @@ public final class PendingRewardStore extends SavedData {
         tag.putInt("elapsed_ticks", pending.elapsedCombatTicks());
         tag.putInt("participants", pending.participantCount());
         tag.putLong("seed", pending.rewardSeed());
-        if (pending.renowned()) tag.putString("renown", pending.renownTitle());
+        if (pending.renowned()) {
+            tag.putString("renown", pending.renownTitle());
+            tag.putString("renown_boon", pending.renownBoon());
+        }
         return tag;
     }
 

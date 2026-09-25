@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.95-encounter-rules'
+version = '0.8.105-boss-dupe-fix-leave-cmd'
 group = 'com.cobbleraids'
 
 base {

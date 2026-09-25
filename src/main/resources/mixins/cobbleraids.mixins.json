@@ -11,12 +11,17 @@
     "battle.RaidBossPushImmunityMixin",
     "battle.RaidBossFishingImmunityMixin",
     "battle.BattleClonePersistenceMixin",
+    "battle.BattleCloneNoDeathDropsMixin",
     "battle.RaidBattleSelectActionsMixin",
     "battle.RaidMoveActionResponseMixin",
     "battle.RaidPokemonBattleMixin",
     "battle.RaidPlayerBattleActorMixin",
     "battle.RaidActiveBattlePokemonMixin",
     "battle.RaidBattleMessagePnxMixin"
+  ],
+  "client": [
+    "client.RaidBossNameplateIconMixin",
+    "client.BattleOverlayBoonIconMixin"
   ],
   "injectors": {
     "defaultRequire": 1

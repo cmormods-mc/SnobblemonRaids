@@ -3,6 +3,7 @@ package com.cobbleraids.lifecycle;
 import com.cobbleraids.api.encounter.EncounterPolicy;
 import com.cobbleraids.api.encounter.LeaveReason;
 import com.cobbleraids.encounter.EncounterService;
+import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobbleraids.fault.RaidThreadGuard;
 import com.cobbleraids.catching.RaidCatchService;
 import com.cobbleraids.catching.RaidPlayerRecords;
@@ -179,6 +180,28 @@ public final class RaidLifecycleCoordinator {
     public static void abort(RaidSession raid) {
         if (raid == null || !raid.abort()) return;
         finalizeNonVictory(raid, false);
+    }
+
+    /**
+     * Ends every still-live raid before the world saves, so a boss frozen mid-battle is never
+     * written to disk as an ordinary, permanently-invulnerable entity nobody's bookkeeping still
+     * knows about. Registered on SERVER_STOPPING, ahead of the world save -- SERVER_STOPPED's own
+     * handlers (including {@link RaidRegistry#onServerStopped}) only clear in-memory maps and run
+     * too late to stop that write.
+     *
+     * <p>Before this, a raid left active at shutdown (a crash, or simply {@code /stop} mid-fight --
+     * {@link com.cobbleraids.lifecycle.RaidReconnectService#onPlayerDisconnected} turns the
+     * resulting mass disconnect into a harmless grace hold rather than a real finalize now that
+     * reconnect grace exists) relied entirely on {@link com.cobbleraids.spawn.RaidSpawnScheduler}'s
+     * boot-time purge to clean up after the fact -- and that purge only catches natural and owned
+     * bosses in already-loaded chunks, never an admin-spawned one, and never one in a chunk nobody
+     * has walked back into. Ending it here instead means nothing invalid reaches disk in the first
+     * place.
+     */
+    public static void abortAll() {
+        for (RaidSession raid : RaidRegistry.all()) {
+            RaidFaultBarrier.guard("shutdown:abort-raid", () -> abort(raid));
+        }
     }
 
     private static void finalizeVictory(RaidSession raid) {

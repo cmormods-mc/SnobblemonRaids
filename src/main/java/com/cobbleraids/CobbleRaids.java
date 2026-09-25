@@ -3,6 +3,7 @@ package com.cobbleraids;
 import com.cobbleraids.fault.RaidThreadGuard;
 import com.cobbleraids.catching.RaidPlayerRecords;
 import com.cobbleraids.command.RaidAdminCommand;
+import com.cobbleraids.command.RaidLeaveCommand;
 import com.cobbleraids.command.RaidPointsCommand;
 import com.cobbleraids.command.RaidShopCommand;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
@@ -15,6 +16,7 @@ import com.cobbleraids.item.RaidKeyItems;
 import com.cobbleraids.lifecycle.RaidBattleEventCoordinator;
 import com.cobbleraids.lifecycle.RaidCombatRuleService;
 import com.cobbleraids.lifecycle.RaidLifecycleCoordinator;
+import com.cobbleraids.lifecycle.RaidReconnectService;
 import com.cobbleraids.lifecycle.RaidRewardService;
 import com.cobbleraids.lobby.RaidLobbyManager;
 import com.cobbleraids.network.RaidRewardPayloads;
@@ -75,6 +77,7 @@ public final class CobbleRaids implements ModInitializer {
         RaidPointsCommand.register();
         RaidShopCommand.register();
         RaidAdminCommand.register();
+        RaidLeaveCommand.register();
         RaidBossInteractionListener.register();
         RaidPlaceholders.registerIfPresent();
         // Each subsystem gets its own barrier rather than one around the whole block: a lobby that
@@ -84,6 +87,7 @@ public final class CobbleRaids implements ModInitializer {
             RaidFaultBarrier.safeTick("lobby", server, RaidLobbyManager::tick);
             RaidFaultBarrier.safeTick("spawning", server, RaidSpawnScheduler::tick);
             RaidFaultBarrier.safeTick("rewards", server, RaidRewardService::tick);
+            RaidFaultBarrier.safeTick("reconnect-grace", server, RaidReconnectService::tick);
             RaidFaultBarrier.safeTick("combat-timer", server, RaidCombatRuleService::tick);
             RaidFaultBarrier.safeTick("boss-glow", server, RaidBossGlowService::tick);
             RaidFaultBarrier.safeTick("consistency-audit", server, RaidConsistencyAuditScheduler::tick);
@@ -124,11 +128,19 @@ public final class CobbleRaids implements ModInitializer {
         // who happened to be online when the raid was won.
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
                 RaidFaultBarrier.guard("player-join", () -> RaidRewardService.onPlayerJoin(handler.getPlayer())));
+        // Resumes a raid a player was mid-disconnect-grace on -- see RaidReconnectService.
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
+                RaidFaultBarrier.guard("player-join:raid-reconnect",
+                        () -> RaidReconnectService.onPlayerJoin(handler.getPlayer(), server)));
         // Repairs the Showdown integration (ShowdownResourceLoaderMixin) if another mod's own
         // unbundle-time file writes clobbered it after ours -- confirmed live against a real pack
         // (mega_showdown) that patches the same Cobblemon Showdown files at the same injection point.
         ServerLifecycleEvents.SERVER_STARTED.register(server -> RaidFaultBarrier.guard("startup:showdown",
                 () -> ShowdownIntegrationInstaller.installSafely("at server start")));
+        // First: ends every raid still in battle before anything below runs or the world saves, so
+        // no boss is ever written to disk mid-fight. See RaidLifecycleCoordinator.abortAll.
+        ServerLifecycleEvents.SERVER_STOPPING.register(server ->
+                RaidFaultBarrier.guard("shutdown:abort-active-raids", RaidLifecycleCoordinator::abortAll));
         ServerLifecycleEvents.SERVER_STOPPING.register(server ->
                 RaidFaultBarrier.guard("shutdown:spawn-scheduler", () -> RaidSpawnScheduler.onServerStopping(server)));
         ServerLifecycleEvents.SERVER_STOPPING.register(server ->
@@ -153,6 +165,7 @@ public final class CobbleRaids implements ModInitializer {
             RaidFaultBarrier.guard("shutdown:lifecycle", RaidLifecycleCoordinator::onServerStopped);
             RaidFaultBarrier.guard("shutdown:encounters", com.cobbleraids.encounter.EncounterService::onServerStopped);
             RaidFaultBarrier.guard("shutdown:combat-rules", RaidCombatRuleService::onServerStopped);
+            RaidFaultBarrier.guard("shutdown:reconnect-grace", RaidReconnectService::onServerStopped);
             RaidFaultBarrier.guard("shutdown:rewards", RaidRewardService::onServerStopped);
             RaidFaultBarrier.guard("shutdown:spawn-history", RaidSpawnHistory::onServerStopped);
             RaidFaultBarrier.guard("shutdown:player-records", RaidPlayerRecords::onServerStopped);

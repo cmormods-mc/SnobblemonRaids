@@ -59,6 +59,8 @@ def validate_screen_uses_real_textures() -> None:
     for name in EXPECTED_TEXTURES:
         if name == "icons":
             continue  # icon atlas is bundled for future use, not wired into the screen yet
+        if name == "claim_button":
+            continue  # superseded by claim_button_blank for both the choice and close buttons
         assert f'texture("{name}")' in screen, f"RaidRewardRevealScreen must reference {name}"
 
 

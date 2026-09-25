@@ -21,6 +21,10 @@ public final class RaidCombatRuleService {
         if (RaidRegistry.isEmpty()) return;
         for (RaidSession raid : RaidRegistry.all()) {
             if (raid.getStatus() != RaidSession.Status.ACTIVE || !raid.isTimed()) continue;
+            // Paused rather than ticked while every remaining active participant is mid-reconnect-
+            // grace: nobody is actually here to be racing the clock, so the raid cannot time out from
+            // under someone who is only just reconnecting. See RaidReconnectService.hasActivePresence.
+            if (!RaidReconnectService.hasActivePresence(raid)) continue;
             boolean expired = raid.tickCombatTimer();
             int remainingTicks = raid.getRemainingCombatTicks();
             if (!expired) {

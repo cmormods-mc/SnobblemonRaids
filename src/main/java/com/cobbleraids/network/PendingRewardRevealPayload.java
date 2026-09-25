@@ -12,12 +12,12 @@ import net.minecraft.resources.ResourceLocation;
 /**
  * S2C: a raid reward is waiting and the client's native reveal screen can render it.
  *
- * <p>The channel is {@code pending_reward_reveal_v2} because {@code renownTitle} changed the wire
- * format. Keeping the old id would have sent the longer packet to a client that still decodes the
- * shorter one, and a custom payload with bytes left over is a disconnect, not a warning. Under a
- * new id an out-of-date client simply does not advertise the channel, {@code canSend} is false,
- * and the reward falls back to the chat claim path it already supports. Change the id again the
- * next time a field is added.
+ * <p>The channel is {@code pending_reward_reveal_v3} because {@code renownBoon} changed the wire
+ * format (v2 added {@code renownTitle} for the same reason). Keeping the old id would have sent
+ * the longer packet to a client that still decodes the shorter one, and a custom payload with
+ * bytes left over is a disconnect, not a warning. Under a new id an out-of-date client simply does
+ * not advertise the channel, {@code canSend} is false, and the reward falls back to the chat claim
+ * path it already supports. Change the id again the next time a field is added.
  */
 public record PendingRewardRevealPayload(
         UUID raidId,
@@ -25,6 +25,7 @@ public record PendingRewardRevealPayload(
         String rarityTier,
         String speciesDisplayName,
         String renownTitle,
+        String renownBoon,
         List<String> choiceIds,
         double contributionPercentage,
         int contributionBonusRolls,
@@ -32,7 +33,7 @@ public record PendingRewardRevealPayload(
         int participantCount
 ) implements CustomPacketPayload {
     public static final Type<PendingRewardRevealPayload> TYPE =
-            new Type<>(ResourceLocation.fromNamespaceAndPath("cobbleraids", "pending_reward_reveal_v2"));
+            new Type<>(ResourceLocation.fromNamespaceAndPath("cobbleraids", "pending_reward_reveal_v3"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, PendingRewardRevealPayload> STREAM_CODEC = StreamCodec.of(
             (buf, payload) -> {
@@ -41,6 +42,7 @@ public record PendingRewardRevealPayload(
                 ByteBufCodecs.STRING_UTF8.encode(buf, payload.rarityTier());
                 ByteBufCodecs.STRING_UTF8.encode(buf, payload.speciesDisplayName());
                 ByteBufCodecs.STRING_UTF8.encode(buf, payload.renownTitle());
+                ByteBufCodecs.STRING_UTF8.encode(buf, payload.renownBoon());
                 ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()).encode(buf, payload.choiceIds());
                 ByteBufCodecs.DOUBLE.encode(buf, payload.contributionPercentage());
                 ByteBufCodecs.VAR_INT.encode(buf, payload.contributionBonusRolls());
@@ -50,6 +52,7 @@ public record PendingRewardRevealPayload(
             buf -> new PendingRewardRevealPayload(
                     UUIDUtil.STREAM_CODEC.decode(buf),
                     ResourceLocation.STREAM_CODEC.decode(buf),
+                    ByteBufCodecs.STRING_UTF8.decode(buf),
                     ByteBufCodecs.STRING_UTF8.decode(buf),
                     ByteBufCodecs.STRING_UTF8.decode(buf),
                     ByteBufCodecs.STRING_UTF8.decode(buf),
