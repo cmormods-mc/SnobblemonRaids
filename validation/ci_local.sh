@@ -54,6 +54,9 @@ done
 step "Validate logging discipline"
 "$py" validation/validate_logging.py
 
+step "Validate Showdown JS syntax"
+"$py" validation/validate_showdown_js_syntax.py
+
 step "Validate callback fault barriers"
 "$py" validation/validate_callback_guards.py
 
@@ -81,6 +84,12 @@ step "Compile, test and remap"
 # the classes exist. `clean` above also wipes anything a previous run left behind.
 step "Validate mixin fault barriers (bytecode)"
 "$py" validation/validate_mixin_guards.py
+
+step "Validate mixin targets are not shadowed"
+"$py" validation/validate_mixin_target_shadowing.py
+
+step "Validate raid-patch.js behaviour against Cobblemon's real Showdown fork"
+"$py" validation/validate_showdown_raid_patch_behavior.py
 
 step "Validate public API boundary (bytecode)"
 "$py" validation/validate_api_boundary.py
