@@ -363,15 +363,17 @@ public record CobbleRaidsConfig(
      * <p>Buy-back cost is priced per rarity tier, the same shape as {@link RaidPoints}, because what
      * a boss is worth to buy back should track what winning it was worth in the first place.
      * Reroll cost is flat: it is a gamble on a snapshot already captured, not a reward tied to a
-     * raid's difficulty. {@code ivJitter}/{@code evJitter} size that gamble's spread, using the same
-     * clamp-and-random-offset shape {@link RaidBossTraits#jitterIv} already uses at spawn time.
+     * raid's difficulty. The reroll itself has no configurable spread -- see
+     * {@link RaidBossTraits#rollIv}/{@link RaidBossTraits#rollEvs}: every stat is a fresh, uniform
+     * roll across its whole legal range, with no relationship to what it was a moment ago. That is
+     * the point of a gamble; a small nudge away from the current value would not be one.
      *
      * <p>Independent of {@link Catching}: that mechanic is an instant, free, config-gated chance
      * roll at the moment of victory, off by default. This is a guaranteed-but-paid, delayed second
      * path to the same underlying idea, on by default -- the two coexist and neither implies the
      * other's setting.
      */
-    public record PersonalBossShop(boolean enabled, int rerollCost, int ivJitter, int evJitter,
+    public record PersonalBossShop(boolean enabled, int rerollCost,
                                    int buyCostStarter, int buyCostPowerhouse,
                                    int buyCostLegendary, int buyCostMythical) {
         private static final int MAX_COST = 100_000;
@@ -379,10 +381,6 @@ public record CobbleRaidsConfig(
         public PersonalBossShop {
             if (rerollCost < 0 || rerollCost > MAX_COST)
                 throw new IllegalArgumentException("personal_boss_shop.reroll_cost must be 0.." + MAX_COST);
-            if (ivJitter < 0 || ivJitter > 31)
-                throw new IllegalArgumentException("personal_boss_shop.iv_jitter must be 0..31");
-            if (evJitter < 0 || evJitter > 252)
-                throw new IllegalArgumentException("personal_boss_shop.ev_jitter must be 0..252");
             validateCost("buy_cost_starter", buyCostStarter);
             validateCost("buy_cost_powerhouse", buyCostPowerhouse);
             validateCost("buy_cost_legendary", buyCostLegendary);
@@ -390,7 +388,7 @@ public record CobbleRaidsConfig(
         }
 
         public static PersonalBossShop defaults() {
-            return new PersonalBossShop(true, 50, 4, 24, 40, 80, 160, 300);
+            return new PersonalBossShop(true, 50, 40, 80, 160, 300);
         }
 
         public int buyCostFor(RaidRarityTier tier) {

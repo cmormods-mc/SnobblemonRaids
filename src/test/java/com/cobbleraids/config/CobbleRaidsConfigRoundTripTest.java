@@ -53,7 +53,7 @@ class CobbleRaidsConfigRoundTripTest {
                 new CobbleRaidsConfig.DynamicLevel(true, -5, 90),
                 new CobbleRaidsConfig.MegaPity(true, 20),
                 new CobbleRaidsConfig.RaidPoints(true, 10, 20, 30, 40),
-                new CobbleRaidsConfig.PersonalBossShop(false, 75, 6, 40, 15, 30, 60, 120),
+                new CobbleRaidsConfig.PersonalBossShop(false, 75, 15, 30, 60, 120),
                 CobbleRaidsConfig.defaults().tierScaling(),
                 CobbleRaidsConfig.defaults().bossGlow(),
                 CobbleRaidsConfig.defaults().bossMovement(),
@@ -83,8 +83,6 @@ class CobbleRaidsConfigRoundTripTest {
         assertEquals(30, reparsed.raidPoints().legendary());
         assertFalse(reparsed.personalBossShop().enabled());
         assertEquals(75, reparsed.personalBossShop().rerollCost());
-        assertEquals(6, reparsed.personalBossShop().ivJitter());
-        assertEquals(40, reparsed.personalBossShop().evJitter());
         assertEquals(60, reparsed.personalBossShop().buyCostFor(RaidRarityTier.LEGENDARY));
         assertFalse(reparsed.renown().enabled());
         assertEquals(0.4, reparsed.renown().chanceFor(RaidRarityTier.LEGENDARY), 0.0);
@@ -160,11 +158,9 @@ class CobbleRaidsConfigRoundTripTest {
         assertEquals(40, shop.buyCostFor(RaidRarityTier.STARTER));
         assertEquals(300, shop.buyCostFor(RaidRarityTier.MYTHICAL));
         assertThrows(IllegalArgumentException.class,
-                () -> new CobbleRaidsConfig.PersonalBossShop(true, 50, 32, 24, 40, 80, 160, 300), "IV jitter capped at 31");
+                () -> new CobbleRaidsConfig.PersonalBossShop(true, -1, 40, 80, 160, 300), "reroll cost cannot be negative");
         assertThrows(IllegalArgumentException.class,
-                () -> new CobbleRaidsConfig.PersonalBossShop(true, 50, 4, 253, 40, 80, 160, 300), "EV jitter capped at 252");
-        assertThrows(IllegalArgumentException.class,
-                () -> new CobbleRaidsConfig.PersonalBossShop(true, -1, 4, 24, 40, 80, 160, 300), "reroll cost cannot be negative");
+                () -> new CobbleRaidsConfig.PersonalBossShop(true, 50, -1, 80, 160, 300), "a buy cost cannot be negative");
     }
 
     @Test

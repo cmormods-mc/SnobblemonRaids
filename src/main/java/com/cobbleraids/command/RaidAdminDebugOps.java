@@ -340,8 +340,6 @@ final class RaidAdminDebugOps {
         section(source, "personal_boss_shop");
         setting(source, "enabled", config.personalBossShop().enabled());
         setting(source, "reroll_cost", config.personalBossShop().rerollCost());
-        setting(source, "iv_jitter", config.personalBossShop().ivJitter());
-        setting(source, "ev_jitter", config.personalBossShop().evJitter());
         setting(source, "buy_cost", tierValues(config.personalBossShop().buyCostStarter(),
                 config.personalBossShop().buyCostPowerhouse(), config.personalBossShop().buyCostLegendary(),
                 config.personalBossShop().buyCostMythical()));

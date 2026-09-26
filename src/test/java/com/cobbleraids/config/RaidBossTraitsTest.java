@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import org.junit.jupiter.api.DisplayName;
@@ -246,37 +247,34 @@ class RaidBossTraitsTest {
     }
 
     @Nested
-    @DisplayName("EV jitter")
-    class EvJitter {
+    @DisplayName("reroll (full, independent random roll -- the shop's gamble, not the spawn-time jitter)")
+    class Reroll {
 
         @Test
-        @DisplayName("a spread of 0 pins the value exactly")
-        void zeroSpreadPins() {
-            Random random = new Random(1L);
-            for (int i = 0; i < 100; i++) {
-                assertEquals(200, RaidBossTraits.jitterEv(200, 0, random));
-            }
-        }
-
-        @Test
-        @DisplayName("jitter cannot push an EV outside 0..252")
-        void clampsAtTheEdges() {
-            Random random = new Random(7L);
-            for (int i = 0; i < 20_000; i++) {
-                assertTrue(RaidBossTraits.jitterEv(252, 30, random) <= 252);
-                assertTrue(RaidBossTraits.jitterEv(0, 30, random) >= 0);
-            }
-        }
-
-        @Test
-        @DisplayName("jitterEvs never exceeds the 510 total cap even when every stat rolls high")
-        void jitterEvsStaysUnderTotalCap() {
+        @DisplayName("rollIv is always a legal IV and is not anchored to any prior value")
+        void rollIvStaysInRangeAndVaries() {
             Random random = new Random(20260926L);
-            Map<String, Integer> baseline = Map.of(
-                    "hp", 252, "attack", 252, "defence", 252,
-                    "special_attack", 252, "special_defence", 252, "speed", 252);
-            for (int i = 0; i < 500; i++) {
-                Map<String, Integer> rolled = RaidBossTraits.jitterEvs(baseline, 30, random);
+            boolean sawLow = false;
+            boolean sawHigh = false;
+            for (int i = 0; i < 20_000; i++) {
+                int rolled = RaidBossTraits.rollIv(random);
+                assertTrue(rolled >= 0 && rolled <= 31, "outside 0..31: " + rolled);
+                if (rolled <= 5) sawLow = true;
+                if (rolled >= 26) sawHigh = true;
+            }
+            // A gamble that can only ever land near one end would not be a real gamble -- this is
+            // the property that distinguishes rollIv from jitterIv, which is anchored to a base.
+            assertTrue(sawLow, "20000 rolls never landed low; rollIv looks anchored to something");
+            assertTrue(sawHigh, "20000 rolls never landed high; rollIv looks anchored to something");
+        }
+
+        @Test
+        @DisplayName("rollEvs never exceeds the 510 total cap even when every independent roll is high")
+        void rollEvsStaysUnderTotalCap() {
+            Random random = new Random(20260926L);
+            List<String> stats = List.of("hp", "attack", "defence", "special_attack", "special_defence", "speed");
+            for (int i = 0; i < 2_000; i++) {
+                Map<String, Integer> rolled = RaidBossTraits.rollEvs(stats, random);
                 int total = rolled.values().stream().mapToInt(Integer::intValue).sum();
                 assertTrue(total <= RaidBossTraits.EV_TOTAL_CAP,
                         "total " + total + " exceeds the cap: " + rolled);
@@ -285,14 +283,14 @@ class RaidBossTraitsTest {
         }
 
         @Test
-        @DisplayName("jitterEvs preserves every stat key from the baseline")
-        void jitterEvsKeepsEveryStat() {
+        @DisplayName("rollEvs preserves every stat key it was asked for")
+        void rollEvsKeepsEveryStat() {
             Random random = new Random(5L);
-            Map<String, Integer> baseline = Map.of("hp", 4, "attack", 252, "speed", 252);
+            List<String> stats = List.of("hp", "attack", "speed");
 
-            Map<String, Integer> rolled = RaidBossTraits.jitterEvs(baseline, 10, random);
+            Map<String, Integer> rolled = RaidBossTraits.rollEvs(stats, random);
 
-            assertEquals(baseline.keySet(), rolled.keySet());
+            assertEquals(java.util.Set.copyOf(stats), rolled.keySet());
         }
     }
 }
