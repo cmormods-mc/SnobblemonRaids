@@ -59,6 +59,7 @@ The steps individually, if you want to run just one:
 bash validation/validate_phase31.sh
 for n in 32 36 37 38 39 40; do python validation/validate_phase$n.py; done
 python validation/validate_logging.py
+python validation/validate_showdown_js_syntax.py
 python validation/validate_callback_guards.py
 python validation/sprites/build_icon_manifest.py --check
 python validation/economy/validate_economy_manifest.py
@@ -67,6 +68,8 @@ python validation/economy/validate_economy_probabilities.py
 python validation/shop/build_test_catalog.py --check
 gradlew clean build
 python validation/validate_mixin_guards.py
+python validation/validate_mixin_target_shadowing.py
+python validation/validate_showdown_raid_patch_behavior.py
 python validation/validate_api_boundary.py
 for n in 31 32 36 37 38 39 40; do python validation/validate_phase$n.py build/libs/CobbleRaids-<version>.jar; done
 python validation/validate_mixin_guards.py build/libs/CobbleRaids-<version>.jar
@@ -81,6 +84,15 @@ something that stays true no matter how the code is spelled:
 - `validate_mixin_guards.py` — finds every `@Inject`/`@Redirect` in the mixin sources, then asserts
   each one's *compiled bytecode* carries an exception table. Rename a handler, add a mixin, move the
   package: it keeps working, and it covers new code the day it lands.
+- `validate_mixin_target_shadowing.py` — finds every mixin target and injected method, then checks
+  the real Cobblemon + Minecraft jars for a concrete subclass that overrides the same method without
+  calling up to it. Caught a live one on the day it was written: `BattleClonePersistenceMixin`
+  targeted vanilla `Entity.shouldBeSaved`, `PokemonEntity` fully overrode it, and the mixin had been
+  dead code for the exact clone-duplication bug it existed to fix.
+- `validate_showdown_raid_patch_behavior.py` — extracts Cobblemon's actual bundled Showdown fork
+  from its own jar and runs `raid-patch.js`'s exported topology predicates against it with plain
+  Node. Not a live battle simulation, but enough to catch a regression or a load-time error in the
+  dynamic-player-count model without booting a server.
 - `validate_logging.py` — no `System.out`, no `printStackTrace`, no logger outside `RaidLog`.
 - `validate_physical_side_boundary` in phases 37/38/40 — walks every Java file looking for
   client-only imports in server code.

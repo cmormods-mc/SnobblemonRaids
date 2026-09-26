@@ -52,6 +52,9 @@ jobs:
       - name: Validate logging discipline
         run: python3 validation/validate_logging.py
 
+      - name: Validate Showdown JS syntax
+        run: python3 validation/validate_showdown_js_syntax.py
+
       - name: Validate callback fault barriers
         run: python3 validation/validate_callback_guards.py
 
@@ -78,6 +81,12 @@ jobs:
       # until the classes exist. `clean` above also wipes anything a previous run left behind.
       - name: Validate mixin fault barriers
         run: python3 validation/validate_mixin_guards.py
+
+      - name: Validate mixin targets are not shadowed
+        run: python3 validation/validate_mixin_target_shadowing.py
+
+      - name: Validate raid-patch.js behaviour against Cobblemon's real Showdown fork
+        run: python3 validation/validate_showdown_raid_patch_behavior.py
 
       - name: Validate public API boundary
         run: python3 validation/validate_api_boundary.py
