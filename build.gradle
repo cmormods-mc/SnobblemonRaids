@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.115-nameplate-outline-and-overlap-fix'
+version = '0.8.116-battle-clone-persistence-shadow-fix'
 group = 'com.cobbleraids'
 
 base {
