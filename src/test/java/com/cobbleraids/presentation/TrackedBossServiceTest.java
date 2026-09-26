@@ -7,42 +7,44 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * The one rule in this service that has been got wrong before, in three different places: a tracked
+ * The one rule in this class that has been got wrong before, in three different places: a tracked
  * boss that does not resolve is not a boss that has gone away.
  *
  * <p>Phase 32 established the distinction for the spawn scheduler, {@code ActiveRaidSpawnTracker}
- * now enforces it there, and the glow service was still failing it -- dropping any boss whose chunk
- * had unloaded. That was permanent, because registration only happens at spawn: the boss came back
- * when the chunk reloaded and never glowed again.
+ * now enforces it there, and both {@code RaidBossGlowService} and {@code RenownBoonSyncService}
+ * were still failing it before this class existed to hold the rule once for both -- each dropping
+ * any boss whose chunk had unloaded. That was permanent, because registration only happens at
+ * spawn: the boss came back when the chunk reloaded and was never tracked again.
  */
-class RaidBossGlowServiceTest {
+class TrackedBossServiceTest {
 
     @Test
     @DisplayName("a boss whose chunk is not loaded stays tracked")
     void unresolvedIsKept() {
         // The whole bug in one assertion. "Not loaded" and "no longer exists" are indistinguishable
         // from a failed lookup, and only one of them means the boss is gone.
-        assertFalse(RaidBossGlowService.shouldUntrack(false, false, false));
+        assertFalse(TrackedBossService.shouldUntrack(false, false, false));
     }
 
     @Test
     @DisplayName("a boss that resolved and reports removed is dropped")
     void resolvedAndRemovedIsDropped() {
-        assertTrue(RaidBossGlowService.shouldUntrack(true, true, true));
+        assertTrue(TrackedBossService.shouldUntrack(true, true, true));
     }
 
     @Test
     @DisplayName("an entity that is no longer a raid boss is dropped")
     void demotedBossIsDropped() {
         // The marker can be gone while the entity lives -- an admin clearing it, or another mod
-        // rewriting the entity's tags. Glowing it after that would tint an ordinary Pokemon.
-        assertTrue(RaidBossGlowService.shouldUntrack(true, false, false));
+        // rewriting the entity's tags. Refreshing this service's side effect after that would act
+        // on an ordinary Pokemon.
+        assertTrue(TrackedBossService.shouldUntrack(true, false, false));
     }
 
     @Test
     @DisplayName("a live, marked, loaded boss is kept")
     void healthyBossIsKept() {
-        assertFalse(RaidBossGlowService.shouldUntrack(true, false, true));
+        assertFalse(TrackedBossService.shouldUntrack(true, false, true));
     }
 
     @Test
@@ -52,7 +54,7 @@ class RaidBossGlowServiceTest {
         // when the lookup failed, the other two flags say nothing at all and must not be consulted.
         for (boolean removed : new boolean[] {false, true}) {
             for (boolean stillBoss : new boolean[] {false, true}) {
-                assertFalse(RaidBossGlowService.shouldUntrack(false, removed, stillBoss),
+                assertFalse(TrackedBossService.shouldUntrack(false, removed, stillBoss),
                         "unresolved must never be dropped (removed=" + removed + ", boss=" + stillBoss + ")");
             }
         }
