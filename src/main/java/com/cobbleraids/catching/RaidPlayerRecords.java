@@ -181,7 +181,10 @@ public final class RaidPlayerRecords extends SavedData {
         setDirty();
     }
 
-    private static RaidPlayerRecords load(CompoundTag tag, HolderLookup.Provider registries) {
+    // Package-private rather than private so a round-trip test can call it directly against a real
+    // CompoundTag without bootstrapping Minecraft's registries -- registries is unused by this method,
+    // every field here is a primitive, UUID or ResourceLocation, none of it registry-keyed.
+    static RaidPlayerRecords load(CompoundTag tag, HolderLookup.Provider registries) {
         RaidPlayerRecords store = new RaidPlayerRecords();
         ListTag players = tag.getList("players", Tag.TAG_COMPOUND);
         for (int i = 0; i < players.size(); i++) {
