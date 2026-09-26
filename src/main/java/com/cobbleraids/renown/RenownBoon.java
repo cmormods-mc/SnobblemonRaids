@@ -56,27 +56,14 @@ public record RenownBoon(Kind kind, String stat) {
         return new RenownBoon(Kind.STAT_FOCUS, stat);
     }
 
+    /**
+     * Also the codec {@link com.cobbleraids.network.RenownBoonSyncPayload} uses -- the one channel a
+     * client actually learns a boss's boon through. Not the boss's own display name:
+     * {@code PokemonEntity.setCustomName} flattens whatever {@code Component} it is given down to a
+     * bare string before storing it, discarding any {@code Style} a marker would have ridden on.
+     */
     public String encode() {
         return kind == Kind.STAT_FOCUS ? kind.serializedName() + ":" + stat : kind.serializedName();
-    }
-
-    private static final String MARKER_PREFIX = "cobbleraids_boon:";
-
-    /**
-     * A boon encoded for the one channel the actual boss nameplate has to a client: riding along,
-     * invisibly, inside the synced {@code Component} that is the entity's custom name. See
-     * {@link com.cobbleraids.presentation.RaidBossNameplate#of} for where this is tucked into a
-     * {@code Style}'s chat-insertion field (never rendered, never a real insertion action) and
-     * {@link #decodeMarker} for the other end.
-     */
-    public String marker() {
-        return MARKER_PREFIX + encode();
-    }
-
-    /** The inverse of {@link #marker}. Empty for anything else a Style's insertion might hold. */
-    public static Optional<RenownBoon> decodeMarker(String insertion) {
-        if (insertion == null || !insertion.startsWith(MARKER_PREFIX)) return Optional.empty();
-        return decode(insertion.substring(MARKER_PREFIX.length()));
     }
 
     /** The inverse of {@link #encode}. Empty rather than throwing, since tags and datapacks are both untrusted. */

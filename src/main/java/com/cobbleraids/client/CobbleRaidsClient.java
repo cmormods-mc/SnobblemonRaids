@@ -1,11 +1,15 @@
 package com.cobbleraids.client;
 
+import com.cobbleraids.RaidLog;
+import com.cobbleraids.client.renown.RenownBoonClientCache;
 import com.cobbleraids.client.reveal.RaidRewardRevealScreen;
 import com.cobbleraids.client.shop.RaidShopScreen;
 import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobbleraids.network.PendingRewardRevealPayload;
+import com.cobbleraids.network.RenownBoonSyncPayload;
 import com.cobbleraids.network.RewardResultPayload;
 import com.cobbleraids.network.ShopPagePayload;
+import com.cobbleraids.renown.RenownBoon;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 
@@ -26,5 +30,13 @@ public final class CobbleRaidsClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(ShopPagePayload.TYPE, (payload, context) ->
                 context.client().execute(() -> RaidFaultBarrier.guard("shop-screen:page",
                         () -> RaidShopScreen.show(payload))));
+        ClientPlayNetworking.registerGlobalReceiver(RenownBoonSyncPayload.TYPE, (payload, context) ->
+                context.client().execute(() -> RaidFaultBarrier.guard("renown-boon-sync", () -> {
+                    // TEMPORARY diagnostic while the boon-icon feature is being live-tested.
+                    java.util.Optional<RenownBoon> decoded = RenownBoon.decode(payload.boonEncoded());
+                    RaidLog.info("[boon-sync] client received pokemonUuid={} boonEncoded={} decoded={}",
+                            payload.pokemonUuid(), payload.boonEncoded(), decoded.isPresent());
+                    decoded.ifPresent(boon -> RenownBoonClientCache.remember(payload.pokemonUuid(), boon));
+                })));
     }
 }
