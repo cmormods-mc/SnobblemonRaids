@@ -10,9 +10,11 @@ import java.util.Set;
  * boss HP is a virtual pool driven exclusively by RaidDamageInstruction/RaidHealInstruction, so a
  * faint that bypasses that pipeline -- e.g. Perish Song fainting every active Pokemon at once,
  * including the boss -- satisfies neither of RaidLifecycleCoordinator's victory/defeat paths and
- * leaves the battle interface open. Verified against Cobblemon's bundled data/moves.js: every move
- * below either carries selfdestruct: "always"/"ifHit" or calls a .faint() directly (Destiny Bond,
- * Perish Song), and these are the only .faint() call sites in the whole file.
+ * leaves the battle interface open. Every move below either carries selfdestruct: "always"/"ifHit"
+ * or calls .faint() directly (Destiny Bond, Final Gambit, Perish Song), and this is mechanically
+ * checked against Cobblemon's actual bundled data/moves.js by validate_raid_banned_moves.py, rather
+ * than trusted from a one-time manual read -- see that script for why a drifted list here fails
+ * loudly instead of a raid boss quietly hanging a battle turn.
  */
 public final class RaidBannedMoves {
     private static final Set<String> BANNED = Set.of(

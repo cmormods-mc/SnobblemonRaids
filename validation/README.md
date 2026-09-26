@@ -60,6 +60,7 @@ bash validation/validate_phase31.sh
 for n in 32 36 37 38 39 40; do python validation/validate_phase$n.py; done
 python validation/validate_logging.py
 python validation/validate_showdown_js_syntax.py
+python validation/validate_raid_banned_moves.py
 python validation/validate_callback_guards.py
 python validation/sprites/build_icon_manifest.py --check
 python validation/economy/validate_economy_manifest.py
@@ -93,6 +94,10 @@ something that stays true no matter how the code is spelled:
   from its own jar and runs `raid-patch.js`'s exported topology predicates against it with plain
   Node. Not a live battle simulation, but enough to catch a regression or a load-time error in the
   dynamic-player-count model without booting a server.
+- `validate_raid_banned_moves.py` — extracts Cobblemon's actual bundled `data/moves.js`, derives
+  which moves bypass the tracked damage pipeline (a `selfdestruct` field or a direct `.faint()`
+  call), and diffs that against `RaidBannedMoves.BANNED`. That set used to be justified only by a
+  comment claiming a one-time manual check; this re-derives it every run instead.
 - `validate_logging.py` — no `System.out`, no `printStackTrace`, no logger outside `RaidLog`.
 - `validate_physical_side_boundary` in phases 37/38/40 — walks every Java file looking for
   client-only imports in server code.
