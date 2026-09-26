@@ -193,6 +193,12 @@ public final class CobbleRaids implements ModInitializer {
         // SERVER_STARTED sweep has already run.
         ServerEntityEvents.ENTITY_LOAD.register(RaidFaultBarrier.entityLoad("entity-load:owned-encounter",
                 com.cobbleraids.encounter.EncounterService::onEntityLoaded));
+        // The same gap again, for the glow service's own tracking: a boss whose raid survived a
+        // restart never went through RaidBossSpawner.spawnAt(), so it has no TRACKED entry until it
+        // reloads here -- otherwise its (still legitimate) scoreboard membership looks orphaned to the
+        // consistency audit, and can never be cleaned up for real once the boss is later destroyed.
+        ServerEntityEvents.ENTITY_LOAD.register(
+                RaidFaultBarrier.entityLoad("entity-load:glow", RaidBossGlowService::onEntityLoaded));
         // The converse: release a tracked boss's raid slot as soon as the entity is destroyed.
         // discard() removes it from ServerLevel's UUID lookup synchronously, so the scheduler's
         // once-a-second maintenance pass can never observe the removal itself and would hold the

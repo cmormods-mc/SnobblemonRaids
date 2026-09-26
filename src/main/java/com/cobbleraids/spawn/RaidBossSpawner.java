@@ -50,6 +50,16 @@ import net.minecraft.world.phys.Vec3;
 public final class RaidBossSpawner {
     private RaidBossSpawner() {}
 
+    // sendOut() marks the entity as a raid boss from inside its own ENTITY_LOAD-triggering add-to-level
+    // step, before spawnAt() gets the entity back to call RaidBossGlowService.register() itself. Without
+    // this flag, RaidBossGlowService.onEntityLoaded would see an already-marked, not-yet-tracked boss on
+    // every single spawn and log a spurious "recovered from an untracked reload" line for it. Same
+    // pattern, same reason, as RaidSpawnScheduler's own spawningTrackedBoss flag.
+    private static boolean spawning;
+
+    /** Whether a boss is being created by {@link #spawnAt} right now, on this same thread. */
+    public static boolean isSpawning() { return spawning; }
+
     public static PokemonEntity spawnAt(ServerLevel level, Vec3 position, RaidDefinition definition) {
         return spawnAt(level, position, definition, RenownRequest.ROLL);
     }
@@ -83,18 +93,24 @@ public final class RaidBossSpawner {
         pokemon.setCurrentHealth(pokemon.getMaxHealth());
         UncatchableProperty.INSTANCE.uncatchable().apply(pokemon);
 
-        PokemonEntity entity = pokemon.sendOut(level, position, null, spawned -> {
-            RaidBossEntityMarker.mark(spawned, definition.id());
-            RaidBossEntityMarker.markSpawnTime(spawned, level.getGameTime());
-            spawned.setPersistenceRequired();
-            spawned.setCountsTowardsSpawnCap(false);
-            spawned.setInvulnerable(true);
-            if (renown != null) RaidRenownMarker.mark(spawned, renown);
-            spawned.setCustomName(RaidBossNameplate.of(definition.rarityTier(),
-                    spawned.getPokemon().getSpecies().getTranslatedName(), renown, 0));
-            spawned.setCustomNameVisible(true);
-            return Unit.INSTANCE;
-        });
+        PokemonEntity entity;
+        spawning = true;
+        try {
+            entity = pokemon.sendOut(level, position, null, spawned -> {
+                RaidBossEntityMarker.mark(spawned, definition.id());
+                RaidBossEntityMarker.markSpawnTime(spawned, level.getGameTime());
+                spawned.setPersistenceRequired();
+                spawned.setCountsTowardsSpawnCap(false);
+                spawned.setInvulnerable(true);
+                if (renown != null) RaidRenownMarker.mark(spawned, renown);
+                spawned.setCustomName(RaidBossNameplate.of(definition.rarityTier(),
+                        spawned.getPokemon().getSpecies().getTranslatedName(), renown, 0));
+                spawned.setCustomNameVisible(true);
+                return Unit.INSTANCE;
+            });
+        } finally {
+            spawning = false;
+        }
         if (entity == null) throw new IllegalStateException("Cobblemon did not create a PokemonEntity for " + definition.id());
         applyMovementLock(entity);
         RaidBossGlowService.register(entity, level);

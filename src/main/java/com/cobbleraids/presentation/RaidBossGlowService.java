@@ -1,5 +1,6 @@
 package com.cobbleraids.presentation;
 
+import com.cobbleraids.RaidLog;
 import com.cobbleraids.spawn.RaidBossLookup;
 import com.cobbleraids.config.CobbleRaidsConfig;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
@@ -7,6 +8,7 @@ import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.config.RaidDefinitionRegistry;
 import com.cobbleraids.config.RaidRarityTier;
 import com.cobbleraids.spawn.RaidBossEntityMarker;
+import com.cobbleraids.spawn.RaidBossSpawner;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import net.minecraft.world.entity.Entity;
 import java.util.Iterator;
@@ -37,7 +39,10 @@ public final class RaidBossGlowService {
 
     private RaidBossGlowService() {}
 
-    /** Called once, right after a boss is created, regardless of how it was spawned. */
+    /**
+     * Called once, right after a boss is created, regardless of how it was spawned -- and again by
+     * {@link #onEntityLoaded} for a boss that survived a restart without ever going through spawn.
+     */
     public static void register(PokemonEntity boss, ServerLevel level) {
         TRACKED.put(boss.getUUID(), level.dimension().location());
     }
@@ -142,6 +147,38 @@ public final class RaidBossGlowService {
         // none; the two-argument form throws if it guesses wrong.
         scoreboard.removePlayerFromTeam(member);
         if (boss != null && boss.hasEffect(MobEffects.GLOWING)) boss.removeEffect(MobEffects.GLOWING);
+    }
+
+    /**
+     * Re-registers a raid boss that loads without ever having called {@link #register}.
+     *
+     * <p>register() only runs at spawn, so a boss whose raid was still going when the server last
+     * stopped -- clean shutdown or a crash, either one -- comes back on restart with no entry in
+     * TRACKED. Two consequences, both silent: the audit's {@code orphaned-glow-team-member} check
+     * flags its (still legitimate) scoreboard membership as gone, and worse, {@link #onEntityUnloaded}
+     * can never untrack it later either, because {@code TRACKED.remove} is a no-op for an id that was
+     * never there -- so once this boss is genuinely destroyed, its team membership becomes permanent
+     * growth in the world save, exactly the cost {@link #untrack} exists to avoid. Same fix as
+     * {@code EncounterService.onEntityLoaded} for the analogous encounter-boss gap: bound to
+     * ServerEntityEvents.ENTITY_LOAD rather than a boot-time sweep, because entity sections load
+     * asynchronously after the server reports ready and a sweep run too early would miss this exact
+     * case.
+     *
+     * <p>Unlike the encounter sibling fix, a freshly spawned boss here is NOT naturally excluded by
+     * marker timing: RaidBossSpawner.spawnAt() tags the entity as a raid boss from inside the same
+     * sendOut() call that triggers ENTITY_LOAD, before it gets the entity back to call this service's
+     * own register(). Confirmed live: without the isSpawning() guard below, every ordinary spawn logged
+     * a spurious "recovered from an untracked reload" line. RaidBossSpawner.isSpawning() suppresses it,
+     * the same role RaidSpawnScheduler's own spawningTrackedBoss flag plays for its sibling check.
+     */
+    public static void onEntityLoaded(Entity entity, ServerLevel level) {
+        if (RaidBossSpawner.isSpawning()) return;
+        if (!(entity instanceof PokemonEntity pokemon)) return;
+        if (!RaidBossEntityMarker.isRaidBoss(pokemon)) return;
+        if (TRACKED.containsKey(pokemon.getUUID())) return;
+        RaidLog.info("Re-registered a raid boss with the glow service after it (re)loaded untracked ({} in {})",
+                pokemon.getUUID(), level.dimension().location());
+        register(pokemon, level);
     }
 
     /** Untracks a boss the moment it is genuinely destroyed, whatever destroyed it. */
