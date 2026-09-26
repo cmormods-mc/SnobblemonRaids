@@ -24,6 +24,9 @@ public final class RewardGuiDefaults {
     /**
      * Every default shipped before the current one. <b>When the bundled file changes, add the
      * outgoing version's hash here</b>, or servers that already have it keep the old copy forever.
+     * Forgetting is checked mechanically, not just by this comment:
+     * {@code validate_reward_gui_defaults.py} walks the resource's real git history and fails the
+     * build if any past revision's hash is missing from this set.
      *
      * <p>All three sent their messages as COMMAND_PLAYER tellraw, which runs with the player's own
      * permissions, so no ordinary player ever saw them. The first also had actions that crashed the

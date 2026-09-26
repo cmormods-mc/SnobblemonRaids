@@ -17,13 +17,33 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
 /** Everything the wild-spawn system says to players: who hears it, and how precisely. */
-final class RaidSpawnAnnouncementService {
+public final class RaidSpawnAnnouncementService {
+
+    /**
+     * A player tag rather than a separate store: it needs to persist with the player and nothing
+     * else, and a tag already does that with no save file and no cleanup hook, the same reasoning
+     * {@code RaidBossEntityMarker}/{@code RaidRenownMarker} use it for on a boss.
+     */
+    private static final String MUTE_TAG = "cobbleraids_mute_wild_spawn_announcements";
 
     private RaidSpawnAnnouncementService() {}
 
+    /** Whether this player has opted out of {@link #naturalSpawn}'s server-wide announcement. */
+    public static boolean isMuted(ServerPlayer player) {
+        return player.getTags().contains(MUTE_TAG);
+    }
+
+    /** Flips the mute tag and reports the new state. Called from {@code /cobbleraids notify}. */
+    public static boolean toggleMute(ServerPlayer player) {
+        boolean muted = !isMuted(player);
+        if (muted) player.addTag(MUTE_TAG); else player.removeTag(MUTE_TAG);
+        return muted;
+    }
+
     /**
-     * Server-wide, because a wild raid is an invitation to everyone. Coordinates are deliberately
-     * rounded: precise ones would make the announcement a waypoint and skip the finding entirely.
+     * Server-wide by default, because a wild raid is an invitation to everyone -- see
+     * {@link #toggleMute} for the opt-out. Coordinates are deliberately rounded: precise ones would
+     * make the announcement a waypoint and skip the finding entirely.
      */
     static void naturalSpawn(
             MinecraftServer server,
@@ -61,7 +81,7 @@ final class RaidSpawnAnnouncementService {
                         .withStyle(ChatFormatting.DARK_GRAY));
 
         for (ServerPlayer onlinePlayer : server.getPlayerList().getPlayers()) {
-            onlinePlayer.sendSystemMessage(message);
+            if (!isMuted(onlinePlayer)) onlinePlayer.sendSystemMessage(message);
         }
     }
 
