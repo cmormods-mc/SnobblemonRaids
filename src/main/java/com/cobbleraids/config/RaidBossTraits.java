@@ -118,18 +118,58 @@ public record RaidBossTraits(
         return known != null ? known : "not on the raid-boss held-item allowlist";
     }
 
+    /** Cobblemon's total EV cap across all six stats, shared by {@link #jitterEvs} and its caller. */
+    public static final int EV_TOTAL_CAP = 510;
+
     /**
      * Spreads a pinned IV a little so repeat raids are not byte-identical, without changing the
      * character of the fight. A spread of 0 pins it exactly; the result is always a legal IV.
      */
     public static int jitterIv(int base, int spread, RandomGenerator random) {
-        if (spread <= 0) return clampIv(base);
-        int offset = random.nextInt(spread * 2 + 1) - spread;
-        return clampIv(base + offset);
+        return jitter(base, spread, 31, random);
     }
 
-    private static int clampIv(int value) {
-        return Math.max(0, Math.min(31, value));
+    /** Same shape as {@link #jitterIv}, sized for one EV stat's own 0..252 range. */
+    public static int jitterEv(int base, int spread, RandomGenerator random) {
+        return jitter(base, spread, 252, random);
+    }
+
+    /**
+     * Jitters all six EV stats independently via {@link #jitterEv}, then renormalizes down to
+     * {@link #EV_TOTAL_CAP} if the independent jitters pushed the total over it -- exactly the cap
+     * Cobblemon itself enforces, so a rerolled spread can never be illegal.
+     *
+     * <p>Scaling down proportionally can leave the total a point or two under the cap after
+     * rounding; the remainder is trimmed one point at a time off whichever stat is currently
+     * largest, which keeps the total exact without ever taking a stat below zero.
+     */
+    public static Map<String, Integer> jitterEvs(Map<String, Integer> baseline, int spread, RandomGenerator random) {
+        Map<String, Integer> result = new LinkedHashMap<>();
+        for (Map.Entry<String, Integer> entry : baseline.entrySet()) {
+            result.put(entry.getKey(), jitterEv(entry.getValue(), spread, random));
+        }
+        int total = result.values().stream().mapToInt(Integer::intValue).sum();
+        if (total > EV_TOTAL_CAP) {
+            double scale = EV_TOTAL_CAP / (double) total;
+            result.replaceAll((stat, value) -> (int) Math.floor(value * scale));
+            int over = EV_TOTAL_CAP - result.values().stream().mapToInt(Integer::intValue).sum();
+            while (over < 0) {
+                String largest = result.entrySet().stream().max(Map.Entry.comparingByValue()).orElseThrow().getKey();
+                result.merge(largest, -1, Integer::sum);
+                over++;
+            }
+        }
+        return result;
+    }
+
+    private static int jitter(int base, int spread, int max, RandomGenerator random) {
+        if (spread <= 0) return clamp(base, max);
+        int offset = random.nextInt(spread * 2 + 1) - spread;
+        return clamp(base + offset, max);
+    }
+
+    private static int clamp(int value, int max) {
+        return Math.max(0, Math.min(max, value));
     }
 
     /** Reads the optional "traits" block. Never throws; unusable fields are dropped with a warning. */

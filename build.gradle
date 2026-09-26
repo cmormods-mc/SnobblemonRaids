@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.122-audit-cleanup'
+version = '0.8.123-personal-boss-shop-p1-capture'
 group = 'com.cobbleraids'
 
 base {

@@ -5,6 +5,7 @@ import com.cobbleraids.api.encounter.LeaveReason;
 import com.cobbleraids.encounter.EncounterService;
 import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobbleraids.fault.RaidThreadGuard;
+import com.cobbleraids.catching.BossSnapshotService;
 import com.cobbleraids.catching.RaidCatchService;
 import com.cobbleraids.catching.RaidPlayerRecords;
 import com.cobbleraids.config.CobbleRaidsConfig;
@@ -239,7 +240,10 @@ public final class RaidLifecycleCoordinator {
      *
      * <p>An owned encounter records history and rolls the catch only if its policy says so. The
      * catch copies the boss and removes its uncatchable flag, so for a boss that must never be
-     * obtainable, skipping the roll is the only thing standing between it and a player's PC.
+     * obtainable, skipping the roll is the only thing standing between it and a player's PC. The
+     * personal-shop snapshot (see {@link BossSnapshotService}) is another such obtain-path for the
+     * same boss, so it is gated on the same {@code catchable} policy flag -- independently of
+     * {@code CobbleRaidsConfig.PersonalBossShop.enabled}, its own separate on/off switch.
      */
     private static void recordAndOfferCatch(RaidSession raid, MinecraftServer server, EncounterPolicy policy) {
         boolean history = policy == null || policy.raidHistory();
@@ -265,9 +269,14 @@ public final class RaidLifecycleCoordinator {
         }
 
         if (!catching) return;
+        boolean personalShop = bossPokemon != null && CobbleRaidsConfigManager.get().personalBossShop().enabled();
         for (UUID playerId : victors) {
             ServerPlayer player = server.getPlayerList().getPlayer(playerId);
             if (player == null) continue;
+            if (personalShop) {
+                RaidFaultBarrier.guard("boss-snapshot", () ->
+                        BossSnapshotService.snapshot(server, playerId, definition.rarityTier(), bossPokemon));
+            }
             RaidCatchService.tryCatch(player, definition, bossPokemon,
                     contributions.getOrDefault(playerId, 0.0), participants);
         }

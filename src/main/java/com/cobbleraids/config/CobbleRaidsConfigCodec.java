@@ -130,6 +130,18 @@ final class CobbleRaidsConfigCodec {
                 Json.integer(raidPointsObject, "legendary", rp.legendary()),
                 Json.integer(raidPointsObject, "mythical", rp.mythical()));
 
+        JsonObject personalBossShopObject = Json.object(root, "personal_boss_shop");
+        CobbleRaidsConfig.PersonalBossShop pbs = defaults.personalBossShop();
+        CobbleRaidsConfig.PersonalBossShop personalBossShop = new CobbleRaidsConfig.PersonalBossShop(
+                Json.bool(personalBossShopObject, "enabled", pbs.enabled()),
+                Json.integer(personalBossShopObject, "reroll_cost", pbs.rerollCost()),
+                Json.integer(personalBossShopObject, "iv_jitter", pbs.ivJitter()),
+                Json.integer(personalBossShopObject, "ev_jitter", pbs.evJitter()),
+                Json.integer(personalBossShopObject, "buy_cost_starter", pbs.buyCostStarter()),
+                Json.integer(personalBossShopObject, "buy_cost_powerhouse", pbs.buyCostPowerhouse()),
+                Json.integer(personalBossShopObject, "buy_cost_legendary", pbs.buyCostLegendary()),
+                Json.integer(personalBossShopObject, "buy_cost_mythical", pbs.buyCostMythical()));
+
         JsonObject tierScalingObject = Json.object(root, "tier_scaling");
         CobbleRaidsConfig.TierScaling ts = defaults.tierScaling();
         CobbleRaidsConfig.TierScaling tierScaling = new CobbleRaidsConfig.TierScaling(
@@ -175,8 +187,8 @@ final class CobbleRaidsConfigCodec {
                 Json.integer(reconnectGraceObject, "grace_seconds", rg.graceSeconds()));
 
         return new CobbleRaidsConfig(naturalSpawning, recruitmentDefaults, combatDefaults, battleCarryover,
-                bossTraits, catching, currency, dynamicLevel, megaPity, raidPoints, tierScaling, bossGlow, bossMovement,
-                renown, reconnectGrace, Json.bool(root, "debug_logging", defaults.debugLogging()));
+                bossTraits, catching, currency, dynamicLevel, megaPity, raidPoints, personalBossShop, tierScaling,
+                bossGlow, bossMovement, renown, reconnectGrace, Json.bool(root, "debug_logging", defaults.debugLogging()));
     }
 
     private static CobbleRaidsConfig.TierMultipliers readTierMultipliers(
@@ -290,6 +302,18 @@ final class CobbleRaidsConfigCodec {
         raidPointsJson.addProperty("legendary", raidPoints.legendary());
         raidPointsJson.addProperty("mythical", raidPoints.mythical());
         root.add("raid_points", raidPointsJson);
+
+        CobbleRaidsConfig.PersonalBossShop personalBossShop = config.personalBossShop();
+        JsonObject personalBossShopJson = new JsonObject();
+        personalBossShopJson.addProperty("enabled", personalBossShop.enabled());
+        personalBossShopJson.addProperty("reroll_cost", personalBossShop.rerollCost());
+        personalBossShopJson.addProperty("iv_jitter", personalBossShop.ivJitter());
+        personalBossShopJson.addProperty("ev_jitter", personalBossShop.evJitter());
+        personalBossShopJson.addProperty("buy_cost_starter", personalBossShop.buyCostStarter());
+        personalBossShopJson.addProperty("buy_cost_powerhouse", personalBossShop.buyCostPowerhouse());
+        personalBossShopJson.addProperty("buy_cost_legendary", personalBossShop.buyCostLegendary());
+        personalBossShopJson.addProperty("buy_cost_mythical", personalBossShop.buyCostMythical());
+        root.add("personal_boss_shop", personalBossShopJson);
 
         CobbleRaidsConfig.TierScaling tierScaling = config.tierScaling();
         JsonObject tierScalingObject = new JsonObject();

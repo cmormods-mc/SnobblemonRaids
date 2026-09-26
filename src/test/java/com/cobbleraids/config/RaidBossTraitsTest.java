@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import java.util.Map;
 import java.util.Random;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -241,6 +242,57 @@ class RaidBossTraitsTest {
                 moved = RaidBossTraits.jitterIv(15, 3, random) != 15;
             }
             assertTrue(moved, "jitter never changed the pinned value");
+        }
+    }
+
+    @Nested
+    @DisplayName("EV jitter")
+    class EvJitter {
+
+        @Test
+        @DisplayName("a spread of 0 pins the value exactly")
+        void zeroSpreadPins() {
+            Random random = new Random(1L);
+            for (int i = 0; i < 100; i++) {
+                assertEquals(200, RaidBossTraits.jitterEv(200, 0, random));
+            }
+        }
+
+        @Test
+        @DisplayName("jitter cannot push an EV outside 0..252")
+        void clampsAtTheEdges() {
+            Random random = new Random(7L);
+            for (int i = 0; i < 20_000; i++) {
+                assertTrue(RaidBossTraits.jitterEv(252, 30, random) <= 252);
+                assertTrue(RaidBossTraits.jitterEv(0, 30, random) >= 0);
+            }
+        }
+
+        @Test
+        @DisplayName("jitterEvs never exceeds the 510 total cap even when every stat rolls high")
+        void jitterEvsStaysUnderTotalCap() {
+            Random random = new Random(20260926L);
+            Map<String, Integer> baseline = Map.of(
+                    "hp", 252, "attack", 252, "defence", 252,
+                    "special_attack", 252, "special_defence", 252, "speed", 252);
+            for (int i = 0; i < 500; i++) {
+                Map<String, Integer> rolled = RaidBossTraits.jitterEvs(baseline, 30, random);
+                int total = rolled.values().stream().mapToInt(Integer::intValue).sum();
+                assertTrue(total <= RaidBossTraits.EV_TOTAL_CAP,
+                        "total " + total + " exceeds the cap: " + rolled);
+                rolled.values().forEach(value -> assertTrue(value >= 0, "a stat went negative: " + rolled));
+            }
+        }
+
+        @Test
+        @DisplayName("jitterEvs preserves every stat key from the baseline")
+        void jitterEvsKeepsEveryStat() {
+            Random random = new Random(5L);
+            Map<String, Integer> baseline = Map.of("hp", 4, "attack", 252, "speed", 252);
+
+            Map<String, Integer> rolled = RaidBossTraits.jitterEvs(baseline, 10, random);
+
+            assertEquals(baseline.keySet(), rolled.keySet());
         }
     }
 }

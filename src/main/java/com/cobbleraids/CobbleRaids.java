@@ -1,6 +1,7 @@
 package com.cobbleraids;
 
 import com.cobbleraids.fault.RaidThreadGuard;
+import com.cobbleraids.catching.DefeatedBossSnapshots;
 import com.cobbleraids.catching.RaidPlayerRecords;
 import com.cobbleraids.command.RaidAdminCommand;
 import com.cobbleraids.command.RaidLeaveCommand;
@@ -135,6 +136,10 @@ public final class CobbleRaids implements ModInitializer {
         // rewards and cleared with everything else below.
         ServerLifecycleEvents.SERVER_STARTED.register(server ->
                 RaidFaultBarrier.guard("startup:player-records", () -> RaidPlayerRecords.onServerStarted(server)));
+        // Same substrate, same reason: a snapshot bought back is still only readable once the
+        // datapack's raid definitions (rarity tiers) are loaded.
+        ServerLifecycleEvents.SERVER_STARTED.register(server ->
+                RaidFaultBarrier.guard("startup:boss-snapshots", () -> DefeatedBossSnapshots.onServerStarted(server)));
         // Presents a reward that outlived a disconnect or restart. Without this the queue is
         // restored but nothing ever offers it, so the reveal screen is only ever seen by players
         // who happened to be online when the raid was won.
@@ -183,6 +188,7 @@ public final class CobbleRaids implements ModInitializer {
             RaidFaultBarrier.guard("shutdown:rewards", RaidRewardService::onServerStopped);
             RaidFaultBarrier.guard("shutdown:spawn-history", RaidSpawnHistory::onServerStopped);
             RaidFaultBarrier.guard("shutdown:player-records", RaidPlayerRecords::onServerStopped);
+            RaidFaultBarrier.guard("shutdown:boss-snapshots", DefeatedBossSnapshots::onServerStopped);
             int raids = counts[0];
             int lobbies = counts[1];
             RaidFaultBarrier.onServerStopped();
