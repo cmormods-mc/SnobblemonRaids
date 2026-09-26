@@ -53,6 +53,7 @@ class CobbleRaidsConfigRoundTripTest {
                 new CobbleRaidsConfig.DynamicLevel(true, -5, 90),
                 new CobbleRaidsConfig.MegaPity(true, 20),
                 new CobbleRaidsConfig.RaidPoints(true, 10, 20, 30, 40),
+                new CobbleRaidsConfig.PersonalBossShop(false, 75, 6, 40, 15, 30, 60, 120),
                 CobbleRaidsConfig.defaults().tierScaling(),
                 CobbleRaidsConfig.defaults().bossGlow(),
                 CobbleRaidsConfig.defaults().bossMovement(),
@@ -80,6 +81,11 @@ class CobbleRaidsConfigRoundTripTest {
         assertEquals(90, reparsed.dynamicLevel().maxLevel());
         assertEquals(20, reparsed.megaPity().threshold());
         assertEquals(30, reparsed.raidPoints().legendary());
+        assertFalse(reparsed.personalBossShop().enabled());
+        assertEquals(75, reparsed.personalBossShop().rerollCost());
+        assertEquals(6, reparsed.personalBossShop().ivJitter());
+        assertEquals(40, reparsed.personalBossShop().evJitter());
+        assertEquals(60, reparsed.personalBossShop().buyCostFor(RaidRarityTier.LEGENDARY));
         assertFalse(reparsed.renown().enabled());
         assertEquals(0.4, reparsed.renown().chanceFor(RaidRarityTier.LEGENDARY), 0.0);
         assertEquals(0.25, reparsed.renown().healthBonus(), 0.0);
@@ -123,6 +129,7 @@ class CobbleRaidsConfigRoundTripTest {
         old.remove("dynamic_level");
         old.remove("mega_pity");
         old.remove("raid_points");
+        old.remove("personal_boss_shop");
         old.remove("renown");
         old.remove("reconnect_grace");
         old.getAsJsonObject("combat_defaults").remove("max_failed_attempts");
@@ -140,6 +147,24 @@ class CobbleRaidsConfigRoundTripTest {
         assertEquals(CobbleRaidsConfig.defaults().dynamicLevel(), loaded.dynamicLevel());
         assertEquals(CobbleRaidsConfig.defaults().megaPity(), loaded.megaPity());
         assertEquals(CobbleRaidsConfig.defaults().raidPoints(), loaded.raidPoints());
+        assertEquals(CobbleRaidsConfig.defaults().personalBossShop(), loaded.personalBossShop());
+    }
+
+    @Test
+    @DisplayName("personal boss shop ships on, unlike the free catch mechanic it coexists with")
+    void personalBossShopDefaults() {
+        CobbleRaidsConfig.PersonalBossShop shop = CobbleRaidsConfig.defaults().personalBossShop();
+
+        assertTrue(shop.enabled());
+        assertEquals(50, shop.rerollCost());
+        assertEquals(40, shop.buyCostFor(RaidRarityTier.STARTER));
+        assertEquals(300, shop.buyCostFor(RaidRarityTier.MYTHICAL));
+        assertThrows(IllegalArgumentException.class,
+                () -> new CobbleRaidsConfig.PersonalBossShop(true, 50, 32, 24, 40, 80, 160, 300), "IV jitter capped at 31");
+        assertThrows(IllegalArgumentException.class,
+                () -> new CobbleRaidsConfig.PersonalBossShop(true, 50, 4, 253, 40, 80, 160, 300), "EV jitter capped at 252");
+        assertThrows(IllegalArgumentException.class,
+                () -> new CobbleRaidsConfig.PersonalBossShop(true, -1, 4, 24, 40, 80, 160, 300), "reroll cost cannot be negative");
     }
 
     @Test

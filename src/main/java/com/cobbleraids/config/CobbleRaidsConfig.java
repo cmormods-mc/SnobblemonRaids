@@ -16,6 +16,7 @@ public record CobbleRaidsConfig(
         DynamicLevel dynamicLevel,
         MegaPity megaPity,
         RaidPoints raidPoints,
+        PersonalBossShop personalBossShop,
         TierScaling tierScaling,
         BossGlow bossGlow,
         BossMovement bossMovement,
@@ -355,6 +356,58 @@ public record CobbleRaidsConfig(
         }
     }
 
+    /**
+     * Buying back the exact boss a player helped defeat, and the risky IV/EV reroll gamble on that
+     * saved snapshot before buying it.
+     *
+     * <p>Buy-back cost is priced per rarity tier, the same shape as {@link RaidPoints}, because what
+     * a boss is worth to buy back should track what winning it was worth in the first place.
+     * Reroll cost is flat: it is a gamble on a snapshot already captured, not a reward tied to a
+     * raid's difficulty. {@code ivJitter}/{@code evJitter} size that gamble's spread, using the same
+     * clamp-and-random-offset shape {@link RaidBossTraits#jitterIv} already uses at spawn time.
+     *
+     * <p>Independent of {@link Catching}: that mechanic is an instant, free, config-gated chance
+     * roll at the moment of victory, off by default. This is a guaranteed-but-paid, delayed second
+     * path to the same underlying idea, on by default -- the two coexist and neither implies the
+     * other's setting.
+     */
+    public record PersonalBossShop(boolean enabled, int rerollCost, int ivJitter, int evJitter,
+                                   int buyCostStarter, int buyCostPowerhouse,
+                                   int buyCostLegendary, int buyCostMythical) {
+        private static final int MAX_COST = 100_000;
+
+        public PersonalBossShop {
+            if (rerollCost < 0 || rerollCost > MAX_COST)
+                throw new IllegalArgumentException("personal_boss_shop.reroll_cost must be 0.." + MAX_COST);
+            if (ivJitter < 0 || ivJitter > 31)
+                throw new IllegalArgumentException("personal_boss_shop.iv_jitter must be 0..31");
+            if (evJitter < 0 || evJitter > 252)
+                throw new IllegalArgumentException("personal_boss_shop.ev_jitter must be 0..252");
+            validateCost("buy_cost_starter", buyCostStarter);
+            validateCost("buy_cost_powerhouse", buyCostPowerhouse);
+            validateCost("buy_cost_legendary", buyCostLegendary);
+            validateCost("buy_cost_mythical", buyCostMythical);
+        }
+
+        public static PersonalBossShop defaults() {
+            return new PersonalBossShop(true, 50, 4, 24, 40, 80, 160, 300);
+        }
+
+        public int buyCostFor(RaidRarityTier tier) {
+            return switch (tier) {
+                case STARTER -> buyCostStarter;
+                case POWERHOUSE -> buyCostPowerhouse;
+                case LEGENDARY -> buyCostLegendary;
+                case MYTHICAL -> buyCostMythical;
+            };
+        }
+
+        private static void validateCost(String name, int amount) {
+            if (amount < 0 || amount > MAX_COST)
+                throw new IllegalArgumentException("personal_boss_shop." + name + " must be 0.." + MAX_COST);
+        }
+    }
+
     public record BattleCarryover(boolean health, boolean pp, boolean status) {
         public static BattleCarryover defaults() { return new BattleCarryover(true, true, false); }
 
@@ -564,6 +617,7 @@ public record CobbleRaidsConfig(
                 DynamicLevel.defaults(),
                 MegaPity.defaults(),
                 RaidPoints.defaults(),
+                PersonalBossShop.defaults(),
                 TierScaling.defaults(),
                 BossGlow.defaults(),
                 BossMovement.defaults(),
