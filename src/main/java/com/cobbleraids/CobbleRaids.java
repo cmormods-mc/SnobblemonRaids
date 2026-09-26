@@ -74,6 +74,14 @@ public final class CobbleRaids implements ModInitializer {
 
         RaidInstructionRegistrar.register();
         RaidBattleEventCoordinator.register();
+        // ORDER MATTERS: RaidRewardCommand must register the shared "cobbleraids" root before
+        // RaidAdminCommand does. Brigadier's CommandNode.addChild merges a same-named node by keeping
+        // the FIRST-registered node's own requirement, so whichever of these two runs first decides
+        // whether every command under "cobbleraids" -- reward/points/shop/leave included -- needs
+        // operator permission just to route through the root. RaidRewardCommand registers the root
+        // with no requirement on purpose; see the comment on RaidAdminCommand.admin() for the other
+        // half of this. Reordering these two calls would silently make every player-facing subcommand
+        // require permission level 2.
         RaidRewardCommand.register();
         RaidPointsCommand.register();
         RaidShopCommand.register();
@@ -199,6 +207,11 @@ public final class CobbleRaids implements ModInitializer {
         // consistency audit, and can never be cleaned up for real once the boss is later destroyed.
         ServerEntityEvents.ENTITY_LOAD.register(
                 RaidFaultBarrier.entityLoad("entity-load:glow", RaidBossGlowService::onEntityLoaded));
+        // Same gap again, for the boon-sync service: a renowned boss that survived a restart never
+        // went through RaidBossSpawner.spawnAt() either, so its boon stops syncing to clients until
+        // this recovers it from the entity's own RaidRenownMarker tags.
+        ServerEntityEvents.ENTITY_LOAD.register(RaidFaultBarrier.entityLoad(
+                "entity-load:renown-boon-sync", RenownBoonSyncService::onEntityLoaded));
         // The converse: release a tracked boss's raid slot as soon as the entity is destroyed.
         // discard() removes it from ServerLevel's UUID lookup synchronously, so the scheduler's
         // once-a-second maintenance pass can never observe the removal itself and would hold the

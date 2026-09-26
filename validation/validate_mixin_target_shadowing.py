@@ -240,7 +240,14 @@ def mixin_targets() -> list[tuple[str, str, Path]]:
             args = text[start:end]
             method_match = METHOD_ATTR.search(args)
             if method_match:
-                targets.append((target_internal, method_match.group(1), source))
+                # Some targets disambiguate an overload with a full method descriptor
+                # ("name(Ldesc;)Ldesc;") rather than a bare name. Everywhere downstream compares
+                # against ClassInfo.method_names, which the classfile reader (read_class_info) fills
+                # with bare names only -- so a descriptor left intact here can never match, silently
+                # skipping every candidate for that target while checked_pairs still counts it as
+                # checked. Strip to the bare name before it leaves this function.
+                method_name = method_match.group(1).split("(", 1)[0]
+                targets.append((target_internal, method_name, source))
     return targets
 
 

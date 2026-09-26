@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.117-glow-team-restart-orphan-fix'
+version = '0.8.118-codebase-audit-fixes'
 group = 'com.cobbleraids'
 
 base {

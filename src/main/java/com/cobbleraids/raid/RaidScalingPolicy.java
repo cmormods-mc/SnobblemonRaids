@@ -34,13 +34,6 @@ public final class RaidScalingPolicy {
     }
 
     /**
-     * The participant-scaled pool, adjusted for the level the boss ended up at.
-     *
-     * <p>Takes plain numbers rather than a definition so it can be tested without one: parsing a
-     * definition reaches CobbleRaidsConfigManager for its defaults, whose static initializer wants
-     * a Fabric config directory that no unit test has.
-     */
-    /**
      * The pool for a renowned boss whose epithet carries the hp_pool boon.
      *
      * <p>Applied last, to the pool the party actually faces after player count and level, so the
@@ -54,6 +47,13 @@ public final class RaidScalingPolicy {
         return Math.max(1L, Math.round(scaled));
     }
 
+    /**
+     * The participant-scaled pool, adjusted for the level the boss ended up at.
+     *
+     * <p>Takes plain numbers rather than a definition so it can be tested without one: parsing a
+     * definition reaches CobbleRaidsConfigManager for its defaults, whose static initializer wants
+     * a Fabric config directory that no unit test has.
+     */
     public static long forLevel(long participantScaledHealth, int definitionLevel, int bossLevel) {
         if (definitionLevel <= 0 || bossLevel <= definitionLevel) return participantScaledHealth;
 

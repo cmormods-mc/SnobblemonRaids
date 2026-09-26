@@ -8,6 +8,7 @@ import com.cobbleraids.catching.RaidPlayerRecords;
 import com.cobbleraids.config.RaidRewardPolicyManager;
 import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobbleraids.config.CobbleRaidsConfig;
+import com.cobbleraids.item.ItemGiving;
 import com.cobbleraids.reward.currency.RaidCurrencyBackends;
 import com.cobbleraids.reward.points.RaidPointsStore;
 import com.cobbleraids.reward.plan.RewardPlan;
@@ -21,7 +22,6 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 
 /** Server-authoritative item grant logic. SkiesGUIs never grants raid loot directly. */
 public final class RaidRewardGrantEngine {
@@ -114,7 +114,6 @@ public final class RaidRewardGrantEngine {
         });
     }
 
-    /** Policy path: roll each table in the plan once, then pay. Every selection is one table roll. */
     /**
      * Renown's currency multiplier, applied to whatever the plan decided. Here rather than in
      * RewardPlanResolver so the resolver keeps answering "what does this tier pay" and renown stays
@@ -126,6 +125,7 @@ public final class RaidRewardGrantEngine {
                 : base;
     }
 
+    /** Policy path: roll each table in the plan once, then pay. Every selection is one table roll. */
     private static RewardGrantResult grantPolicy(ServerPlayer player, ResourceLocation definitionId,
                                                  RewardPlan.Policy plan, Random claimRandom, BigInteger currency) {
         List<RaidDefinition.RewardItem> standard = new ArrayList<>();
@@ -245,14 +245,7 @@ public final class RaidRewardGrantEngine {
                     + "' is not registered; skipping it. Is the mod that owns it installed?");
             return false;
         }
-        int remaining = reward.amount();
-        while (remaining > 0) {
-            ItemStack stack = new ItemStack(item);
-            int amount = Math.min(remaining, stack.getMaxStackSize());
-            stack.setCount(amount);
-            player.getInventory().placeItemBackInInventory(stack);
-            remaining -= amount;
-        }
+        ItemGiving.giveStacked(player, item, reward.amount());
         return true;
     }
 }
