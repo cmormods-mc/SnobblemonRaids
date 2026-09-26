@@ -34,8 +34,12 @@ public final class BossSnapshotService {
                 ivPercent, evPercent, tier, tag, System.currentTimeMillis()));
     }
 
-    /** Rounded to the nearest whole percent. {@code total} is never negative; Cobblemon enforces that. */
-    static int percentOf(int total, int max) {
+    /**
+     * Rounded to the nearest whole percent. {@code total} is never negative; Cobblemon enforces
+     * that. Public because {@code PersonalBossShopService.reroll} needs the exact same formula to
+     * recompute a snapshot's display scalars after mutating its IVs/EVs.
+     */
+    public static int percentOf(int total, int max) {
         return Math.round(total * 100.0f / max);
     }
 }

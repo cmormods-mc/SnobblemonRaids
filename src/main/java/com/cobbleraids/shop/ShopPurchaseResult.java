@@ -12,6 +12,7 @@ public enum ShopPurchaseResult {
 
     BOUGHT(true, "Purchased."),
     BOUGHT_TO_PC(true, "Purchased. Your party was full, so it went to your PC."),
+    REROLLED(true, "Rerolled."),
     UNKNOWN_ENTRY(false, "That is not for sale."),
     LIMIT_REACHED(false, "You have bought as many of those as you may."),
     NOT_ENOUGH_POINTS(false, "You do not have enough Raid Points."),

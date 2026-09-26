@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.123-personal-boss-shop-p1-capture'
+version = '0.8.124-personal-boss-shop-p2-shop-wiring'
 group = 'com.cobbleraids'
 
 base {
