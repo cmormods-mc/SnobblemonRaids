@@ -207,6 +207,7 @@ public final class RaidShopScreen extends Screen {
                         rect.y() + rect.height(), 0x99070A10);
             }
             drawStock(graphics, entry, rect);
+            drawRerollHotspot(graphics, entry, rect);
             if (slot == hovered) {
                 graphics.fill(rect.x(), rect.y(), rect.x() + rect.width(),
                         rect.y() + rect.height(), 0x40FFFFFF);
@@ -286,6 +287,28 @@ public final class RaidShopScreen extends Screen {
                 entry.soldOut() ? 0xFFFF8A8A : 0xFFB8D8EA, true);
     }
 
+    /**
+     * A single glyph in a personal cell's bottom-right corner, the reroll gamble's only visible
+     * affordance until a proper icon replaces it. The opposite corner from the stock counter, which
+     * a personal entry never shows anyway ({@code limit} is always 0 for one), so there is no
+     * actual overlap today -- kept apart regardless so a future entry that carried both would not
+     * need to fight over one corner.
+     */
+    private void drawRerollHotspot(GuiGraphics graphics, ShopEntryPayload entry, RaidGuiLayout.Rect rect) {
+        if (!entry.personal() || !entry.canReroll()) return;
+        graphics.drawString(font, "R",
+                rect.x() + rect.width() - font.width("R") - 1, rect.y() + rect.height() - font.lineHeight,
+                0xFFFFD84A, true);
+    }
+
+    /** The reroll glyph's own small hit-box within a cell, matching where {@link #drawRerollHotspot} draws it. */
+    private boolean withinRerollHotspot(RaidGuiLayout.Rect rect, double mouseX, double mouseY) {
+        int size = Math.max(font.lineHeight, font.width("R")) + 2;
+        int x = rect.x() + rect.width() - size;
+        int y = rect.y() + rect.height() - size;
+        return mouseX >= x && mouseX < rect.x() + rect.width() && mouseY >= y && mouseY < rect.y() + rect.height();
+    }
+
     private List<Component> tooltipFor(ShopEntryPayload entry, ItemStack icon) {
         List<Component> lines = new ArrayList<>();
         if (entry.pokemon()) {
@@ -295,6 +318,19 @@ public final class RaidShopScreen extends Screen {
         } else {
             lines.add(icon.getHoverName());
             lines.add(Component.literal("x" + entry.count()).withStyle(ChatFormatting.GRAY));
+        }
+        if (entry.personal()) {
+            // The exact boss the player defeated, not a catalogue listing -- the two percentages
+            // are what makes that concrete rather than a promise.
+            lines.add(Component.literal("IV: " + entry.ivPercent() + "%").withStyle(ChatFormatting.YELLOW));
+            lines.add(Component.literal("EV: " + entry.evPercent() + "%").withStyle(ChatFormatting.YELLOW));
+            if (entry.canReroll()) {
+                // A distinct colour from the buy price below: this is a second, separate spend, and
+                // a gamble rather than a purchase -- it can leave the numbers above worse, not just
+                // better.
+                lines.add(Component.literal("Reroll (risky): " + entry.rerollCost() + " RP")
+                        .withStyle(ChatFormatting.LIGHT_PURPLE));
+            }
         }
         if (entry.soldOut()) {
             lines.add(Component.literal(entry.limit() == 1
@@ -329,10 +365,16 @@ public final class RaidShopScreen extends Screen {
             }
             int slot = layout.slotAt(mouseX, mouseY);
             if (slot >= 0 && slot < page.entries().size()) {
+                ShopEntryPayload entry = page.entries().get(slot);
+                String id = entry.id();
+                // A second, smaller hotspot inside the same cell for the reroll gamble -- checked
+                // before the ordinary buy click, since the two overlap the same cell.
+                if (entry.personal() && entry.canReroll() && withinRerollHotspot(layout.slots().get(slot), mouseX, mouseY)) {
+                    id = "reroll:" + id.substring("personal:".length());
+                }
                 // The click carries the id and the page it was clicked on. The server re-reads
                 // everything else, so a stale page or a hostile client buys nothing unusual.
-                ClientPlayNetworking.send(
-                        ShopActionPayload.buy(page.pageIndex(), page.entries().get(slot).id()));
+                ClientPlayNetworking.send(ShopActionPayload.buy(page.pageIndex(), id));
                 click();
                 return true;
             }
