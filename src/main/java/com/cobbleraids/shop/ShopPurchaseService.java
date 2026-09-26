@@ -8,6 +8,7 @@ import com.cobblemon.mod.common.api.storage.party.PlayerPartyStore;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.cobbleraids.RaidLog;
 import com.cobbleraids.catching.RaidPlayerRecords;
+import com.cobbleraids.item.ItemGiving;
 import com.cobbleraids.pokemon.PokemonStatNames;
 import com.cobbleraids.reward.points.RaidPointsStore;
 import java.time.Instant;
@@ -15,7 +16,6 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 
 /**
  * Turning a click into a purchase.
@@ -67,16 +67,7 @@ public final class ShopPurchaseService {
         }
 
         settle(player, entry, now);
-        // placeItemBackInInventory drops what will not fit at the player's feet rather than
-        // destroying it, so a full inventory is never a reason to refuse the sale.
-        int remaining = entry.item().count();
-        while (remaining > 0) {
-            ItemStack stack = new ItemStack(item);
-            int amount = Math.min(remaining, stack.getMaxStackSize());
-            stack.setCount(amount);
-            player.getInventory().placeItemBackInInventory(stack);
-            remaining -= amount;
-        }
+        ItemGiving.giveStacked(player, item, entry.item().count());
         return ShopPurchaseResult.BOUGHT;
     }
 
@@ -100,8 +91,18 @@ public final class ShopPurchaseService {
         if (partyHasRoom && party.add(pokemon)) {
             return ShopPurchaseResult.BOUGHT;
         }
-        Cobblemon.INSTANCE.getStorage().getPC(player).add(pokemon);
-        return ShopPurchaseResult.BOUGHT_TO_PC;
+        if (Cobblemon.INSTANCE.getStorage().getPC(player).add(pokemon)) {
+            return ShopPurchaseResult.BOUGHT_TO_PC;
+        }
+        // The room check above only rules out "no free slot"; it cannot rule out add() itself
+        // refusing the Pokemon for some other reason. That should be unreachable given a free slot
+        // was just confirmed, but settle() has already run by this point, so if it ever does happen
+        // the alternative is a player charged and left with nothing and no line in any log to say
+        // so. Loud and rare beats silent and rare.
+        RaidLog.error("Shop purchase of " + entry.id() + " by " + player.getGameProfile().getName()
+                + " charged the player but the Pokemon could not be added to either the party or the"
+                + " PC despite a free slot being confirmed beforehand.");
+        return ShopPurchaseResult.FAILED;
     }
 
     /** Takes the points and remembers the purchase. Called only once nothing can still fail. */

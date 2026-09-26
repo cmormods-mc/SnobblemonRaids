@@ -34,6 +34,11 @@ public final class RaidAdminCommand {
     public static void register() {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(
                 Commands.literal("cobbleraids")
+                        // Discarded at merge time by RaidRewardCommand's earlier, requirement-less
+                        // registration of the same root -- see the class doc above and CobbleRaids.java's
+                        // registration-order comment. Kept anyway as a defensive default for this class
+                        // in isolation (e.g. a future test that registers only RaidAdminCommand), since
+                        // every real subcommand below already carries its own check via admin() regardless.
                         .requires(source -> source.hasPermission(ADMIN_PERMISSION_LEVEL))
                         .then(admin("list")
                                 .executes(ctx -> RaidAdminSpawnOps.list(ctx.getSource()))

@@ -27,6 +27,11 @@ public final class RaidRewardCommand {
 
     public static void register() {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(
+                // Deliberately no .requires() here: this is the first registration of the shared
+                // "cobbleraids" root, and Brigadier's addChild merge keeps whichever registration got
+                // there first -- see CobbleRaids.java's call-site comment and RaidAdminCommand.admin().
+                // RaidAdminCommand.register() must keep running after this one, or every command below
+                // (and every operator subcommand, via the merge) starts requiring operator permission.
                 Commands.literal("cobbleraids")
                         .then(Commands.literal("reward")
                                 .executes(ctx -> {
