@@ -11,6 +11,7 @@ import com.cobbleraids.raid.RaidFactory;
 import com.cobbleraids.presentation.RaidBossNameplate;
 import com.cobbleraids.renown.RaidRenownMarker;
 import com.cobbleraids.renown.RenownBoon;
+import com.cobbleraids.pokemon.PokemonLeveling;
 import com.cobbleraids.raid.RaidLevelPolicy;
 import com.cobbleraids.raid.RaidScalingPolicy;
 import com.cobbleraids.spawn.RaidBossEntityMarker;
@@ -204,10 +205,7 @@ public final class RaidLobbyManager {
             }
             applied[0] = level;
 
-            boss.getPokemon().setLevel(level);
-            // Level changes max HP, and a boss left on its old current health would enter the
-            // battle already damaged -- the same ordering RaidBossSpawner documents.
-            boss.getPokemon().setCurrentHealth(boss.getPokemon().getMaxHealth());
+            PokemonLeveling.applyLevel(boss.getPokemon(), level);
             // Put the level on the nameplate, but only now that it is not the one the definition
             // advertises. Cobblemon already draws a level on its own entity label, so saying it
             // again on an unscaled boss would be pure duplication -- whereas a boss that has been

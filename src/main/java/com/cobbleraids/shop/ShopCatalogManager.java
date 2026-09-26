@@ -1,14 +1,6 @@
 package com.cobbleraids.shop;
 
-import com.cobbleraids.RaidLog;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import java.io.Reader;
-import java.io.Writer;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
+import com.cobbleraids.config.JsonFileStore;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +24,6 @@ import net.fabricmc.loader.api.FabricLoader;
  * half-applied.
  */
 public final class ShopCatalogManager {
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Path CATALOG_PATH = FabricLoader.getInstance().getConfigDir()
             .resolve("cobbleraids").resolve("shop.json");
 
@@ -58,36 +49,11 @@ public final class ShopCatalogManager {
     public static Path path() { return CATALOG_PATH; }
 
     public static synchronized ShopCatalog load() {
-        try {
-            Files.createDirectories(CATALOG_PATH.getParent());
-            if (!Files.exists(CATALOG_PATH)) {
-                CURRENT = Loaded.of(ShopCatalog.defaults());
-                write(CURRENT.catalog());
-                RaidLog.info("Created default shop catalogue: " + CATALOG_PATH);
-                return CURRENT.catalog();
-            }
-            JsonObject root;
-            try (Reader reader = Files.newBufferedReader(CATALOG_PATH, StandardCharsets.UTF_8)) {
-                root = JsonParser.parseReader(reader).getAsJsonObject();
-            }
-            CURRENT = Loaded.of(ShopCatalog.fromJson(root));
-
-            JsonObject canonical = CURRENT.catalog().toJson();
-            if (!canonical.equals(root)) {
-                write(CURRENT.catalog());
-                RaidLog.info("Updated " + CATALOG_PATH + " with settings new to this version.");
-            }
-            return CURRENT.catalog();
-        } catch (Exception ex) {
-            throw new IllegalStateException("Failed to load shop catalogue " + CATALOG_PATH, ex);
-        }
+        ShopCatalog catalog = JsonFileStore.load(CATALOG_PATH, "shop catalogue", ShopCatalog::defaults,
+                ShopCatalog::fromJson, ShopCatalog::toJson);
+        CURRENT = Loaded.of(catalog);
+        return catalog;
     }
 
     public static synchronized ShopCatalog reload() { return load(); }
-
-    private static void write(ShopCatalog catalog) throws Exception {
-        try (Writer writer = Files.newBufferedWriter(CATALOG_PATH, StandardCharsets.UTF_8)) {
-            GSON.toJson(catalog.toJson(), writer);
-        }
-    }
 }

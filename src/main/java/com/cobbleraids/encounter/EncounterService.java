@@ -10,6 +10,7 @@ import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.config.RaidDefinitionRegistry;
 import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobbleraids.lifecycle.RaidLifecycleCoordinator;
+import com.cobbleraids.pokemon.PokemonLeveling;
 import com.cobbleraids.presentation.RaidBossNameplate;
 import com.cobbleraids.raid.RaidFactory;
 import com.cobbleraids.raid.RaidScalingPolicy;
@@ -184,16 +185,10 @@ public final class EncounterService {
         return active;
     }
 
-    /**
-     * The caller's level, applied as given. Same ordering as the lobby's dynamic level: a level
-     * change moves max HP, and a boss left on its old health would enter the fight already damaged.
-     */
+    /** The caller's level, applied as given. See {@link PokemonLeveling} for the health-reset ordering. */
     private static void applyLevel(PokemonEntity boss, RaidDefinition definition, int level) {
         Pokemon pokemon = boss.getPokemon();
-        if (pokemon.getLevel() != level) {
-            pokemon.setLevel(level);
-            pokemon.setCurrentHealth(pokemon.getMaxHealth());
-        }
+        PokemonLeveling.applyLevel(pokemon, level);
         boss.setCustomName(RaidBossNameplate.of(definition.rarityTier(),
                 pokemon.getSpecies().getTranslatedName(), null, level == definition.level() ? 0 : level));
         boss.setCustomNameVisible(true);

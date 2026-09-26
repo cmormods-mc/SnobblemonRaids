@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.121-tracked-boss-service'
+version = '0.8.122-audit-cleanup'
 group = 'com.cobbleraids'
 
 base {

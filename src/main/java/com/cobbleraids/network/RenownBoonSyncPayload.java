@@ -20,6 +20,9 @@ import net.minecraft.resources.ResourceLocation;
  * payload fills, and {@link com.cobbleraids.presentation.RenownBoonSyncService} for when it is
  * sent (on spawn, and resent periodically so a player who starts tracking the boss later -- moved
  * into range, reconnected, joined late -- still gets it without a dedicated tracking-start event).
+ *
+ * <p>The channel carries a {@code _v1} suffix; see {@link RaidRewardPayloads} for why every payload
+ * here does, and bump it if this record's fields ever change.
  */
 public record RenownBoonSyncPayload(UUID pokemonUuid, String boonEncoded) implements CustomPacketPayload {
     public static final Type<RenownBoonSyncPayload> TYPE =

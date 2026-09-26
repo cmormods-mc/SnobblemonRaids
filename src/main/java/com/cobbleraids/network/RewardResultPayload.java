@@ -14,6 +14,9 @@ import net.minecraft.resources.ResourceLocation;
  *
  * <p>{@code currencyGranted} is a long rather than the BigInteger the economy API uses: the payout
  * policy caps a tier amount well inside a long, and the client only ever displays this number.
+ *
+ * <p>The channel carries a {@code _v1} suffix; see {@link RaidRewardPayloads} for why every payload
+ * here does, and bump it if this record's fields ever change.
  */
 public record RewardResultPayload(
         UUID raidId,
@@ -24,7 +27,7 @@ public record RewardResultPayload(
         boolean hasMoreQueued
 ) implements CustomPacketPayload {
     public static final Type<RewardResultPayload> TYPE =
-            new Type<>(ResourceLocation.fromNamespaceAndPath("cobbleraids", "reward_result"));
+            new Type<>(ResourceLocation.fromNamespaceAndPath("cobbleraids", "reward_result_v1"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, RewardResultPayload> STREAM_CODEC = StreamCodec.composite(
             UUIDUtil.STREAM_CODEC, RewardResultPayload::raidId,
