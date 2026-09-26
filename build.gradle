@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.116-battle-clone-persistence-shadow-fix'
+version = '0.8.117-glow-team-restart-orphan-fix'
 group = 'com.cobbleraids'
 
 base {
