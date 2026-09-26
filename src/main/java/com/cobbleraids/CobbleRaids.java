@@ -24,6 +24,7 @@ import com.cobbleraids.network.RewardChoicePayload;
 import com.cobbleraids.network.ShopActionPayload;
 import com.cobbleraids.placeholder.RaidPlaceholders;
 import com.cobbleraids.presentation.RaidBossGlowService;
+import com.cobbleraids.presentation.RenownBoonSyncService;
 import com.cobbleraids.raid.RaidRegistry;
 import com.cobbleraids.renown.RenownRegistry;
 import com.cobbleraids.reward.NativeRewardScreenGateway;
@@ -90,6 +91,7 @@ public final class CobbleRaids implements ModInitializer {
             RaidFaultBarrier.safeTick("reconnect-grace", server, RaidReconnectService::tick);
             RaidFaultBarrier.safeTick("combat-timer", server, RaidCombatRuleService::tick);
             RaidFaultBarrier.safeTick("boss-glow", server, RaidBossGlowService::tick);
+            RaidFaultBarrier.safeTick("renown-boon-sync", server, RenownBoonSyncService::tick);
             RaidFaultBarrier.safeTick("consistency-audit", server, RaidConsistencyAuditScheduler::tick);
         });
         // Guarded like everything else, but for a different reason than the rest: reload() throws
@@ -145,6 +147,8 @@ public final class CobbleRaids implements ModInitializer {
                 RaidFaultBarrier.guard("shutdown:spawn-scheduler", () -> RaidSpawnScheduler.onServerStopping(server)));
         ServerLifecycleEvents.SERVER_STOPPING.register(server ->
                 RaidFaultBarrier.guard("shutdown:boss-glow", () -> RaidBossGlowService.onServerStopping(server)));
+        ServerLifecycleEvents.SERVER_STOPPING.register(server ->
+                RaidFaultBarrier.guard("shutdown:renown-boon-sync", () -> RenownBoonSyncService.onServerStopping(server)));
         // Everything above needs a live server (discarding bosses, removing scoreboard teams).
         // Everything below is pure memory hygiene, so it waits for SERVER_STOPPED -- after every
         // world is closed and saved -- where it cannot race the write of a SavedData.
@@ -201,6 +205,10 @@ public final class CobbleRaids implements ModInitializer {
         // scoreboard team, which is saved into the world.
         ServerEntityEvents.ENTITY_UNLOAD.register(
                 RaidFaultBarrier.entityUnload("entity-unload:glow", RaidBossGlowService::onEntityUnloaded));
+        // Same signal, same reason: a renowned boss that merely unloaded must stay tracked so its
+        // boon keeps syncing to trackers once its chunk returns.
+        ServerEntityEvents.ENTITY_UNLOAD.register(RaidFaultBarrier.entityUnload(
+                "entity-unload:renown-boon-sync", RenownBoonSyncService::onEntityUnloaded));
         // A dimension-managing mod can close a ServerLevel outright (not just unload its chunks),
         // which would otherwise leave a tracked boss there occupying a raid slot until its despawn
         // timer expires, since it can never resolve again.

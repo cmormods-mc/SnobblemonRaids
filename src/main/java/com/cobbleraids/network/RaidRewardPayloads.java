@@ -12,5 +12,6 @@ public final class RaidRewardPayloads {
         PayloadTypeRegistry.playC2S().register(RewardChoicePayload.TYPE, RewardChoicePayload.STREAM_CODEC);
         PayloadTypeRegistry.playS2C().register(ShopPagePayload.TYPE, ShopPagePayload.STREAM_CODEC);
         PayloadTypeRegistry.playC2S().register(ShopActionPayload.TYPE, ShopActionPayload.STREAM_CODEC);
+        PayloadTypeRegistry.playS2C().register(RenownBoonSyncPayload.TYPE, RenownBoonSyncPayload.STREAM_CODEC);
     }
 }

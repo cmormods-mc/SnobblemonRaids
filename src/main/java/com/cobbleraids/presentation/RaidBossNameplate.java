@@ -2,8 +2,6 @@ package com.cobbleraids.presentation;
 
 import com.cobbleraids.config.RaidRarityTier;
 import com.cobbleraids.renown.RaidRenown;
-import com.cobbleraids.renown.RenownBoon;
-import java.util.Optional;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -39,35 +37,9 @@ public final class RaidBossNameplate {
         return Component.empty()
                 .append(ornament(SKULL + " "))
                 .append(Component.literal(renown.name()).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD))
-                .append(withBoonMarker(
-                        Component.literal(", " + renown.epithet() + " ").withStyle(ChatFormatting.RED, ChatFormatting.BOLD),
-                        renown.boon()))
+                .append(Component.literal(", " + renown.epithet() + " ").withStyle(ChatFormatting.RED, ChatFormatting.BOLD))
                 .append(species.copy().withStyle(RaidTierPresentation.color(tier)))
                 .append(ornament(" " + SKULL));
-    }
-
-    /**
-     * Rides along on the entity's synced custom name so the client-side nameplate renderer can show
-     * a boon icon without any packet of its own. {@code Style}'s chat-insertion field is otherwise
-     * unused on a nameplate (there is nothing to shift-click here), so it is free to carry
-     * {@link RenownBoon#marker()} instead -- piggybacked onto the epithet's own style rather than a
-     * separate empty-text sibling, so there is no bare component anywhere in the tree whose fate
-     * depends on how an empty string with an otherwise-plain style happens to (de)serialize.
-     */
-    private static MutableComponent withBoonMarker(MutableComponent epithet, RenownBoon boon) {
-        return epithet.withStyle(style -> style.withInsertion(boon.marker()));
-    }
-
-    /** The inverse of {@link #boonMarker}: recovers the boon riding on an entity's display name, if any. */
-    public static Optional<RenownBoon> readBoonMarker(Component displayName) {
-        if (displayName == null) return Optional.empty();
-        Optional<RenownBoon> here = RenownBoon.decodeMarker(displayName.getStyle().getInsertion());
-        if (here.isPresent()) return here;
-        for (Component sibling : displayName.getSiblings()) {
-            Optional<RenownBoon> found = readBoonMarker(sibling);
-            if (found.isPresent()) return found;
-        }
-        return Optional.empty();
     }
 
     /** "☠ Kaelen, the Relentless ☠" on its own, for a surface that shows the species elsewhere. Null when blank. */

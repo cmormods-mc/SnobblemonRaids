@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.105-boss-dupe-fix-leave-cmd'
+version = '0.8.115-nameplate-outline-and-overlap-fix'
 group = 'com.cobbleraids'
 
 base {
