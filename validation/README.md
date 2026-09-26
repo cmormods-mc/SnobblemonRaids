@@ -61,6 +61,7 @@ for n in 32 36 37 38 39 40; do python validation/validate_phase$n.py; done
 python validation/validate_logging.py
 python validation/validate_showdown_js_syntax.py
 python validation/validate_raid_banned_moves.py
+python validation/validate_reward_gui_defaults.py
 python validation/validate_callback_guards.py
 python validation/sprites/build_icon_manifest.py --check
 python validation/economy/validate_economy_manifest.py
@@ -98,6 +99,9 @@ something that stays true no matter how the code is spelled:
   which moves bypass the tracked damage pipeline (a `selfdestruct` field or a direct `.faint()`
   call), and diffs that against `RaidBannedMoves.BANNED`. That set used to be justified only by a
   comment claiming a one-time manual check; this re-derives it every run instead.
+- `validate_reward_gui_defaults.py` — walks the bundled reward GUI resource's real git history and
+  asserts every past revision's hash is in `RewardGuiDefaults.SUPERSEDED`, instead of trusting that
+  whoever last edited the resource remembered to add the outgoing hash by hand.
 - `validate_logging.py` — no `System.out`, no `printStackTrace`, no logger outside `RaidLog`.
 - `validate_physical_side_boundary` in phases 37/38/40 — walks every Java file looking for
   client-only imports in server code.

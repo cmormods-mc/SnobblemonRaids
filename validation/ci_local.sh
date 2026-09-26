@@ -60,6 +60,9 @@ step "Validate Showdown JS syntax"
 step "Validate raid banned-move list against Cobblemon's real Showdown fork"
 "$py" validation/validate_raid_banned_moves.py
 
+step "Validate reward GUI superseded-default hashes against git history"
+"$py" validation/validate_reward_gui_defaults.py
+
 step "Validate callback fault barriers"
 "$py" validation/validate_callback_guards.py
 

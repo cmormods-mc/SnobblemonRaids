@@ -16,6 +16,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          # Full history, not the default shallow clone: validate_reward_gui_defaults.py walks the
+          # bundled reward GUI resource's entire git log to check it against RewardGuiDefaults, and
+          # a shallow clone would silently make that check see only the latest commit.
+          fetch-depth: 0
 
       - name: Set up Java 21
         uses: actions/setup-java@v6
@@ -57,6 +62,9 @@ jobs:
 
       - name: Validate raid banned-move list against Cobblemon's real Showdown fork
         run: python3 validation/validate_raid_banned_moves.py
+
+      - name: Validate reward GUI superseded-default hashes against git history
+        run: python3 validation/validate_reward_gui_defaults.py
 
       - name: Validate callback fault barriers
         run: python3 validation/validate_callback_guards.py

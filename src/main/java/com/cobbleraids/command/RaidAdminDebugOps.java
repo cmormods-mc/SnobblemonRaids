@@ -307,10 +307,65 @@ final class RaidAdminDebugOps {
                 + " (Slowness " + (config.bossMovement().slownessAmplifier() + 1) + ")");
         setting(source, "prevent_knockback", config.bossMovement().preventKnockback());
 
+        section(source, "boss_traits");
+        setting(source, "iv_jitter", config.bossTraits().ivJitter());
+        setting(source, "shiny_chance", config.bossTraits().shinyChance());
+
+        section(source, "catching");
+        setting(source, "enabled", config.catching().enabled());
+        setting(source, "chance", tierValues(config.catching().starter(), config.catching().powerhouse(),
+                config.catching().legendary(), config.catching().mythical()));
+
+        section(source, "currency");
+        setting(source, "enabled", config.currency().enabled());
+        setting(source, "amount", tierValues(config.currency().starter(), config.currency().powerhouse(),
+                config.currency().legendary(), config.currency().mythical()));
+        setting(source, "scale_with_contribution", config.currency().scaleWithContribution());
+        setting(source, "minimum_share_percentage", config.currency().minimumSharePercentage());
+
+        section(source, "dynamic_level");
+        setting(source, "enabled", config.dynamicLevel().enabled());
+        setting(source, "level_offset", config.dynamicLevel().levelOffset());
+        setting(source, "max_level", config.dynamicLevel().maxLevel());
+
+        section(source, "mega_pity");
+        setting(source, "enabled", config.megaPity().enabled());
+        setting(source, "threshold", config.megaPity().threshold());
+
+        section(source, "raid_points");
+        setting(source, "enabled", config.raidPoints().enabled());
+        setting(source, "amount", tierValues(config.raidPoints().starter(), config.raidPoints().powerhouse(),
+                config.raidPoints().legendary(), config.raidPoints().mythical()));
+
+        section(source, "tier_scaling");
+        setting(source, "enabled", config.tierScaling().enabled());
+        for (RaidRarityTier tier : RaidRarityTier.values()) {
+            CobbleRaidsConfig.TierMultipliers multipliers = config.tierScaling().forTier(tier);
+            setting(source, tier.serializedName(), "health x" + multipliers.health()
+                    + ", time x" + multipliers.timeLimit() + ", reward x" + multipliers.reward());
+        }
+
+        section(source, "renown");
+        setting(source, "enabled", config.renown().enabled());
+        setting(source, "chance", tierValues(config.renown().starter(), config.renown().powerhouse(),
+                config.renown().legendary(), config.renown().mythical()));
+        setting(source, "health_bonus", config.renown().healthBonus());
+        setting(source, "stat_focus_evs", config.renown().statFocusEvs());
+        setting(source, "points_multiplier", config.renown().pointsMultiplier());
+        setting(source, "currency_multiplier", config.renown().currencyMultiplier());
+
+        section(source, "reconnect_grace");
+        setting(source, "enabled", config.reconnectGrace().enabled());
+        setting(source, "grace_seconds", config.reconnectGrace().graceSeconds());
+
         section(source, "other");
-        setting(source, "tier_scaling.enabled", config.tierScaling().enabled());
         setting(source, "debug_logging", config.debugLogging());
         return 1;
+    }
+
+    /** Starter/powerhouse/legendary/mythical, in the one order every per-tier setting is printed. */
+    private static String tierValues(Object starter, Object powerhouse, Object legendary, Object mythical) {
+        return starter + "/" + powerhouse + "/" + legendary + "/" + mythical;
     }
 
     /** Same player, dimension and outcome -- the detail (a candidate position) is expected to differ. */
