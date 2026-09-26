@@ -11,12 +11,10 @@ import com.cobbleraids.catching.RaidPlayerRecords;
 import com.cobbleraids.pokemon.PokemonStatNames;
 import com.cobbleraids.reward.points.RaidPointsStore;
 import com.cobblemon.mod.common.Cobblemon;
-import com.cobblemon.mod.common.api.pokemon.stats.Stat;
 import com.cobblemon.mod.common.api.storage.party.PlayerPartyStore;
 import com.cobblemon.mod.common.pokemon.EVs;
 import com.cobblemon.mod.common.pokemon.IVs;
 import com.cobblemon.mod.common.pokemon.Pokemon;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
@@ -104,7 +102,7 @@ public final class PersonalBossShopService {
         if (RaidPointsStore.balance(player.getUUID()) < config.rerollCost()) return ShopPurchaseResult.NOT_ENOUGH_POINTS;
 
         RaidPointsStore.spend(player.getServer(), player.getUUID(), config.rerollCost());
-        applyReroll(pokemon, config);
+        applyReroll(pokemon);
 
         CompoundTag tag = pokemon.saveToNBT(player.registryAccess(), new CompoundTag());
         BossSnapshot updated = new BossSnapshot(species, snapshot.level(), snapshot.shiny(),
@@ -122,24 +120,20 @@ public final class PersonalBossShopService {
     }
 
     /**
-     * Jitters every IV and EV independently, from the snapshot's own current values rather than
-     * the raid definition's authored baseline -- a renowned boss's stat-focus boon can already have
-     * pushed a stat above the definition's plain value, so the definition would be a stale, wrong
-     * baseline to gamble from.
+     * A fresh, independent, uniform roll of every IV and EV -- not a nudge away from the current
+     * value. That is the whole point of a gamble: the old roll has no bearing on the new one, in
+     * either direction.
      */
-    private static void applyReroll(Pokemon pokemon, CobbleRaidsConfig.PersonalBossShop config) {
+    private static void applyReroll(Pokemon pokemon) {
         var random = ThreadLocalRandom.current();
 
         IVs ivs = pokemon.getIvs();
         for (String key : STAT_KEYS) {
-            Stat stat = PokemonStatNames.statFor(key);
-            ivs.set(stat, RaidBossTraits.jitterIv(ivs.getOrDefault(stat), config.ivJitter(), random));
+            ivs.set(PokemonStatNames.statFor(key), RaidBossTraits.rollIv(random));
         }
 
         EVs evs = pokemon.getEvs();
-        Map<String, Integer> evBaseline = new LinkedHashMap<>();
-        for (String key : STAT_KEYS) evBaseline.put(key, evs.getOrDefault(PokemonStatNames.statFor(key)));
-        Map<String, Integer> rolledEvs = RaidBossTraits.jitterEvs(evBaseline, config.evJitter(), random);
+        Map<String, Integer> rolledEvs = RaidBossTraits.rollEvs(STAT_KEYS, random);
         rolledEvs.forEach((key, value) -> evs.set(PokemonStatNames.statFor(key), value));
     }
 

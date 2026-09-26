@@ -135,8 +135,6 @@ final class CobbleRaidsConfigCodec {
         CobbleRaidsConfig.PersonalBossShop personalBossShop = new CobbleRaidsConfig.PersonalBossShop(
                 Json.bool(personalBossShopObject, "enabled", pbs.enabled()),
                 Json.integer(personalBossShopObject, "reroll_cost", pbs.rerollCost()),
-                Json.integer(personalBossShopObject, "iv_jitter", pbs.ivJitter()),
-                Json.integer(personalBossShopObject, "ev_jitter", pbs.evJitter()),
                 Json.integer(personalBossShopObject, "buy_cost_starter", pbs.buyCostStarter()),
                 Json.integer(personalBossShopObject, "buy_cost_powerhouse", pbs.buyCostPowerhouse()),
                 Json.integer(personalBossShopObject, "buy_cost_legendary", pbs.buyCostLegendary()),
@@ -307,8 +305,6 @@ final class CobbleRaidsConfigCodec {
         JsonObject personalBossShopJson = new JsonObject();
         personalBossShopJson.addProperty("enabled", personalBossShop.enabled());
         personalBossShopJson.addProperty("reroll_cost", personalBossShop.rerollCost());
-        personalBossShopJson.addProperty("iv_jitter", personalBossShop.ivJitter());
-        personalBossShopJson.addProperty("ev_jitter", personalBossShop.evJitter());
         personalBossShopJson.addProperty("buy_cost_starter", personalBossShop.buyCostStarter());
         personalBossShopJson.addProperty("buy_cost_powerhouse", personalBossShop.buyCostPowerhouse());
         personalBossShopJson.addProperty("buy_cost_legendary", personalBossShop.buyCostLegendary());

@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.124-personal-boss-shop-p2-shop-wiring'
+version = '0.8.125-personal-boss-shop-reroll-fix'
 group = 'com.cobbleraids'
 
 base {

@@ -3,6 +3,7 @@ package com.cobbleraids.config;
 import com.cobbleraids.RaidLog;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -118,7 +119,7 @@ public record RaidBossTraits(
         return known != null ? known : "not on the raid-boss held-item allowlist";
     }
 
-    /** Cobblemon's total EV cap across all six stats, shared by {@link #jitterEvs} and its caller. */
+    /** Cobblemon's total EV cap across all six stats, shared by {@link #rollEvs} and its caller. */
     public static final int EV_TOTAL_CAP = 510;
 
     /**
@@ -126,27 +127,35 @@ public record RaidBossTraits(
      * character of the fight. A spread of 0 pins it exactly; the result is always a legal IV.
      */
     public static int jitterIv(int base, int spread, RandomGenerator random) {
-        return jitter(base, spread, 31, random);
-    }
-
-    /** Same shape as {@link #jitterIv}, sized for one EV stat's own 0..252 range. */
-    public static int jitterEv(int base, int spread, RandomGenerator random) {
-        return jitter(base, spread, 252, random);
+        if (spread <= 0) return clamp(base, 31);
+        int offset = random.nextInt(spread * 2 + 1) - spread;
+        return clamp(base + offset, 31);
     }
 
     /**
-     * Jitters all six EV stats independently via {@link #jitterEv}, then renormalizes down to
-     * {@link #EV_TOTAL_CAP} if the independent jitters pushed the total over it -- exactly the cap
-     * Cobblemon itself enforces, so a rerolled spread can never be illegal.
+     * A fresh IV roll, uniform across the entire legal 0..31 range -- unlike {@link #jitterIv},
+     * not anchored to any prior value at all. This is the personal shop's reroll gamble: the point
+     * is that the old value has no bearing on the new one, not a small nudge away from it.
+     */
+    public static int rollIv(RandomGenerator random) {
+        return random.nextInt(32);
+    }
+
+    /**
+     * Rolls every stat in {@code stats} uniformly across 0..252 independently, then renormalizes
+     * down to {@link #EV_TOTAL_CAP} if the independent rolls landed over it -- exactly the cap
+     * Cobblemon itself enforces, so a rerolled spread can never be illegal. The personal shop's EV
+     * reroll gamble: every stat is a fresh, independent roll, with no relationship to what it was
+     * a moment ago.
      *
      * <p>Scaling down proportionally can leave the total a point or two under the cap after
      * rounding; the remainder is trimmed one point at a time off whichever stat is currently
      * largest, which keeps the total exact without ever taking a stat below zero.
      */
-    public static Map<String, Integer> jitterEvs(Map<String, Integer> baseline, int spread, RandomGenerator random) {
+    public static Map<String, Integer> rollEvs(Collection<String> stats, RandomGenerator random) {
         Map<String, Integer> result = new LinkedHashMap<>();
-        for (Map.Entry<String, Integer> entry : baseline.entrySet()) {
-            result.put(entry.getKey(), jitterEv(entry.getValue(), spread, random));
+        for (String stat : stats) {
+            result.put(stat, random.nextInt(253));
         }
         int total = result.values().stream().mapToInt(Integer::intValue).sum();
         if (total > EV_TOTAL_CAP) {
@@ -160,12 +169,6 @@ public record RaidBossTraits(
             }
         }
         return result;
-    }
-
-    private static int jitter(int base, int spread, int max, RandomGenerator random) {
-        if (spread <= 0) return clamp(base, max);
-        int offset = random.nextInt(spread * 2 + 1) - spread;
-        return clamp(base + offset, max);
     }
 
     private static int clamp(int value, int max) {
