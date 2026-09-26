@@ -314,7 +314,7 @@ final class RaidAdminDebugOps {
     }
 
     /** Same player, dimension and outcome -- the detail (a candidate position) is expected to differ. */
-    private static boolean sameRun(RaidSpawnHistory.Entry a, RaidSpawnHistory.Entry b) {
+    static boolean sameRun(RaidSpawnHistory.Entry a, RaidSpawnHistory.Entry b) {
         return a.outcome() == b.outcome()
                 && a.player().equals(b.player())
                 && a.dimension().equals(b.dimension());

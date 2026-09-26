@@ -55,6 +55,9 @@ jobs:
       - name: Validate Showdown JS syntax
         run: python3 validation/validate_showdown_js_syntax.py
 
+      - name: Validate raid banned-move list against Cobblemon's real Showdown fork
+        run: python3 validation/validate_raid_banned_moves.py
+
       - name: Validate callback fault barriers
         run: python3 validation/validate_callback_guards.py
 

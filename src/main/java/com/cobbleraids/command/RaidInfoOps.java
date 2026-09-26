@@ -48,9 +48,9 @@ final class RaidInfoOps {
             return 1;
         }
 
-        source.sendSuccess(() -> CommandFormat.row("Found in: " + habitats(definition)), false);
-        source.sendSuccess(() -> CommandFormat.row("Time: " + times(definition)
-                + " · " + dimensions(definition)), false);
+        source.sendSuccess(() -> CommandFormat.row("Found in: " + habitats(definition.spawn())), false);
+        source.sendSuccess(() -> CommandFormat.row("Time: " + times(definition.spawn())
+                + " · " + dimensions(definition.spawn())), false);
         source.sendSuccess(() -> CommandFormat.hint(" Right-click one to join; the raid starts when the timer ends."), false);
         return 1;
     }
@@ -86,9 +86,9 @@ final class RaidInfoOps {
         source.sendSuccess(() -> CommandFormat.row(CommandFormat.pad("timers", 10)
                 + "despawn " + spawn.despawnSeconds() + "s unattended · lifetime "
                 + spawn.maxLifetimeSeconds() + "s total"), false);
-        source.sendSuccess(() -> CommandFormat.row(CommandFormat.pad("where", 10) + habitats(definition)), false);
-        source.sendSuccess(() -> CommandFormat.row(CommandFormat.pad("when", 10) + times(definition)
-                + " · " + dimensions(definition)), false);
+        source.sendSuccess(() -> CommandFormat.row(CommandFormat.pad("where", 10) + habitats(definition.spawn())), false);
+        source.sendSuccess(() -> CommandFormat.row(CommandFormat.pad("when", 10) + times(definition.spawn())
+                + " · " + dimensions(definition.spawn())), false);
 
         RaidDefinition.Rewards rewards = definition.rewards();
         for (RaidDefinition.RewardChoice choice : rewards.choices().values()) {
@@ -103,7 +103,7 @@ final class RaidInfoOps {
         return 1;
     }
 
-    private static String describeTraits(com.cobbleraids.config.RaidBossTraits traits) {
+    static String describeTraits(com.cobbleraids.config.RaidBossTraits traits) {
         List<String> parts = new ArrayList<>();
         if (traits.nature() != null) parts.add(traits.nature());
         if (traits.ability() != null) parts.add(traits.ability());
@@ -131,23 +131,27 @@ final class RaidInfoOps {
      * Biome tags in this datapack are shaped cobbleraids:raid_types/fire, so the last path segment is
      * the part a player recognises. Falls back to plain biome ids, then to "anywhere" -- an empty
      * biome list genuinely means any biome in the allowed dimensions.
+     *
+     * <p>Takes the {@code Spawn} sub-record rather than the whole {@link RaidDefinition}: it is all
+     * this reads, and it is what {@code RaidInfoOpsTest} builds directly instead of a full
+     * definition's unrelated fields.
      */
-    private static String habitats(RaidDefinition definition) {
-        List<String> names = definition.spawn().biomeTags().stream().map(RaidInfoOps::lastSegment).toList();
-        if (names.isEmpty()) names = definition.spawn().biomes().stream().map(RaidInfoOps::lastSegment).toList();
+    static String habitats(RaidDefinition.Spawn spawn) {
+        List<String> names = spawn.biomeTags().stream().map(RaidInfoOps::lastSegment).toList();
+        if (names.isEmpty()) names = spawn.biomes().stream().map(RaidInfoOps::lastSegment).toList();
         return names.isEmpty() ? "any biome" : CommandFormat.names(names, 6);
     }
 
-    private static String times(RaidDefinition definition) {
-        List<RaidDefinition.SpawnTime> times = definition.spawn().times();
+    static String times(RaidDefinition.Spawn spawn) {
+        List<RaidDefinition.SpawnTime> times = spawn.times();
         if (times.contains(RaidDefinition.SpawnTime.ALL_DAY)) return "any time";
         return CommandFormat.names(times.stream()
                 .map(time -> time.name().toLowerCase(Locale.ROOT).replace('_', ' '))
                 .toList(), 8);
     }
 
-    private static String dimensions(RaidDefinition definition) {
-        List<String> dims = definition.spawn().dimensions().stream()
+    static String dimensions(RaidDefinition.Spawn spawn) {
+        List<String> dims = spawn.dimensions().stream()
                 .map(CommandFormat::shortId).toList();
         return dims.isEmpty() ? "any dimension" : CommandFormat.names(dims, 4);
     }

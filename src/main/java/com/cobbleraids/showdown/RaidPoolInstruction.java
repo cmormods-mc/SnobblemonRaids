@@ -64,6 +64,12 @@ abstract class RaidPoolInstruction implements InterpreterInstruction {
      * <p>The private message is preferred because Showdown only puts exact numbers there; the public
      * one carries the same field rounded for spectators. Values arrive as {@code "120/255"}, so
      * everything from the slash on is discarded.
+     *
+     * <p>A pure function of the two messages, and so in principle directly testable -- but
+     * {@link BattleMessage} is Cobblemon's own Kotlin class, and this project's test sourceSet has
+     * neither Cobblemon nor kotlin-stdlib on its runtime classpath by design (see the {@code test}
+     * task's doc comment in build.gradle: tests are scoped to code that is free of Minecraft,
+     * Cobblemon and Fabric types). Covered by the live raid smoke tests instead.
      */
     private Float parseAmount() {
         String raw = privateMessage == null ? null : privateMessage.argumentAt(1);
