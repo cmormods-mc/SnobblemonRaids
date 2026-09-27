@@ -1,8 +1,0 @@
-{
-  "replace": false,
-  "values": [
-    "#c:is_spooky",
-    "#c:is_dead",
-    "#c:is_magical"
-  ]
-}

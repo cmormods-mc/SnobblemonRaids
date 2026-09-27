@@ -2,6 +2,8 @@
   "replace": false,
   "values": [
     "minecraft:swamp",
-    "minecraft:mangrove_swamp"
+    "minecraft:mangrove_swamp",
+    "#c:is_swamp",
+    "#c:is_wet/overworld"
   ]
 }

@@ -2,6 +2,10 @@
   "replace": false,
   "values": [
     "minecraft:stony_peaks",
-    "minecraft:badlands"
+    "minecraft:badlands",
+    "#minecraft:is_mountain",
+    "#c:is_mountain",
+    "#c:is_stony_shores",
+    "#minecraft:is_badlands"
   ]
 }

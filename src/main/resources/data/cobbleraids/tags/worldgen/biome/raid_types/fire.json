@@ -2,6 +2,9 @@
   "replace": false,
   "values": [
     "minecraft:badlands",
-    "minecraft:savanna"
+    "minecraft:savanna",
+    "#c:is_hot/overworld",
+    "#minecraft:is_badlands",
+    "#minecraft:is_savanna"
   ]
 }

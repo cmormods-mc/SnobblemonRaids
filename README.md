@@ -19,7 +19,7 @@ wears the boss down.
 **Optional.** `SkiesGUIs` 1.8.1 gives reward claiming a chest GUI; without it the same
 rewards are claimed from chat with `/cobbleraids reward claim`, and a SkiesGUIs that
 fails to load degrades to that fallback rather than aborting server start.
-`CobbleRaids-BiomeCompat` and `CobbleRaids-AddonRewards` are optional data-only JARs.
+`CobbleRaids-AddonRewards` is an optional data-only JAR.
 
 ## Content
 
@@ -27,11 +27,11 @@ fails to load degrades to that fallback rather than aborting server start.
 tagged with one or two element-type biome tags, and each carries a fixed competitive
 moveset.
 
-The core ships vanilla biome mappings only. Installing `CobbleRaids-BiomeCompat` maps
-the same 18 tags onto Fabric convention tags (Fire → `#c:is_hot/overworld`,
-`#minecraft:is_badlands`, …), so any biome mod populating those conventions —
-Terralith, Oh The Biomes We've Gone — extends the spawn pool automatically. Removing
-the JAR returns spawning to vanilla biomes.
+Each of the 18 type-based biome tags carries both a hardcoded vanilla biome mapping and
+Fabric convention tags (Fire → `#c:is_hot/overworld`, `#minecraft:is_badlands`, …), so
+any biome mod populating those conventions — Terralith, Oh The Biomes We've Gone —
+extends the spawn pool automatically, with no hard dependency on either: a convention
+tag nobody defines is simply an empty tag, not an error.
 
 ## Spawning
 
@@ -282,7 +282,7 @@ python3 validation/economy/validate_economy_manifest.py
 python3 validation/economy/build_tables.py --check
 ```
 
-Structural checks over the 130 definitions, tier membership, biome-compat separation,
+Structural checks over the 130 definitions, tier membership, biome tag composition,
 optional-mod manifests, the mixin registry, the shared-HP packet path, and the tier loot
 table each definition rolls — plus four property checks that re-derive their subject from
 the tree each run: every Fabric callback and every mixin injection is wrapped in a fault
