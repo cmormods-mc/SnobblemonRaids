@@ -171,7 +171,7 @@ public record CobbleRaidsConfig(
      * The Raid Capture Protocol: a victor may attempt a timing minigame instead of claiming this
      * raid's RP, for a per-tier chance to keep an ordinary Pokemon of the boss's species.
      *
-     * <p>Off by default. {@code baseChance} is the floor a player gets by doing nothing in the
+     * <p>{@code baseChance} is the floor a player gets by doing nothing in the
      * minigame; {@code stabilizationCap}/{@code throwCap} are the maximum additive bonus each half of
      * the minigame can contribute, scored from the player's actual timing. A tier's ceiling
      * (base + both caps) is validated to never exceed 100%.
@@ -195,19 +195,17 @@ public record CobbleRaidsConfig(
         }
 
         /**
-         * Ships fully inert -- {@code enabled=false} and every tier's chance and bonus caps at zero
-         * -- same as the scaffold this replaced. The timing-window figures are populated with
-         * reasonable values (so they pass validation and the wiring can still be exercised), but the
-         * chance an operator actually turns on is theirs to set; see this class's javadoc for a
-         * suggested starting point (roughly 8/6/4/2% base, +2/+2/+1.5/+1 stabilization, +2/+2/+1.5/+1
-         * throw, starter through mythical).
+         * Enabled, with the base/bonus figures named in this class's javadoc: 8/6/4/2% base chance,
+         * +2/+2/+1.5/+1% stabilization bonus, +2/+2/+1.5/+1% throw bonus, starter through mythical --
+         * ceilings of ~12/10/7/4% on a flawless attempt. Sized against the RP a player forgoes by
+         * capturing instead of claiming the reward; an operator who reprices RP should retune these.
          */
         public static Catching defaults() {
-            return new Catching(false,
-                    new CaptureTierConfig(0.0, 0.0, 0.0, 1400, 300, 120, 1200, 260, 100),
-                    new CaptureTierConfig(0.0, 0.0, 0.0, 1300, 260, 100, 1100, 220, 90),
-                    new CaptureTierConfig(0.0, 0.0, 0.0, 1200, 220, 80, 1000, 190, 70),
-                    new CaptureTierConfig(0.0, 0.0, 0.0, 1100, 180, 60, 900, 150, 50),
+            return new Catching(true,
+                    new CaptureTierConfig(0.08, 0.02, 0.02, 1400, 300, 120, 1200, 260, 100),
+                    new CaptureTierConfig(0.06, 0.02, 0.02, 1300, 260, 100, 1100, 220, 90),
+                    new CaptureTierConfig(0.04, 0.015, 0.015, 1200, 220, 80, 1000, 190, 70),
+                    new CaptureTierConfig(0.02, 0.01, 0.01, 1100, 180, 60, 900, 150, 50),
                     60, 18, 30, 120);
         }
 

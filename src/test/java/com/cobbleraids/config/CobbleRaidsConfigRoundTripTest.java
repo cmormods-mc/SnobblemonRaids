@@ -211,15 +211,20 @@ class CobbleRaidsConfigRoundTripTest {
     }
 
     @Test
-    @DisplayName("catching ships off, so the infrastructure is inert until a mechanic is chosen")
-    void catchingIsOffByDefault() {
+    @DisplayName("catching ships on with the 8/6/4/2% base rates named in its javadoc")
+    void catchingDefaultRates() {
         CobbleRaidsConfig.Catching catching = CobbleRaidsConfig.defaults().catching();
 
-        assertFalse(catching.enabled());
-        assertTrue(catching.isNoOp(), "no tier should be catchable by default");
-        for (RaidRarityTier tier : RaidRarityTier.values()) {
-            assertEquals(0.0, catching.chanceFor(tier), 0.0, tier.name());
-        }
+        assertTrue(catching.enabled());
+        assertFalse(catching.isNoOp(), "starter through mythical should all be catchable by default");
+        assertEquals(0.08, catching.chanceFor(RaidRarityTier.STARTER), 0.0);
+        assertEquals(0.06, catching.chanceFor(RaidRarityTier.POWERHOUSE), 0.0);
+        assertEquals(0.04, catching.chanceFor(RaidRarityTier.LEGENDARY), 0.0);
+        assertEquals(0.02, catching.chanceFor(RaidRarityTier.MYTHICAL), 0.0);
+        assertEquals(0.12, catching.ceilingFor(RaidRarityTier.STARTER), 1e-9);
+        assertEquals(0.10, catching.ceilingFor(RaidRarityTier.POWERHOUSE), 1e-9);
+        assertEquals(0.07, catching.ceilingFor(RaidRarityTier.LEGENDARY), 1e-9);
+        assertEquals(0.04, catching.ceilingFor(RaidRarityTier.MYTHICAL), 1e-9);
     }
 
     @Test

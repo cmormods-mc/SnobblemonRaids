@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.133-biome-compat-merged'
+version = '0.8.134-capture-rates-enabled'
 group = 'com.cobbleraids'
 
 base {
