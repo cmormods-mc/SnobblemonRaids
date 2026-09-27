@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.129-trophy-gallery-art'
+version = '0.8.132-raid-capture-claim-order-fix'
 group = 'com.cobbleraids'
 
 base {

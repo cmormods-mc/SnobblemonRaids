@@ -2,6 +2,7 @@ package com.cobbleraids;
 
 import com.cobbleraids.fault.RaidThreadGuard;
 import com.cobbleraids.catching.DefeatedBossSnapshots;
+import com.cobbleraids.catching.RaidCaptureSessionService;
 import com.cobbleraids.catching.RaidPlayerRecords;
 import com.cobbleraids.catching.TrophyLedger;
 import com.cobbleraids.catching.TrophyRoomGateway;
@@ -26,6 +27,9 @@ import com.cobbleraids.lifecycle.RaidLifecycleCoordinator;
 import com.cobbleraids.lifecycle.RaidReconnectService;
 import com.cobbleraids.lifecycle.RaidRewardService;
 import com.cobbleraids.lobby.RaidLobbyManager;
+import com.cobbleraids.network.CaptureChoicePayload;
+import com.cobbleraids.network.CapturePulseInputPayload;
+import com.cobbleraids.network.CaptureThrowInputPayload;
 import com.cobbleraids.network.RaidRewardPayloads;
 import com.cobbleraids.network.RewardChoicePayload;
 import com.cobbleraids.network.ShopActionPayload;
@@ -88,6 +92,16 @@ public final class CobbleRaids implements ModInitializer {
                 context.server().execute(() -> RaidFaultBarrier.guard("trophy-room-action-packet",
                         () -> TrophyRoomGateway.handle(context.player(), payload))));
 
+        ServerPlayNetworking.registerGlobalReceiver(CaptureChoicePayload.TYPE, (payload, context) ->
+                context.server().execute(() -> RaidFaultBarrier.guard("capture-choice-packet",
+                        () -> RaidCaptureSessionService.handleChoice(context.player(), payload.raidId(), payload.attempt()))));
+        ServerPlayNetworking.registerGlobalReceiver(CapturePulseInputPayload.TYPE, (payload, context) ->
+                context.server().execute(() -> RaidFaultBarrier.guard("capture-pulse-packet",
+                        () -> RaidCaptureSessionService.handlePulse(context.player(), payload.raidId(), payload.pulseIndex()))));
+        ServerPlayNetworking.registerGlobalReceiver(CaptureThrowInputPayload.TYPE, (payload, context) ->
+                context.server().execute(() -> RaidFaultBarrier.guard("capture-throw-packet",
+                        () -> RaidCaptureSessionService.handleThrow(context.player(), payload.raidId()))));
+
         RaidInstructionRegistrar.register();
         RaidBattleEventCoordinator.register();
         // ORDER MATTERS: RaidRewardCommand must register the shared "cobbleraids" root before
@@ -115,6 +129,7 @@ public final class CobbleRaids implements ModInitializer {
             RaidFaultBarrier.safeTick("lobby", server, RaidLobbyManager::tick);
             RaidFaultBarrier.safeTick("spawning", server, RaidSpawnScheduler::tick);
             RaidFaultBarrier.safeTick("rewards", server, RaidRewardService::tick);
+            RaidFaultBarrier.safeTick("capture-sessions", server, RaidCaptureSessionService::tick);
             RaidFaultBarrier.safeTick("reconnect-grace", server, RaidReconnectService::tick);
             RaidFaultBarrier.safeTick("combat-timer", server, RaidCombatRuleService::tick);
             RaidFaultBarrier.safeTick("boss-glow", server, RaidBossGlowService::tick);
@@ -151,6 +166,10 @@ public final class CobbleRaids implements ModInitializer {
         // datapack registry, which is only populated once the initial resource load has finished.
         ServerLifecycleEvents.SERVER_STARTED.register(server ->
                 RaidFaultBarrier.guard("startup:rewards", () -> RaidRewardService.onServerStarted(server)));
+        // Same reasoning as rewards above: a restored session's banked RP fallback resolves against
+        // the live raid definition registry, so this waits for SERVER_STARTED too.
+        ServerLifecycleEvents.SERVER_STARTED.register(server ->
+                RaidFaultBarrier.guard("startup:capture-sessions", () -> RaidCaptureSessionService.onServerStarted(server)));
         // Raid history is the substrate every catch mechanic reads, so it is restored with the
         // rewards and cleared with everything else below.
         ServerLifecycleEvents.SERVER_STARTED.register(server ->
@@ -168,6 +187,11 @@ public final class CobbleRaids implements ModInitializer {
         // who happened to be online when the raid was won.
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
                 RaidFaultBarrier.guard("player-join", () -> RaidRewardService.onPlayerJoin(handler.getPlayer())));
+        // Retries a capture whose delivery was pending on party/PC room the moment its player logs
+        // back in, same reasoning as the reward re-offer just above.
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
+                RaidFaultBarrier.guard("player-join:capture-sessions",
+                        () -> RaidCaptureSessionService.onPlayerJoin(handler.getPlayer())));
         // Resumes a raid a player was mid-disconnect-grace on -- see RaidReconnectService.
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
                 RaidFaultBarrier.guard("player-join:raid-reconnect",
@@ -214,6 +238,7 @@ public final class CobbleRaids implements ModInitializer {
             RaidFaultBarrier.guard("shutdown:combat-rules", RaidCombatRuleService::onServerStopped);
             RaidFaultBarrier.guard("shutdown:reconnect-grace", RaidReconnectService::onServerStopped);
             RaidFaultBarrier.guard("shutdown:rewards", RaidRewardService::onServerStopped);
+            RaidFaultBarrier.guard("shutdown:capture-sessions", RaidCaptureSessionService::onServerStopped);
             RaidFaultBarrier.guard("shutdown:spawn-history", RaidSpawnHistory::onServerStopped);
             RaidFaultBarrier.guard("shutdown:player-records", RaidPlayerRecords::onServerStopped);
             RaidFaultBarrier.guard("shutdown:boss-snapshots", DefeatedBossSnapshots::onServerStopped);

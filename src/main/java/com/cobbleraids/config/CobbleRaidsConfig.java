@@ -168,24 +168,50 @@ public record CobbleRaidsConfig(
     }
 
     /**
-     * Whether a victor may keep the boss, and how likely that is per rarity tier.
+     * The Raid Capture Protocol: a victor may attempt a timing minigame instead of claiming this
+     * raid's RP, for a per-tier chance to keep an ordinary Pokemon of the boss's species.
      *
-     * <p>Off, and zero everywhere, by default. The catching infrastructure is deliberately inert
-     * until a mechanic is chosen: these flat per-tier odds exist so the wiring can be proven end to
-     * end, not as a proposal for how catching should finally work. See RaidCatchPolicy.
+     * <p>Off by default. {@code baseChance} is the floor a player gets by doing nothing in the
+     * minigame; {@code stabilizationCap}/{@code throwCap} are the maximum additive bonus each half of
+     * the minigame can contribute, scored from the player's actual timing. A tier's ceiling
+     * (base + both caps) is validated to never exceed 100%.
      */
-    public record Catching(boolean enabled, double starter, double powerhouse,
-                           double legendary, double mythical) {
+    public record Catching(boolean enabled, CaptureTierConfig starter, CaptureTierConfig powerhouse,
+                           CaptureTierConfig legendary, CaptureTierConfig mythical,
+                           int choiceWindowSeconds, int sequenceTimeoutSeconds, int deliveryRetryIntervalSeconds,
+                           int sessionRetentionSecondsAfterResolve) {
         public Catching {
-            validate("starter", starter);
-            validate("powerhouse", powerhouse);
-            validate("legendary", legendary);
-            validate("mythical", mythical);
+            if (starter == null || powerhouse == null || legendary == null || mythical == null)
+                throw new IllegalArgumentException("catching tier configs cannot be null");
+            if (choiceWindowSeconds < 1 || choiceWindowSeconds > 3600)
+                throw new IllegalArgumentException("catching.choice_window_seconds must be 1..3600");
+            if (sequenceTimeoutSeconds < 1 || sequenceTimeoutSeconds > 600)
+                throw new IllegalArgumentException("catching.sequence_timeout_seconds must be 1..600");
+            if (deliveryRetryIntervalSeconds < 1 || deliveryRetryIntervalSeconds > 3600)
+                throw new IllegalArgumentException("catching.delivery_retry_interval_seconds must be 1..3600");
+            if (sessionRetentionSecondsAfterResolve < 0 || sessionRetentionSecondsAfterResolve > 3600)
+                throw new IllegalArgumentException(
+                        "catching.session_retention_seconds_after_resolve must be 0..3600");
         }
 
-        public static Catching defaults() { return new Catching(false, 0.0, 0.0, 0.0, 0.0); }
+        /**
+         * Ships fully inert -- {@code enabled=false} and every tier's chance and bonus caps at zero
+         * -- same as the scaffold this replaced. The timing-window figures are populated with
+         * reasonable values (so they pass validation and the wiring can still be exercised), but the
+         * chance an operator actually turns on is theirs to set; see this class's javadoc for a
+         * suggested starting point (roughly 8/6/4/2% base, +2/+2/+1.5/+1 stabilization, +2/+2/+1.5/+1
+         * throw, starter through mythical).
+         */
+        public static Catching defaults() {
+            return new Catching(false,
+                    new CaptureTierConfig(0.0, 0.0, 0.0, 1400, 300, 120, 1200, 260, 100),
+                    new CaptureTierConfig(0.0, 0.0, 0.0, 1300, 260, 100, 1100, 220, 90),
+                    new CaptureTierConfig(0.0, 0.0, 0.0, 1200, 220, 80, 1000, 190, 70),
+                    new CaptureTierConfig(0.0, 0.0, 0.0, 1100, 180, 60, 900, 150, 50),
+                    60, 18, 30, 120);
+        }
 
-        public double chanceFor(RaidRarityTier tier) {
+        public CaptureTierConfig tierConfigFor(RaidRarityTier tier) {
             return switch (tier) {
                 case STARTER -> starter;
                 case POWERHOUSE -> powerhouse;
@@ -194,14 +220,63 @@ public record CobbleRaidsConfig(
             };
         }
 
-        /** True when no tier can ever be caught, so the victory path can skip the roll entirely. */
-        public boolean isNoOp() {
-            return starter <= 0.0 && powerhouse <= 0.0 && legendary <= 0.0 && mythical <= 0.0;
+        /** The floor: what a player gets for attempting without landing a single timing window. */
+        public double chanceFor(RaidRarityTier tier) {
+            return tierConfigFor(tier).baseChance();
         }
 
-        private static void validate(String name, double chance) {
-            if (!(chance >= 0.0) || chance > 1.0)
+        /** Base chance plus every bonus at maximum, i.e. a flawless attempt. */
+        public double ceilingFor(RaidRarityTier tier) {
+            CaptureTierConfig cfg = tierConfigFor(tier);
+            return Math.min(1.0, cfg.baseChance() + cfg.stabilizationCap() + cfg.throwCap());
+        }
+
+        /** True when no tier can ever be caught, so the victory path can skip the roll entirely. */
+        public boolean isNoOp() {
+            return ceilingFor(RaidRarityTier.STARTER) <= 0.0 && ceilingFor(RaidRarityTier.POWERHOUSE) <= 0.0
+                    && ceilingFor(RaidRarityTier.LEGENDARY) <= 0.0 && ceilingFor(RaidRarityTier.MYTHICAL) <= 0.0;
+        }
+    }
+
+    /**
+     * One rarity tier's capture-minigame tuning: the chance math (base floor plus the two bonus
+     * caps) and the timing windows for its stabilization pulses and its throw.
+     *
+     * <p>Each zone width must fit inside its own travel duration, and a perfect zone must fit inside
+     * its tier's good zone -- both are validated so a misconfigured server can't ship a zone wider
+     * than the track it's judged against.
+     */
+    public record CaptureTierConfig(double baseChance, double stabilizationCap, double throwCap,
+                                     int pulseTravelDurationMs, int pulseGoodZoneWidthMs, int pulsePerfectZoneWidthMs,
+                                     int throwTravelDurationMs, int throwGoodZoneWidthMs, int throwPerfectZoneWidthMs) {
+        public CaptureTierConfig {
+            validateChance("base_chance", baseChance);
+            validateChance("stabilization_cap", stabilizationCap);
+            validateChance("throw_cap", throwCap);
+            if (baseChance + stabilizationCap + throwCap > 1.0)
+                throw new IllegalArgumentException(
+                        "catching tier base_chance + stabilization_cap + throw_cap must not exceed 1.0");
+            validateDuration("pulse_travel_duration_ms", pulseTravelDurationMs);
+            validateZoneWidth("pulse_good_zone_width_ms", pulseGoodZoneWidthMs, pulseTravelDurationMs);
+            validateZoneWidth("pulse_perfect_zone_width_ms", pulsePerfectZoneWidthMs, pulseGoodZoneWidthMs);
+            validateDuration("throw_travel_duration_ms", throwTravelDurationMs);
+            validateZoneWidth("throw_good_zone_width_ms", throwGoodZoneWidthMs, throwTravelDurationMs);
+            validateZoneWidth("throw_perfect_zone_width_ms", throwPerfectZoneWidthMs, throwGoodZoneWidthMs);
+        }
+
+        private static void validateChance(String name, double value) {
+            if (!(value >= 0.0) || value > 1.0)
                 throw new IllegalArgumentException("catching." + name + " must be 0..1");
+        }
+
+        private static void validateDuration(String name, int ms) {
+            if (ms < 200 || ms > 10_000)
+                throw new IllegalArgumentException("catching." + name + " must be 200..10000");
+        }
+
+        private static void validateZoneWidth(String name, int widthMs, int mustBeAtMost) {
+            if (widthMs < 10 || widthMs > mustBeAtMost)
+                throw new IllegalArgumentException("catching." + name + " must be 10.." + mustBeAtMost);
         }
     }
 

@@ -58,9 +58,24 @@ separately.
 - **Cost** — `battle_carryover` copies health and PP back to the real party (both on
   by default; `status` off). Faints carry with health and recover on Cobblemon's own
   faint timer. Applied on wins and losses alike, and not waived by disconnecting.
-- **Catching** — off by default. `catching.enabled` plus a per-tier chance
-  (`starter`/`powerhouse`/`legendary`/`mythical`, each `0.0`–`1.0`) rolls once per victor
-  for a copy of the boss. Leaving every tier at `0.0` skips the roll entirely.
+- **Raid Capture Protocol** — off by default (`catching.enabled`). Each victor personally
+  chooses, per raid: attempt a short timing minigame (three stabilization pulses, then a
+  throw) for a chance at an ordinarily-generated Pokémon of the boss's species, or claim
+  that raid's Raid Points outright. Failing, declining, or letting the choice window lapse
+  all pay the same RP a claim would have; the only thing an attempt ever gives up is this
+  one raid's RP, never an existing balance. Every tier
+  (`starter`/`powerhouse`/`legendary`/`mythical` under `catching`) has its own `base_chance`
+  (the floor for doing nothing in the minigame), `stabilization_cap`/`throw_cap` (the most
+  each half of the minigame can add), and its own pulse/throw travel durations and zone
+  widths — a higher tier can be tuned with a lower ceiling *and* a tighter, faster-moving
+  target. Leaving every tier's chance and caps at `0.0` (the shipped default) skips the
+  whole mechanic. `choice_window_seconds`/`sequence_timeout_seconds` bound how long a
+  choice or an in-progress attempt can sit unanswered before it resolves on its own (as a
+  decline); `delivery_retry_interval_seconds` governs how often a caught Pokémon that
+  couldn't be delivered (party and PC both full) retries. Support can inspect or clear a
+  stuck session with `/cobbleraids capture status [player]` / `/cobbleraids capture clear
+  <player>` — clearing settles nothing, so use it only for a session that is genuinely
+  stuck, not as a routine way to skip the choice.
 - **Tiers are progression** — starter raids are level 25 with a 550 HP base, powerhouse level 50
   at 1100, and legendary and mythical stay level 100 at 3500. A new player can clear a starter
   raid; a legendary is endgame. Starter is also 70% of natural spawns, so the tier a low-level

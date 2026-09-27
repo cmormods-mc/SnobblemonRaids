@@ -118,6 +118,19 @@ public final class RaidAdminCommand {
                                         .then(Commands.argument("target", EntityArgument.player())
                                                 .executes(ctx -> RaidAdminRewardOps.clear(
                                                         ctx.getSource(), EntityArgument.getPlayer(ctx, "target"))))))
+                        // Support visibility/escape-hatch for the Raid Capture Protocol; see
+                        // RaidAdminCaptureOps for why "clear" settles nothing. Unlike "reward" above,
+                        // nothing player-facing shares this root, so the whole subtree is admin-only.
+                        .then(admin("capture")
+                                .then(Commands.literal("status")
+                                        .executes(ctx -> RaidAdminCaptureOps.status(ctx.getSource(), null))
+                                        .then(Commands.argument("target", EntityArgument.player())
+                                                .executes(ctx -> RaidAdminCaptureOps.status(
+                                                        ctx.getSource(), EntityArgument.getPlayer(ctx, "target")))))
+                                .then(Commands.literal("clear")
+                                        .then(Commands.argument("target", EntityArgument.player())
+                                                .executes(ctx -> RaidAdminCaptureOps.clear(
+                                                        ctx.getSource(), EntityArgument.getPlayer(ctx, "target"))))))
                         .then(admin("debug")
                                 .then(Commands.literal("status")
                                         .executes(ctx -> RaidAdminDebugOps.status(ctx.getSource())))

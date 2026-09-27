@@ -313,8 +313,16 @@ final class RaidAdminDebugOps {
 
         section(source, "catching");
         setting(source, "enabled", config.catching().enabled());
-        setting(source, "chance", tierValues(config.catching().starter(), config.catching().powerhouse(),
-                config.catching().legendary(), config.catching().mythical()));
+        setting(source, "base_chance", tierValues(
+                config.catching().chanceFor(RaidRarityTier.STARTER),
+                config.catching().chanceFor(RaidRarityTier.POWERHOUSE),
+                config.catching().chanceFor(RaidRarityTier.LEGENDARY),
+                config.catching().chanceFor(RaidRarityTier.MYTHICAL)));
+        setting(source, "ceiling_chance", tierValues(
+                config.catching().ceilingFor(RaidRarityTier.STARTER),
+                config.catching().ceilingFor(RaidRarityTier.POWERHOUSE),
+                config.catching().ceilingFor(RaidRarityTier.LEGENDARY),
+                config.catching().ceilingFor(RaidRarityTier.MYTHICAL)));
 
         section(source, "currency");
         setting(source, "enabled", config.currency().enabled());
