@@ -2,6 +2,9 @@
   "replace": false,
   "values": [
     "minecraft:snowy_plains",
-    "minecraft:frozen_peaks"
+    "minecraft:frozen_peaks",
+    "#c:is_icy",
+    "#c:is_snowy",
+    "#c:is_cold/overworld"
   ]
 }

@@ -2,6 +2,8 @@
   "replace": false,
   "values": [
     "minecraft:flower_forest",
-    "minecraft:cherry_grove"
+    "minecraft:cherry_grove",
+    "#c:is_floral",
+    "#c:is_magical"
   ]
 }

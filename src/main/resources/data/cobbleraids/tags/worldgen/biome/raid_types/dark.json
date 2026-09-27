@@ -2,6 +2,9 @@
   "replace": false,
   "values": [
     "minecraft:dark_forest",
-    "minecraft:old_growth_pine_taiga"
+    "minecraft:old_growth_pine_taiga",
+    "#c:is_spooky",
+    "#c:is_dead",
+    "#c:is_magical"
   ]
 }

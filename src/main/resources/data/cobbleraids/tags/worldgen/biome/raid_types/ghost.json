@@ -2,6 +2,9 @@
   "replace": false,
   "values": [
     "minecraft:dark_forest",
-    "minecraft:deep_dark"
+    "minecraft:deep_dark",
+    "#c:is_spooky",
+    "#c:is_dead",
+    "#c:is_magical"
   ]
 }

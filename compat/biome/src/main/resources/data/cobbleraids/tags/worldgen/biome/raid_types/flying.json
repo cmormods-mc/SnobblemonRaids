@@ -1,8 +1,0 @@
-{
-  "replace": false,
-  "values": [
-    "#c:is_windswept",
-    "#minecraft:is_mountain",
-    "#c:is_mountain/peak"
-  ]
-}

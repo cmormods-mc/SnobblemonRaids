@@ -2,6 +2,10 @@
   "replace": false,
   "values": [
     "minecraft:stony_peaks",
-    "minecraft:windswept_gravelly_hills"
+    "minecraft:windswept_gravelly_hills",
+    "#minecraft:is_mountain",
+    "#c:is_mountain",
+    "#c:is_mountain/peak",
+    "#c:is_stony_shores"
   ]
 }

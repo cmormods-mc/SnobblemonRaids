@@ -8,7 +8,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CORE_RESOURCES = ROOT / "src/main/resources"
-COMPAT_RESOURCES = ROOT / "compat/biome/src/main/resources"
 TIERS = {"starter", "powerhouse", "legendary", "mythical"}
 EXPECTED_COUNTS = Counter({"starter": 27, "powerhouse": 10, "legendary": 71, "mythical": 22})
 
@@ -44,23 +43,22 @@ def validate_tree() -> None:
 
     assert tiers == EXPECTED_COUNTS, (tiers, EXPECTED_COUNTS)
 
+    # Each raid_types tag carries both the mod's own hardcoded vanilla biome IDs and the tag-based
+    # Terralith/BWG/Fabric-convention compatibility entries -- folded into one file per tag since the
+    # separate cobbleraids_biome_compat add-on was merged into the core mod. Still no hard dependency
+    # on either biome mod: the tag-based entries (#c:.../#minecraft:...) are inert no-ops when the mod
+    # that defines them is absent, which is what let this fold in safely.
     core_tags = sorted((CORE_RESOURCES / "data/cobbleraids/tags/worldgen/biome/raid_types").glob("*.json"))
-    compat_tags = sorted((COMPAT_RESOURCES / "data/cobbleraids/tags/worldgen/biome/raid_types").glob("*.json"))
-    assert len(core_tags) == len(compat_tags) == 18
-    assert [path.name for path in core_tags] == [path.name for path in compat_tags]
-    for core, compat in zip(core_tags, compat_tags):
-        core_data, compat_data = load(core), load(compat)
-        assert core_data["replace"] is False and compat_data["replace"] is False
-        assert core_data["values"] and compat_data["values"]
-        assert all(value.startswith("minecraft:") for value in core_data["values"])
-        assert all(value.startswith("#") for value in compat_data["values"])
+    assert len(core_tags) == 18
+    for core in core_tags:
+        core_data = load(core)
+        assert core_data["replace"] is False
+        assert core_data["values"]
+        assert any(value.startswith("minecraft:") for value in core_data["values"]), core
+        assert any(value.startswith("#") for value in core_data["values"]), core
 
     core_text = "\n".join(path.read_text(encoding="utf-8") for path in CORE_RESOURCES.rglob("*.json"))
     assert "biomeswevegone:" not in core_text
-
-    compat_manifest = load(COMPAT_RESOURCES / "fabric.mod.json")
-    assert compat_manifest["id"] == "cobbleraids_biome_compat"
-    assert "biomeswevegone" not in compat_manifest["depends"]
     assert "biomeswevegone" not in load(CORE_RESOURCES / "fabric.mod.json")["depends"]
 
     mixins = load(CORE_RESOURCES / "mixins/cobbleraids.mixins.json")["mixins"]

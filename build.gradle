@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.132-raid-capture-claim-order-fix'
+version = '0.8.133-biome-compat-merged'
 group = 'com.cobbleraids'
 
 base {
@@ -89,22 +89,9 @@ publishing {
 }
 
 sourceSets {
-    biomeCompat {
-        resources.srcDir 'compat/biome/src/main/resources'
-    }
     addonRewards {
         resources.srcDir 'compat/addonrewards/src/main/resources'
     }
-}
-
-tasks.register('biomeCompatJar', Jar) {
-    group = 'build'
-    description = 'Builds the optional tag-based biome compatibility data mod.'
-    dependsOn tasks.named('processBiomeCompatResources')
-    archiveBaseName = 'CobbleRaids-BiomeCompat'
-    archiveVersion = '1.0.0'
-    archiveClassifier = ''
-    from sourceSets.biomeCompat.output
 }
 
 tasks.register('addonRewardsJar', Jar) {
@@ -137,6 +124,5 @@ tasks.register('addonRewardsJar', Jar) {
 }
 
 tasks.named('build') {
-    dependsOn tasks.named('biomeCompatJar')
     dependsOn tasks.named('addonRewardsJar')
 }

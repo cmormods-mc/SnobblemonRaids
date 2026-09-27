@@ -2,6 +2,10 @@
   "replace": false,
   "values": [
     "minecraft:desert",
-    "minecraft:badlands"
+    "minecraft:badlands",
+    "#c:is_desert",
+    "#c:is_sandy",
+    "#minecraft:is_badlands",
+    "#c:is_dry/overworld"
   ]
 }
