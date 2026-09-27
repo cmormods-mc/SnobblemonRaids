@@ -4,8 +4,10 @@ import com.cobbleraids.RaidLog;
 import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobbleraids.config.RaidRarityTier;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.core.HolderLookup;
@@ -116,7 +118,7 @@ public final class RaidPlayerRecords extends SavedData {
             return new RaidPlayerRecord(current.raidsWon(), current.winsByTier(),
                     current.defeatsBySpecies(), current.totalContribution(), current.bossesCaught(),
                     gotStone ? 0 : current.raidsSinceMegaStone() + 1, current.raidPoints(),
-                    current.purchases());
+                    current.purchases(), current.unlockedTitles(), current.selectedTitle());
         });
         persist(server);
     }
@@ -147,6 +149,32 @@ public final class RaidPlayerRecords extends SavedData {
                 (existing == null ? RaidPlayerRecord.EMPTY : existing)
                         .withPurchaseOn(entryId, window, today));
         persist(server);
+    }
+
+    /**
+     * Adds {@code titleId} to what this player has unlocked. A no-op (still persisted, since a
+     * caller only reaches here after deciding the title is newly earned) rather than an error if it
+     * was somehow already unlocked -- {@link RaidPlayerRecord#withTitleUnlocked} already treats a
+     * repeat as a no-op copy.
+     */
+    public static void unlockTitle(MinecraftServer server, UUID playerId, String titleId) {
+        LIVE.merge(playerId, RaidPlayerRecord.EMPTY.withTitleUnlocked(titleId),
+                (existing, ignored) -> existing.withTitleUnlocked(titleId));
+        persist(server);
+    }
+
+    /**
+     * Sets which unlocked title this player wears, or clears it with a {@code null} id. Refuses a
+     * title the player has not unlocked -- the command layer already checks this against tab
+     * completion, but a hostile or stale client packet must not be able to force a selection the
+     * player never earned.
+     */
+    public static boolean selectTitle(MinecraftServer server, UUID playerId, String titleId) {
+        if (titleId != null && !get(playerId).hasTitle(titleId)) return false;
+        LIVE.merge(playerId, RaidPlayerRecord.EMPTY.withSelectedTitle(titleId),
+                (existing, ignored) -> existing.withSelectedTitle(titleId));
+        persist(server);
+        return true;
     }
 
     /**
@@ -214,10 +242,17 @@ public final class RaidPlayerRecords extends SavedData {
                             Math.max(0, row.getInt("count")), row.getLong("day")));
                 }
             }
+            Set<String> unlockedTitles = new LinkedHashSet<>();
+            ListTag titleTag = playerTag.getList("titles", Tag.TAG_STRING);
+            for (int t = 0; t < titleTag.size(); t++) unlockedTitles.add(titleTag.getString(t));
+            String selectedTitle = playerTag.contains("selected_title")
+                    ? playerTag.getString("selected_title") : null;
+
             store.loaded.put(playerTag.getUUID("player"), new RaidPlayerRecord(
                     playerTag.getInt("wins"), tiers, species,
                     playerTag.getDouble("contribution"), playerTag.getInt("caught"),
-                    playerTag.getInt("since_mega"), playerTag.getInt("points"), purchases));
+                    playerTag.getInt("since_mega"), playerTag.getInt("points"), purchases,
+                    unlockedTitles, selectedTitle));
         }
         return store;
     }
@@ -251,6 +286,14 @@ public final class RaidPlayerRecords extends SavedData {
                     purchases.add(row);
                 });
                 playerTag.put("purchases", purchases);
+            }
+            if (!record.unlockedTitles().isEmpty()) {
+                ListTag titles = new ListTag();
+                record.unlockedTitles().forEach(id -> titles.add(net.minecraft.nbt.StringTag.valueOf(id)));
+                playerTag.put("titles", titles);
+            }
+            if (record.selectedTitle() != null) {
+                playerTag.putString("selected_title", record.selectedTitle());
             }
             players.add(playerTag);
         }

@@ -3,17 +3,22 @@ package com.cobbleraids;
 import com.cobbleraids.fault.RaidThreadGuard;
 import com.cobbleraids.catching.DefeatedBossSnapshots;
 import com.cobbleraids.catching.RaidPlayerRecords;
+import com.cobbleraids.catching.TrophyLedger;
+import com.cobbleraids.catching.TrophyRoomGateway;
 import com.cobbleraids.command.RaidAdminCommand;
 import com.cobbleraids.command.RaidLeaveCommand;
 import com.cobbleraids.command.RaidNotifyCommand;
 import com.cobbleraids.command.RaidPointsCommand;
 import com.cobbleraids.command.RaidShopCommand;
+import com.cobbleraids.command.RaidTitleCommand;
+import com.cobbleraids.command.RaidTrophyCommand;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.config.RaidRewardPolicyManager;
 import com.cobbleraids.config.RaidDefinitionRegistry;
 import com.cobbleraids.fault.RaidConsistencyAuditScheduler;
 import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobbleraids.interaction.RaidBossInteractionListener;
+import com.cobbleraids.item.RaidHeldItems;
 import com.cobbleraids.item.RaidKeyItems;
 import com.cobbleraids.lifecycle.RaidBattleEventCoordinator;
 import com.cobbleraids.lifecycle.RaidCombatRuleService;
@@ -24,6 +29,7 @@ import com.cobbleraids.lobby.RaidLobbyManager;
 import com.cobbleraids.network.RaidRewardPayloads;
 import com.cobbleraids.network.RewardChoicePayload;
 import com.cobbleraids.network.ShopActionPayload;
+import com.cobbleraids.network.TrophyRoomActionPayload;
 import com.cobbleraids.placeholder.RaidPlaceholders;
 import com.cobbleraids.presentation.RaidBossGlowService;
 import com.cobbleraids.presentation.RenownBoonSyncService;
@@ -39,6 +45,8 @@ import com.cobbleraids.showdown.RaidInstructionRegistrar;
 import com.cobbleraids.showdown.ShowdownIntegrationInstaller;
 import com.cobbleraids.spawn.RaidSpawnHistory;
 import com.cobbleraids.spawn.RaidSpawnScheduler;
+import com.cobbleraids.presentation.TitleDisplayService;
+import com.cobbleraids.title.TitleCatalogManager;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -60,10 +68,12 @@ public final class CobbleRaids implements ModInitializer {
         CobbleRaidsConfigManager.load();
         RaidRewardPolicyManager.load();
         ShopCatalogManager.load();
+        TitleCatalogManager.load();
 
         // Before anything that could look an item up by id, and before the reward policy is used:
         // a loot table naming an unregistered id costs the whole table, not just the entry.
         RaidKeyItems.register();
+        RaidHeldItems.register();
 
         RaidRewardPayloads.registerPayloadTypes();
         ServerPlayNetworking.registerGlobalReceiver(RewardChoicePayload.TYPE, (payload, context) ->
@@ -73,6 +83,10 @@ public final class CobbleRaids implements ModInitializer {
         ServerPlayNetworking.registerGlobalReceiver(ShopActionPayload.TYPE, (payload, context) ->
                 context.server().execute(() -> RaidFaultBarrier.guard("shop-action-packet",
                         () -> RaidShopGateway.handle(context.player(), payload))));
+
+        ServerPlayNetworking.registerGlobalReceiver(TrophyRoomActionPayload.TYPE, (payload, context) ->
+                context.server().execute(() -> RaidFaultBarrier.guard("trophy-room-action-packet",
+                        () -> TrophyRoomGateway.handle(context.player(), payload))));
 
         RaidInstructionRegistrar.register();
         RaidBattleEventCoordinator.register();
@@ -87,6 +101,8 @@ public final class CobbleRaids implements ModInitializer {
         RaidRewardCommand.register();
         RaidPointsCommand.register();
         RaidShopCommand.register();
+        RaidTrophyCommand.register();
+        RaidTitleCommand.register();
         RaidAdminCommand.register();
         RaidLeaveCommand.register();
         RaidNotifyCommand.register();
@@ -119,6 +135,9 @@ public final class CobbleRaids implements ModInitializer {
         // And the shop catalogue, so an operator can reprice without restarting the server.
         ServerLifecycleEvents.START_DATA_PACK_RELOAD.register((server, resources) ->
                 RaidFaultBarrier.guard("shop-catalog-reload", ShopCatalogManager::reload));
+        // And the title catalogue, for the same reason.
+        ServerLifecycleEvents.START_DATA_PACK_RELOAD.register((server, resources) ->
+                RaidFaultBarrier.guard("title-catalog-reload", TitleCatalogManager::reload));
         ServerLifecycleEvents.SERVER_STARTING.register(server ->
                 RaidFaultBarrier.guard("startup:reward-gui", RewardGuiBackends::ensureReady));
         ServerLifecycleEvents.SERVER_STARTING.register(server ->
@@ -140,6 +159,10 @@ public final class CobbleRaids implements ModInitializer {
         // datapack's raid definitions (rarity tiers) are loaded.
         ServerLifecycleEvents.SERVER_STARTED.register(server ->
                 RaidFaultBarrier.guard("startup:boss-snapshots", () -> DefeatedBossSnapshots.onServerStarted(server)));
+        // Same substrate again: the trophy room is a permanent history record, restored alongside
+        // the other two rather than lazily on first open.
+        ServerLifecycleEvents.SERVER_STARTED.register(server ->
+                RaidFaultBarrier.guard("startup:trophy-ledger", () -> TrophyLedger.onServerStarted(server)));
         // Presents a reward that outlived a disconnect or restart. Without this the queue is
         // restored but nothing ever offers it, so the reveal screen is only ever seen by players
         // who happened to be online when the raid was won.
@@ -149,6 +172,11 @@ public final class CobbleRaids implements ModInitializer {
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
                 RaidFaultBarrier.guard("player-join:raid-reconnect",
                         () -> RaidReconnectService.onPlayerJoin(handler.getPlayer(), server)));
+        // Re-applies a selected title's scoreboard team on every join -- team membership does not
+        // survive a relog, unlike the record it is derived from.
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
+                RaidFaultBarrier.guard("player-join:title-display",
+                        () -> TitleDisplayService.apply(server, handler.getPlayer())));
         // Repairs the Showdown integration (ShowdownResourceLoaderMixin) if another mod's own
         // unbundle-time file writes clobbered it after ours -- confirmed live against a real pack
         // (mega_showdown) that patches the same Cobblemon Showdown files at the same injection point.
@@ -189,6 +217,7 @@ public final class CobbleRaids implements ModInitializer {
             RaidFaultBarrier.guard("shutdown:spawn-history", RaidSpawnHistory::onServerStopped);
             RaidFaultBarrier.guard("shutdown:player-records", RaidPlayerRecords::onServerStopped);
             RaidFaultBarrier.guard("shutdown:boss-snapshots", DefeatedBossSnapshots::onServerStopped);
+            RaidFaultBarrier.guard("shutdown:trophy-ledger", TrophyLedger::onServerStopped);
             int raids = counts[0];
             int lobbies = counts[1];
             RaidFaultBarrier.onServerStopped();

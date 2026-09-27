@@ -192,6 +192,14 @@ SPECIALTY_ROWS = [
     ("golden auspicious ball", "cobblesafari:auspiciouspokeball_gold", [0, 0, 2, 5]),
     ("rare candy", "cobblemon:rare_candy", [100, 200, 300, 400]),
     ("large exp candy", "cobblemon:exp_candy_l", [0, 500, 800, 1000]),
+    # Raid-exclusive held items (see the progression-and-identity plan). Behind their own leaf
+    # tables like the optional-mod rows above, even though "cobbleraids" is in this file's own
+    # ALWAYS_PRESENT: validate_economy_probabilities's no-mixing check does not special-case this
+    # mod's own namespace, on purpose -- the AddonRewards jar and the main jar are versioned and
+    # installed separately, and a stale AddonRewards jar naming an item the running main jar has
+    # not registered yet is exactly the kind of mismatch that check exists to catch.
+    ("raid core", {"table": "cobbleraids:specialty/leaf/raid_core"}, [0, 8, 12, 15]),
+    ("guardian scale", {"table": "cobbleraids:specialty/leaf/guardian_scale"}, [0, 4, 6, 8]),
 ]
 
 # 10.00%, and only on a boss that has a stone. Solved from three dials that multiply: a 20-minute
@@ -330,6 +338,8 @@ def build_tables(manifest):
         item_entry("cobblemoncharms:catch_charm", 1),
         item_entry("cobblemoncharms:exp_charm", 1),
     ])
+    tables["specialty/leaf/raid_core.json"] = single_pool([item_entry("cobbleraids:raid_core")])
+    tables["specialty/leaf/guardian_scale.json"] = single_pool([item_entry("cobbleraids:guardian_scale")])
 
     # specialty/mega/<species> -- the stones one boss can drop, split evenly inside the mega row
     for boss, entry in sorted(manifest["mega"].items()):

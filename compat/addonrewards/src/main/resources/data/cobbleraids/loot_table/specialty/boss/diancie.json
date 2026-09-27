@@ -146,8 +146,18 @@
         },
         {
           "type": "minecraft:loot_table",
+          "value": "cobbleraids:specialty/leaf/raid_core",
+          "weight": 15
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:specialty/leaf/guardian_scale",
+          "weight": 8
+        },
+        {
+          "type": "minecraft:loot_table",
           "value": "cobbleraids:base/mythical",
-          "weight": 5570
+          "weight": 5547
         }
       ]
     }

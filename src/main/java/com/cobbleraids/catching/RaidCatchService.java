@@ -3,6 +3,8 @@ package com.cobbleraids.catching;
 import com.cobbleraids.RaidLog;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.config.RaidDefinition;
+import com.cobbleraids.fault.RaidFaultBarrier;
+import com.cobbleraids.title.TitleService;
 import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.api.storage.party.PlayerPartyStore;
 import com.cobblemon.mod.common.pokemon.Pokemon;
@@ -95,6 +97,8 @@ public final class RaidCatchService {
             }
 
             RaidPlayerRecords.recordCatch(player.getServer(), player.getUUID());
+            RaidFaultBarrier.guard("title-unlock:catch", () ->
+                    TitleService.checkUnlocks(player.getServer(), player.getUUID()));
             player.sendSystemMessage(Component.literal("You caught the raid boss!")
                     .withStyle(ChatFormatting.GOLD));
             return true;
