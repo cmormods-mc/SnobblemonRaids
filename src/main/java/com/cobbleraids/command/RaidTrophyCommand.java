@@ -1,5 +1,6 @@
 package com.cobbleraids.command;
 
+import com.cobbleraids.catching.TrophyGalleryQuery;
 import com.cobbleraids.catching.TrophyRoomGateway;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.commands.Commands;
@@ -15,7 +16,10 @@ public final class RaidTrophyCommand {
                         .then(Commands.literal("trophies")
                                 .executes(ctx -> {
                                     ServerPlayer player = ctx.getSource().getPlayerOrException();
-                                    TrophyRoomGateway.open(player);
+                                    // The server has no idea how wide the player's window is yet; the
+                                    // client re-requests with its real column count as soon as its own
+                                    // layout runs, so this only has to be a reasonable starting guess.
+                                    TrophyRoomGateway.open(player, TrophyGalleryQuery.MAX_COLUMNS);
                                     return 1;
                                 }))
         ));
