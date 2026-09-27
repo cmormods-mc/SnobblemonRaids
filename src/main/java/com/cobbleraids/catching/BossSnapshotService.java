@@ -10,10 +10,10 @@ import net.minecraft.server.MinecraftServer;
 /**
  * Captures a defeated raid boss into its victors' personal shop, one slot per species per player.
  *
- * <p>Copies the boss the same way {@link RaidCatchService#award} already does --
- * {@code boss.clone(true, registries)} -- rather than touching the live entity, which is still
- * wired into the finishing battle and about to be discarded. See {@link DefeatedBossSnapshots} for
- * why the copy is kept as full Pokemon NBT rather than a handful of primitive fields.
+ * <p>Copies the boss ({@code boss.clone(true, registries)}) rather than touching the live entity,
+ * which is still wired into the finishing battle and about to be discarded. See
+ * {@link DefeatedBossSnapshots} for why the copy is kept as full Pokemon NBT rather than a handful
+ * of primitive fields.
  */
 public final class BossSnapshotService {
 
@@ -22,7 +22,7 @@ public final class BossSnapshotService {
     public static void snapshot(MinecraftServer server, UUID playerId, RaidRarityTier tier, Pokemon bossPokemon) {
         Pokemon copy = bossPokemon.clone(true, server.registryAccess());
         // Uncatchable belongs to the boss standing in the world, not to a snapshot a player will
-        // eventually buy back -- same reasoning RaidCatchService.award applies to its own copy.
+        // eventually buy back.
         UncatchableProperty.INSTANCE.catchable().apply(copy);
 
         int ivPercent = percentOf(copy.getIvs().total(), 186);

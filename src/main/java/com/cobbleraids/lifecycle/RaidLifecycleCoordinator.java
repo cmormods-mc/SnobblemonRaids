@@ -6,7 +6,7 @@ import com.cobbleraids.encounter.EncounterService;
 import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobbleraids.fault.RaidThreadGuard;
 import com.cobbleraids.catching.BossSnapshotService;
-import com.cobbleraids.catching.RaidCatchService;
+import com.cobbleraids.catching.RaidCaptureSessionService;
 import com.cobbleraids.catching.RaidPlayerRecords;
 import com.cobbleraids.catching.TrophyLedger;
 import com.cobbleraids.config.CobbleRaidsConfig;
@@ -258,7 +258,6 @@ public final class RaidLifecycleCoordinator {
         var boss = raid.getBossEntity();
         Pokemon bossPokemon = boss == null ? null : boss.getPokemon();
         Set<UUID> victors = raid.getActiveParticipants();
-        int participants = victors.size();
         // Same figures the reward screen shows, computed once rather than per player.
         Map<UUID, Double> contributions =
                 ContributionMath.percentages(raid.getContributionSnapshot(), victors);
@@ -271,8 +270,8 @@ public final class RaidLifecycleCoordinator {
             RaidPlayerRecords.recordWins(server, definition.rarityTier(), definition.id(), earned);
 
             // A win can cross a RAIDS_WON or TIER_WINS threshold, so titles are checked right after
-            // the record they read moves -- the same reasoning RaidCatchService checks them right
-            // after recordCatch.
+            // the record they read moves -- the same reasoning RaidCaptureSessionService checks them
+            // right after recordCatch.
             for (UUID playerId : victors) {
                 RaidFaultBarrier.guard("title-unlock:win", () -> TitleService.checkUnlocks(server, playerId));
             }
@@ -295,16 +294,20 @@ public final class RaidLifecycleCoordinator {
 
         if (!catching) return;
         boolean personalShop = bossPokemon != null && CobbleRaidsConfigManager.get().personalBossShop().enabled();
-        for (UUID playerId : victors) {
-            ServerPlayer player = server.getPlayerList().getPlayer(playerId);
-            if (player == null) continue;
-            if (personalShop) {
+        if (personalShop) {
+            for (UUID playerId : victors) {
+                ServerPlayer player = server.getPlayerList().getPlayer(playerId);
+                if (player == null) continue;
                 RaidFaultBarrier.guard("boss-snapshot", () ->
                         BossSnapshotService.snapshot(server, playerId, definition.rarityTier(), bossPokemon));
             }
-            RaidCatchService.tryCatch(player, definition, bossPokemon,
-                    contributions.getOrDefault(playerId, 0.0), participants);
         }
+        if (bossPokemon == null) return;
+        // Offered regardless of online status, unlike the personal-shop snapshot above: a player
+        // mid-reconnect-grace can still be an active participant, and their choice window (once they
+        // actually claim) is wall clock, so there is no reason to require them online at this exact
+        // instant to be offered a session.
+        RaidCaptureSessionService.offer(server, definition, bossPokemon, raid.getId(), victors);
     }
 
     /** Used when Cobblemon/Showdown already ended the battle and then emitted BATTLE_VICTORY. */

@@ -48,7 +48,12 @@ class CobbleRaidsConfigRoundTripTest {
                 new CobbleRaidsConfig.CombatDefaults(600, true, 7),
                 new CobbleRaidsConfig.BattleCarryover(false, true, true),
                 new CobbleRaidsConfig.BossTraits(5, 0.25),
-                new CobbleRaidsConfig.Catching(true, 0.5, 0.25, 0.1, 0.0),
+                new CobbleRaidsConfig.Catching(true,
+                        new CobbleRaidsConfig.CaptureTierConfig(0.5, 0.1, 0.1, 1000, 200, 80, 900, 180, 70),
+                        new CobbleRaidsConfig.CaptureTierConfig(0.25, 0.05, 0.05, 1000, 200, 80, 900, 180, 70),
+                        new CobbleRaidsConfig.CaptureTierConfig(0.1, 0.02, 0.02, 1000, 200, 80, 900, 180, 70),
+                        new CobbleRaidsConfig.CaptureTierConfig(0.0, 0.0, 0.0, 1000, 200, 80, 900, 180, 70),
+                        45, 12, 20, 90),
                 new CobbleRaidsConfig.Currency(true, 25L, 100L, 400L, 1_000L, true, 20.0),
                 new CobbleRaidsConfig.DynamicLevel(true, -5, 90),
                 new CobbleRaidsConfig.MegaPity(true, 20),
@@ -72,6 +77,11 @@ class CobbleRaidsConfigRoundTripTest {
         assertTrue(reparsed.catching().enabled());
         assertEquals(0.5, reparsed.catching().chanceFor(RaidRarityTier.STARTER), 0.0);
         assertEquals(0.0, reparsed.catching().chanceFor(RaidRarityTier.MYTHICAL), 0.0);
+        assertEquals(0.7, reparsed.catching().ceilingFor(RaidRarityTier.STARTER), 0.0);
+        assertEquals(45, reparsed.catching().choiceWindowSeconds());
+        assertEquals(12, reparsed.catching().sequenceTimeoutSeconds());
+        assertEquals(20, reparsed.catching().deliveryRetryIntervalSeconds());
+        assertEquals(90, reparsed.catching().sessionRetentionSecondsAfterResolve());
         assertTrue(reparsed.currency().enabled());
         assertEquals(25L, reparsed.currency().amountFor(RaidRarityTier.STARTER));
         assertEquals(1_000L, reparsed.currency().amountFor(RaidRarityTier.MYTHICAL));
@@ -216,9 +226,28 @@ class CobbleRaidsConfigRoundTripTest {
     @DisplayName("a chance above 1 is rejected rather than read as a percentage")
     void catchChanceIsBounded() {
         assertThrows(IllegalArgumentException.class,
-                () -> new CobbleRaidsConfig.Catching(true, 50.0, 0.0, 0.0, 0.0));
+                () -> new CobbleRaidsConfig.CaptureTierConfig(50.0, 0.0, 0.0, 1000, 200, 80, 900, 180, 70));
         assertThrows(IllegalArgumentException.class,
-                () -> new CobbleRaidsConfig.Catching(true, -0.1, 0.0, 0.0, 0.0));
+                () -> new CobbleRaidsConfig.CaptureTierConfig(-0.1, 0.0, 0.0, 1000, 200, 80, 900, 180, 70));
+    }
+
+    @Test
+    @DisplayName("a tier ceiling above 100% is rejected even when each fraction is individually valid")
+    void catchCeilingCannotExceedOne() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new CobbleRaidsConfig.CaptureTierConfig(0.6, 0.3, 0.3, 1000, 200, 80, 900, 180, 70),
+                "0.6 + 0.3 + 0.3 = 1.2, over the ceiling");
+    }
+
+    @Test
+    @DisplayName("a zone cannot be wider than the track it's judged against")
+    void catchZoneWidthsAreBounded() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new CobbleRaidsConfig.CaptureTierConfig(0.1, 0.05, 0.05, 1000, 1200, 80, 900, 180, 70),
+                "good zone wider than the pulse's own travel duration");
+        assertThrows(IllegalArgumentException.class,
+                () -> new CobbleRaidsConfig.CaptureTierConfig(0.1, 0.05, 0.05, 1000, 200, 260, 900, 180, 70),
+                "perfect zone wider than its own good zone");
     }
 
     @Test

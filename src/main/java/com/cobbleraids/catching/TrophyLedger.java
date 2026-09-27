@@ -54,10 +54,38 @@ public final class TrophyLedger extends SavedData {
         Map<ResourceLocation, TrophyEntry> perPlayer =
                 LIVE.computeIfAbsent(playerId, ignored -> new ConcurrentHashMap<>());
         perPlayer.compute(species, (ignored, existing) -> existing == null
-                ? new TrophyEntry(species, level, shiny, ivPercent, evPercent, tier, timestampEpochMs, 1)
+                ? new TrophyEntry(species, level, shiny, ivPercent, evPercent, tier, timestampEpochMs, 1, 0, 0, 0)
                 : new TrophyEntry(existing.species(), existing.level(), existing.shiny(),
                         existing.ivPercent(), existing.evPercent(), existing.rarityTier(),
-                        existing.firstDefeatedAtEpochMs(), existing.timesDefeated() + 1));
+                        existing.firstDefeatedAtEpochMs(), existing.timesDefeated() + 1,
+                        existing.firstCapturedAtEpochMs(), existing.timesCaptured(),
+                        existing.bestStabilizationScorePercent()));
+        persist(server);
+    }
+
+    /**
+     * Records a Raid Capture Protocol success for {@code species}. The first capture creates the
+     * entry (if a defeat has not already, since capturing a species always means having just defeated
+     * it) and pins {@code firstCapturedAtEpochMs}; every later one only grows {@code timesCaptured}
+     * and raises {@code bestStabilizationScorePercent} if this run beat it -- the same
+     * "pin on first sighting, only counters move after" idiom {@link #recordDefeat} uses, kept
+     * independent of it: a species defeated many times but captured only once still pins its
+     * defeat stats from the very first fight, not this capture.
+     */
+    public static void recordCapture(MinecraftServer server, UUID playerId, ResourceLocation species,
+                                     int level, boolean shiny, int ivPercent, int evPercent, RaidRarityTier tier,
+                                     int stabilizationScorePercent, long timestampEpochMs) {
+        Map<ResourceLocation, TrophyEntry> perPlayer =
+                LIVE.computeIfAbsent(playerId, ignored -> new ConcurrentHashMap<>());
+        perPlayer.compute(species, (ignored, existing) -> existing == null
+                ? new TrophyEntry(species, level, shiny, ivPercent, evPercent, tier, timestampEpochMs, 1,
+                        timestampEpochMs, 1, stabilizationScorePercent)
+                : new TrophyEntry(existing.species(), existing.level(), existing.shiny(),
+                        existing.ivPercent(), existing.evPercent(), existing.rarityTier(),
+                        existing.firstDefeatedAtEpochMs(), existing.timesDefeated(),
+                        existing.everCaptured() ? existing.firstCapturedAtEpochMs() : timestampEpochMs,
+                        existing.timesCaptured() + 1,
+                        Math.max(existing.bestStabilizationScorePercent(), stabilizationScorePercent)));
         persist(server);
     }
 
@@ -127,10 +155,14 @@ public final class TrophyLedger extends SavedData {
                 } catch (RuntimeException ignored) {
                     continue; // a tier that no longer exists; drop this one entry, keep the rest
                 }
+                // Absent on every trophy saved before capturing existed, which reads as 0/0/0 -- "never
+                // captured", exactly what TrophyEntry.everCaptured() expects for a real epoch millisecond.
                 perPlayer.put(species, new TrophyEntry(
                         species, row.getInt("level"), row.getBoolean("shiny"),
                         row.getInt("iv_pct"), row.getInt("ev_pct"), tier,
-                        row.getLong("first_defeated_at"), Math.max(1, row.getInt("times_defeated"))));
+                        row.getLong("first_defeated_at"), Math.max(1, row.getInt("times_defeated")),
+                        row.getLong("first_captured_at"), row.getInt("times_captured"),
+                        row.getInt("best_stabilization_pct")));
             }
             if (!perPlayer.isEmpty()) store.loaded.put(playerId, perPlayer);
         }
@@ -155,6 +187,11 @@ public final class TrophyLedger extends SavedData {
                 row.putString("tier", trophy.rarityTier().serializedName());
                 row.putLong("first_defeated_at", trophy.firstDefeatedAtEpochMs());
                 row.putInt("times_defeated", trophy.timesDefeated());
+                if (trophy.everCaptured()) {
+                    row.putLong("first_captured_at", trophy.firstCapturedAtEpochMs());
+                    row.putInt("times_captured", trophy.timesCaptured());
+                    row.putInt("best_stabilization_pct", trophy.bestStabilizationScorePercent());
+                }
                 speciesList.add(row);
             }
             playerTag.put("species", speciesList);

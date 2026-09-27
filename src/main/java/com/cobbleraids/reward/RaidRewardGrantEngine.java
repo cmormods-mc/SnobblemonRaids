@@ -4,6 +4,7 @@ import com.cobbleraids.RaidLog;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.config.RaidDefinitionRegistry;
+import com.cobbleraids.catching.RaidCaptureSessionService;
 import com.cobbleraids.catching.RaidPlayerRecords;
 import com.cobbleraids.config.RaidRewardPolicyManager;
 import com.cobbleraids.fault.RaidFaultBarrier;
@@ -74,22 +75,39 @@ public final class RaidRewardGrantEngine {
     }
 
     /**
-     * Credits the claim's Raid Points.
+     * Credits the claim's Raid Points -- or, if a Raid Capture Protocol session is waiting on exactly
+     * this raid for this player, withholds them instead and reports the same figure back as
+     * "granted" anyway (see {@link RaidCaptureSessionService#onRewardClaimed}). The player's item
+     * rewards above are entirely unaffected either way; this interception is scoped to the points
+     * figure alone, and happens only now -- after the items are already placed -- specifically so
+     * capturing never gates or delays the ordinary reward claim, only redirects its RP.
      *
      * <p>Flat per tier and per claim: every eligible participant fought the same raid, and the
-     * reward for contributing more is the extra loot selections, which already scale. Awarded
+     * reward for contributing more is the extra loot selections, which already scale. Computed
      * after the items are in hand and guarded, because a currency this mod invented must never be
      * the reason a player loses loot they won.
      */
     private static int awardPoints(ServerPlayer player, PendingRaidReward pending) {
         CobbleRaidsConfig.RaidPoints config = CobbleRaidsConfigManager.get().raidPoints();
-        if (!config.enabled() || config.isNoOp()) return 0;
-        int base = config.pointsFor(pending.rarityTier());
-        int amount = pending.renowned()
-                ? RenownRewards.points(base, CobbleRaidsConfigManager.get().renown().pointsMultiplier())
-                : base;
-        int finalAmount = carryingRaidCore(player)
-                ? RenownRewards.points(amount, RAID_CORE_POINTS_MULTIPLIER) : amount;
+        int computed = 0;
+        if (config.enabled() && !config.isNoOp()) {
+            int base = config.pointsFor(pending.rarityTier());
+            int amount = pending.renowned()
+                    ? RenownRewards.points(base, CobbleRaidsConfigManager.get().renown().pointsMultiplier())
+                    : base;
+            computed = Math.max(0, carryingRaidCore(player)
+                    ? RenownRewards.points(amount, RAID_CORE_POINTS_MULTIPLIER) : amount);
+        }
+        final int finalAmount = computed;
+
+        // Always checked, even when RaidPoints itself is off (finalAmount 0): a waiting capture
+        // session has no other event to promote it on, and skipping this call whenever there is
+        // nothing to withhold would strand that player's session in AWAITING_CLAIM permanently,
+        // silently, the moment an operator disables the currency the capture protocol wagers.
+        boolean[] intercepted = { false };
+        RaidFaultBarrier.guard("reward:raid-points-capture-check", () ->
+                intercepted[0] = RaidCaptureSessionService.onRewardClaimed(player, pending.raidId(), finalAmount));
+        if (intercepted[0]) return finalAmount;
         if (finalAmount <= 0) return 0;
 
         int[] awarded = { 0 };

@@ -90,10 +90,15 @@ final class CobbleRaidsConfigCodec {
         CobbleRaidsConfig.Catching cat = defaults.catching();
         CobbleRaidsConfig.Catching catching = new CobbleRaidsConfig.Catching(
                 Json.bool(catchingObject, "enabled", cat.enabled()),
-                Json.decimal(catchingObject, "starter", cat.starter()),
-                Json.decimal(catchingObject, "powerhouse", cat.powerhouse()),
-                Json.decimal(catchingObject, "legendary", cat.legendary()),
-                Json.decimal(catchingObject, "mythical", cat.mythical())
+                readCaptureTierConfig(catchingObject, "starter", cat.starter()),
+                readCaptureTierConfig(catchingObject, "powerhouse", cat.powerhouse()),
+                readCaptureTierConfig(catchingObject, "legendary", cat.legendary()),
+                readCaptureTierConfig(catchingObject, "mythical", cat.mythical()),
+                Json.integer(catchingObject, "choice_window_seconds", cat.choiceWindowSeconds()),
+                Json.integer(catchingObject, "sequence_timeout_seconds", cat.sequenceTimeoutSeconds()),
+                Json.integer(catchingObject, "delivery_retry_interval_seconds", cat.deliveryRetryIntervalSeconds()),
+                Json.integer(catchingObject, "session_retention_seconds_after_resolve",
+                        cat.sessionRetentionSecondsAfterResolve())
         );
 
         JsonObject currencyObject = Json.object(root, "currency");
@@ -199,6 +204,22 @@ final class CobbleRaidsConfigCodec {
         );
     }
 
+    private static CobbleRaidsConfig.CaptureTierConfig readCaptureTierConfig(
+            JsonObject catching, String key, CobbleRaidsConfig.CaptureTierConfig fallback) {
+        JsonObject tier = Json.object(catching, key);
+        return new CobbleRaidsConfig.CaptureTierConfig(
+                Json.decimal(tier, "base_chance", fallback.baseChance()),
+                Json.decimal(tier, "stabilization_cap", fallback.stabilizationCap()),
+                Json.decimal(tier, "throw_cap", fallback.throwCap()),
+                Json.integer(tier, "pulse_travel_duration_ms", fallback.pulseTravelDurationMs()),
+                Json.integer(tier, "pulse_good_zone_width_ms", fallback.pulseGoodZoneWidthMs()),
+                Json.integer(tier, "pulse_perfect_zone_width_ms", fallback.pulsePerfectZoneWidthMs()),
+                Json.integer(tier, "throw_travel_duration_ms", fallback.throwTravelDurationMs()),
+                Json.integer(tier, "throw_good_zone_width_ms", fallback.throwGoodZoneWidthMs()),
+                Json.integer(tier, "throw_perfect_zone_width_ms", fallback.throwPerfectZoneWidthMs())
+        );
+    }
+
     static JsonObject toJson(CobbleRaidsConfig config) {
         JsonObject root = new JsonObject();
         CobbleRaidsConfig.NaturalSpawning naturalSpawning = config.naturalSpawning();
@@ -262,10 +283,15 @@ final class CobbleRaidsConfigCodec {
         CobbleRaidsConfig.Catching catching = config.catching();
         JsonObject catchingJson = new JsonObject();
         catchingJson.addProperty("enabled", catching.enabled());
-        catchingJson.addProperty("starter", catching.starter());
-        catchingJson.addProperty("powerhouse", catching.powerhouse());
-        catchingJson.addProperty("legendary", catching.legendary());
-        catchingJson.addProperty("mythical", catching.mythical());
+        catchingJson.add("starter", captureTierConfigJson(catching.starter()));
+        catchingJson.add("powerhouse", captureTierConfigJson(catching.powerhouse()));
+        catchingJson.add("legendary", captureTierConfigJson(catching.legendary()));
+        catchingJson.add("mythical", captureTierConfigJson(catching.mythical()));
+        catchingJson.addProperty("choice_window_seconds", catching.choiceWindowSeconds());
+        catchingJson.addProperty("sequence_timeout_seconds", catching.sequenceTimeoutSeconds());
+        catchingJson.addProperty("delivery_retry_interval_seconds", catching.deliveryRetryIntervalSeconds());
+        catchingJson.addProperty("session_retention_seconds_after_resolve",
+                catching.sessionRetentionSecondsAfterResolve());
         root.add("catching", catchingJson);
 
         CobbleRaidsConfig.Currency currency = config.currency();
@@ -356,6 +382,20 @@ final class CobbleRaidsConfigCodec {
 
         root.addProperty("debug_logging", config.debugLogging());
         return root;
+    }
+
+    private static JsonObject captureTierConfigJson(CobbleRaidsConfig.CaptureTierConfig tier) {
+        JsonObject object = new JsonObject();
+        object.addProperty("base_chance", tier.baseChance());
+        object.addProperty("stabilization_cap", tier.stabilizationCap());
+        object.addProperty("throw_cap", tier.throwCap());
+        object.addProperty("pulse_travel_duration_ms", tier.pulseTravelDurationMs());
+        object.addProperty("pulse_good_zone_width_ms", tier.pulseGoodZoneWidthMs());
+        object.addProperty("pulse_perfect_zone_width_ms", tier.pulsePerfectZoneWidthMs());
+        object.addProperty("throw_travel_duration_ms", tier.throwTravelDurationMs());
+        object.addProperty("throw_good_zone_width_ms", tier.throwGoodZoneWidthMs());
+        object.addProperty("throw_perfect_zone_width_ms", tier.throwPerfectZoneWidthMs());
+        return object;
     }
 
     private static JsonObject tierMultipliersJson(CobbleRaidsConfig.TierMultipliers multipliers) {

@@ -1,6 +1,7 @@
 package com.cobbleraids.catching;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -24,7 +25,13 @@ class TrophyLedgerRoundTripTest {
     private static final ResourceLocation TYRANITAR = ResourceLocation.parse("cobblemon:tyranitar");
 
     private static TrophyEntry entry(ResourceLocation species, RaidRarityTier tier, int timesDefeated) {
-        return new TrophyEntry(species, 75, true, 84, 62, tier, 1_000_000L, timesDefeated);
+        return new TrophyEntry(species, 75, true, 84, 62, tier, 1_000_000L, timesDefeated, 0, 0, 0);
+    }
+
+    private static TrophyEntry captured(ResourceLocation species, RaidRarityTier tier,
+                                        long firstCapturedAtEpochMs, int timesCaptured, int bestStabilizationPct) {
+        return new TrophyEntry(species, 75, true, 84, 62, tier, 1_000_000L, 1,
+                firstCapturedAtEpochMs, timesCaptured, bestStabilizationPct);
     }
 
     private static TrophyLedger roundTrip(Map<UUID, Map<ResourceLocation, TrophyEntry>> records) {
@@ -111,17 +118,70 @@ class TrophyLedgerRoundTripTest {
         // drives directly, so this proves the rule (pin first stats, grow the counter) without it.
         Map<ResourceLocation, TrophyEntry> perPlayer = new java.util.HashMap<>();
         perPlayer.compute(GARCHOMP, (ignored, existing) -> existing == null
-                ? new TrophyEntry(GARCHOMP, 70, false, 50, 40, RaidRarityTier.STARTER, 500L, 1)
+                ? new TrophyEntry(GARCHOMP, 70, false, 50, 40, RaidRarityTier.STARTER, 500L, 1, 0, 0, 0)
                 : existing);
         perPlayer.compute(GARCHOMP, (ignored, existing) -> existing == null
-                ? new TrophyEntry(GARCHOMP, 99, true, 100, 100, RaidRarityTier.LEGENDARY, 999L, 1)
+                ? new TrophyEntry(GARCHOMP, 99, true, 100, 100, RaidRarityTier.LEGENDARY, 999L, 1, 0, 0, 0)
                 : new TrophyEntry(existing.species(), existing.level(), existing.shiny(),
                         existing.ivPercent(), existing.evPercent(), existing.rarityTier(),
-                        existing.firstDefeatedAtEpochMs(), existing.timesDefeated() + 1));
+                        existing.firstDefeatedAtEpochMs(), existing.timesDefeated() + 1,
+                        existing.firstCapturedAtEpochMs(), existing.timesCaptured(),
+                        existing.bestStabilizationScorePercent()));
 
         TrophyEntry result = perPlayer.get(GARCHOMP);
         assertEquals(70, result.level(), "the first defeat's stats must survive a repeat");
         assertEquals(500L, result.firstDefeatedAtEpochMs());
         assertEquals(2, result.timesDefeated());
+    }
+
+    @Test
+    @DisplayName("a species never captured reports 0 for every capture field, not a stray default")
+    void neverCapturedHasZeroedCaptureFields() {
+        TrophyEntry never = entry(GARCHOMP, RaidRarityTier.STARTER, 1);
+
+        assertFalse(never.everCaptured());
+        assertEquals(0L, never.firstCapturedAtEpochMs());
+        assertEquals(0, never.timesCaptured());
+        assertEquals(0, never.bestStabilizationScorePercent());
+    }
+
+    @Test
+    @DisplayName("a captured trophy's capture fields survive a save/load round trip exactly")
+    void capturedTrophyRoundTrips() {
+        UUID playerId = UUID.randomUUID();
+        TrophyEntry original = captured(GARCHOMP, RaidRarityTier.MYTHICAL, 777_000L, 3, 92);
+
+        TrophyEntry result = roundTrip(Map.of(playerId, Map.of(GARCHOMP, original)))
+                .take().get(playerId).get(GARCHOMP);
+
+        assertTrue(result.everCaptured());
+        assertEquals(777_000L, result.firstCapturedAtEpochMs());
+        assertEquals(3, result.timesCaptured());
+        assertEquals(92, result.bestStabilizationScorePercent());
+    }
+
+    @Test
+    @DisplayName("recordCapture pins the first capture's timestamp and only grows the counter and best score")
+    void repeatCaptureOnlyGrowsCounterAndBestScore() {
+        // Same reasoning as repeatDefeatOnlyIncrementsCounter: recordCapture itself needs a
+        // MinecraftServer to persist against, so this drives the exact merge logic by hand instead.
+        Map<ResourceLocation, TrophyEntry> perPlayer = new java.util.HashMap<>();
+        perPlayer.compute(GARCHOMP, (ignored, existing) -> existing == null
+                ? new TrophyEntry(GARCHOMP, 70, false, 50, 40, RaidRarityTier.STARTER, 500L, 1, 1_000L, 1, 60)
+                : existing);
+        // A second, later, worse-played capture: timestamp must not move, count grows, best score
+        // must not fall to a worse run.
+        perPlayer.compute(GARCHOMP, (ignored, existing) -> existing == null
+                ? new TrophyEntry(GARCHOMP, 70, false, 50, 40, RaidRarityTier.STARTER, 500L, 1, 2_000L, 1, 30)
+                : new TrophyEntry(existing.species(), existing.level(), existing.shiny(),
+                        existing.ivPercent(), existing.evPercent(), existing.rarityTier(),
+                        existing.firstDefeatedAtEpochMs(), existing.timesDefeated(),
+                        existing.everCaptured() ? existing.firstCapturedAtEpochMs() : 2_000L,
+                        existing.timesCaptured() + 1, Math.max(existing.bestStabilizationScorePercent(), 30)));
+
+        TrophyEntry result = perPlayer.get(GARCHOMP);
+        assertEquals(1_000L, result.firstCapturedAtEpochMs(), "the first capture's timestamp must survive a repeat");
+        assertEquals(2, result.timesCaptured());
+        assertEquals(60, result.bestStabilizationScorePercent(), "a worse repeat must not lower the best score");
     }
 }
