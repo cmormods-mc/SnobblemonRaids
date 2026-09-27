@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.125-personal-boss-shop-reroll-fix'
+version = '0.8.126-progression-and-identity'
 group = 'com.cobbleraids'
 
 base {
@@ -128,7 +128,10 @@ tasks.register('addonRewardsJar', Jar) {
     //
     // 2.3.0-key-fragments: adds keys/<tier>, the one-outcome tables the reward policy points at
     // for guaranteed raid key fragments.
-    archiveVersion = '2.3.0-key-fragments'
+    //
+    // 2.4.0-held-items: adds specialty/leaf/raid_core and specialty/leaf/guardian_scale, the raid-
+    // exclusive held items' own leaf tables, referenced from specialty/<tier> for powerhouse and up.
+    archiveVersion = '2.4.0-held-items'
     archiveClassifier = ''
     from sourceSets.addonRewards.output
 }

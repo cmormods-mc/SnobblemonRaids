@@ -42,7 +42,10 @@ class RaidPlayerRecordsRoundTripTest {
                 .withCatch()
                 .withPoints(75)
                 .withPurchaseOn("cobbleraids:mega_key", 86_400L, 19_000L)
-                .withPurchaseOn("cobbleraids:lifetime_charm", 0L, 19_000L);
+                .withPurchaseOn("cobbleraids:lifetime_charm", 0L, 19_000L)
+                .withTitleUnlocked("novice_raider")
+                .withTitleUnlocked("veteran_raider")
+                .withSelectedTitle("veteran_raider");
 
         RaidPlayerRecords reloaded = roundTrip(Map.of(playerId, record));
 
@@ -55,6 +58,20 @@ class RaidPlayerRecordsRoundTripTest {
         assertEquals(record.raidsSinceMegaStone(), result.raidsSinceMegaStone());
         assertEquals(record.raidPoints(), result.raidPoints());
         assertEquals(record.purchases(), result.purchases());
+        assertEquals(record.unlockedTitles(), result.unlockedTitles());
+        assertEquals(record.selectedTitle(), result.selectedTitle());
+    }
+
+    @Test
+    @DisplayName("no selected title round-trips as absent, not the literal string \"null\"")
+    void noSelectedTitleRoundTripsAsNull() {
+        UUID playerId = UUID.randomUUID();
+        RaidPlayerRecord record = RaidPlayerRecord.EMPTY.withTitleUnlocked("novice_raider");
+
+        RaidPlayerRecord result = roundTrip(Map.of(playerId, record)).take().get(playerId);
+
+        assertEquals(java.util.Set.of("novice_raider"), result.unlockedTitles());
+        assertEquals(null, result.selectedTitle());
     }
 
     @Test

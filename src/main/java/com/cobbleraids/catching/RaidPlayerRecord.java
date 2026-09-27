@@ -4,7 +4,9 @@ import com.cobbleraids.config.RaidRarityTier;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
 
 /**
@@ -26,10 +28,12 @@ public record RaidPlayerRecord(
         int bossesCaught,
         int raidsSinceMegaStone,
         int raidPoints,
-        Map<String, RaidPurchaseTally> purchases
+        Map<String, RaidPurchaseTally> purchases,
+        Set<String> unlockedTitles,
+        String selectedTitle
 ) {
     public static final RaidPlayerRecord EMPTY =
-            new RaidPlayerRecord(0, Map.of(), Map.of(), 0.0, 0, 0, 0, Map.of());
+            new RaidPlayerRecord(0, Map.of(), Map.of(), 0.0, 0, 0, 0, Map.of(), Set.of(), null);
 
     public RaidPlayerRecord {
         // Built key-first rather than with EnumMap's copy constructor: that one throws
@@ -44,6 +48,8 @@ public record RaidPlayerRecord(
         // keeps the world save from churning on every autosave.
         purchases = Collections.unmodifiableMap(
                 new LinkedHashMap<>(purchases == null ? Map.of() : purchases));
+        unlockedTitles = Collections.unmodifiableSet(
+                new LinkedHashSet<>(unlockedTitles == null ? Set.of() : unlockedTitles));
     }
 
     public int winsIn(RaidRarityTier tier) {
@@ -71,12 +77,13 @@ public record RaidPlayerRecord(
         LinkedHashMap<ResourceLocation, Integer> species = new LinkedHashMap<>(defeatsBySpecies);
         species.merge(definitionId, 1, Integer::sum);
         return new RaidPlayerRecord(raidsWon + 1, tiers, species,
-                totalContribution + contribution, bossesCaught, raidsSinceMegaStone, raidPoints, purchases);
+                totalContribution + contribution, bossesCaught, raidsSinceMegaStone, raidPoints, purchases,
+                unlockedTitles, selectedTitle);
     }
 
     public RaidPlayerRecord withCatch() {
         return new RaidPlayerRecord(raidsWon, winsByTier, defeatsBySpecies, totalContribution,
-                bossesCaught + 1, raidsSinceMegaStone, raidPoints, purchases);
+                bossesCaught + 1, raidsSinceMegaStone, raidPoints, purchases, unlockedTitles, selectedTitle);
     }
 
     /**
@@ -90,7 +97,7 @@ public record RaidPlayerRecord(
         long updated = (long) raidPoints + delta;
         int clamped = (int) Math.max(0L, Math.min(Integer.MAX_VALUE, updated));
         return new RaidPlayerRecord(raidsWon, winsByTier, defeatsBySpecies, totalContribution,
-                bossesCaught, raidsSinceMegaStone, clamped, purchases);
+                bossesCaught, raidsSinceMegaStone, clamped, purchases, unlockedTitles, selectedTitle);
     }
 
     /** How many times a limited entry has been bought, and on which day. Never null. */
@@ -108,7 +115,7 @@ public record RaidPlayerRecord(
         LinkedHashMap<String, RaidPurchaseTally> updated = new LinkedHashMap<>(purchases);
         updated.put(entryId, purchasesOf(entryId).increment(window));
         return new RaidPlayerRecord(raidsWon, winsByTier, defeatsBySpecies, totalContribution,
-                bossesCaught, raidsSinceMegaStone, raidPoints, updated);
+                bossesCaught, raidsSinceMegaStone, raidPoints, updated, unlockedTitles, selectedTitle);
     }
 
     /**
@@ -136,6 +143,30 @@ public record RaidPlayerRecord(
         });
         return kept.size() == purchases.size() ? this
                 : new RaidPlayerRecord(raidsWon, winsByTier, defeatsBySpecies, totalContribution,
-                        bossesCaught, raidsSinceMegaStone, raidPoints, kept);
+                        bossesCaught, raidsSinceMegaStone, raidPoints, kept, unlockedTitles, selectedTitle);
+    }
+
+    /** Whether {@code titleId} has ever been unlocked, regardless of what is currently selected. */
+    public boolean hasTitle(String titleId) {
+        return unlockedTitles.contains(titleId);
+    }
+
+    /**
+     * The same record with {@code titleId} added to what has been unlocked. A no-op copy (returns
+     * {@code this}) when it was already unlocked, the same short-circuit {@link #prunePurchases}
+     * uses, since an unlock check runs on every raid win and most of those find nothing new.
+     */
+    public RaidPlayerRecord withTitleUnlocked(String titleId) {
+        if (unlockedTitles.contains(titleId)) return this;
+        LinkedHashSet<String> updated = new LinkedHashSet<>(unlockedTitles);
+        updated.add(titleId);
+        return new RaidPlayerRecord(raidsWon, winsByTier, defeatsBySpecies, totalContribution,
+                bossesCaught, raidsSinceMegaStone, raidPoints, purchases, updated, selectedTitle);
+    }
+
+    /** The same record wearing {@code titleId}, or no title at all when it is {@code null}. */
+    public RaidPlayerRecord withSelectedTitle(String titleId) {
+        return new RaidPlayerRecord(raidsWon, winsByTier, defeatsBySpecies, totalContribution,
+                bossesCaught, raidsSinceMegaStone, raidPoints, purchases, unlockedTitles, titleId);
     }
 }

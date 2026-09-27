@@ -9,11 +9,14 @@ import com.cobbleraids.config.RaidRewardPolicyManager;
 import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobbleraids.config.CobbleRaidsConfig;
 import com.cobbleraids.item.ItemGiving;
+import com.cobbleraids.item.RaidHeldItems;
 import com.cobbleraids.reward.currency.RaidCurrencyBackends;
 import com.cobbleraids.reward.points.RaidPointsStore;
 import com.cobbleraids.reward.plan.RewardPlan;
 import com.cobbleraids.reward.plan.RewardPlanResolver;
 import com.cobbleraids.renown.RenownRewards;
+import com.cobblemon.mod.common.Cobblemon;
+import com.cobblemon.mod.common.pokemon.Pokemon;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
@@ -85,14 +88,43 @@ public final class RaidRewardGrantEngine {
         int amount = pending.renowned()
                 ? RenownRewards.points(base, CobbleRaidsConfigManager.get().renown().pointsMultiplier())
                 : base;
-        if (amount <= 0) return 0;
+        int finalAmount = carryingRaidCore(player)
+                ? RenownRewards.points(amount, RAID_CORE_POINTS_MULTIPLIER) : amount;
+        if (finalAmount <= 0) return 0;
 
         int[] awarded = { 0 };
         RaidFaultBarrier.guard("reward:raid-points", () -> {
-            RaidPointsStore.award(player.getServer(), player.getUUID(), amount);
-            awarded[0] = amount;
+            RaidPointsStore.award(player.getServer(), player.getUUID(), finalAmount);
+            awarded[0] = finalAmount;
         });
         return awarded[0];
+    }
+
+    /** Raid Core's whole effect: a flat bonus on the points a claim was already going to pay. */
+    private static final double RAID_CORE_POINTS_MULTIPLIER = 1.20;
+
+    /**
+     * Whether any Pokemon in this player's party is holding a Raid Core right now, at the moment
+     * they claim their reward -- not at the moment the boss fell, the way {@link
+     * com.cobbleraids.catching.TrophyLedger}'s win-time hook works. A claim can be made well after
+     * the raid ends (see {@link PendingRewardStore}), and re-checking a snapshot of who held what
+     * mid-battle would need plumbing this engine has no other reason to carry. Guarded because
+     * scanning party storage is Cobblemon's code, not this mod's, and a bonus item must never be
+     * able to cost a player the reward itself.
+     */
+    private static boolean carryingRaidCore(ServerPlayer player) {
+        Item raidCore = RaidHeldItems.raidCore();
+        if (raidCore == null) return false;
+        boolean[] found = { false };
+        RaidFaultBarrier.guard("reward:raid-core-check", () -> {
+            for (Pokemon pokemon : Cobblemon.INSTANCE.getStorage().getParty(player)) {
+                if (pokemon.heldItem().getItem() == raidCore) {
+                    found[0] = true;
+                    return;
+                }
+            }
+        });
+        return found[0];
     }
 
     /**

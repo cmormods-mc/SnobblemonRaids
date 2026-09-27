@@ -1,6 +1,7 @@
 package com.cobbleraids.catching;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -83,6 +84,23 @@ class RaidPlayerRecordTest {
                 () -> record.winsByTier().put(RaidRarityTier.MYTHICAL, 99));
         assertThrows(UnsupportedOperationException.class,
                 () -> record.defeatsBySpecies().put(MEGANIUM, 99));
+    }
+
+    @Test
+    @DisplayName("unlocking a title is idempotent and does not disturb the current selection")
+    void titlesUnlockAndSelect() {
+        RaidPlayerRecord record = RaidPlayerRecord.EMPTY.withTitleUnlocked("novice_raider");
+
+        assertTrue(record.hasTitle("novice_raider"));
+        assertEquals(record, record.withTitleUnlocked("novice_raider"), "a repeat unlock must be a no-op");
+
+        RaidPlayerRecord wearing = record.withSelectedTitle("novice_raider");
+        assertEquals("novice_raider", wearing.selectedTitle());
+        assertTrue(wearing.hasTitle("novice_raider"), "selecting must not affect the unlocked set");
+
+        RaidPlayerRecord cleared = wearing.withSelectedTitle(null);
+        assertNull(cleared.selectedTitle());
+        assertTrue(cleared.hasTitle("novice_raider"), "clearing the selection must not un-unlock it");
     }
 
     @Test

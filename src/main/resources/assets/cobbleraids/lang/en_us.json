@@ -10,5 +10,9 @@
   "item.cobbleraids.raid_key_fragment.tooltip": "Right-click to combine %s into a key",
   "item.cobbleraids.starter_raid_key": "Starter Raid Key",
   "item.cobbleraids.starter_raid_key_fragment": "Starter Raid Key Fragment",
+  "item.cobbleraids.raid_core": "Raid Core",
+  "item.cobbleraids.raid_core.tooltip": "Held item. Boosts Raid Points earned by whoever is carrying it when a raid boss falls.",
+  "item.cobbleraids.guardian_scale": "Guardian Scale",
+  "item.cobbleraids.guardian_scale.tooltip": "Held item. Once per battle, survives a hit that would faint it with %s%% HP instead.",
   "itemGroup.cobbleraids.raid_keys": "CobbleRaids"
 }

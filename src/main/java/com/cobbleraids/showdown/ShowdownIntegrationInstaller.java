@@ -84,6 +84,10 @@ public final class ShowdownIntegrationInstaller {
         ready = false;
         copy("/assets/cobbleraids/showdown/raid-patch.js", Path.of("showdown/raid-patch.js"));
         copy("/assets/cobbleraids/showdown/mods/conditions.js", Path.of("showdown/data/mods/cobblemon/conditions.js"));
+        // Same mechanism as conditions.js above: a whole file this mod owns, dropped into Showdown's
+        // own "cobblemon" format-mod folder so it merges into the item dex for every Cobblemon
+        // battle -- no regex-matching of Cobblemon's own data/items.js needed. See RaidHeldItems.java.
+        copy("/assets/cobbleraids/showdown/mods/items.js", Path.of("showdown/data/mods/cobblemon/items.js"));
         patchPlayerCount(Path.of("showdown/sim/dex-formats.js"));
         patchIndexBootstrap(Path.of("showdown/index.js"));
         patchOutputPump(Path.of("showdown/index.js"));

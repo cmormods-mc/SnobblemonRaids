@@ -8,6 +8,7 @@ import com.cobbleraids.fault.RaidThreadGuard;
 import com.cobbleraids.catching.BossSnapshotService;
 import com.cobbleraids.catching.RaidCatchService;
 import com.cobbleraids.catching.RaidPlayerRecords;
+import com.cobbleraids.catching.TrophyLedger;
 import com.cobbleraids.config.CobbleRaidsConfig;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.config.RaidDefinition;
@@ -17,6 +18,7 @@ import com.cobbleraids.reward.ContributionMath;
 import com.cobbleraids.raid.RaidSession;
 import com.cobbleraids.spawn.RaidBossEntityMarker;
 import com.cobbleraids.spawn.RaidSpawnScheduler;
+import com.cobbleraids.title.TitleService;
 import com.cobblemon.mod.common.api.battles.model.PokemonBattle;
 import com.cobblemon.mod.common.api.battles.model.actor.BattleActor;
 import com.cobblemon.mod.common.net.messages.client.battle.BattleEndPacket;
@@ -29,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -266,6 +269,28 @@ public final class RaidLifecycleCoordinator {
             Map<UUID, Double> earned = new LinkedHashMap<>();
             for (UUID playerId : victors) earned.put(playerId, contributions.getOrDefault(playerId, 0.0));
             RaidPlayerRecords.recordWins(server, definition.rarityTier(), definition.id(), earned);
+
+            // A win can cross a RAIDS_WON or TIER_WINS threshold, so titles are checked right after
+            // the record they read moves -- the same reasoning RaidCatchService checks them right
+            // after recordCatch.
+            for (UUID playerId : victors) {
+                RaidFaultBarrier.guard("title-unlock:win", () -> TitleService.checkUnlocks(server, playerId));
+            }
+
+            // Same history flag as the win record above: the trophy room is raid history, not a
+            // personal-shop or catching feature, so it must not depend on either of those being on.
+            if (bossPokemon != null) {
+                RaidFaultBarrier.guard("trophy-ledger", () -> {
+                    ResourceLocation species = bossPokemon.getSpecies().getResourceIdentifier();
+                    int ivPercent = BossSnapshotService.percentOf(bossPokemon.getIvs().total(), 186);
+                    int evPercent = BossSnapshotService.percentOf(bossPokemon.getEvs().total(), 510);
+                    long now = System.currentTimeMillis();
+                    for (UUID playerId : victors) {
+                        TrophyLedger.recordDefeat(server, playerId, species, bossPokemon.getLevel(),
+                                bossPokemon.getShiny(), ivPercent, evPercent, definition.rarityTier(), now);
+                    }
+                });
+            }
         }
 
         if (!catching) return;

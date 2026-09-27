@@ -44,7 +44,9 @@ Weights are hundredths of a percent; each pool totals 10000. The *matched* colum
 | golden auspicious ball | -- | -- | -- | -- | 0.02% | 0.02% | 0.05% | 0.05% |
 | rare candy | 1.00% | 1.00% | 2.00% | 2.00% | 3.00% | 3.00% | 4.00% | 4.00% |
 | large exp candy | -- | -- | 5.00% | 5.00% | 8.00% | 8.00% | 10.00% | 10.00% |
-| base fallback | 71.55% | 81.55% | 74.20% | 84.20% | 64.24% | 74.24% | 55.70% | 65.70% |
+| raid core | -- | -- | 0.08% | 0.08% | 0.12% | 0.12% | 0.15% | 0.15% |
+| guardian scale | -- | -- | 0.04% | 0.04% | 0.06% | 0.06% | 0.08% | 0.08% |
+| base fallback | 71.55% | 81.55% | 74.08% | 84.08% | 64.06% | 74.06% | 55.47% | 65.47% |
 
 ## Mega Stones
 
@@ -155,7 +157,7 @@ Base is reached from a general selection at its category weight and from the spe
 | starter | 2.56 of 4 | 64% | -- |
 | powerhouse | 2.43 of 4 | 61% | -- |
 | legendary | 2.27 of 4 | 57% | -- |
-| mythical | 2.07 of 4 | 52% | 0.413% (1 in 242) |
+| mythical | 2.06 of 4 | 52% | 0.413% (1 in 242) |
 
 ## Resolved against the pack
 
