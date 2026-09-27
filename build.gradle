@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.126-progression-and-identity'
+version = '0.8.129-trophy-gallery-art'
 group = 'com.cobbleraids'
 
 base {
