@@ -58,7 +58,7 @@ separately.
 - **Cost** — `battle_carryover` copies health and PP back to the real party (both on
   by default; `status` off). Faints carry with health and recover on Cobblemon's own
   faint timer. Applied on wins and losses alike, and not waived by disconnecting.
-- **Raid Capture Protocol** — off by default (`catching.enabled`). Each victor personally
+- **Raid Capture Protocol** — on by default (`catching.enabled`). Each victor personally
   chooses, per raid: attempt a short timing minigame (three stabilization pulses, then a
   throw) for a chance at an ordinarily-generated Pokémon of the boss's species, or claim
   that raid's Raid Points outright. Failing, declining, or letting the choice window lapse
@@ -68,8 +68,12 @@ separately.
   (the floor for doing nothing in the minigame), `stabilization_cap`/`throw_cap` (the most
   each half of the minigame can add), and its own pulse/throw travel durations and zone
   widths — a higher tier can be tuned with a lower ceiling *and* a tighter, faster-moving
-  target. Leaving every tier's chance and caps at `0.0` (the shipped default) skips the
-  whole mechanic. `choice_window_seconds`/`sequence_timeout_seconds` bound how long a
+  target. The shipped defaults are 8/6/4/2% base chance and +2/+2/+1.5/+1% for each of
+  stabilization and throw (starter through mythical), for ceilings of ~12/10/7/4% on a
+  flawless attempt — sized against the RP a player forgoes by attempting instead of
+  claiming; a server that reprices RP should retune these. Leaving every tier's chance and
+  caps at `0.0` skips the whole mechanic. `choice_window_seconds`/`sequence_timeout_seconds`
+  bound how long a
   choice or an in-progress attempt can sit unanswered before it resolves on its own (as a
   decline); `delivery_retry_interval_seconds` governs how often a caught Pokémon that
   couldn't be delivered (party and PC both full) retries. Support can inspect or clear a
