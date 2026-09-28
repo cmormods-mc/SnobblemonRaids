@@ -5,6 +5,7 @@ import com.cobbleraids.config.CobbleRaidsConfig;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.fault.RaidFaultBarrier;
+import com.cobbleraids.network.CaptureDetailsPayload;
 import com.cobbleraids.network.CaptureOfferPayload;
 import com.cobbleraids.network.CapturePulseResultPayload;
 import com.cobbleraids.network.CaptureResultPayload;
@@ -192,6 +193,13 @@ public final class RaidCaptureSessionService {
 
             if (ServerPlayNetworking.canSend(player, CaptureOfferPayload.TYPE)) {
                 CobbleRaidsConfig.CaptureTierConfig tierConfig = config.tierConfigFor(claimed.tier());
+                // Optional display metadata only -- the offer/input/result protocol below is unchanged
+                // whether or not this is sent, or whether the client's build even recognises it.
+                if (ServerPlayNetworking.canSend(player, CaptureDetailsPayload.TYPE)) {
+                    ServerPlayNetworking.send(player, new CaptureDetailsPayload(raidId, claimed.species(),
+                            tierConfig.baseChance(), tierConfig.stabilizationCap(), tierConfig.throwCap(),
+                            config.sequenceTimeoutSeconds()));
+                }
                 ServerPlayNetworking.send(player, new CaptureOfferPayload(raidId, claimed.definitionId(),
                         claimed.tier().serializedName(), speciesDisplayName(claimed.species()), claimed.shiny(),
                         computedRaidPoints, config.choiceWindowSeconds(), tierConfig.pulseTravelDurationMs(),

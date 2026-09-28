@@ -1,6 +1,7 @@
 package com.cobbleraids.client;
 
 import com.cobbleraids.RaidLog;
+import com.cobbleraids.client.capture.CaptureDetailsCache;
 import com.cobbleraids.client.capture.CaptureMinigameScreen;
 import com.cobbleraids.client.capture.CaptureOfferScreen;
 import com.cobbleraids.client.renown.RenownBoonClientCache;
@@ -8,6 +9,7 @@ import com.cobbleraids.client.reveal.RaidRewardRevealScreen;
 import com.cobbleraids.client.shop.RaidShopScreen;
 import com.cobbleraids.client.shop.TrophyRoomScreen;
 import com.cobbleraids.fault.RaidFaultBarrier;
+import com.cobbleraids.network.CaptureDetailsPayload;
 import com.cobbleraids.network.CaptureOfferPayload;
 import com.cobbleraids.network.CapturePulseResultPayload;
 import com.cobbleraids.network.CaptureResultPayload;
@@ -18,6 +20,7 @@ import com.cobbleraids.network.ShopPagePayload;
 import com.cobbleraids.network.TrophyRoomPagePayload;
 import com.cobbleraids.renown.RenownBoon;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 
 /** The only class in CobbleRaids that touches ClientPlayNetworking -- everything else stays common code. */
@@ -40,6 +43,9 @@ public final class CobbleRaidsClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(TrophyRoomPagePayload.TYPE, (payload, context) ->
                 context.client().execute(() -> RaidFaultBarrier.guard("trophy-room:page",
                         () -> TrophyRoomScreen.show(payload))));
+        ClientPlayNetworking.registerGlobalReceiver(CaptureDetailsPayload.TYPE, (payload, context) ->
+                context.client().execute(() -> RaidFaultBarrier.guard("capture-screen:details",
+                        () -> CaptureDetailsCache.remember(payload))));
         ClientPlayNetworking.registerGlobalReceiver(CaptureOfferPayload.TYPE, (payload, context) ->
                 context.client().execute(() -> RaidFaultBarrier.guard("capture-screen:offer",
                         () -> CaptureOfferScreen.openFor(payload))));
@@ -57,5 +63,7 @@ public final class CobbleRaidsClient implements ClientModInitializer {
                             payload.pokemonUuid(), payload.boonEncoded(), decoded.isPresent());
                     decoded.ifPresent(boon -> RenownBoonClientCache.remember(payload.pokemonUuid(), boon));
                 })));
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
+                RaidFaultBarrier.guard("capture-screen:disconnect-cleanup", CaptureDetailsCache::clear));
     }
 }

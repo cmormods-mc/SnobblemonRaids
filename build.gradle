@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.134-capture-rates-enabled'
+version = '0.8.135-capture-art'
 group = 'com.cobbleraids'
 
 base {
