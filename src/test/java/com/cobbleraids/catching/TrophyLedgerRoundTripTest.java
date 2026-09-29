@@ -25,13 +25,19 @@ class TrophyLedgerRoundTripTest {
     private static final ResourceLocation TYRANITAR = ResourceLocation.parse("cobblemon:tyranitar");
 
     private static TrophyEntry entry(ResourceLocation species, RaidRarityTier tier, int timesDefeated) {
-        return new TrophyEntry(species, 75, true, 84, 62, tier, 1_000_000L, timesDefeated, 0, 0, 0);
+        return new TrophyEntry(species, 75, true, 84, 62, tier, 1_000_000L, timesDefeated, 0, 0, 0, 0, "");
     }
 
     private static TrophyEntry captured(ResourceLocation species, RaidRarityTier tier,
                                         long firstCapturedAtEpochMs, int timesCaptured, int bestStabilizationPct) {
         return new TrophyEntry(species, 75, true, 84, 62, tier, 1_000_000L, 1,
-                firstCapturedAtEpochMs, timesCaptured, bestStabilizationPct);
+                firstCapturedAtEpochMs, timesCaptured, bestStabilizationPct, 0, "");
+    }
+
+    private static TrophyEntry renowned(ResourceLocation species, RaidRarityTier tier,
+                                        int timesRenownDefeated, String firstRenownTitle) {
+        return new TrophyEntry(species, 75, true, 84, 62, tier, 1_000_000L, 1, 0, 0, 0,
+                timesRenownDefeated, firstRenownTitle);
     }
 
     private static TrophyLedger roundTrip(Map<UUID, Map<ResourceLocation, TrophyEntry>> records) {
@@ -118,20 +124,46 @@ class TrophyLedgerRoundTripTest {
         // drives directly, so this proves the rule (pin first stats, grow the counter) without it.
         Map<ResourceLocation, TrophyEntry> perPlayer = new java.util.HashMap<>();
         perPlayer.compute(GARCHOMP, (ignored, existing) -> existing == null
-                ? new TrophyEntry(GARCHOMP, 70, false, 50, 40, RaidRarityTier.STARTER, 500L, 1, 0, 0, 0)
+                ? new TrophyEntry(GARCHOMP, 70, false, 50, 40, RaidRarityTier.STARTER, 500L, 1, 0, 0, 0, 0, "")
                 : existing);
         perPlayer.compute(GARCHOMP, (ignored, existing) -> existing == null
-                ? new TrophyEntry(GARCHOMP, 99, true, 100, 100, RaidRarityTier.LEGENDARY, 999L, 1, 0, 0, 0)
+                ? new TrophyEntry(GARCHOMP, 99, true, 100, 100, RaidRarityTier.LEGENDARY, 999L, 1, 0, 0, 0, 0, "")
                 : new TrophyEntry(existing.species(), existing.level(), existing.shiny(),
                         existing.ivPercent(), existing.evPercent(), existing.rarityTier(),
                         existing.firstDefeatedAtEpochMs(), existing.timesDefeated() + 1,
                         existing.firstCapturedAtEpochMs(), existing.timesCaptured(),
-                        existing.bestStabilizationScorePercent()));
+                        existing.bestStabilizationScorePercent(),
+                        existing.timesRenownDefeated(), existing.firstRenownTitle()));
 
         TrophyEntry result = perPlayer.get(GARCHOMP);
         assertEquals(70, result.level(), "the first defeat's stats must survive a repeat");
         assertEquals(500L, result.firstDefeatedAtEpochMs());
         assertEquals(2, result.timesDefeated());
+    }
+
+    @Test
+    @DisplayName("the first renowned defeat pins the title; a later, differently titled one only grows the counter")
+    void repeatRenownedDefeatPinsFirstTitleOnly() {
+        Map<ResourceLocation, TrophyEntry> perPlayer = new java.util.HashMap<>();
+        String[] titles = {"", "Kaelen, the Relentless", "Doraan, the Ancient"};
+        for (String title : titles) {
+            perPlayer.compute(GARCHOMP, (ignored, existing) -> existing == null
+                    ? new TrophyEntry(GARCHOMP, 70, false, 50, 40, RaidRarityTier.STARTER, 500L, 1, 0, 0, 0,
+                            title.isEmpty() ? 0 : 1, title)
+                    : new TrophyEntry(existing.species(), existing.level(), existing.shiny(),
+                            existing.ivPercent(), existing.evPercent(), existing.rarityTier(),
+                            existing.firstDefeatedAtEpochMs(), existing.timesDefeated() + 1,
+                            existing.firstCapturedAtEpochMs(), existing.timesCaptured(),
+                            existing.bestStabilizationScorePercent(),
+                            existing.timesRenownDefeated() + (title.isEmpty() ? 0 : 1),
+                            existing.firstRenownTitle().isEmpty() ? title : existing.firstRenownTitle()));
+        }
+
+        TrophyEntry result = perPlayer.get(GARCHOMP);
+        assertEquals("Kaelen, the Relentless", result.firstRenownTitle(),
+                "the first renowned title seen must stay pinned even after a second, different one");
+        assertEquals(2, result.timesRenownDefeated(), "both renowned defeats must count, the non-renowned one must not");
+        assertEquals(3, result.timesDefeated());
     }
 
     @Test
@@ -167,21 +199,65 @@ class TrophyLedgerRoundTripTest {
         // MinecraftServer to persist against, so this drives the exact merge logic by hand instead.
         Map<ResourceLocation, TrophyEntry> perPlayer = new java.util.HashMap<>();
         perPlayer.compute(GARCHOMP, (ignored, existing) -> existing == null
-                ? new TrophyEntry(GARCHOMP, 70, false, 50, 40, RaidRarityTier.STARTER, 500L, 1, 1_000L, 1, 60)
+                ? new TrophyEntry(GARCHOMP, 70, false, 50, 40, RaidRarityTier.STARTER, 500L, 1, 1_000L, 1, 60, 0, "")
                 : existing);
         // A second, later, worse-played capture: timestamp must not move, count grows, best score
         // must not fall to a worse run.
         perPlayer.compute(GARCHOMP, (ignored, existing) -> existing == null
-                ? new TrophyEntry(GARCHOMP, 70, false, 50, 40, RaidRarityTier.STARTER, 500L, 1, 2_000L, 1, 30)
+                ? new TrophyEntry(GARCHOMP, 70, false, 50, 40, RaidRarityTier.STARTER, 500L, 1, 2_000L, 1, 30, 0, "")
                 : new TrophyEntry(existing.species(), existing.level(), existing.shiny(),
                         existing.ivPercent(), existing.evPercent(), existing.rarityTier(),
                         existing.firstDefeatedAtEpochMs(), existing.timesDefeated(),
                         existing.everCaptured() ? existing.firstCapturedAtEpochMs() : 2_000L,
-                        existing.timesCaptured() + 1, Math.max(existing.bestStabilizationScorePercent(), 30)));
+                        existing.timesCaptured() + 1, Math.max(existing.bestStabilizationScorePercent(), 30),
+                        existing.timesRenownDefeated(), existing.firstRenownTitle()));
 
         TrophyEntry result = perPlayer.get(GARCHOMP);
         assertEquals(1_000L, result.firstCapturedAtEpochMs(), "the first capture's timestamp must survive a repeat");
         assertEquals(2, result.timesCaptured());
         assertEquals(60, result.bestStabilizationScorePercent(), "a worse repeat must not lower the best score");
+    }
+
+    @Test
+    @DisplayName("a species never fought renowned reports 0/empty for both renown fields, not a stray default")
+    void neverRenownedHasZeroedRenownFields() {
+        TrophyEntry never = entry(GARCHOMP, RaidRarityTier.STARTER, 1);
+
+        assertFalse(never.everRenowned());
+        assertEquals(0, never.timesRenownDefeated());
+        assertEquals("", never.firstRenownTitle());
+    }
+
+    @Test
+    @DisplayName("a renowned trophy's fields survive a save/load round trip exactly")
+    void renownedTrophyRoundTrips() {
+        UUID playerId = UUID.randomUUID();
+        TrophyEntry original = renowned(GARCHOMP, RaidRarityTier.LEGENDARY, 4, "Kaelen, the Relentless");
+
+        TrophyEntry result = roundTrip(Map.of(playerId, Map.of(GARCHOMP, original)))
+                .take().get(playerId).get(GARCHOMP);
+
+        assertTrue(result.everRenowned());
+        assertEquals(4, result.timesRenownDefeated());
+        assertEquals("Kaelen, the Relentless", result.firstRenownTitle());
+    }
+
+    @Test
+    @DisplayName("NBT saved before renown existed loads as 0/empty, not a failure")
+    void missingRenownKeysLoadAsZeroAndEmpty() {
+        UUID playerId = UUID.randomUUID();
+        TrophyLedger store = new TrophyLedger();
+        store.update(Map.of(playerId, Map.of(GARCHOMP, entry(GARCHOMP, RaidRarityTier.STARTER, 1))));
+        CompoundTag tag = store.save(new CompoundTag(), null);
+        CompoundTag row = tag.getList("players", Tag.TAG_COMPOUND).getCompound(0)
+                .getList("species", Tag.TAG_COMPOUND).getCompound(0);
+        row.remove("times_renown_defeated");
+        row.remove("first_renown_title");
+
+        TrophyEntry result = TrophyLedger.load(tag, null).take().get(playerId).get(GARCHOMP);
+
+        assertFalse(result.everRenowned());
+        assertEquals(0, result.timesRenownDefeated());
+        assertEquals("", result.firstRenownTitle());
     }
 }

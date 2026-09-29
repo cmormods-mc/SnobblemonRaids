@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.135-capture-art'
+version = '0.8.136-renown-legends'
 group = 'com.cobbleraids'
 
 base {

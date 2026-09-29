@@ -15,6 +15,10 @@ import net.minecraft.resources.ResourceLocation;
  * stabilization quality (0..100) ever achieved capturing this species; it exists for a future
  * "Perfect Protocol" cosmetic, not read by anything yet. A defeat and a capture of the same species
  * pin their stats independently -- capturing does not touch the defeat fields above, and vice versa.
+ *
+ * <p>{@code firstRenownTitle} is the first renowned title ever beaten of this species, empty if none
+ * -- pinned the same way {@code firstCapturedAtEpochMs} is, even if a later renowned repeat rolls a
+ * different title. {@code timesRenownDefeated} counts every renowned defeat, pinned title or not.
  */
 public record TrophyEntry(
         ResourceLocation species,
@@ -27,10 +31,21 @@ public record TrophyEntry(
         int timesDefeated,
         long firstCapturedAtEpochMs,
         int timesCaptured,
-        int bestStabilizationScorePercent
+        int bestStabilizationScorePercent,
+        int timesRenownDefeated,
+        String firstRenownTitle
 ) {
+    public TrophyEntry {
+        firstRenownTitle = firstRenownTitle == null ? "" : firstRenownTitle;
+    }
+
     /** True once this species has been caught at least once through the Raid Capture Protocol. */
     public boolean everCaptured() {
         return firstCapturedAtEpochMs > 0;
+    }
+
+    /** True once this species has been defeated renowned at least once. */
+    public boolean everRenowned() {
+        return !firstRenownTitle.isEmpty();
     }
 }

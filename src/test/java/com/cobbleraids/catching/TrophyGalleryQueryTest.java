@@ -19,7 +19,7 @@ class TrophyGalleryQueryTest {
     private static TrophyEntry entry(String species, boolean shiny, int ivPercent, long firstDefeatedAtEpochMs,
                                      RaidRarityTier tier) {
         return new TrophyEntry(ResourceLocation.parse("cobblemon:" + species), 100, shiny, ivPercent, 50,
-                tier, firstDefeatedAtEpochMs, 1, 0, 0, 0);
+                tier, firstDefeatedAtEpochMs, 1, 0, 0, 0, 0, "");
     }
 
     private static final List<TrophyEntry> ROSTER = List.of(
