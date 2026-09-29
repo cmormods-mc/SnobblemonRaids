@@ -25,6 +25,8 @@ public final class RaidRewardPayloads {
         PayloadTypeRegistry.playS2C().register(RenownBoonSyncPayload.TYPE, RenownBoonSyncPayload.STREAM_CODEC);
         PayloadTypeRegistry.playS2C().register(TrophyRoomPagePayload.TYPE, TrophyRoomPagePayload.STREAM_CODEC);
         PayloadTypeRegistry.playC2S().register(TrophyRoomActionPayload.TYPE, TrophyRoomActionPayload.STREAM_CODEC);
+        PayloadTypeRegistry.playS2C().register(LegendPagePayload.TYPE, LegendPagePayload.STREAM_CODEC);
+        PayloadTypeRegistry.playC2S().register(LegendActionPayload.TYPE, LegendActionPayload.STREAM_CODEC);
         PayloadTypeRegistry.playS2C().register(CaptureOfferPayload.TYPE, CaptureOfferPayload.STREAM_CODEC);
         PayloadTypeRegistry.playS2C().register(CaptureDetailsPayload.TYPE, CaptureDetailsPayload.STREAM_CODEC);
         PayloadTypeRegistry.playS2C().register(CapturePulseResultPayload.TYPE, CapturePulseResultPayload.STREAM_CODEC);

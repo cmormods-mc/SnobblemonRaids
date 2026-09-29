@@ -47,19 +47,27 @@ public final class TrophyLedger extends SavedData {
      * Records a defeat of {@code species}. The first sighting creates the entry and pins its stats;
      * every later one only increments {@link TrophyEntry#timesDefeated}, leaving the pinned stats
      * alone -- a trophy remembers the fight that earned it, not the most recent repeat.
+     *
+     * <p>{@code renownTitle} is empty for an ordinary defeat. The first renowned defeat of this
+     * species pins {@link TrophyEntry#firstRenownTitle}; a later renowned repeat under a different
+     * title still grows {@link TrophyEntry#timesRenownDefeated} but does not overwrite the pin.
      */
     public static void recordDefeat(MinecraftServer server, UUID playerId, ResourceLocation species,
                                     int level, boolean shiny, int ivPercent, int evPercent,
-                                    RaidRarityTier tier, long timestampEpochMs) {
+                                    RaidRarityTier tier, long timestampEpochMs, String renownTitle) {
+        String title = renownTitle == null ? "" : renownTitle;
         Map<ResourceLocation, TrophyEntry> perPlayer =
                 LIVE.computeIfAbsent(playerId, ignored -> new ConcurrentHashMap<>());
         perPlayer.compute(species, (ignored, existing) -> existing == null
-                ? new TrophyEntry(species, level, shiny, ivPercent, evPercent, tier, timestampEpochMs, 1, 0, 0, 0)
+                ? new TrophyEntry(species, level, shiny, ivPercent, evPercent, tier, timestampEpochMs, 1, 0, 0, 0,
+                        title.isEmpty() ? 0 : 1, title)
                 : new TrophyEntry(existing.species(), existing.level(), existing.shiny(),
                         existing.ivPercent(), existing.evPercent(), existing.rarityTier(),
                         existing.firstDefeatedAtEpochMs(), existing.timesDefeated() + 1,
                         existing.firstCapturedAtEpochMs(), existing.timesCaptured(),
-                        existing.bestStabilizationScorePercent()));
+                        existing.bestStabilizationScorePercent(),
+                        existing.timesRenownDefeated() + (title.isEmpty() ? 0 : 1),
+                        existing.firstRenownTitle().isEmpty() ? title : existing.firstRenownTitle()));
         persist(server);
     }
 
@@ -79,13 +87,14 @@ public final class TrophyLedger extends SavedData {
                 LIVE.computeIfAbsent(playerId, ignored -> new ConcurrentHashMap<>());
         perPlayer.compute(species, (ignored, existing) -> existing == null
                 ? new TrophyEntry(species, level, shiny, ivPercent, evPercent, tier, timestampEpochMs, 1,
-                        timestampEpochMs, 1, stabilizationScorePercent)
+                        timestampEpochMs, 1, stabilizationScorePercent, 0, "")
                 : new TrophyEntry(existing.species(), existing.level(), existing.shiny(),
                         existing.ivPercent(), existing.evPercent(), existing.rarityTier(),
                         existing.firstDefeatedAtEpochMs(), existing.timesDefeated(),
                         existing.everCaptured() ? existing.firstCapturedAtEpochMs() : timestampEpochMs,
                         existing.timesCaptured() + 1,
-                        Math.max(existing.bestStabilizationScorePercent(), stabilizationScorePercent)));
+                        Math.max(existing.bestStabilizationScorePercent(), stabilizationScorePercent),
+                        existing.timesRenownDefeated(), existing.firstRenownTitle()));
         persist(server);
     }
 
@@ -157,12 +166,15 @@ public final class TrophyLedger extends SavedData {
                 }
                 // Absent on every trophy saved before capturing existed, which reads as 0/0/0 -- "never
                 // captured", exactly what TrophyEntry.everCaptured() expects for a real epoch millisecond.
+                // Absent on every trophy saved before renown existed, which reads as 0/"" -- "never
+                // renowned", exactly what TrophyEntry.everRenowned() expects.
                 perPlayer.put(species, new TrophyEntry(
                         species, row.getInt("level"), row.getBoolean("shiny"),
                         row.getInt("iv_pct"), row.getInt("ev_pct"), tier,
                         row.getLong("first_defeated_at"), Math.max(1, row.getInt("times_defeated")),
                         row.getLong("first_captured_at"), row.getInt("times_captured"),
-                        row.getInt("best_stabilization_pct")));
+                        row.getInt("best_stabilization_pct"),
+                        row.getInt("times_renown_defeated"), row.getString("first_renown_title")));
             }
             if (!perPlayer.isEmpty()) store.loaded.put(playerId, perPlayer);
         }
@@ -192,6 +204,8 @@ public final class TrophyLedger extends SavedData {
                     row.putInt("times_captured", trophy.timesCaptured());
                     row.putInt("best_stabilization_pct", trophy.bestStabilizationScorePercent());
                 }
+                row.putInt("times_renown_defeated", trophy.timesRenownDefeated());
+                if (trophy.everRenowned()) row.putString("first_renown_title", trophy.firstRenownTitle());
                 speciesList.add(row);
             }
             playerTag.put("species", speciesList);

@@ -6,6 +6,7 @@ import com.cobbleraids.client.capture.CaptureMinigameScreen;
 import com.cobbleraids.client.capture.CaptureOfferScreen;
 import com.cobbleraids.client.renown.RenownBoonClientCache;
 import com.cobbleraids.client.reveal.RaidRewardRevealScreen;
+import com.cobbleraids.client.shop.LegendRoomScreen;
 import com.cobbleraids.client.shop.RaidShopScreen;
 import com.cobbleraids.client.shop.TrophyRoomScreen;
 import com.cobbleraids.fault.RaidFaultBarrier;
@@ -13,6 +14,7 @@ import com.cobbleraids.network.CaptureDetailsPayload;
 import com.cobbleraids.network.CaptureOfferPayload;
 import com.cobbleraids.network.CapturePulseResultPayload;
 import com.cobbleraids.network.CaptureResultPayload;
+import com.cobbleraids.network.LegendPagePayload;
 import com.cobbleraids.network.PendingRewardRevealPayload;
 import com.cobbleraids.network.RenownBoonSyncPayload;
 import com.cobbleraids.network.RewardResultPayload;
@@ -43,6 +45,9 @@ public final class CobbleRaidsClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(TrophyRoomPagePayload.TYPE, (payload, context) ->
                 context.client().execute(() -> RaidFaultBarrier.guard("trophy-room:page",
                         () -> TrophyRoomScreen.show(payload))));
+        ClientPlayNetworking.registerGlobalReceiver(LegendPagePayload.TYPE, (payload, context) ->
+                context.client().execute(() -> RaidFaultBarrier.guard("legend-room:page",
+                        () -> LegendRoomScreen.show(payload))));
         ClientPlayNetworking.registerGlobalReceiver(CaptureDetailsPayload.TYPE, (payload, context) ->
                 context.client().execute(() -> RaidFaultBarrier.guard("capture-screen:details",
                         () -> CaptureDetailsCache.remember(payload))));

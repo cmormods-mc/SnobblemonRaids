@@ -6,6 +6,9 @@ import com.cobbleraids.encounter.EncounterService;
 import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobbleraids.fault.RaidThreadGuard;
 import com.cobbleraids.catching.BossSnapshotService;
+import com.cobbleraids.catching.HallOfLegends;
+import com.cobbleraids.catching.HallOfLegendsAnnouncementService;
+import com.cobbleraids.catching.LegendEntry;
 import com.cobbleraids.catching.RaidCaptureSessionService;
 import com.cobbleraids.catching.RaidPlayerRecords;
 import com.cobbleraids.catching.TrophyLedger;
@@ -14,6 +17,7 @@ import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.config.RaidDefinitionRegistry;
 import com.cobbleraids.raid.RaidRegistry;
+import com.cobbleraids.renown.RenownBoon;
 import com.cobbleraids.reward.ContributionMath;
 import com.cobbleraids.raid.RaidSession;
 import com.cobbleraids.spawn.RaidBossEntityMarker;
@@ -23,7 +27,9 @@ import com.cobblemon.mod.common.api.battles.model.PokemonBattle;
 import com.cobblemon.mod.common.api.battles.model.actor.BattleActor;
 import com.cobblemon.mod.common.net.messages.client.battle.BattleEndPacket;
 import com.cobblemon.mod.common.pokemon.Pokemon;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -286,9 +292,32 @@ public final class RaidLifecycleCoordinator {
                     long now = System.currentTimeMillis();
                     for (UUID playerId : victors) {
                         TrophyLedger.recordDefeat(server, playerId, species, bossPokemon.getLevel(),
-                                bossPokemon.getShiny(), ivPercent, evPercent, definition.rarityTier(), now);
+                                bossPokemon.getShiny(), ivPercent, evPercent, definition.rarityTier(), now,
+                                raid.getRenownTitle());
                     }
                 });
+
+                // Same guard, same history flag, but its own fault barrier: a failure recording a
+                // server-wide first must not take the per-player trophy write above down with it.
+                if (!raid.getRenownTitle().isEmpty()) {
+                    RaidFaultBarrier.guard("hall-of-legends", () -> {
+                        ResourceLocation species = bossPokemon.getSpecies().getResourceIdentifier();
+                        RenownBoon boon = RenownBoon.decode(raid.getRenownBoon())
+                                .orElse(new RenownBoon(RenownBoon.Kind.NONE, null));
+                        List<UUID> victorIds = new ArrayList<>(victors.size());
+                        List<String> victorNames = new ArrayList<>(victors.size());
+                        for (UUID playerId : victors) {
+                            ServerPlayer online = server.getPlayerList().getPlayer(playerId);
+                            victorIds.add(playerId);
+                            victorNames.add(online != null ? online.getGameProfile().getName() : playerId.toString());
+                        }
+                        LegendEntry candidate = new LegendEntry(raid.getRenownTitle(), species,
+                                definition.rarityTier(), boon, System.currentTimeMillis(), victorIds, victorNames);
+                        if (HallOfLegends.recordFirstDefeat(server, candidate)) {
+                            HallOfLegendsAnnouncementService.announce(server, candidate);
+                        }
+                    });
+                }
             }
         }
 

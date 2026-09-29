@@ -2,12 +2,15 @@ package com.cobbleraids;
 
 import com.cobbleraids.fault.RaidThreadGuard;
 import com.cobbleraids.catching.DefeatedBossSnapshots;
+import com.cobbleraids.catching.HallOfLegends;
+import com.cobbleraids.catching.LegendRoomGateway;
 import com.cobbleraids.catching.RaidCaptureSessionService;
 import com.cobbleraids.catching.RaidPlayerRecords;
 import com.cobbleraids.catching.TrophyLedger;
 import com.cobbleraids.catching.TrophyRoomGateway;
 import com.cobbleraids.command.RaidAdminCommand;
 import com.cobbleraids.command.RaidLeaveCommand;
+import com.cobbleraids.command.RaidLegendsCommand;
 import com.cobbleraids.command.RaidNotifyCommand;
 import com.cobbleraids.command.RaidPointsCommand;
 import com.cobbleraids.command.RaidShopCommand;
@@ -33,6 +36,7 @@ import com.cobbleraids.network.CaptureThrowInputPayload;
 import com.cobbleraids.network.RaidRewardPayloads;
 import com.cobbleraids.network.RewardChoicePayload;
 import com.cobbleraids.network.ShopActionPayload;
+import com.cobbleraids.network.LegendActionPayload;
 import com.cobbleraids.network.TrophyRoomActionPayload;
 import com.cobbleraids.placeholder.RaidPlaceholders;
 import com.cobbleraids.presentation.RaidBossGlowService;
@@ -92,6 +96,10 @@ public final class CobbleRaids implements ModInitializer {
                 context.server().execute(() -> RaidFaultBarrier.guard("trophy-room-action-packet",
                         () -> TrophyRoomGateway.handle(context.player(), payload))));
 
+        ServerPlayNetworking.registerGlobalReceiver(LegendActionPayload.TYPE, (payload, context) ->
+                context.server().execute(() -> RaidFaultBarrier.guard("legend-room-action-packet",
+                        () -> LegendRoomGateway.handle(context.player(), payload))));
+
         ServerPlayNetworking.registerGlobalReceiver(CaptureChoicePayload.TYPE, (payload, context) ->
                 context.server().execute(() -> RaidFaultBarrier.guard("capture-choice-packet",
                         () -> RaidCaptureSessionService.handleChoice(context.player(), payload.raidId(), payload.attempt()))));
@@ -116,6 +124,7 @@ public final class CobbleRaids implements ModInitializer {
         RaidPointsCommand.register();
         RaidShopCommand.register();
         RaidTrophyCommand.register();
+        RaidLegendsCommand.register();
         RaidTitleCommand.register();
         RaidAdminCommand.register();
         RaidLeaveCommand.register();
@@ -182,6 +191,9 @@ public final class CobbleRaids implements ModInitializer {
         // the other two rather than lazily on first open.
         ServerLifecycleEvents.SERVER_STARTED.register(server ->
                 RaidFaultBarrier.guard("startup:trophy-ledger", () -> TrophyLedger.onServerStarted(server)));
+        // The server-wide sibling of the trophy ledger just above: same substrate, same restore point.
+        ServerLifecycleEvents.SERVER_STARTED.register(server ->
+                RaidFaultBarrier.guard("startup:hall-of-legends", () -> HallOfLegends.onServerStarted(server)));
         // Presents a reward that outlived a disconnect or restart. Without this the queue is
         // restored but nothing ever offers it, so the reveal screen is only ever seen by players
         // who happened to be online when the raid was won.
@@ -243,6 +255,7 @@ public final class CobbleRaids implements ModInitializer {
             RaidFaultBarrier.guard("shutdown:player-records", RaidPlayerRecords::onServerStopped);
             RaidFaultBarrier.guard("shutdown:boss-snapshots", DefeatedBossSnapshots::onServerStopped);
             RaidFaultBarrier.guard("shutdown:trophy-ledger", TrophyLedger::onServerStopped);
+            RaidFaultBarrier.guard("shutdown:hall-of-legends", HallOfLegends::onServerStopped);
             int raids = counts[0];
             int lobbies = counts[1];
             RaidFaultBarrier.onServerStopped();
