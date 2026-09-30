@@ -76,14 +76,14 @@ public record ShopCatalog(int version, int perPage, ShopLimits limits, List<Shop
                 new ShopSection("training", "Training", List.of(
                         ShopEntry.ofItem("ability_capsule", 300, "cobblemon:ability_capsule", 1, 1, ShopResetPeriod.DAILY),
                         ShopEntry.ofItem("ability_patch", 600, "cobblemon:ability_patch", 1, 1, ShopResetPeriod.DAILY),
-                        ShopEntry.ofItem("pp_up", 100, "cobblemon:pp_up", 1),
-                        ShopEntry.ofItem("pp_max", 350, "cobblemon:pp_max", 1),
+                        ShopEntry.ofItem("pp_up", 5, "cobblemon:pp_up", 1, ShopEntry.UNLIMITED, ShopResetPeriod.DAILY),
+                        ShopEntry.ofItem("pp_max", 15, "cobblemon:pp_max", 1, ShopEntry.UNLIMITED, ShopResetPeriod.DAILY),
                         ShopEntry.ofItem("protein", 60, "cobblemon:protein", 2),
                         ShopEntry.ofItem("calcium", 60, "cobblemon:calcium", 2),
-                        ShopEntry.ofItem("destiny_knot", 250, "cobblemon:destiny_knot", 1),
-                        ShopEntry.ofItem("everstone", 60, "cobblemon:everstone", 1),
-                        ShopEntry.ofItem("link_cable", 120, "cobblemon:link_cable", 1),
-                        ShopEntry.ofItem("mirror_herb", 200, "cobblemon:mirror_herb", 1))),
+                        heldItem("destiny_knot", 50, "cobblemon:destiny_knot"),
+                        heldItem("everstone", 35, "cobblemon:everstone"),
+                        heldItem("link_cable", 75, "cobblemon:link_cable"),
+                        heldItem("mirror_herb", 35, "cobblemon:mirror_herb"))),
                 new ShopSection("pokemon", "Pokemon", List.of(
                         // One worked example of the fixed-Pokemon shape, so an operator editing
                         // this file can see every field a purchase can pin rather than guess.
@@ -146,7 +146,7 @@ public record ShopCatalog(int version, int perPage, ShopLimits limits, List<Shop
         return new ShopCatalog(version, perPage, limits, sections);
     }
 
-    /** A competitive held item: one per purchase, one purchase a day. */
+    /** A held item or one-off tool: one per purchase, one purchase a day. */
     private static ShopEntry heldItem(String id, int cost, String itemId) {
         return ShopEntry.ofItem(id, cost, itemId, 1, 1, ShopResetPeriod.DAILY);
     }
@@ -177,7 +177,13 @@ public record ShopCatalog(int version, int perPage, ShopLimits limits, List<Shop
             Map.entry("life_orb", was("life_orb", 200, 1)),
             Map.entry("focus_sash", was("focus_sash", 200, 1)),
             Map.entry("assault_vest", was("assault_vest", 175, 1)),
-            Map.entry("rocky_helmet", was("rocky_helmet", 150, 1)));
+            Map.entry("rocky_helmet", was("rocky_helmet", 150, 1)),
+            Map.entry("pp_up", was("pp_up", 100, 1)),
+            Map.entry("pp_max", was("pp_max", 350, 1)),
+            Map.entry("destiny_knot", was("destiny_knot", 250, 1)),
+            Map.entry("everstone", was("everstone", 60, 1)),
+            Map.entry("link_cable", was("link_cable", 120, 1)),
+            Map.entry("mirror_herb", was("mirror_herb", 200, 1)));
 
     private static ShopEntry migrated(ShopEntry entry) {
         if (!entry.equals(SUPERSEDED.get(entry.id()))) return entry;
