@@ -147,6 +147,28 @@ class CobbleRaidsConfigRoundTripTest {
     }
 
     @Test
+    @DisplayName("an untouched pre-repricing boss buy-back block moves to the new prices; an edited one stays")
+    void bossBuyBackMigratesOnlyWhenUntouched() {
+        JsonObject untouched = CobbleRaidsConfig.defaults().toJson();
+        var old = new JsonObject();
+        old.addProperty("enabled", true);
+        old.addProperty("reroll_cost", 50);
+        old.addProperty("buy_cost_starter", 40);
+        old.addProperty("buy_cost_powerhouse", 80);
+        old.addProperty("buy_cost_legendary", 160);
+        old.addProperty("buy_cost_mythical", 300);
+        untouched.add("personal_boss_shop", old);
+        assertEquals(CobbleRaidsConfig.defaults().personalBossShop(),
+                CobbleRaidsConfig.fromJson(untouched).personalBossShop());
+
+        JsonObject edited = CobbleRaidsConfig.defaults().toJson();
+        old = old.deepCopy();
+        old.addProperty("buy_cost_legendary", 170);
+        edited.add("personal_boss_shop", old);
+        assertEquals(170, CobbleRaidsConfig.fromJson(edited).personalBossShop().buyCostLegendary());
+    }
+
+    @Test
     @DisplayName("an older config without the new blocks loads on defaults, not on zeroes")
     void olderConfigGainsDefaults() {
         // Exactly what an existing server.json looks like before the upgrade: both new blocks
@@ -188,8 +210,8 @@ class CobbleRaidsConfigRoundTripTest {
 
         assertTrue(shop.enabled());
         assertEquals(50, shop.rerollCost());
-        assertEquals(40, shop.buyCostFor(RaidRarityTier.STARTER));
-        assertEquals(300, shop.buyCostFor(RaidRarityTier.MYTHICAL));
+        assertEquals(200, shop.buyCostFor(RaidRarityTier.STARTER));
+        assertEquals(3_000, shop.buyCostFor(RaidRarityTier.MYTHICAL));
         assertThrows(IllegalArgumentException.class,
                 () -> new CobbleRaidsConfig.PersonalBossShop(true, -1, 40, 80, 160, 300), "reroll cost cannot be negative");
         assertThrows(IllegalArgumentException.class,

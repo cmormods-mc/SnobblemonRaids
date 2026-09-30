@@ -464,7 +464,16 @@ public record CobbleRaidsConfig(
             validateCost("buy_cost_mythical", buyCostMythical);
         }
 
+        /**
+         * Roughly 8 / 10 / 20 / 30 raids of Raid Points, at 25 / 50 / 75 / 100 a raid. They were
+         * 40 / 80 / 160 / 300, which made a mythical about three mythical raids of income.
+         */
         public static PersonalBossShop defaults() {
+            return new PersonalBossShop(true, 50, 200, 500, 1_500, 3_000);
+        }
+
+        /** What shipped before the repricing. Used only to recognise an untouched block. */
+        public static PersonalBossShop supersededDefaults() {
             return new PersonalBossShop(true, 50, 40, 80, 160, 300);
         }
 

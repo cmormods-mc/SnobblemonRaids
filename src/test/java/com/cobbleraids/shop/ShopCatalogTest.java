@@ -465,4 +465,22 @@ class ShopCatalogTest {
             assertEquals(5, byId.get(id).limit(), id + " is ten vitamins a day");
         }
     }
+
+    @Test
+    @DisplayName("PP items are cheap and unlimited; breeding and evolution items are one a day")
+    void utilityItemPricing() {
+        Map<String, ShopEntry> byId = ShopCatalog.defaults().byId();
+
+        assertEquals(5, byId.get("pp_up").cost());
+        assertEquals(15, byId.get("pp_max").cost());
+        assertFalse(byId.get("pp_up").isLimited());
+        assertFalse(byId.get("pp_max").isLimited());
+        assertEquals(50, byId.get("destiny_knot").cost());
+        assertEquals(35, byId.get("mirror_herb").cost());
+        assertEquals(75, byId.get("link_cable").cost());
+        assertEquals(35, byId.get("everstone").cost());
+        for (String id : List.of("destiny_knot", "mirror_herb", "link_cable", "everstone")) {
+            assertEquals(1, byId.get(id).limit(), id + " is one a day");
+        }
+    }
 }

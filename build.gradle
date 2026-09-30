@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.142-shop-prices-weekly-limits'
+version = '0.8.143-shop-utility-and-buyback'
 group = 'com.cobbleraids'
 
 base {
