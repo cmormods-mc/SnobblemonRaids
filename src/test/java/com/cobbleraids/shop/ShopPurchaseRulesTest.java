@@ -184,7 +184,7 @@ class ShopPurchaseRulesTest {
                 .withPurchase("balls", today)
                 .withPurchase("unique", 0L);
 
-        RaidPlayerRecord pruned = record.prunePurchases(tomorrow);
+        RaidPlayerRecord pruned = record.prunePurchases(NEXT_DAY);
 
         assertEquals(0, pruned.purchasesOf("balls").count(), "yesterday's daily tally is gone");
         assertEquals(1, pruned.purchasesOf("unique").count(), "a permanent tally must survive");
@@ -195,8 +195,7 @@ class ShopPurchaseRulesTest {
 
     /** One purchase, through the same record method RaidPlayerRecords.recordPurchase uses. */
     private static RaidPlayerRecord buy(RaidPlayerRecord record, ShopEntry entry, Instant when) {
-        return record.withPurchaseOn(entry.id(), ShopPurchaseRules.windowOf(entry, when),
-                ShopResetPeriod.DAILY.windowOf(when));
+        return record.withPurchaseOn(entry.id(), ShopPurchaseRules.windowOf(entry, when), when);
     }
 
     @Test
@@ -280,5 +279,33 @@ class ShopPurchaseRulesTest {
     @DisplayName("the refusal names the week")
     void weeklyRefusalMessage() {
         assertEquals("You have bought all 3 of those this week.", ShopPurchaseRules.limitMessage(WEEKLY_EGG));
+    }
+
+    private static final ShopEntry ROTATING =
+            ShopEntry.ofPokemon("rotating_3", 400, gift(), 1, ShopResetPeriod.ROTATION);
+
+    @Test
+    @DisplayName("a rotating listing can be bought once per four-hour window, then again in the next")
+    void rotatingLimitResetsEveryFourHours() {
+        Instant first = Instant.parse("2026-09-12T08:10:00Z");
+        Instant sameWindow = Instant.parse("2026-09-12T11:59:59Z");
+        Instant nextWindow = Instant.parse("2026-09-12T12:00:01Z");
+
+        RaidPlayerRecord record = buy(RaidPlayerRecord.EMPTY, ROTATING, first);
+
+        assertEquals(0, ShopPurchaseRules.remaining(ROTATING, record.purchasesOf("rotating_3"), sameWindow));
+        assertEquals(1, ShopPurchaseRules.remaining(ROTATING, record.purchasesOf("rotating_3"), nextWindow));
+    }
+
+    @Test
+    @DisplayName("buying something else in the same window does not refill a rotating listing")
+    void otherPurchasesKeepRotatingTallies() {
+        Instant when = Instant.parse("2026-09-12T08:10:00Z");
+        RaidPlayerRecord record = buy(RaidPlayerRecord.EMPTY, ROTATING, when);
+
+        record = buy(record, BALLS, when.plusSeconds(600));
+
+        assertEquals(0, ShopPurchaseRules.remaining(ROTATING, record.purchasesOf("rotating_3"), when.plusSeconds(900)),
+                "pruning must keep the current rotation's tally");
     }
 }

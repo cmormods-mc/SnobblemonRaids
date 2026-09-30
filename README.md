@@ -174,6 +174,26 @@ definition can reward exactly one add-on. Each is skipped when its mod is not in
 `/cobbleraids debug audit` names any definition still on that path, in case it is there by
 accident rather than on purpose.
 
+### The raid shop
+
+Items are priced in Raid Points, with per-player limits that reset daily, weekly (Monday, UTC) or
+never; everything lives in `config/cobbleraids/shop.json`. Exp candies are priced so a level costs
+about 15 RP on average, and the strongest items (Lucky Egg, Ability Patch, held items) carry low
+daily or weekly limits.
+
+**Wandering Pokemon.** A page of ten Pokemon that changes every four hours (00:00, 04:00... UTC) and
+is the same for every player. Nothing is stored: the ten are a pure function of the four-hour window,
+so a restart reproduces them. Every Cobblemon species is eligible except those labelled legendary,
+mythical, ultra beast, paradox or restricted. Each listing has a level from 5 to 50 and a fixed
+nature, ability, gender and IV spread, so every buyer of that listing gets the identical Pokemon; it
+is never shiny. Each can be bought once per player per rotation.
+
+Price is the ceiling scaled by rarity and level: `max_price x rarity x level / max_level`, where
+rarity is half catch rate (45 or lower counts as hardest) and half base stat total (600 counts as
+full), with a floor of 10%. The default ceiling is 1,250 RP, which only the hardest, strongest species
+at level 50 reaches. `/cobbleraids debug rotation` prints the current ten; the `rotation` block in
+`shop.json` sets the listing count, level range, price band and excluded labels.
+
 ## Commands
 
 `/cobbleraids reward claim` is player-facing; `info` is unrestricted. Everything else

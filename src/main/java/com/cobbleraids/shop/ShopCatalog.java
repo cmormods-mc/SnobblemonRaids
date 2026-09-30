@@ -27,7 +27,8 @@ import java.util.Set;
  * <p>Free of Minecraft types, so the whole catalogue -- parsing, paging and validation -- is
  * testable without a server.
  */
-public record ShopCatalog(int version, int perPage, ShopLimits limits, List<ShopSection> sections) {
+public record ShopCatalog(int version, int perPage, ShopLimits limits, List<ShopSection> sections,
+                          ShopRotationConfig rotation) {
 
     /** Bumped when the schema changes in a way an older file cannot be read as. */
     public static final int CURRENT_VERSION = 2;
@@ -35,7 +36,13 @@ public record ShopCatalog(int version, int perPage, ShopLimits limits, List<Shop
     /** The sliced art's grid is eight by eight, so a page can never usefully hold more. */
     public static final int MAX_PER_PAGE = 64;
 
+    /** A catalogue with the default rotation; what every hand-built catalogue in a test wants. */
+    public ShopCatalog(int version, int perPage, ShopLimits limits, List<ShopSection> sections) {
+        this(version, perPage, limits, sections, ShopRotationConfig.DEFAULTS);
+    }
+
     public ShopCatalog {
+        if (rotation == null) rotation = ShopRotationConfig.DEFAULTS;
         if (perPage < 1 || perPage > MAX_PER_PAGE) {
             throw new IllegalArgumentException("per_page " + perPage + " is outside 1.." + MAX_PER_PAGE);
         }
@@ -83,16 +90,9 @@ public record ShopCatalog(int version, int perPage, ShopLimits limits, List<Shop
                         heldItem("destiny_knot", 50, "cobblemon:destiny_knot"),
                         heldItem("everstone", 35, "cobblemon:everstone"),
                         heldItem("link_cable", 75, "cobblemon:link_cable"),
-                        heldItem("mirror_herb", 35, "cobblemon:mirror_herb"))),
-                new ShopSection("pokemon", "Pokemon", List.of(
-                        // One worked example of the fixed-Pokemon shape, so an operator editing
-                        // this file can see every field a purchase can pin rather than guess.
-                        ShopEntry.ofPokemon("starter_dratini", 2500,
-                                new ShopPokemonGift("dratini", 15, false, "adamant", null, null, null, null,
-                                        null,
-                                        Map.of("hp", 31, "attack", 31, "speed", 31),
-                                        Map.of())))));
-        return new ShopCatalog(CURRENT_VERSION, MAX_PER_PAGE, ShopLimits.DEFAULTS, sections);
+                        heldItem("mirror_herb", 35, "cobblemon:mirror_herb"))));
+        return new ShopCatalog(CURRENT_VERSION, MAX_PER_PAGE, ShopLimits.DEFAULTS, sections,
+                ShopRotationConfig.DEFAULTS);
     }
 
     /**
@@ -132,7 +132,12 @@ public record ShopCatalog(int version, int perPage, ShopLimits limits, List<Shop
             // a purchase names one, and two entries answering to it means the player gets whichever
             // the lookup happened to reach first.
             List<ShopEntry> kept = new ArrayList<>();
+            boolean droppedSuperseded = false;
             for (ShopEntry original : section.entries()) {
+                if (original.equals(SUPERSEDED_EXAMPLE_POKEMON)) {
+                    droppedSuperseded = true;
+                    continue;
+                }
                 ShopEntry entry = migrated(original);
                 if (seenEntries.add(entry.id())) {
                     kept.add(entry);
@@ -141,9 +146,13 @@ public record ShopCatalog(int version, int perPage, ShopLimits limits, List<Shop
                             + " in section " + section.id());
                 }
             }
+            // The old worked example was the only thing in its section, and the rotating page
+            // replaces it. A section left empty by dropping it goes too, rather than showing a
+            // blank page; one the operator left empty themselves is theirs and stays.
+            if (droppedSuperseded && kept.isEmpty()) continue;
             sections.add(new ShopSection(section.id(), section.title(), kept));
         }
-        return new ShopCatalog(version, perPage, limits, sections);
+        return new ShopCatalog(version, perPage, limits, sections, ShopRotationConfig.fromJson(root));
     }
 
     /** A held item or one-off tool: one per purchase, one purchase a day. */
@@ -185,6 +194,11 @@ public record ShopCatalog(int version, int perPage, ShopLimits limits, List<Shop
             Map.entry("link_cable", was("link_cable", 120, 1)),
             Map.entry("mirror_herb", was("mirror_herb", 200, 1)));
 
+    /** The fixed level-15 Dratini that shipped as the shop's one Pokemon, before the rotating page. */
+    private static final ShopEntry SUPERSEDED_EXAMPLE_POKEMON = ShopEntry.ofPokemon("starter_dratini", 2500,
+            new ShopPokemonGift("dratini", 15, false, "adamant", null, null, null, null, null,
+                    Map.of("hp", 31, "attack", 31, "speed", 31), Map.of()));
+
     private static ShopEntry migrated(ShopEntry entry) {
         if (!entry.equals(SUPERSEDED.get(entry.id()))) return entry;
         return defaultsEntry(entry.id());
@@ -203,6 +217,7 @@ public record ShopCatalog(int version, int perPage, ShopLimits limits, List<Shop
         JsonArray array = new JsonArray();
         sections.forEach(section -> array.add(section.toJson()));
         root.add("sections", array);
+        root.add("rotation", rotation.toJson());
         return root;
     }
 

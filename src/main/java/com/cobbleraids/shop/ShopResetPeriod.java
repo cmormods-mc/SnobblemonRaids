@@ -21,7 +21,12 @@ public enum ShopResetPeriod {
     /** The limit refills at 00:00 UTC. */
     DAILY,
     /** The limit refills at 00:00 UTC on Monday. */
-    WEEKLY;
+    WEEKLY,
+    /** The limit refills every four hours, in step with the rotating Pokemon page. */
+    ROTATION;
+
+    /** Seconds in one rotation of the Pokemon page. */
+    public static final long ROTATION_SECONDS = 4L * 3600L;
 
     /** Seconds in a day. UTC has no daylight saving, so every day is exactly this long. */
     private static final long SECONDS_PER_DAY = 86_400L;
@@ -41,6 +46,7 @@ public enum ShopResetPeriod {
             case NEVER -> 0L;
             case DAILY -> day;
             case WEEKLY -> weekOfDay(day);
+            case ROTATION -> Math.floorDiv(instant.getEpochSecond(), ROTATION_SECONDS);
         };
     }
 
@@ -69,6 +75,7 @@ public enum ShopResetPeriod {
             case "never", "none", "once" -> NEVER;
             case "daily", "day" -> DAILY;
             case "weekly", "week" -> WEEKLY;
+            case "rotation" -> ROTATION;
             default -> fallback;
         };
     }
@@ -79,6 +86,7 @@ public enum ShopResetPeriod {
             case NEVER -> "ever";
             case DAILY -> "today";
             case WEEKLY -> "this week";
+            case ROTATION -> "this rotation";
         };
     }
 }

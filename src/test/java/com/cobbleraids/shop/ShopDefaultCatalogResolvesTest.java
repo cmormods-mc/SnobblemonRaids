@@ -111,7 +111,8 @@ class ShopDefaultCatalogResolvesTest {
 
         assertFalse(catalog.sections().isEmpty());
         assertTrue(catalog.totalEntries() >= 10, "only " + catalog.totalEntries() + " entries");
-        assertTrue(catalog.byId().values().stream().anyMatch(ShopEntry::isPokemon),
-                "no worked example of a Pokemon entry for operators to copy");
+        // Pokemon are sold by the rotating page now, so the catalogue itself carries none. The
+        // rotation is what must be on by default, or the shop sells no Pokemon at all.
+        assertTrue(catalog.rotation().enabled(), "the rotating Pokemon page must ship on");
     }
 }

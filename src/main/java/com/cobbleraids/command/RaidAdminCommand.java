@@ -140,6 +140,8 @@ public final class RaidAdminCommand {
                                         .then(Commands.argument("target", EntityArgument.player())
                                                 .executes(ctx -> RaidAdminBossOps.joinNearest(
                                                         ctx.getSource(), EntityArgument.getPlayer(ctx, "target")))))
+                                .then(Commands.literal("rotation")
+                                        .executes(ctx -> RaidAdminDebugOps.rotation(ctx.getSource())))
                                 .then(Commands.literal("raids")
                                         .executes(ctx -> RaidAdminDebugOps.raids(ctx.getSource())))
                                 .then(Commands.literal("history")

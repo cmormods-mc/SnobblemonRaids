@@ -121,12 +121,12 @@ public record RaidPlayerRecord(
     /**
      * One purchase of {@code entryId}, counted against {@code window}, with stale tallies pruned.
      *
-     * <p>{@code today} is the current UTC day, separate from {@code window} on purpose. A lifetime
+     * <p>{@code now} is what "current" means for every window kind, separate from {@code window} on purpose. A lifetime
      * entry's window is always 0, and pruning against that used to delete every daily tally from
      * today -- so buying one lifetime entry refilled every daily limit the player had already spent.
      */
-    public RaidPlayerRecord withPurchaseOn(String entryId, long window, long today) {
-        return prunePurchases(today).withPurchase(entryId, window);
+    public RaidPlayerRecord withPurchaseOn(String entryId, long window, java.time.Instant now) {
+        return prunePurchases(now).withPurchase(entryId, window);
     }
 
     /**
@@ -136,16 +136,22 @@ public record RaidPlayerRecord(
      *
      * <p>Weekly tallies have to be kept on purpose: pruning to "today" alone deleted them on the
      * next purchase of anything, which refilled every weekly limit. A week number and a day number
-     * are in different ranges, so one test per kind is enough to tell them apart.
+     * are in different ranges, so one test per kind is enough to tell them apart. The same goes for
+     * the four-hour rotation window, whose numbers (over 100,000) are larger than either.
      *
      * <p>Housekeeping: {@link RaidPurchaseTally#countOn} already reads a stale daily tally as zero,
      * so this changes what is stored and not what is allowed.
      */
-    public RaidPlayerRecord prunePurchases(long today) {
-        long thisWeek = com.cobbleraids.shop.ShopResetPeriod.weekOfDay(today);
+    public RaidPlayerRecord prunePurchases(java.time.Instant now) {
+        long today = com.cobbleraids.shop.ShopResetPeriod.DAILY.windowOf(now);
+        long thisWeek = com.cobbleraids.shop.ShopResetPeriod.WEEKLY.windowOf(now);
+        long thisRotation = com.cobbleraids.shop.ShopResetPeriod.ROTATION.windowOf(now);
         LinkedHashMap<String, RaidPurchaseTally> kept = new LinkedHashMap<>();
         purchases.forEach((id, tally) -> {
-            if (tally.day() == today || tally.day() == thisWeek || tally.day() == 0L) kept.put(id, tally);
+            if (tally.day() == today || tally.day() == thisWeek || tally.day() == thisRotation
+                    || tally.day() == 0L) {
+                kept.put(id, tally);
+            }
         });
         return kept.size() == purchases.size() ? this
                 : new RaidPlayerRecord(raidsWon, winsByTier, defeatsBySpecies, totalContribution,

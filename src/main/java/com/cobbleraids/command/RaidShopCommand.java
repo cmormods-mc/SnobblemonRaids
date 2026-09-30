@@ -12,6 +12,8 @@ import com.cobbleraids.shop.ShopPageView;
 import com.cobbleraids.shop.ShopPurchaseResult;
 import com.cobbleraids.shop.ShopPurchaseRules;
 import com.cobbleraids.shop.ShopPurchaseService;
+import com.cobbleraids.shop.ShopRotation;
+import com.cobbleraids.shop.ShopRotationService;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -34,8 +36,15 @@ public final class RaidShopCommand {
 
     private RaidShopCommand() {}
 
-    private static final SuggestionProvider<CommandSourceStack> ENTRY_IDS = (context, builder) ->
-            SharedSuggestionProvider.suggest(ShopCatalogManager.index().keySet(), builder);
+    private static final SuggestionProvider<CommandSourceStack> ENTRY_IDS = (context, builder) -> {
+        java.util.List<String> ids = new java.util.ArrayList<>(ShopCatalogManager.index().keySet());
+        // The rotating page's ids carry their window, so only the current ones are ever offered.
+        long window = ShopRotationService.windowNow(java.time.Instant.now());
+        for (ShopRotation.Listing listing : ShopRotationService.current(java.time.Instant.now())) {
+            ids.add(ShopRotation.wireId(window, listing.slot()));
+        }
+        return SharedSuggestionProvider.suggest(ids, builder);
+    };
 
     public static void register() {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(
@@ -64,7 +73,7 @@ public final class RaidShopCommand {
 
         source.sendSuccess(() -> CommandFormat.header("Raid Shop")
                 .append(Component.literal("  " + balance + " RP").withStyle(ChatFormatting.AQUA)), false);
-        if (catalog.totalEntries() == 0) {
+        if (catalog.totalEntries() == 0 && ShopRotationService.current(now).isEmpty()) {
             source.sendSuccess(() -> CommandFormat.row("Nothing is for sale yet."), false);
             return 0;
         }
@@ -87,14 +96,31 @@ public final class RaidShopCommand {
                         + CommandFormat.pad(entry.cost() + " RP", 10) + label).withStyle(colour), false);
             }
         }
-        return catalog.totalEntries();
+        java.util.List<ShopRotation.Listing> rotating = ShopRotationService.current(now);
+        if (!rotating.isEmpty()) {
+            long window = ShopRotationService.windowNow(now);
+            long secondsLeft = ShopRotationService.nextRotation(now).getEpochSecond() - now.getEpochSecond();
+            source.sendSuccess(() -> CommandFormat.row("Wandering Pokemon  (rotates in "
+                    + CommandFormat.duration(secondsLeft) + ")").withStyle(ChatFormatting.GOLD), false);
+            for (ShopRotation.Listing listing : rotating) {
+                ChatFormatting colour = balance >= listing.cost() ? ChatFormatting.WHITE : ChatFormatting.DARK_GRAY;
+                int left = ShopRotationService.remaining(player, listing, now);
+                source.sendSuccess(() -> CommandFormat.row("  "
+                        + CommandFormat.pad(ShopRotation.wireId(window, listing.slot()), 26)
+                        + CommandFormat.pad(listing.cost() + " RP", 10) + listing.speciesPath()
+                        + " Lv." + listing.gift().level() + (left > 0 ? "" : "  (bought)")).withStyle(colour), false);
+            }
+        }
+        return catalog.totalEntries() + rotating.size();
     }
 
     private static int buy(CommandSourceStack source, String entryId) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
         ServerPlayer player = source.getPlayerOrException();
-        ShopEntry entry = ShopCatalogManager.index().get(entryId);
+        boolean rotating = entryId.startsWith("rotating.");
+        ShopEntry entry = rotating ? null : ShopCatalogManager.index().get(entryId);
 
-        ShopPurchaseResult result = ShopPurchaseService.purchase(player, entryId);
+        ShopPurchaseResult result = rotating ? ShopRotationService.purchase(player, entryId)
+                : ShopPurchaseService.purchase(player, entryId);
         if (result.success()) {
             source.sendSuccess(() -> Component.literal(result.message()).withStyle(ChatFormatting.GREEN), false);
             source.sendSuccess(() -> Component.literal("Balance: "
