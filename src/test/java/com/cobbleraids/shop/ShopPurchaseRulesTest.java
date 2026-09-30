@@ -244,4 +244,41 @@ class ShopPurchaseRulesTest {
         assertEquals(3, java.util.Arrays.stream(ShopPurchaseResult.values())
                 .filter(ShopPurchaseResult::success).count());
     }
+
+    private static final ShopEntry WEEKLY_EGG =
+            ShopEntry.ofItem("lucky_egg", 600, "cobblemon:lucky_egg", 1, 3, ShopResetPeriod.WEEKLY);
+
+    @Test
+    @DisplayName("a weekly limit holds through the week and refills on Monday")
+    void weeklyLimitRefillsOnMonday() {
+        Instant saturday = Instant.parse("2026-09-12T12:00:00Z");
+        Instant sunday = Instant.parse("2026-09-13T23:59:59Z");
+        Instant monday = Instant.parse("2026-09-14T00:00:01Z");
+        RaidPlayerRecord record = RaidPlayerRecord.EMPTY;
+        for (int index = 0; index < 3; index++) record = buy(record, WEEKLY_EGG, saturday);
+
+        assertEquals(0, ShopPurchaseRules.remaining(WEEKLY_EGG, record.purchasesOf("lucky_egg"), sunday));
+        assertEquals(3, ShopPurchaseRules.remaining(WEEKLY_EGG, record.purchasesOf("lucky_egg"), monday));
+    }
+
+    @Test
+    @DisplayName("buying something else the next day does not refill a weekly limit")
+    void dailyPurchaseKeepsWeeklyTallies() {
+        Instant saturday = Instant.parse("2026-09-12T12:00:00Z");
+        Instant sunday = Instant.parse("2026-09-13T12:00:00Z");
+        RaidPlayerRecord record = buy(RaidPlayerRecord.EMPTY, WEEKLY_EGG, saturday);
+        record = buy(record, WEEKLY_EGG, saturday);
+        record = buy(record, WEEKLY_EGG, saturday);
+
+        record = buy(record, BALLS, sunday);
+
+        assertEquals(0, ShopPurchaseRules.remaining(WEEKLY_EGG, record.purchasesOf("lucky_egg"), sunday),
+                "pruning to today alone used to delete the weekly tally here");
+    }
+
+    @Test
+    @DisplayName("the refusal names the week")
+    void weeklyRefusalMessage() {
+        assertEquals("You have bought all 3 of those this week.", ShopPurchaseRules.limitMessage(WEEKLY_EGG));
+    }
 }

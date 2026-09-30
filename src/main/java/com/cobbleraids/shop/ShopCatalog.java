@@ -63,23 +63,23 @@ public record ShopCatalog(int version, int perPage, ShopLimits limits, List<Shop
                         ShopEntry.ofItem("exp_candy_xl", 75, "cobblemon:exp_candy_xl", 1, 3,
                                 ShopLimits.DEFAULTS.reset()))),
                 new ShopSection("held_items", "Held Items", List.of(
-                        ShopEntry.ofItem("leftovers", 150, "cobblemon:leftovers", 1),
-                        ShopEntry.ofItem("choice_band", 175, "cobblemon:choice_band", 1),
-                        ShopEntry.ofItem("choice_specs", 175, "cobblemon:choice_specs", 1),
-                        ShopEntry.ofItem("choice_scarf", 175, "cobblemon:choice_scarf", 1),
-                        ShopEntry.ofItem("life_orb", 200, "cobblemon:life_orb", 1),
-                        ShopEntry.ofItem("focus_sash", 200, "cobblemon:focus_sash", 1),
-                        ShopEntry.ofItem("assault_vest", 175, "cobblemon:assault_vest", 1),
-                        ShopEntry.ofItem("rocky_helmet", 150, "cobblemon:rocky_helmet", 1),
-                        ShopEntry.ofItem("lucky_egg", 250, "cobblemon:lucky_egg", 1),
-                        ShopEntry.ofItem("exp_share", 200, "cobblemon:exp_share", 1))),
+                        heldItem("leftovers", 150, "cobblemon:leftovers"),
+                        heldItem("choice_band", 175, "cobblemon:choice_band"),
+                        heldItem("choice_specs", 175, "cobblemon:choice_specs"),
+                        heldItem("choice_scarf", 175, "cobblemon:choice_scarf"),
+                        heldItem("life_orb", 200, "cobblemon:life_orb"),
+                        heldItem("focus_sash", 200, "cobblemon:focus_sash"),
+                        heldItem("assault_vest", 175, "cobblemon:assault_vest"),
+                        heldItem("rocky_helmet", 150, "cobblemon:rocky_helmet"),
+                        ShopEntry.ofItem("lucky_egg", 600, "cobblemon:lucky_egg", 1, 3, ShopResetPeriod.WEEKLY),
+                        ShopEntry.ofItem("exp_share", 400, "cobblemon:exp_share", 1, 3, ShopResetPeriod.WEEKLY))),
                 new ShopSection("training", "Training", List.of(
-                        ShopEntry.ofItem("ability_capsule", 300, "cobblemon:ability_capsule", 1),
-                        ShopEntry.ofItem("ability_patch", 600, "cobblemon:ability_patch", 1),
+                        ShopEntry.ofItem("ability_capsule", 300, "cobblemon:ability_capsule", 1, 1, ShopResetPeriod.DAILY),
+                        ShopEntry.ofItem("ability_patch", 600, "cobblemon:ability_patch", 1, 1, ShopResetPeriod.DAILY),
                         ShopEntry.ofItem("pp_up", 100, "cobblemon:pp_up", 1),
                         ShopEntry.ofItem("pp_max", 350, "cobblemon:pp_max", 1),
-                        ShopEntry.ofItem("protein", 80, "cobblemon:protein", 4),
-                        ShopEntry.ofItem("calcium", 80, "cobblemon:calcium", 4),
+                        ShopEntry.ofItem("protein", 60, "cobblemon:protein", 2),
+                        ShopEntry.ofItem("calcium", 60, "cobblemon:calcium", 2),
                         ShopEntry.ofItem("destiny_knot", 250, "cobblemon:destiny_knot", 1),
                         ShopEntry.ofItem("everstone", 60, "cobblemon:everstone", 1),
                         ShopEntry.ofItem("link_cable", 120, "cobblemon:link_cable", 1),
@@ -146,15 +146,38 @@ public record ShopCatalog(int version, int perPage, ShopLimits limits, List<Shop
         return new ShopCatalog(version, perPage, limits, sections);
     }
 
+    /** A competitive held item: one per purchase, one purchase a day. */
+    private static ShopEntry heldItem(String id, int cost, String itemId) {
+        return ShopEntry.ofItem(id, cost, itemId, 1, 1, ShopResetPeriod.DAILY);
+    }
+
+    private static ShopEntry was(String id, int cost, int count) {
+        return ShopEntry.ofItem(id, cost, "cobblemon:" + id, count);
+    }
+
     /**
-     * The three exp-candy listings as they shipped before the per-level repricing. An entry that is
-     * still exactly one of these was never edited, so it moves to the new listing; any other is an
-     * operator's own price and stays as written.
+     * The listings as they shipped before the exp-candy, exp-booster, ability, vitamin and held-item
+     * repricing. An entry that is still exactly one of these was never edited, so it moves to the
+     * new listing; any other is an operator's own price and stays as written.
      */
-    private static final Map<String, ShopEntry> SUPERSEDED = Map.of(
-            "rare_candy", ShopEntry.ofItem("rare_candy", 75, "cobblemon:rare_candy", 1),
-            "exp_candy_l", ShopEntry.ofItem("exp_candy_l", 40, "cobblemon:exp_candy_l", 4),
-            "exp_candy_xl", ShopEntry.ofItem("exp_candy_xl", 90, "cobblemon:exp_candy_xl", 2));
+    private static final Map<String, ShopEntry> SUPERSEDED = Map.ofEntries(
+            Map.entry("rare_candy", was("rare_candy", 75, 1)),
+            Map.entry("exp_candy_l", was("exp_candy_l", 40, 4)),
+            Map.entry("exp_candy_xl", was("exp_candy_xl", 90, 2)),
+            Map.entry("lucky_egg", was("lucky_egg", 250, 1)),
+            Map.entry("exp_share", was("exp_share", 200, 1)),
+            Map.entry("ability_capsule", was("ability_capsule", 300, 1)),
+            Map.entry("ability_patch", was("ability_patch", 600, 1)),
+            Map.entry("protein", was("protein", 80, 4)),
+            Map.entry("calcium", was("calcium", 80, 4)),
+            Map.entry("leftovers", was("leftovers", 150, 1)),
+            Map.entry("choice_band", was("choice_band", 175, 1)),
+            Map.entry("choice_specs", was("choice_specs", 175, 1)),
+            Map.entry("choice_scarf", was("choice_scarf", 175, 1)),
+            Map.entry("life_orb", was("life_orb", 200, 1)),
+            Map.entry("focus_sash", was("focus_sash", 200, 1)),
+            Map.entry("assault_vest", was("assault_vest", 175, 1)),
+            Map.entry("rocky_helmet", was("rocky_helmet", 150, 1)));
 
     private static ShopEntry migrated(ShopEntry entry) {
         if (!entry.equals(SUPERSEDED.get(entry.id()))) return entry;

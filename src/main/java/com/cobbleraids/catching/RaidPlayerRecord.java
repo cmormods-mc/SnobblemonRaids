@@ -130,16 +130,22 @@ public record RaidPlayerRecord(
     }
 
     /**
-     * Drops daily tallies from before {@code today}, so a long-lived record does not accumulate a
-     * row for every daily entry a player has ever touched. Lifetime tallies (day 0) are kept.
+     * Drops daily tallies from before {@code today} and weekly tallies from before this week, so a
+     * long-lived record does not accumulate a row for every entry a player has ever touched.
+     * Lifetime tallies (day 0) are kept.
+     *
+     * <p>Weekly tallies have to be kept on purpose: pruning to "today" alone deleted them on the
+     * next purchase of anything, which refilled every weekly limit. A week number and a day number
+     * are in different ranges, so one test per kind is enough to tell them apart.
      *
      * <p>Housekeeping: {@link RaidPurchaseTally#countOn} already reads a stale daily tally as zero,
      * so this changes what is stored and not what is allowed.
      */
     public RaidPlayerRecord prunePurchases(long today) {
+        long thisWeek = com.cobbleraids.shop.ShopResetPeriod.weekOfDay(today);
         LinkedHashMap<String, RaidPurchaseTally> kept = new LinkedHashMap<>();
         purchases.forEach((id, tally) -> {
-            if (tally.day() == today || tally.day() == 0L) kept.put(id, tally);
+            if (tally.day() == today || tally.day() == thisWeek || tally.day() == 0L) kept.put(id, tally);
         });
         return kept.size() == purchases.size() ? this
                 : new RaidPlayerRecord(raidsWon, winsByTier, defeatsBySpecies, totalContribution,

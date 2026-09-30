@@ -386,7 +386,7 @@ class ShopCatalogTest {
         ShopCatalog catalog = ShopCatalog.fromJson(parse("""
                 {
                   "sections": [{"id": "a", "title": "A", "entries": [
-                    {"id": "typo", "cost": 10, "item": "cobblemon:poke_ball", "reset": "weekly"}
+                    {"id": "typo", "cost": 10, "item": "cobblemon:poke_ball", "reset": "fortnightly"}
                   ]}]
                 }
                 """));
@@ -440,5 +440,29 @@ class ShopCatalogTest {
         assertEquals(ShopCatalog.defaults().byId().get("exp_candy_l"), byId.get("exp_candy_l"));
         assertEquals(95, byId.get("exp_candy_xl").cost(), "an operator's own price is left alone");
         assertEquals(2, byId.get("exp_candy_xl").item().count());
+    }
+
+    @Test
+    @DisplayName("the shipped prices and limits for the strong items")
+    void strongItemPricing() {
+        Map<String, ShopEntry> byId = ShopCatalog.defaults().byId();
+
+        assertEquals(600, byId.get("lucky_egg").cost());
+        assertEquals(3, byId.get("lucky_egg").limit());
+        assertEquals(ShopResetPeriod.WEEKLY, byId.get("lucky_egg").reset());
+        assertEquals(400, byId.get("exp_share").cost());
+        assertEquals(ShopResetPeriod.WEEKLY, byId.get("exp_share").reset());
+        assertEquals(600, byId.get("ability_patch").cost());
+        assertEquals(300, byId.get("ability_capsule").cost());
+        for (String id : List.of("ability_patch", "ability_capsule", "leftovers", "choice_band", "choice_specs",
+                "choice_scarf", "life_orb", "focus_sash", "assault_vest", "rocky_helmet")) {
+            assertEquals(1, byId.get(id).limit(), id + " is one a day");
+            assertEquals(ShopResetPeriod.DAILY, byId.get(id).reset());
+        }
+        for (String id : List.of("protein", "calcium")) {
+            assertEquals(60, byId.get(id).cost(), id + " is 30 RP a vitamin");
+            assertEquals(2, byId.get(id).item().count());
+            assertEquals(5, byId.get(id).limit(), id + " is ten vitamins a day");
+        }
     }
 }

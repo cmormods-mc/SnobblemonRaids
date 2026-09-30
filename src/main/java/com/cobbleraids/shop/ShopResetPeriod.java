@@ -19,7 +19,9 @@ public enum ShopResetPeriod {
     /** The limit is for the life of the player. Buy it once, that is it. */
     NEVER,
     /** The limit refills at 00:00 UTC. */
-    DAILY;
+    DAILY,
+    /** The limit refills at 00:00 UTC on Monday. */
+    WEEKLY;
 
     /** Seconds in a day. UTC has no daylight saving, so every day is exactly this long. */
     private static final long SECONDS_PER_DAY = 86_400L;
@@ -34,7 +36,22 @@ public enum ShopResetPeriod {
      * it across a span of years rather than taking it on trust.
      */
     public long windowOf(Instant instant) {
-        return this == DAILY ? Math.floorDiv(instant.getEpochSecond(), SECONDS_PER_DAY) : 0L;
+        long day = Math.floorDiv(instant.getEpochSecond(), SECONDS_PER_DAY);
+        return switch (this) {
+            case NEVER -> 0L;
+            case DAILY -> day;
+            case WEEKLY -> weekOfDay(day);
+        };
+    }
+
+    /**
+     * The Monday-to-Sunday week an epoch day falls in. Day 0 (1970-01-01) was a Thursday, so a week
+     * starts on day 4, 11, 18... Week numbers are around 2,900 today and day numbers around 20,000,
+     * so a stored weekly tally can never be mistaken for a daily one; see
+     * {@code RaidPlayerRecord.prunePurchases}, which relies on that.
+     */
+    public static long weekOfDay(long epochDay) {
+        return Math.floorDiv(epochDay - 4L, 7L);
     }
 
     public boolean resets() {
@@ -51,12 +68,17 @@ public enum ShopResetPeriod {
         return switch (value.trim().toLowerCase(Locale.ROOT)) {
             case "never", "none", "once" -> NEVER;
             case "daily", "day" -> DAILY;
+            case "weekly", "week" -> WEEKLY;
             default -> fallback;
         };
     }
 
     /** "today" or "ever" -- how a refusal should describe the window to a player. */
     public String windowNoun() {
-        return this == DAILY ? "today" : "ever";
+        return switch (this) {
+            case NEVER -> "ever";
+            case DAILY -> "today";
+            case WEEKLY -> "this week";
+        };
     }
 }

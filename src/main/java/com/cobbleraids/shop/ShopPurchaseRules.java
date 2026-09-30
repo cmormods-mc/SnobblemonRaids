@@ -62,7 +62,7 @@ public final class ShopPurchaseRules {
         if (entry.limit() == 1) {
             return entry.reset() == ShopResetPeriod.NEVER
                     ? "You have already bought that."
-                    : "You have already bought that today.";
+                    : "You have already bought that " + entry.reset().windowNoun() + ".";
         }
         return "You have bought all " + entry.limit() + " of those "
                 + entry.reset().windowNoun() + ".";
