@@ -41,8 +41,8 @@ class RaidPlayerRecordsRoundTripTest {
                 .withWin(RaidRarityTier.LEGENDARY, MEGANIUM, 80.0)
                 .withCatch()
                 .withPoints(75)
-                .withPurchaseOn("cobbleraids:mega_key", 86_400L, 19_000L)
-                .withPurchaseOn("cobbleraids:lifetime_charm", 0L, 19_000L)
+                .withPurchaseOn("cobbleraids:mega_key", 86_400L, java.time.Instant.parse("2026-09-12T12:00:00Z"))
+                .withPurchaseOn("cobbleraids:lifetime_charm", 0L, java.time.Instant.parse("2026-09-12T12:00:00Z"))
                 .withTitleUnlocked("novice_raider")
                 .withTitleUnlocked("veteran_raider")
                 .withSelectedTitle("veteran_raider");

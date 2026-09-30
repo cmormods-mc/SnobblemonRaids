@@ -483,4 +483,28 @@ class ShopCatalogTest {
             assertEquals(1, byId.get(id).limit(), id + " is one a day");
         }
     }
+
+    @Test
+    @DisplayName("the untouched old Dratini example is dropped with its empty section; an edited one stays")
+    void oldDratiniExampleMigrates() {
+        String untouched = """
+                {"version": 2, "sections": [{"id": "pokemon", "title": "Pokemon", "entries": [
+                  {"id": "starter_dratini", "cost": 2500, "limit": 1, "reset": "daily", "species": "dratini",
+                   "level": 15, "traits": {"nature": "adamant", "ivs": {"hp": 31, "attack": 31, "speed": 31}}}]}]}
+                """;
+        assertTrue(ShopCatalog.fromJson(parse(untouched)).sections().isEmpty());
+
+        String edited = untouched.replace("2500", "2600");
+        assertEquals(2600, ShopCatalog.fromJson(parse(edited)).byId().get("starter_dratini").cost());
+    }
+
+    @Test
+    @DisplayName("the rotation block survives a round trip through the catalogue file")
+    void rotationRoundTrips() {
+        ShopCatalog custom = new ShopCatalog(2, 64, ShopLimits.DEFAULTS, List.of(),
+                new ShopRotationConfig(true, 6, 10, 40, 50, 900, List.of("legendary")));
+
+        assertEquals(custom.rotation(), ShopCatalog.fromJson(custom.toJson()).rotation());
+        assertEquals(ShopRotationConfig.DEFAULTS, ShopCatalog.fromJson(parse("{\"sections\": []}")).rotation());
+    }
 }

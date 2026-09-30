@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.143-shop-utility-and-buyback'
+version = '0.8.144-wandering-pokemon'
 group = 'com.cobbleraids'
 
 base {

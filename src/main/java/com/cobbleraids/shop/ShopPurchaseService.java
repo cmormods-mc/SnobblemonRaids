@@ -3,6 +3,7 @@ package com.cobbleraids.shop;
 import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
 import com.cobblemon.mod.common.pokemon.EVs;
+import com.cobblemon.mod.common.pokemon.Gender;
 import com.cobblemon.mod.common.pokemon.IVs;
 import com.cobblemon.mod.common.api.storage.party.PlayerPartyStore;
 import com.cobblemon.mod.common.pokemon.Pokemon;
@@ -36,8 +37,11 @@ public final class ShopPurchaseService {
     private ShopPurchaseService() {}
 
     public static ShopPurchaseResult purchase(ServerPlayer player, String entryId) {
-        ShopEntry entry = ShopCatalogManager.index().get(entryId);
-        Instant now = Instant.now();
+        return purchase(player, ShopCatalogManager.index().get(entryId), Instant.now());
+    }
+
+    /** Buys an entry that is already resolved: a catalogue one, or one of the rotating listings. */
+    static ShopPurchaseResult purchase(ServerPlayer player, ShopEntry entry, Instant now) {
         ShopPurchaseResult blocked = ShopPurchaseRules.check(
                 entry,
                 RaidPointsStore.balance(player.getUUID()),
@@ -110,7 +114,7 @@ public final class ShopPurchaseService {
         RaidPointsStore.spend(player.getServer(), player.getUUID(), entry.cost());
         if (entry.isLimited()) {
             RaidPlayerRecords.recordPurchase(player.getServer(), player.getUUID(), entry.id(),
-                    ShopPurchaseRules.windowOf(entry, now), ShopResetPeriod.DAILY.windowOf(now));
+                    ShopPurchaseRules.windowOf(entry, now), now);
         }
         // One flush, after both writes rather than inside each, and for every purchase rather than
         // only the limited ones. Points and tallies share a SavedData, so a single write covers
@@ -119,6 +123,17 @@ public final class ShopPurchaseService {
         RaidPlayerRecords.flush(player.getServer());
         RaidLog.info("Shop: " + player.getGameProfile().getName() + " bought " + entry.id()
                 + " for " + entry.cost() + " RP");
+    }
+
+    /** A written gender, or null for anything unrecognised: an operator's typo must not fail a purchase. */
+    private static Gender genderOf(String written) {
+        if (written == null) return null;
+        return switch (written.trim().toLowerCase(java.util.Locale.ROOT)) {
+            case "male" -> Gender.MALE;
+            case "female" -> Gender.FEMALE;
+            case "genderless" -> Gender.GENDERLESS;
+            default -> null;
+        };
     }
 
     /**
@@ -135,6 +150,8 @@ public final class ShopPurchaseService {
         if (gift.shiny()) properties.setShiny(Boolean.TRUE);
         if (gift.nature() != null) properties.setNature(gift.nature());
         if (gift.ability() != null) properties.setAbility(gift.ability());
+        Gender gender = genderOf(gift.gender());
+        if (gender != null) properties.setGender(gender);
         if (gift.form() != null) properties.setForm(gift.form());
         if (gift.teraType() != null) properties.setTeraType(gift.teraType());
         if (gift.heldItem() != null) properties.setHeldItem(gift.heldItem());

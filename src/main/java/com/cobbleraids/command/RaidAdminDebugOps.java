@@ -253,6 +253,46 @@ final class RaidAdminDebugOps {
      * showed "checkIntervalTicks" for a field the file calls "check_interval_ticks" -- which an
      * operator cannot search the file for.
      */
+    /**
+     * Prints the rotating Pokemon page as it stands now: the window, when it turns over, and every
+     * listing with its price and pinned traits. Read-only; the page is a pure function of the clock,
+     * so this is also exactly what a player opening the shop sees.
+     */
+    static int rotation(CommandSourceStack source) {
+        java.time.Instant now = java.time.Instant.now();
+        java.util.List<com.cobbleraids.shop.ShopRotation.Listing> listings =
+                com.cobbleraids.shop.ShopRotationService.current(now);
+        source.sendSuccess(() -> CommandFormat.header("Wandering Pokemon"), false);
+        if (listings.isEmpty()) {
+            source.sendSuccess(() -> CommandFormat.row("The rotation is off, or no species are eligible."), false);
+            return 0;
+        }
+        long window = com.cobbleraids.shop.ShopRotationService.windowNow(now);
+        long secondsLeft = com.cobbleraids.shop.ShopRotationService.nextRotation(now).getEpochSecond()
+                - now.getEpochSecond();
+        source.sendSuccess(() -> CommandFormat.hint(" window " + window + ", rotates in "
+                + CommandFormat.duration(secondsLeft)), false);
+        int total = 0;
+        int highest = 0;
+        for (com.cobbleraids.shop.ShopRotation.Listing listing : listings) {
+            com.cobbleraids.shop.ShopPokemonGift gift = listing.gift();
+            total += listing.cost();
+            highest = Math.max(highest, listing.cost());
+            int ivTotal = gift.ivs().values().stream().mapToInt(Integer::intValue).sum();
+            String line = " " + listing.slot() + ". " + listing.speciesPath() + " Lv" + gift.level()
+                    + "  " + listing.cost() + " RP  (" + gift.nature() + ", "
+                    + (gift.ability() == null ? "no ability" : gift.ability()) + ", " + gift.gender()
+                    + ", IV " + ivTotal + "/186)";
+            source.sendSuccess(() -> CommandFormat.row(line), false);
+        }
+        int poolSize = com.cobbleraids.shop.ShopRotationPool.get(
+                com.cobbleraids.shop.ShopCatalogManager.get().rotation().excludedLabels()).size();
+        String summary = " " + listings.size() + " listings from " + poolSize + " eligible species, dearest "
+                + highest + " RP, average " + (total / listings.size()) + " RP";
+        source.sendSuccess(() -> CommandFormat.hint(summary), false);
+        return listings.size();
+    }
+
     static int config(CommandSourceStack source) {
         CobbleRaidsConfig config = CobbleRaidsConfigManager.get();
         CobbleRaidsConfig.NaturalSpawning ns = config.naturalSpawning();

@@ -49,6 +49,7 @@ import com.cobbleraids.reward.RewardGuiBackends;
 import com.cobbleraids.reward.currency.RaidCurrencyBackends;
 import com.cobbleraids.shop.RaidShopGateway;
 import com.cobbleraids.shop.ShopCatalogManager;
+import com.cobbleraids.shop.ShopRotationService;
 import com.cobbleraids.showdown.RaidInstructionRegistrar;
 import com.cobbleraids.showdown.ShowdownIntegrationInstaller;
 import com.cobbleraids.spawn.RaidSpawnHistory;
@@ -159,6 +160,9 @@ public final class CobbleRaids implements ModInitializer {
         // And the shop catalogue, so an operator can reprice without restarting the server.
         ServerLifecycleEvents.START_DATA_PACK_RELOAD.register((server, resources) ->
                 RaidFaultBarrier.guard("shop-catalog-reload", ShopCatalogManager::reload));
+        // Species and their labels can change on a reload, and the rotating page is built from them.
+        ServerLifecycleEvents.START_DATA_PACK_RELOAD.register((server, resources) ->
+                RaidFaultBarrier.guard("shop-rotation-reload", ShopRotationService::invalidate));
         // And the title catalogue, for the same reason.
         ServerLifecycleEvents.START_DATA_PACK_RELOAD.register((server, resources) ->
                 RaidFaultBarrier.guard("title-catalog-reload", TitleCatalogManager::reload));

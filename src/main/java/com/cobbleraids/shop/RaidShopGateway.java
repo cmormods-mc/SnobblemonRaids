@@ -51,6 +51,7 @@ public final class RaidShopGateway {
     /** A personal entry's id, e.g. "personal:cobblemon:garchomp" or "reroll:cobblemon:garchomp". */
     private static final String PERSONAL_PREFIX = "personal:";
     private static final String REROLL_PREFIX = "reroll:";
+    private static final String ROTATING_PREFIX = "rotating.";
 
     /** Handles a page turn or a purchase from the screen. */
     public static void handle(ServerPlayer player, ShopActionPayload action) {
@@ -64,7 +65,10 @@ public final class RaidShopGateway {
         // Checked before the catalogue lookup, not after: a coincidentally-prefixed operator id in
         // the global catalogue must never be shadowed by this, and checking first makes that
         // structurally impossible rather than merely unlikely.
-        if (id.startsWith(REROLL_PREFIX)) {
+        if (id.startsWith(ROTATING_PREFIX)) {
+            result = ShopRotationService.purchase(player, id);
+            message = result.message();
+        } else if (id.startsWith(REROLL_PREFIX)) {
             ResourceLocation species = ResourceLocation.tryParse(id.substring(REROLL_PREFIX.length()));
             result = species == null ? ShopPurchaseResult.UNKNOWN_ENTRY
                     : PersonalBossShopService.reroll(player, species);
@@ -93,7 +97,9 @@ public final class RaidShopGateway {
         List<ShopPageView> catalogPages = ShopCatalogManager.pages();
         Map<ResourceLocation, BossSnapshot> personal = DefeatedBossSnapshots.forPlayer(player.getUUID());
         boolean hasPersonalPage = !personal.isEmpty();
-        int pageCount = catalogPages.size() + (hasPersonalPage ? 1 : 0);
+        List<ShopRotation.Listing> rotating = ShopRotationService.current(Instant.now());
+        boolean hasRotatingPage = !rotating.isEmpty();
+        int pageCount = catalogPages.size() + (hasRotatingPage ? 1 : 0) + (hasPersonalPage ? 1 : 0);
         if (pageCount == 0) {
             ServerPlayNetworking.send(player,
                     new ShopPagePayload("Raid Shop", 0, 1, RaidPointsStore.balance(player.getUUID()), List.of()));
@@ -108,6 +114,11 @@ public final class RaidShopGateway {
         if (index < catalogPages.size()) {
             heading = catalogPages.get(index).heading();
             entries = buildCatalogEntries(catalogPages.get(index), player);
+        } else if (hasRotatingPage && index == catalogPages.size()) {
+            // After the catalogue's own pages and before "Your Bosses", so page 0 and every
+            // bookmark on the catalogue stay exactly what they were.
+            heading = "Wandering Pokemon";
+            entries = buildRotatingEntries(rotating, player);
         } else {
             // Always the last page, so page 0 -- and every existing bookmark or expectation about
             // it -- stays exactly what it already was.
@@ -137,6 +148,24 @@ public final class RaidShopGateway {
                 entries.add(ShopEntryPayload.item(entry.id(), entry.cost(), itemId,
                         entry.item().count(), remaining, limit));
             }
+        }
+        return entries;
+    }
+
+    /**
+     * One cell per current listing. The id names the window the listing was shown in, which is what
+     * lets a click from a page that has since rotated be refused instead of buying the new stock at
+     * the old price.
+     */
+    private static List<ShopEntryPayload> buildRotatingEntries(List<ShopRotation.Listing> listings,
+                                                               ServerPlayer player) {
+        Instant now = Instant.now();
+        long window = ShopRotationService.windowNow(now);
+        List<ShopEntryPayload> entries = new ArrayList<>(listings.size());
+        for (ShopRotation.Listing listing : listings) {
+            entries.add(ShopEntryPayload.pokemon(ShopRotation.wireId(window, listing.slot()), listing.cost(),
+                    listing.speciesPath(), listing.gift().level(), false,
+                    ShopRotationService.remaining(player, listing, now), 1));
         }
         return entries;
     }
