@@ -54,9 +54,14 @@ public record ShopCatalog(int version, int perPage, ShopLimits limits, List<Shop
                         ShopEntry.ofItem("max_revive", 60, "cobblemon:max_revive", 2),
                         ShopEntry.ofItem("max_potion", 30, "cobblemon:max_potion", 4),
                         ShopEntry.ofItem("full_restore", 45, "cobblemon:full_restore", 2),
-                        ShopEntry.ofItem("rare_candy", 75, "cobblemon:rare_candy", 1),
-                        ShopEntry.ofItem("exp_candy_l", 40, "cobblemon:exp_candy_l", 4),
-                        ShopEntry.ofItem("exp_candy_xl", 90, "cobblemon:exp_candy_xl", 2))),
+                        // Priced so a level costs about 15 RP on average: a Rare Candy is exactly one
+                        // level, and Large (10,000 exp) and XL (30,000) are about one and three
+                        // average levels each. One candy per purchase, with the daily limit as the
+                        // real throttle, so the price is per candy and cannot be bought in bundles.
+                        ShopEntry.ofItem("rare_candy", 15, "cobblemon:rare_candy", 1),
+                        ShopEntry.ofItem("exp_candy_l", 30, "cobblemon:exp_candy_l", 1),
+                        ShopEntry.ofItem("exp_candy_xl", 75, "cobblemon:exp_candy_xl", 1, 3,
+                                ShopLimits.DEFAULTS.reset()))),
                 new ShopSection("held_items", "Held Items", List.of(
                         ShopEntry.ofItem("leftovers", 150, "cobblemon:leftovers", 1),
                         ShopEntry.ofItem("choice_band", 175, "cobblemon:choice_band", 1),
@@ -127,7 +132,8 @@ public record ShopCatalog(int version, int perPage, ShopLimits limits, List<Shop
             // a purchase names one, and two entries answering to it means the player gets whichever
             // the lookup happened to reach first.
             List<ShopEntry> kept = new ArrayList<>();
-            for (ShopEntry entry : section.entries()) {
+            for (ShopEntry original : section.entries()) {
+                ShopEntry entry = migrated(original);
                 if (seenEntries.add(entry.id())) {
                     kept.add(entry);
                 } else {
@@ -138,6 +144,26 @@ public record ShopCatalog(int version, int perPage, ShopLimits limits, List<Shop
             sections.add(new ShopSection(section.id(), section.title(), kept));
         }
         return new ShopCatalog(version, perPage, limits, sections);
+    }
+
+    /**
+     * The three exp-candy listings as they shipped before the per-level repricing. An entry that is
+     * still exactly one of these was never edited, so it moves to the new listing; any other is an
+     * operator's own price and stays as written.
+     */
+    private static final Map<String, ShopEntry> SUPERSEDED = Map.of(
+            "rare_candy", ShopEntry.ofItem("rare_candy", 75, "cobblemon:rare_candy", 1),
+            "exp_candy_l", ShopEntry.ofItem("exp_candy_l", 40, "cobblemon:exp_candy_l", 4),
+            "exp_candy_xl", ShopEntry.ofItem("exp_candy_xl", 90, "cobblemon:exp_candy_xl", 2));
+
+    private static ShopEntry migrated(ShopEntry entry) {
+        if (!entry.equals(SUPERSEDED.get(entry.id()))) return entry;
+        return defaultsEntry(entry.id());
+    }
+
+    private static ShopEntry defaultsEntry(String id) {
+        return defaults().sections().stream().flatMap(section -> section.entries().stream())
+                .filter(candidate -> candidate.id().equals(id)).findFirst().orElseThrow();
     }
 
     public JsonObject toJson() {

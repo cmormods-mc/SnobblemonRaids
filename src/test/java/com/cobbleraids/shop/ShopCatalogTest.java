@@ -407,4 +407,38 @@ class ShopCatalogTest {
 
         assertEquals(fromSections, List.copyOf(catalog.byId().keySet()));
     }
+
+    @Test
+    @DisplayName("exp candies are priced per level: Rare 15, Large 30, XL 75, one candy per purchase")
+    void expCandyPricing() {
+        Map<String, ShopEntry> byId = ShopCatalog.defaults().byId();
+
+        assertEquals(15, byId.get("rare_candy").cost());
+        assertEquals(5, byId.get("rare_candy").limit());
+        assertEquals(30, byId.get("exp_candy_l").cost());
+        assertEquals(5, byId.get("exp_candy_l").limit());
+        assertEquals(75, byId.get("exp_candy_xl").cost());
+        assertEquals(3, byId.get("exp_candy_xl").limit());
+        for (String id : List.of("rare_candy", "exp_candy_l", "exp_candy_xl")) {
+            assertEquals(1, byId.get(id).item().count(), id + " must be one candy per purchase");
+        }
+    }
+
+    @Test
+    @DisplayName("an untouched pre-repricing candy listing moves to the new one; an edited one stays")
+    void oldCandyListingsMigrate() {
+        JsonObject old = parse("""
+                {"version": 2, "sections": [{"id": "c", "title": "C", "entries": [
+                  {"id": "rare_candy", "cost": 75, "limit": 5, "reset": "daily", "item": "cobblemon:rare_candy", "count": 1},
+                  {"id": "exp_candy_l", "cost": 40, "limit": 5, "reset": "daily", "item": "cobblemon:exp_candy_l", "count": 4},
+                  {"id": "exp_candy_xl", "cost": 95, "limit": 5, "reset": "daily", "item": "cobblemon:exp_candy_xl", "count": 2}]}]}
+                """);
+
+        Map<String, ShopEntry> byId = ShopCatalog.fromJson(old).byId();
+
+        assertEquals(ShopCatalog.defaults().byId().get("rare_candy"), byId.get("rare_candy"));
+        assertEquals(ShopCatalog.defaults().byId().get("exp_candy_l"), byId.get("exp_candy_l"));
+        assertEquals(95, byId.get("exp_candy_xl").cost(), "an operator's own price is left alone");
+        assertEquals(2, byId.get("exp_candy_xl").item().count());
+    }
 }
