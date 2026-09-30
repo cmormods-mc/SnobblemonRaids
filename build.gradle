@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.136-renown-legends'
+version = '0.8.137-addon-rewards-merged'
 group = 'com.cobbleraids'
 
 base {
@@ -78,7 +78,7 @@ processResources {
 }
 
 // Consumed by CobbleTowers through `gradlew publishToMavenLocal`. The java component carries the
-// remapped jar and the sources jar; the two data-only add-on jars are not published.
+// remapped jar and the sources jar; the reward loot tables ship inside the core jar.
 publishing {
     publications {
         mavenJava(MavenPublication) {
@@ -86,43 +86,4 @@ publishing {
             from components.java
         }
     }
-}
-
-sourceSets {
-    addonRewards {
-        resources.srcDir 'compat/addonrewards/src/main/resources'
-    }
-}
-
-tasks.register('addonRewardsJar', Jar) {
-    group = 'build'
-    description = 'Builds the optional raid-reward loot tables for common Cobblemon add-ons.'
-    dependsOn tasks.named('processAddonRewardsResources')
-    archiveBaseName = 'CobbleRaids-AddonRewards'
-    // 2.0.0 because the contents changed wholesale: the four cobbleraids:tier bundles and the
-    // vitamins leaf are gone, and the policy economy's base/general/specialty graph replaced them.
-    // Shipping that under the old filename would leave two jars nobody can tell apart, which is
-    // the same trap identically named core builds caused.
-    //
-    // 2.1.0-curated-base: the base catalog was rebuilt. Ten rows of Poke Balls and Potions became
-    // forty-five rows of balls, EV items, upgraded medicine and held items, and base's share of a
-    // bundle fell from 58-73% to 39-50%. The graph shape is unchanged, so this is a minor bump --
-    // but the payouts are not comparable, which is why the filename has to differ.
-    //
-    // 2.2.0-no-filler: the capsule-materials, safari and riding leaves are gone -- two, two and one
-    // entry respectively, and between them 40-54% of every general selection. General is now base
-    // plus card packs. Also drops eight dead addons/* tables the 2.0.0 rebuild left behind.
-    //
-    // 2.3.0-key-fragments: adds keys/<tier>, the one-outcome tables the reward policy points at
-    // for guaranteed raid key fragments.
-    //
-    // 2.4.0-held-items: adds specialty/leaf/raid_core and specialty/leaf/guardian_scale, the raid-
-    // exclusive held items' own leaf tables, referenced from specialty/<tier> for powerhouse and up.
-    archiveVersion = '2.4.0-held-items'
-    archiveClassifier = ''
-    from sourceSets.addonRewards.output
-}
-
-tasks.named('build') {
-    dependsOn tasks.named('addonRewardsJar')
 }

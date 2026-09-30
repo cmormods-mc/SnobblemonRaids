@@ -21,8 +21,8 @@ import sys
 from fractions import Fraction
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-TABLE_ROOT = os.path.join(REPO_ROOT, "compat", "addonrewards", "src", "main", "resources",
-                          "data", "cobbleraids", "loot_table")
+TABLE_ROOT = os.path.join(REPO_ROOT, "src", "main", "resources", "data", "cobbleraids",
+                          "loot_table")
 MANIFEST_PATH = os.path.join(REPO_ROOT, "validation", "economy", "manifest.json")
 
 TIERS = ["starter", "powerhouse", "legendary", "mythical"]

@@ -19,7 +19,10 @@ wears the boss down.
 **Optional.** `SkiesGUIs` 1.8.1 gives reward claiming a chest GUI; without it the same
 rewards are claimed from chat with `/cobbleraids reward claim`, and a SkiesGUIs that
 fails to load degrades to that fallback rather than aborting server start.
-`CobbleRaids-AddonRewards` is an optional data-only JAR.
+The reward loot tables are built in. Items from these Cobblemon add-ons are rewarded only when the
+add-on is installed, and each is skipped silently when it is not: `mega_showdown`, `simpletms`,
+`cobblemoncharms`, `cobblemon-cards`, `cobblecapsule`, `companion_bonds`, `daycareplus`,
+`cobblesafari`, `ridetraining`.
 
 ## Content
 
@@ -145,8 +148,7 @@ is checked by CI against the parser, so it cannot drift out of date.
 ### The reward policy
 
 A definition that names **no** rewards of its own is *policy-driven*: what it grants comes from
-`config/cobbleraids/reward_policy.json` and the tables in the optional `CobbleRaids-AddonRewards`
-JAR. All 130 bundled definitions work this way. Each claim is one **specialty** selection plus two
+`config/cobbleraids/reward_policy.json` and the tables built into the core JAR. All 130 bundled definitions work this way. Each claim is one **specialty** selection plus two
 **general** ones, and contribution adds up to three more general selections — 3 to 6 in total, with
 the specialty selection happening exactly once however hard the player fought.
 
@@ -164,8 +166,9 @@ will notice.
 
 A definition that names anything of its own — items, chance items, loot tables, a contribution
 pool — keeps its own behaviour instead and ignores the policy entirely. That is what the
-per-add-on tables are for: `cobbleraids:addons/charms`, `addons/tms`, `addons/cards` and the rest
-each grant one item from one mod, so a hand-written definition can reward exactly one add-on.
+per-item tables under `cobbleraids:specialty/opt/<mod>/` and the grouped ones under
+`specialty/leaf/` are for: each grants one item (or one group) from one mod, so a hand-written
+definition can reward exactly one add-on. Each is skipped when its mod is not installed.
 `/cobbleraids debug audit` names any definition still on that path, in case it is there by
 accident rather than on purpose.
 
