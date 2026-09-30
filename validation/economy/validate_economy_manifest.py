@@ -29,6 +29,7 @@ REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 MANIFEST_PATH = os.path.join(REPO_ROOT, "validation", "economy", "manifest.json")
 RAIDS_DIR = os.path.join(REPO_ROOT, "src", "main", "resources", "data", "cobbleraids", "raids")
 COMPAT_DIR = os.path.join(REPO_ROOT, "compat")
+RAIDS_DIR_ROOT = os.path.join(REPO_ROOT, "src", "main", "resources")
 
 # Vanilla is always present; it needs no manifest entry to be a legitimate reward.
 ALWAYS_AVAILABLE = ("minecraft",)
@@ -101,7 +102,7 @@ def referenced_item_ids():
             for value in node:
                 walk(value, source)
 
-    for root in (COMPAT_DIR, RAIDS_DIR):
+    for root in (COMPAT_DIR, RAIDS_DIR, os.path.join(RAIDS_DIR_ROOT, "data", "cobbleraids", "loot_table")):
         for directory, _unused, filenames in os.walk(root):
             for filename in filenames:
                 if not filename.endswith(".json"):
@@ -241,8 +242,7 @@ def main():
 
     # A boss-specific specialty table must exist for exactly the bosses that have a Mega Stone.
     # One missing means that boss silently drops its stone; one spare means a table nothing reaches.
-    boss_table_dir = os.path.join(COMPAT_DIR, "addonrewards", "src", "main", "resources", "data",
-                                  "cobbleraids", "loot_table", "specialty", "boss")
+    boss_table_dir = os.path.join(RAIDS_DIR_ROOT, "data", "cobbleraids", "loot_table", "specialty", "boss")
     present = set()
     if os.path.isdir(boss_table_dir):
         present = {name[:-5] for name in os.listdir(boss_table_dir) if name.endswith(".json")}
@@ -288,8 +288,7 @@ def main():
               + ", ".join(sorted(sources)[:3]))
 
     # --- specialty pools must total exactly 10000 ------------------------------------------------
-    specialty_root = os.path.join(COMPAT_DIR, "addonrewards", "src", "main", "resources", "data",
-                                  "cobbleraids", "loot_table", "specialty")
+    specialty_root = os.path.join(RAIDS_DIR_ROOT, "data", "cobbleraids", "loot_table", "specialty")
     # Only the pools that ARE a specialty selection: the four tier tables and the 21 boss ones.
     # Everything below them -- grouped leaves, mega splits, the per-item wrappers that keep a
     # missing mod from taking a whole table down -- is a child whose own weights are relative.

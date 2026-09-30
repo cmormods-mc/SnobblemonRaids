@@ -28,6 +28,15 @@
     "skiesguis": "1.8.1"
   },
   "suggests": {
-    "placeholder-api": ">=2.4.0"
+    "placeholder-api": ">=2.4.0",
+    "mega_showdown": "*",
+    "simpletms": "*",
+    "cobblemoncharms": "*",
+    "cobblemon-cards": "*",
+    "cobblecapsule": "*",
+    "companion_bonds": "*",
+    "daycareplus": "*",
+    "cobblesafari": "*",
+    "ridetraining": "*"
   }
 }

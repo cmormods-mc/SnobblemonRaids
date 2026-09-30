@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generates the reward-economy loot tables, and the exact probability report for them.
 
-Every table under `compat/addonrewards/.../loot_table/{base,general,specialty}` is emitted from
+Every table under `src/main/resources/data/cobbleraids/loot_table/{base,general,keys,specialty}` is emitted from
 the matrix below. They are generated rather than hand-written for the reason the manifest is:
 sixty-seven files whose weights have to add up cannot be maintained by hand, and a drifting
 weight is invisible in a diff. Edit the matrix, re-run, commit what changes.
@@ -34,8 +34,8 @@ import sys
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 MANIFEST_PATH = os.path.join(REPO_ROOT, "validation", "economy", "manifest.json")
-TABLE_ROOT = os.path.join(REPO_ROOT, "compat", "addonrewards", "src", "main", "resources",
-                          "data", "cobbleraids", "loot_table")
+TABLE_ROOT = os.path.join(REPO_ROOT, "src", "main", "resources", "data", "cobbleraids",
+                          "loot_table")
 REPORT_PATH = os.path.join(REPO_ROOT, "validation", "economy", "probability_report.md")
 
 TIERS = ["starter", "powerhouse", "legendary", "mythical"]
@@ -353,7 +353,38 @@ def build_tables(manifest):
         tier_index = TIERS.index(entry["tier"])
         tables["specialty/boss/%s.json" % boss] = single_pool(
             specialty_entries(tables, tier_index, entry["tier"], boss))
-    return tables
+    return {relative: with_load_conditions(table) for relative, table in tables.items()}
+
+
+def foreign_namespaces(node):
+    """Mod namespaces an item or tag entry anywhere in a table names, minus the always-present."""
+    found = set()
+    if isinstance(node, dict):
+        if node.get("type") in ("minecraft:item", "minecraft:tag") and isinstance(node.get("name"), str):
+            found.add(node["name"].lstrip("#").split(":", 1)[0])
+        for value in node.values():
+            found |= foreign_namespaces(value)
+    elif isinstance(node, list):
+        for value in node:
+            found |= foreign_namespaces(value)
+    return found - set(ALWAYS_PRESENT)
+
+
+def with_load_conditions(table):
+    """Stamps a table that names an optional mod's items with a Fabric load condition.
+
+    The per-item table wrapping above keeps a missing mod from taking a PARENT down, but the
+    wrapper itself still fails to parse and logs an error on every server start. A load condition
+    makes the game skip it silently instead. The behavior is otherwise identical: a parent that
+    references a skipped table still rolls nothing for that one selection. A mod id is its item
+    namespace for every mod this names; validate_economy_manifest checks that against the pack.
+    """
+    mods = sorted(foreign_namespaces(table))
+    if not mods:
+        return table
+    conditioned = {"fabric:load_conditions": [{"condition": "fabric:all_mods_loaded", "values": mods}]}
+    conditioned.update(table)
+    return conditioned
 
 
 def specialty_entries(tables, index, tier, boss):
