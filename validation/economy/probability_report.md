@@ -43,10 +43,9 @@ Weights are hundredths of a percent; each pool totals 10000. The *matched* colum
 | redchain random ball | -- | -- | -- | -- | 0.02% | 0.02% | 0.05% | 0.05% |
 | golden auspicious ball | -- | -- | -- | -- | 0.02% | 0.02% | 0.05% | 0.05% |
 | rare candy | 1.00% | 1.00% | 2.00% | 2.00% | 3.00% | 3.00% | 4.00% | 4.00% |
-| large exp candy | -- | -- | 5.00% | 5.00% | 8.00% | 8.00% | 10.00% | 10.00% |
 | raid core | -- | -- | 0.08% | 0.08% | 0.12% | 0.12% | 0.15% | 0.15% |
 | guardian scale | -- | -- | 0.04% | 0.04% | 0.06% | 0.06% | 0.08% | 0.08% |
-| base fallback | 71.55% | 81.55% | 74.08% | 84.08% | 64.06% | 74.06% | 55.47% | 65.47% |
+| base fallback | 71.55% | 81.55% | 79.08% | 89.08% | 72.06% | 82.06% | 65.47% | 75.47% |
 
 ## Mega Stones
 
@@ -108,10 +107,9 @@ The fallback of both the general and specialty pools. Each tier's weights total 
 | cobblemon:poke_ball | 160 (x5) | 100 (x5) | 50 (x5) | 30 (x5) |
 | cobblemon:great_ball | 140 (x3) | 140 (x4) | 100 (x5) | 70 (x5) |
 | cobblemon:ultra_ball | 80 (x2) | 120 (x3) | 160 (x4) | 190 (x5) |
-| cobblemon:fast_ball | 70 (x3) | 70 (x3) | 90 (x3) | 110 (x4) |
-| cobblemon:exp_candy_s | 200 (x3) | 130 (x3) | 90 (x3) | 60 (x3) |
-| cobblemon:exp_candy_m | 110 (x2) | 150 (x2) | 150 (x3) | 130 (x3) |
-| cobblemon:exp_candy_l | 30 (x1) | 60 (x1) | 100 (x1) | 150 (x2) |
+| cobblemon:quick_ball | 70 (x3) | 70 (x3) | 90 (x3) | 110 (x4) |
+| cobblemon:exp_candy_s | 220 (x3) | 150 (x3) | 110 (x3) | 80 (x3) |
+| cobblemon:exp_candy_m | 120 (x2) | 190 (x2) | 230 (x3) | 260 (x3) |
 | cobblemon:max_potion | 80 (x1) | 80 (x2) | 90 (x2) | 90 (x3) |
 | cobblemon:revive | 70 (x1) | 70 (x1) | 70 (x2) | 60 (x2) |
 | cobblemon:full_restore | 30 (x1) | 40 (x1) | 50 (x1) | 60 (x2) |
@@ -132,9 +130,9 @@ Base is reached from a general selection at its category weight and from the spe
 | Tier | base per bundle | share |
 |---|---:|---:|
 | starter | 1.40 of 3 | 47% |
-| powerhouse | 1.72 of 3 | 57% |
-| legendary | 1.74 of 3 | 58% |
-| mythical | 1.71 of 3 | 57% |
+| powerhouse | 1.77 of 3 | 59% |
+| legendary | 1.82 of 3 | 61% |
+| mythical | 1.81 of 3 | 60% |
 
 ## Resolved against the pack
 

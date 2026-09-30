@@ -39,7 +39,7 @@
         },
         {
           "type": "minecraft:item",
-          "name": "cobblemon:fast_ball",
+          "name": "cobblemon:quick_ball",
           "weight": 90,
           "functions": [
             {
@@ -51,7 +51,7 @@
         {
           "type": "minecraft:item",
           "name": "cobblemon:exp_candy_s",
-          "weight": 90,
+          "weight": 110,
           "functions": [
             {
               "function": "minecraft:set_count",
@@ -62,18 +62,13 @@
         {
           "type": "minecraft:item",
           "name": "cobblemon:exp_candy_m",
-          "weight": 150,
+          "weight": 230,
           "functions": [
             {
               "function": "minecraft:set_count",
               "count": 3
             }
           ]
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:exp_candy_l",
-          "weight": 100
         },
         {
           "type": "minecraft:item",

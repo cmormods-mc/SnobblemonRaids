@@ -140,11 +140,6 @@
           "weight": 300
         },
         {
-          "type": "minecraft:item",
-          "name": "cobblemon:exp_candy_l",
-          "weight": 800
-        },
-        {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:specialty/leaf/raid_core",
           "weight": 12
@@ -157,7 +152,7 @@
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:base/legendary",
-          "weight": 6406
+          "weight": 7206
         }
       ]
     }
