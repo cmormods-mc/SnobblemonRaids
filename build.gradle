@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.140-quick-ball-no-large-candy'
+version = '0.8.141-exp-candy-pricing'
 group = 'com.cobbleraids'
 
 base {
