@@ -58,67 +58,40 @@ POOL_TOTAL = 10000
 # Ball needs that: at weight 2 it is 0.31%% of a mythical bundle, about one per 320 mythical raids.
 BASE_POOL_TOTAL = 1000
 
-# Balls: utility over quantity. No Poke Ball, no Great Ball -- those are what made the old pool
-# feel like a consolation prize, and the shop sells them for anyone who wants a bulk supply.
+# 2026-09-30: base is deliberately small and plain -- four balls, three sizes of Exp Candy, and the
+# top grades of healing and revival. It used to be 15 ball types, twelve EV items, six PP and
+# medicine rows and twelve held items; that spread is gone on purpose, so what a raid pays in base
+# is supplies rather than a lottery. Held items, EV items and the Master Ball are no longer paid
+# by any table here. Each row is (item, weight per tier, quantity per tier), in TIERS order.
+#
+# Balls lean on the cheap ones early and on Ultra Balls late, which is the only tier-shaping they
+# carry. Exp Candy stops at L: XL and Rare Candy grant a level or more outright and are not base
+# loot (Rare Candy and Large are specialty rows, where their rate is deliberate).
 BASE_BALLS = [
-    ("cobblemon:ultra_ball",   [80, 60, 50, 40], [2, 3, 3, 4]),
-    ("cobblemon:dusk_ball",    [50, 50, 40, 30], [1, 2, 2, 3]),
-    ("cobblemon:quick_ball",   [50, 50, 40, 30], [1, 2, 2, 3]),
-    ("cobblemon:timer_ball",   [40, 40, 30, 20], [1, 2, 2, 3]),
-    ("cobblemon:net_ball",     [30, 30, 20, 20], [1, 1, 2, 2]),
-    ("cobblemon:repeat_ball",  [30, 30, 20, 20], [1, 1, 2, 2]),
-    ("cobblemon:nest_ball",    [30, 10, 10, 10], [1, 1, 2, 2]),
-    ("cobblemon:heal_ball",    [30, 20, 20, 10], [1, 2, 2, 2]),
-    ("cobblemon:dive_ball",    [20, 20, 20, 10], [1, 1, 2, 2]),
-    ("cobblemon:luxury_ball",  [20, 20, 10, 10], [1, 1, 1, 2]),
-    ("cobblemon:level_ball",   [10, 10, 10, 10], [1, 1, 1, 2]),
-    ("cobblemon:moon_ball",    [10, 10, 10, 10], [1, 1, 1, 2]),
-    ("cobblemon:beast_ball",   [0,  0,  12, 20], [1, 1, 1, 1]),
-    ("cobblemon:dream_ball",   [0,  0,  8,  18], [1, 1, 1, 1]),
-    ("cobblemon:master_ball",  [0,  0,  0,  2],  [1, 1, 1, 1]),
+    ("cobblemon:poke_ball",  [160, 100, 50, 30],  [5, 5, 5, 5]),
+    ("cobblemon:great_ball", [140, 140, 100, 70], [3, 4, 5, 5]),
+    ("cobblemon:ultra_ball", [80, 120, 160, 190], [2, 3, 4, 5]),
+    ("cobblemon:fast_ball",  [70, 70, 90, 110],   [3, 3, 3, 4]),
 ]
 
-# Stat items: the six EV vitamins and the six Power training items. Vitamins are consumed, so they
-# are the common half and scale in quantity; a Power item is permanent gear and always lands as one.
-BASE_VITAMINS = ["protein", "iron", "calcium", "zinc", "carbos", "hp_up"]
-BASE_POWER_ITEMS = ["power_weight", "power_bracer", "power_belt", "power_lens", "power_band",
-                    "power_anklet"]
-VITAMIN_WEIGHTS = [30, 32, 34, 36]
-POWER_WEIGHTS = [10, 14, 16, 18]
-VITAMIN_QUANTITIES = [1, 2, 2, 3]
+BASE_CANDIES = [
+    ("cobblemon:exp_candy_s", [200, 130, 90, 60],  [3, 3, 3, 3]),
+    ("cobblemon:exp_candy_m", [110, 150, 150, 130], [2, 2, 3, 3]),
+    ("cobblemon:exp_candy_l", [30, 60, 100, 150],  [1, 1, 1, 2]),
+]
 
-# Medicine: a thin slice, and only the grades worth receiving. Ether and Max Elixir are here
-# because PP carries between raids (RaidBattleStateCarryover), so restoring it is a real need and
-# nothing else in the reward economy covers it.
+# Only the grades worth receiving. No Potion, Super Potion or Hyper Potion.
 BASE_MEDICINE = [
-    ("cobblemon:revive",       [40, 32, 24, 16], [1, 1, 2, 2]),
-    ("cobblemon:max_potion",   [40, 32, 24, 18], [1, 2, 2, 2]),
-    ("cobblemon:ether",        [30, 24, 18, 14], [1, 2, 2, 2]),
-    ("cobblemon:max_revive",   [20, 20, 20, 18], [1, 1, 1, 2]),
-    ("cobblemon:full_restore", [16, 16, 16, 16], [1, 1, 2, 2]),
-    ("cobblemon:max_elixir",   [10, 10, 10, 10], [1, 1, 1, 2]),
+    ("cobblemon:max_potion",   [80, 80, 90, 90], [1, 2, 2, 3]),
+    ("cobblemon:revive",       [70, 70, 70, 60], [1, 1, 2, 2]),
+    ("cobblemon:full_restore", [30, 40, 50, 60], [1, 1, 1, 2]),
+    ("cobblemon:max_revive",   [30, 40, 50, 50], [1, 1, 1, 2]),
 ]
-
-# Held items: twelve, deliberately the second tier rather than the marquee one. Each is one item
-# at one weight, equal within the tier, so the category reads as "a held item" rather than as a
-# lottery with an obvious jackpot.
-BASE_HELD_ITEMS = ["eviolite", "expert_belt", "weakness_policy", "heavy_duty_boots", "loaded_dice",
-                   "covert_cloak", "air_balloon", "scope_lens", "razor_claw", "muscle_band",
-                   "wise_glasses", "light_clay"]
-HELD_ITEM_WEIGHTS = [17, 20, 24, 27]
 
 
 def base_catalog():
     """Every base row as (item, weights per tier, quantities per tier)."""
-    rows = list(BASE_BALLS)
-    rows += [("cobblemon:" + name, list(VITAMIN_WEIGHTS), list(VITAMIN_QUANTITIES))
-             for name in BASE_VITAMINS]
-    rows += [("cobblemon:" + name, list(POWER_WEIGHTS), [1, 1, 1, 1])
-             for name in BASE_POWER_ITEMS]
-    rows += list(BASE_MEDICINE)
-    rows += [("cobblemon:" + name, list(HELD_ITEM_WEIGHTS), [1, 1, 1, 1])
-             for name in BASE_HELD_ITEMS]
-    return rows
+    return list(BASE_BALLS) + list(BASE_CANDIES) + list(BASE_MEDICINE)
 
 
 # --- section 7: general-roll categories, per tier, totalling 100 -------------------------------
@@ -532,11 +505,8 @@ def write_report(manifest):
     lines.append("|---|" + "---:|" * len(TIERS))
     groups = [
         ("balls", BASE_BALLS),
-        ("stat items (vitamins + power)",
-         [(n, VITAMIN_WEIGHTS, None) for n in BASE_VITAMINS]
-         + [(n, POWER_WEIGHTS, None) for n in BASE_POWER_ITEMS]),
-        ("medicine", BASE_MEDICINE),
-        ("held items", [(n, HELD_ITEM_WEIGHTS, None) for n in BASE_HELD_ITEMS]),
+        ("exp candy", BASE_CANDIES),
+        ("healing and revives", BASE_MEDICINE),
     ]
     for label, rows in groups:
         totals = [sum(r[1][i] for r in rows) for i in range(len(TIERS))]
@@ -550,20 +520,15 @@ def write_report(manifest):
                  " than either figure alone. A claim is two general selections plus one"
                  " specialty, on a boss with no Mega Stone:")
     lines.append("")
-    lines.append("| Tier | base per bundle | share | Master Ball per bundle |")
-    lines.append("|---|---:|---:|---:|")
+    lines.append("| Tier | base per bundle | share |")
+    lines.append("|---|---:|---:|")
     general_base = dict(GENERAL_CATEGORIES)["cobbleraids:base/{tier}"]
     for index, tier in enumerate(TIERS):
         fallback = dict(specialty_breakdown(index, False))["base fallback"] / float(POOL_TOTAL)
         selections = 2
         base_hits = selections * general_base[index] / 100.0 + fallback
-        master = next((w[index] for item, w, _q in BASE_BALLS
-                       if item == "cobblemon:master_ball"), 0) / float(BASE_POOL_TOTAL)
-        rate = base_hits * master
-        lines.append("| %s | %.2f of %d | %.0f%% | %s |"
-                     % (tier, base_hits, selections + 1,
-                        base_hits / (selections + 1) * 100.0,
-                        ("%.3f%% (1 in %d)" % (rate * 100.0, round(1 / rate))) if rate else "--"))
+        lines.append("| %s | %.2f of %d | %.0f%% |"
+                     % (tier, base_hits, selections + 1, base_hits / (selections + 1) * 100.0))
     lines.append("")
     lines.append("## Resolved against the pack")
     lines.append("")

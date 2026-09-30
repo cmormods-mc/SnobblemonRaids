@@ -105,71 +105,36 @@ The fallback of both the general and specialty pools. Each tier's weights total 
 
 | Item | starter | powerhouse | legendary | mythical |
 |---|---:|---:|---:|---:|
-| cobblemon:ultra_ball | 80 (x2) | 60 (x3) | 50 (x3) | 40 (x4) |
-| cobblemon:dusk_ball | 50 (x1) | 50 (x2) | 40 (x2) | 30 (x3) |
-| cobblemon:quick_ball | 50 (x1) | 50 (x2) | 40 (x2) | 30 (x3) |
-| cobblemon:timer_ball | 40 (x1) | 40 (x2) | 30 (x2) | 20 (x3) |
-| cobblemon:net_ball | 30 (x1) | 30 (x1) | 20 (x2) | 20 (x2) |
-| cobblemon:repeat_ball | 30 (x1) | 30 (x1) | 20 (x2) | 20 (x2) |
-| cobblemon:nest_ball | 30 (x1) | 10 (x1) | 10 (x2) | 10 (x2) |
-| cobblemon:heal_ball | 30 (x1) | 20 (x2) | 20 (x2) | 10 (x2) |
-| cobblemon:dive_ball | 20 (x1) | 20 (x1) | 20 (x2) | 10 (x2) |
-| cobblemon:luxury_ball | 20 (x1) | 20 (x1) | 10 (x1) | 10 (x2) |
-| cobblemon:level_ball | 10 (x1) | 10 (x1) | 10 (x1) | 10 (x2) |
-| cobblemon:moon_ball | 10 (x1) | 10 (x1) | 10 (x1) | 10 (x2) |
-| cobblemon:beast_ball | -- | -- | 12 (x1) | 20 (x1) |
-| cobblemon:dream_ball | -- | -- | 8 (x1) | 18 (x1) |
-| cobblemon:master_ball | -- | -- | -- | 2 (x1) |
-| cobblemon:protein | 30 (x1) | 32 (x2) | 34 (x2) | 36 (x3) |
-| cobblemon:iron | 30 (x1) | 32 (x2) | 34 (x2) | 36 (x3) |
-| cobblemon:calcium | 30 (x1) | 32 (x2) | 34 (x2) | 36 (x3) |
-| cobblemon:zinc | 30 (x1) | 32 (x2) | 34 (x2) | 36 (x3) |
-| cobblemon:carbos | 30 (x1) | 32 (x2) | 34 (x2) | 36 (x3) |
-| cobblemon:hp_up | 30 (x1) | 32 (x2) | 34 (x2) | 36 (x3) |
-| cobblemon:power_weight | 10 (x1) | 14 (x1) | 16 (x1) | 18 (x1) |
-| cobblemon:power_bracer | 10 (x1) | 14 (x1) | 16 (x1) | 18 (x1) |
-| cobblemon:power_belt | 10 (x1) | 14 (x1) | 16 (x1) | 18 (x1) |
-| cobblemon:power_lens | 10 (x1) | 14 (x1) | 16 (x1) | 18 (x1) |
-| cobblemon:power_band | 10 (x1) | 14 (x1) | 16 (x1) | 18 (x1) |
-| cobblemon:power_anklet | 10 (x1) | 14 (x1) | 16 (x1) | 18 (x1) |
-| cobblemon:revive | 40 (x1) | 32 (x1) | 24 (x2) | 16 (x2) |
-| cobblemon:max_potion | 40 (x1) | 32 (x2) | 24 (x2) | 18 (x2) |
-| cobblemon:ether | 30 (x1) | 24 (x2) | 18 (x2) | 14 (x2) |
-| cobblemon:max_revive | 20 (x1) | 20 (x1) | 20 (x1) | 18 (x2) |
-| cobblemon:full_restore | 16 (x1) | 16 (x1) | 16 (x2) | 16 (x2) |
-| cobblemon:max_elixir | 10 (x1) | 10 (x1) | 10 (x1) | 10 (x2) |
-| cobblemon:eviolite | 17 (x1) | 20 (x1) | 24 (x1) | 27 (x1) |
-| cobblemon:expert_belt | 17 (x1) | 20 (x1) | 24 (x1) | 27 (x1) |
-| cobblemon:weakness_policy | 17 (x1) | 20 (x1) | 24 (x1) | 27 (x1) |
-| cobblemon:heavy_duty_boots | 17 (x1) | 20 (x1) | 24 (x1) | 27 (x1) |
-| cobblemon:loaded_dice | 17 (x1) | 20 (x1) | 24 (x1) | 27 (x1) |
-| cobblemon:covert_cloak | 17 (x1) | 20 (x1) | 24 (x1) | 27 (x1) |
-| cobblemon:air_balloon | 17 (x1) | 20 (x1) | 24 (x1) | 27 (x1) |
-| cobblemon:scope_lens | 17 (x1) | 20 (x1) | 24 (x1) | 27 (x1) |
-| cobblemon:razor_claw | 17 (x1) | 20 (x1) | 24 (x1) | 27 (x1) |
-| cobblemon:muscle_band | 17 (x1) | 20 (x1) | 24 (x1) | 27 (x1) |
-| cobblemon:wise_glasses | 17 (x1) | 20 (x1) | 24 (x1) | 27 (x1) |
-| cobblemon:light_clay | 17 (x1) | 20 (x1) | 24 (x1) | 27 (x1) |
+| cobblemon:poke_ball | 160 (x5) | 100 (x5) | 50 (x5) | 30 (x5) |
+| cobblemon:great_ball | 140 (x3) | 140 (x4) | 100 (x5) | 70 (x5) |
+| cobblemon:ultra_ball | 80 (x2) | 120 (x3) | 160 (x4) | 190 (x5) |
+| cobblemon:fast_ball | 70 (x3) | 70 (x3) | 90 (x3) | 110 (x4) |
+| cobblemon:exp_candy_s | 200 (x3) | 130 (x3) | 90 (x3) | 60 (x3) |
+| cobblemon:exp_candy_m | 110 (x2) | 150 (x2) | 150 (x3) | 130 (x3) |
+| cobblemon:exp_candy_l | 30 (x1) | 60 (x1) | 100 (x1) | 150 (x2) |
+| cobblemon:max_potion | 80 (x1) | 80 (x2) | 90 (x2) | 90 (x3) |
+| cobblemon:revive | 70 (x1) | 70 (x1) | 70 (x2) | 60 (x2) |
+| cobblemon:full_restore | 30 (x1) | 40 (x1) | 50 (x1) | 60 (x2) |
+| cobblemon:max_revive | 30 (x1) | 40 (x1) | 50 (x1) | 50 (x2) |
 
 ### Category budgets
 
 | Category | starter | powerhouse | legendary | mythical |
 |---|---:|---:|---:|---:|
-| balls | 400 (40.0%) | 350 (35.0%) | 300 (30.0%) | 260 (26.0%) |
-| stat items (vitamins + power) | 240 (24.0%) | 276 (27.6%) | 300 (30.0%) | 324 (32.4%) |
-| medicine | 156 (15.6%) | 134 (13.4%) | 112 (11.2%) | 92 (9.2%) |
-| held items | 204 (20.4%) | 240 (24.0%) | 288 (28.8%) | 324 (32.4%) |
+| balls | 450 (45.0%) | 430 (43.0%) | 400 (40.0%) | 400 (40.0%) |
+| exp candy | 340 (34.0%) | 340 (34.0%) | 340 (34.0%) | 340 (34.0%) |
+| healing and revives | 210 (21.0%) | 230 (23.0%) | 260 (26.0%) | 260 (26.0%) |
 
 ### What a bundle actually contains
 
 Base is reached from a general selection at its category weight and from the specialty selection through the fallback, so its share of a bundle is higher than either figure alone. A claim is two general selections plus one specialty, on a boss with no Mega Stone:
 
-| Tier | base per bundle | share | Master Ball per bundle |
-|---|---:|---:|---:|
-| starter | 1.40 of 3 | 47% | -- |
-| powerhouse | 1.72 of 3 | 57% | -- |
-| legendary | 1.74 of 3 | 58% | -- |
-| mythical | 1.71 of 3 | 57% | 0.343% (1 in 292) |
+| Tier | base per bundle | share |
+|---|---:|---:|
+| starter | 1.40 of 3 | 47% |
+| powerhouse | 1.72 of 3 | 57% |
+| legendary | 1.74 of 3 | 58% |
+| mythical | 1.71 of 3 | 57% |
 
 ## Resolved against the pack
 

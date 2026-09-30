@@ -6,8 +6,41 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "cobblemon:ultra_ball",
+          "name": "cobblemon:poke_ball",
           "weight": 50,
+          "functions": [
+            {
+              "function": "minecraft:set_count",
+              "count": 5
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemon:great_ball",
+          "weight": 100,
+          "functions": [
+            {
+              "function": "minecraft:set_count",
+              "count": 5
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemon:ultra_ball",
+          "weight": 160,
+          "functions": [
+            {
+              "function": "minecraft:set_count",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemon:fast_ball",
+          "weight": 90,
           "functions": [
             {
               "function": "minecraft:set_count",
@@ -17,228 +50,35 @@
         },
         {
           "type": "minecraft:item",
-          "name": "cobblemon:dusk_ball",
-          "weight": 40,
+          "name": "cobblemon:exp_candy_s",
+          "weight": 90,
           "functions": [
             {
               "function": "minecraft:set_count",
-              "count": 2
+              "count": 3
             }
           ]
         },
         {
           "type": "minecraft:item",
-          "name": "cobblemon:quick_ball",
-          "weight": 40,
+          "name": "cobblemon:exp_candy_m",
+          "weight": 150,
           "functions": [
             {
               "function": "minecraft:set_count",
-              "count": 2
+              "count": 3
             }
           ]
         },
         {
           "type": "minecraft:item",
-          "name": "cobblemon:timer_ball",
-          "weight": 30,
-          "functions": [
-            {
-              "function": "minecraft:set_count",
-              "count": 2
-            }
-          ]
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:net_ball",
-          "weight": 20,
-          "functions": [
-            {
-              "function": "minecraft:set_count",
-              "count": 2
-            }
-          ]
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:repeat_ball",
-          "weight": 20,
-          "functions": [
-            {
-              "function": "minecraft:set_count",
-              "count": 2
-            }
-          ]
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:nest_ball",
-          "weight": 10,
-          "functions": [
-            {
-              "function": "minecraft:set_count",
-              "count": 2
-            }
-          ]
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:heal_ball",
-          "weight": 20,
-          "functions": [
-            {
-              "function": "minecraft:set_count",
-              "count": 2
-            }
-          ]
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:dive_ball",
-          "weight": 20,
-          "functions": [
-            {
-              "function": "minecraft:set_count",
-              "count": 2
-            }
-          ]
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:luxury_ball",
-          "weight": 10
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:level_ball",
-          "weight": 10
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:moon_ball",
-          "weight": 10
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:beast_ball",
-          "weight": 12
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:dream_ball",
-          "weight": 8
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:protein",
-          "weight": 34,
-          "functions": [
-            {
-              "function": "minecraft:set_count",
-              "count": 2
-            }
-          ]
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:iron",
-          "weight": 34,
-          "functions": [
-            {
-              "function": "minecraft:set_count",
-              "count": 2
-            }
-          ]
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:calcium",
-          "weight": 34,
-          "functions": [
-            {
-              "function": "minecraft:set_count",
-              "count": 2
-            }
-          ]
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:zinc",
-          "weight": 34,
-          "functions": [
-            {
-              "function": "minecraft:set_count",
-              "count": 2
-            }
-          ]
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:carbos",
-          "weight": 34,
-          "functions": [
-            {
-              "function": "minecraft:set_count",
-              "count": 2
-            }
-          ]
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:hp_up",
-          "weight": 34,
-          "functions": [
-            {
-              "function": "minecraft:set_count",
-              "count": 2
-            }
-          ]
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:power_weight",
-          "weight": 16
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:power_bracer",
-          "weight": 16
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:power_belt",
-          "weight": 16
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:power_lens",
-          "weight": 16
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:power_band",
-          "weight": 16
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:power_anklet",
-          "weight": 16
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:revive",
-          "weight": 24,
-          "functions": [
-            {
-              "function": "minecraft:set_count",
-              "count": 2
-            }
-          ]
+          "name": "cobblemon:exp_candy_l",
+          "weight": 100
         },
         {
           "type": "minecraft:item",
           "name": "cobblemon:max_potion",
-          "weight": 24,
+          "weight": 90,
           "functions": [
             {
               "function": "minecraft:set_count",
@@ -248,95 +88,24 @@
         },
         {
           "type": "minecraft:item",
-          "name": "cobblemon:ether",
-          "weight": 18,
+          "name": "cobblemon:revive",
+          "weight": 70,
           "functions": [
             {
               "function": "minecraft:set_count",
               "count": 2
             }
           ]
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:max_revive",
-          "weight": 20
         },
         {
           "type": "minecraft:item",
           "name": "cobblemon:full_restore",
-          "weight": 16,
-          "functions": [
-            {
-              "function": "minecraft:set_count",
-              "count": 2
-            }
-          ]
+          "weight": 50
         },
         {
           "type": "minecraft:item",
-          "name": "cobblemon:max_elixir",
-          "weight": 10
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:eviolite",
-          "weight": 24
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:expert_belt",
-          "weight": 24
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:weakness_policy",
-          "weight": 24
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:heavy_duty_boots",
-          "weight": 24
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:loaded_dice",
-          "weight": 24
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:covert_cloak",
-          "weight": 24
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:air_balloon",
-          "weight": 24
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:scope_lens",
-          "weight": 24
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:razor_claw",
-          "weight": 24
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:muscle_band",
-          "weight": 24
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:wise_glasses",
-          "weight": 24
-        },
-        {
-          "type": "minecraft:item",
-          "name": "cobblemon:light_clay",
-          "weight": 24
+          "name": "cobblemon:max_revive",
+          "weight": 50
         }
       ]
     }
