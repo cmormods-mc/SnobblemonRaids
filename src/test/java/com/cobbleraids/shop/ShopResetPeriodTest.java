@@ -86,7 +86,28 @@ class ShopResetPeriodTest {
         }
         assertEquals(ShopResetPeriod.NEVER, ShopResetPeriod.parse("NEVER", null));
         assertEquals(ShopResetPeriod.NEVER, ShopResetPeriod.parse("  once  ", null));
-        assertEquals(ShopResetPeriod.DAILY, ShopResetPeriod.parse("weekly", ShopResetPeriod.DAILY));
+        assertEquals(ShopResetPeriod.DAILY, ShopResetPeriod.parse("fortnightly", ShopResetPeriod.DAILY));
         assertEquals(ShopResetPeriod.DAILY, ShopResetPeriod.parse(null, ShopResetPeriod.DAILY));
+    }
+
+    @Test
+    @DisplayName("a week runs Monday to Sunday, in UTC")
+    void weeksStartOnMonday() {
+        // 2026-09-14 is a Monday, so the Sunday before it is the last day of the previous week.
+        long sunday = ShopResetPeriod.WEEKLY.windowOf(Instant.parse("2026-09-13T23:59:59Z"));
+        long monday = ShopResetPeriod.WEEKLY.windowOf(Instant.parse("2026-09-14T00:00:00Z"));
+        long nextSunday = ShopResetPeriod.WEEKLY.windowOf(Instant.parse("2026-09-20T23:59:59Z"));
+
+        assertEquals(sunday + 1, monday);
+        assertEquals(monday, nextSunday);
+        assertEquals(ShopResetPeriod.WEEKLY.windowOf(Instant.parse("2026-09-08T12:00:00Z")), sunday);
+    }
+
+    @Test
+    @DisplayName("a week number can never be mistaken for a day number")
+    void weekAndDayRangesAreApart() {
+        Instant now = Instant.parse("2026-09-30T00:00:00Z");
+
+        assertTrue(ShopResetPeriod.DAILY.windowOf(now) > 5 * ShopResetPeriod.WEEKLY.windowOf(now));
     }
 }

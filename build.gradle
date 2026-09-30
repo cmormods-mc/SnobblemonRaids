@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.141-exp-candy-pricing'
+version = '0.8.142-shop-prices-weekly-limits'
 group = 'com.cobbleraids'
 
 base {
