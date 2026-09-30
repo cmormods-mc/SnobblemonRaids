@@ -112,6 +112,8 @@ final class CobbleRaidsConfigCodec {
                 Json.bool(currencyObject, "scale_with_contribution", cur.scaleWithContribution()),
                 Json.decimal(currencyObject, "minimum_share_percentage", cur.minimumSharePercentage())
         );
+        // A file still holding the old shipped block was never tuned, so it moves to the new one.
+        if (currency.equals(CobbleRaidsConfig.Currency.supersededDefaults())) currency = cur;
 
         JsonObject dynamicLevelObject = Json.object(root, "dynamic_level");
         CobbleRaidsConfig.DynamicLevel dl = defaults.dynamicLevel();

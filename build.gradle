@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.137-addon-rewards-merged'
+version = '0.8.138-three-slot-rewards'
 group = 'com.cobbleraids'
 
 base {

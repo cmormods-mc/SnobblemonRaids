@@ -45,16 +45,50 @@ class RaidRewardPolicyTest {
     }
 
     @Test
-    @DisplayName("the shipped thresholds are 20/35/50 for one, two and three rolls")
-    void shippedThresholds() {
-        List<ContributionMath.Threshold> thresholds = RaidRewardPolicy.defaults().contributionThresholds();
+    @DisplayName("the shipped policy is flat: contribution adds no selections and no fragments are guaranteed")
+    void shippedPolicyIsFlat() {
+        RaidRewardPolicy defaults = RaidRewardPolicy.defaults();
 
-        assertEquals(3, thresholds.size());
-        assertEquals(2, RaidRewardPolicy.defaults().standardGeneralRolls());
-        assertEquals(1, ContributionMath.bonusRolls(20.0, thresholds));
-        assertEquals(2, ContributionMath.bonusRolls(35.0, thresholds));
-        assertEquals(3, ContributionMath.bonusRolls(50.0, thresholds));
-        assertEquals(0, ContributionMath.bonusRolls(19.99, thresholds));
+        assertEquals(2, defaults.standardGeneralRolls());
+        for (double share : new double[] {0.0, 20.0, 50.0, 100.0}) {
+            assertEquals(0, ContributionMath.bonusRolls(share, defaults.contributionThresholds()), "at " + share);
+        }
+        for (int bonus = 0; bonus <= 3; bonus++) assertEquals(0, defaults.keyFragmentsFor(bonus));
+    }
+
+    private static com.google.gson.JsonObject oldShippedFile() {
+        var root = RaidRewardPolicy.defaults().toJson();
+        var ladder = new com.google.gson.JsonArray();
+        for (double[] row : new double[][] {{20.0, 1}, {35.0, 2}, {50.0, 3}}) {
+            var entry = new com.google.gson.JsonObject();
+            entry.addProperty("min_percentage", row[0]);
+            entry.addProperty("bonus_rolls", (int) row[1]);
+            ladder.add(entry);
+        }
+        root.add("contribution_thresholds", ladder);
+        var fragments = new com.google.gson.JsonArray();
+        for (int count : new int[] {1, 2, 2, 3}) fragments.add(count);
+        root.add("key_fragments_by_bonus_rolls", fragments);
+        return root;
+    }
+
+    @Test
+    @DisplayName("an untouched file from before the flat policy moves to the new one")
+    void supersededDefaultsMigrate() {
+        assertEquals(RaidRewardPolicy.defaults(), RaidRewardPolicy.fromJson(oldShippedFile()));
+    }
+
+    @Test
+    @DisplayName("a file the operator changed is left exactly as written")
+    void editedFilesAreNotMigrated() {
+        var edited = oldShippedFile();
+        var fragments = new com.google.gson.JsonArray();
+        for (int count : new int[] {1, 2, 2, 4}) fragments.add(count);
+        edited.add("key_fragments_by_bonus_rolls", fragments);
+
+        RaidRewardPolicy kept = RaidRewardPolicy.fromJson(edited);
+        assertEquals(3, ContributionMath.bonusRolls(50.0, kept.contributionThresholds()));
+        assertEquals(4, kept.keyFragmentsFor(3));
     }
 
     @Test

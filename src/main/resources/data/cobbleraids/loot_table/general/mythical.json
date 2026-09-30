@@ -7,12 +7,17 @@
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:base/mythical",
-          "weight": 47
+          "weight": 53
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:general/leaf/cards",
-          "weight": 53
+          "weight": 27
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:keys/mythical",
+          "weight": 20
         }
       ]
     }
