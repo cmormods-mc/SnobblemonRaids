@@ -24,7 +24,17 @@ import org.junit.jupiter.api.Test;
  */
 class RewardPlanResolverTest {
 
-    private static final RaidRewardPolicy POLICY = RaidRewardPolicy.defaults();
+    /** The shipped policy: flat, three items, no guaranteed fragments. */
+    private static final RaidRewardPolicy SHIPPED = RaidRewardPolicy.defaults();
+    /**
+     * An operator-configured contribution ladder, which is what the bonus-roll and fragment
+     * mechanics below need exercising against. Its fragments differ from the superseded shipped
+     * [1,2,2,3] on purpose, so it is not migrated away when parsed.
+     */
+    private static final RaidRewardPolicy POLICY = RaidRewardPolicy.fromJson(com.google.gson.JsonParser.parseString(
+            "{\"standard_general_rolls\":2,\"contribution_thresholds\":[{\"min_percentage\":20.0,\"bonus_rolls\":1},"
+                    + "{\"min_percentage\":35.0,\"bonus_rolls\":2},{\"min_percentage\":50.0,\"bonus_rolls\":3}],"
+                    + "\"key_fragments_by_bonus_rolls\":[1,2,2,4]}").getAsJsonObject());
     private static final CobbleRaidsConfig.Currency NO_CURRENCY = CobbleRaidsConfig.Currency.disabled();
     private static final Predicate<String> NO_BOSS_TABLES = table -> false;
     private static final CobbleRaidsConfig.MegaPity NO_PITY = new CobbleRaidsConfig.MegaPity(false, 12);
@@ -111,19 +121,22 @@ class RewardPlanResolverTest {
     // --- policy path -----------------------------------------------------------------------------
 
     @Test
-    @DisplayName("a claim is one specialty selection, a key fragment and two general ones")
-    void policyPlanIsThreeSelections() {
-        RewardPlan plan = resolve(rewards(List.of(), noBonus()), emptyChoice(),
-                RaidRarityTier.STARTER, "charizard", 0, NO_BOSS_TABLES);
+    @DisplayName("the shipped claim is one specialty and two general selections, at any contribution")
+    void shippedPlanIsThreeSelectionsFlat() {
+        for (double share : new double[] {0.0, 19.99, 35.0, 100.0}) {
+            int bonus = RewardPlanResolver.bonusRollsFor(rewards(List.of(), noBonus()), emptyChoice(), SHIPPED, share);
+            RewardPlan plan = RewardPlanResolver.resolve(rewards(List.of(), noBonus()), emptyChoice(),
+                    RaidRarityTier.STARTER, "charizard", share, bonus, SHIPPED, NO_CURRENCY,
+                    NO_BOSS_TABLES, 0, NO_PITY);
 
-        RewardPlan.Policy policy = assertInstanceOf(RewardPlan.Policy.class, plan);
-        // Order matters and is asserted, not just membership: the general rolls have to be last.
-        // See planOrderKeepsBonusRollsLast.
-        assertEquals(List.of("cobbleraids:specialty/starter",
-                        "cobbleraids:keys/starter",
-                        "cobbleraids:general/starter",
-                        "cobbleraids:general/starter"),
-                policy.lootTables());
+            RewardPlan.Policy policy = assertInstanceOf(RewardPlan.Policy.class, plan);
+            // Order matters and is asserted, not just membership: the general rolls have to be last.
+            // Key fragments are no longer a separate entry; they are a category inside general/.
+            assertEquals(List.of("cobbleraids:specialty/starter",
+                            "cobbleraids:general/starter",
+                            "cobbleraids:general/starter"),
+                    policy.lootTables(), "at " + share + "%");
+        }
     }
 
     @Test
@@ -149,14 +162,13 @@ class RewardPlanResolverTest {
         // The policy's own numbers, not a copy of them: a retune of the ladder should move this
         // test's expectation with it, because what is being asserted is that the resolver honours
         // the policy -- not that the policy holds any particular value.
-        RaidRewardPolicy policy = RaidRewardPolicy.defaults();
         for (int bonus = 0; bonus <= 3; bonus++) {
             RewardPlan.Policy plan = assertInstanceOf(RewardPlan.Policy.class,
                     resolve(rewards(List.of(), noBonus()), emptyChoice(),
                             RaidRarityTier.MYTHICAL, "mewtwo", bonus, NO_BOSS_TABLES));
 
             long fragments = plan.lootTables().stream().filter(t -> t.startsWith("cobbleraids:keys/")).count();
-            assertEquals(policy.keyFragmentsFor(bonus), fragments, "fragments at B=" + bonus);
+            assertEquals(POLICY.keyFragmentsFor(bonus), fragments, "fragments at B=" + bonus);
             assertTrue(fragments >= 1, "every claim earns at least one fragment, at B=" + bonus);
             assertTrue(plan.lootTables().stream().filter(t -> t.startsWith("cobbleraids:keys/"))
                             .allMatch(t -> t.equals("cobbleraids:keys/mythical")),

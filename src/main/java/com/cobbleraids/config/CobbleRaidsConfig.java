@@ -318,11 +318,15 @@ public record CobbleRaidsConfig(
          * the damage so that tagging a boss once pays nothing.
          */
         /**
-         * Off. Raid Points replaced this as what a raid pays; the figures are kept so a server that
-         * would rather pay CobbleDollars only has to flip the switch. See RaidPointsStore for why
-         * a mod-owned currency was preferred.
+         * On, at a token amount: roughly a tenth of what this paid when it shipped off. Raid Points
+         * are the real payout; this is a top-up small enough not to move a server's economy.
          */
-        public static Currency defaults() { return new Currency(false, 2_000L, 5_000L, 12_000L, 25_000L, true, 10.0); }
+        public static Currency defaults() { return new Currency(true, 200L, 500L, 1_200L, 2_500L, true, 10.0); }
+
+        /** What shipped before the cut. Used only to recognise an untouched file and move it forward. */
+        public static Currency supersededDefaults() {
+            return new Currency(false, 2_000L, 5_000L, 12_000L, 25_000L, true, 10.0);
+        }
 
         /** The all-zero configuration, kept for tests and for an operator switching payouts off. */
         public static Currency disabled() { return new Currency(false, 0L, 0L, 0L, 0L, false, 0.0); }

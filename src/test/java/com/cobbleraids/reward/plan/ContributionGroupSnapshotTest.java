@@ -20,7 +20,15 @@ import org.junit.jupiter.api.Test;
  */
 class ContributionGroupSnapshotTest {
 
-    private static final RaidRewardPolicy POLICY = RaidRewardPolicy.defaults();
+    /**
+     * An operator-configured ladder, not the shipped policy: the shipped one is flat, so it cannot
+     * exercise the threshold mechanics these tests exist for. Fragments differ from the old shipped
+     * [1,2,2,3] on purpose, so this file is not mistaken for an untouched one and migrated.
+     */
+    private static final RaidRewardPolicy POLICY = RaidRewardPolicy.fromJson(com.google.gson.JsonParser.parseString(
+            "{\"standard_general_rolls\":2,\"contribution_thresholds\":[{\"min_percentage\":20.0,\"bonus_rolls\":1},"
+                    + "{\"min_percentage\":35.0,\"bonus_rolls\":2},{\"min_percentage\":50.0,\"bonus_rolls\":3}],"
+                    + "\"key_fragments_by_bonus_rolls\":[1,2,2,4]}").getAsJsonObject());
 
     private static RaidDefinition.Rewards policyDriven() {
         return new RaidDefinition.Rewards("cobbleraids_reward",

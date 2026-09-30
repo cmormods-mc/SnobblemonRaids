@@ -27,17 +27,13 @@ class RaidCurrencyPolicyTest {
     }
 
     @Test
-    @DisplayName("CobbleDollars ships off, because Raid Points replaced it")
-    void shipsDisabled() {
+    @DisplayName("CobbleDollars ships on at a token amount, a tenth of the old figures")
+    void shipsOnAtTokenAmounts() {
         CobbleRaidsConfig.Currency defaults = CobbleRaidsConfig.Currency.defaults();
 
-        // Raid Points became what a raid pays: a currency this mod owns, spendable only in the
-        // raid shop, so what a raid is worth does not depend on another mod's price list. The
-        // figures below are kept so a server that would rather pay CobbleDollars can flip one flag.
-        assertFalse(defaults.enabled());
-        for (RaidRarityTier tier : RaidRarityTier.values()) {
-            assertEquals(BigInteger.ZERO, RaidCurrencyPolicy.payout(defaults, tier, 100.0));
-        }
+        assertTrue(defaults.enabled());
+        assertEquals(BigInteger.valueOf(200L), RaidCurrencyPolicy.payout(defaults, RaidRarityTier.STARTER, 100.0));
+        assertEquals(BigInteger.valueOf(2_500L), RaidCurrencyPolicy.payout(defaults, RaidRarityTier.MYTHICAL, 100.0));
     }
 
     @Test
@@ -48,9 +44,9 @@ class RaidCurrencyPolicyTest {
                 defaults.starter(), defaults.powerhouse(), defaults.legendary(), defaults.mythical(),
                 defaults.scaleWithContribution(), defaults.minimumSharePercentage());
 
-        assertEquals(BigInteger.valueOf(2_000L),
+        assertEquals(BigInteger.valueOf(200L),
                 RaidCurrencyPolicy.payout(reenabled, RaidRarityTier.STARTER, 100.0));
-        assertEquals(BigInteger.valueOf(25_000L),
+        assertEquals(BigInteger.valueOf(2_500L),
                 RaidCurrencyPolicy.payout(reenabled, RaidRarityTier.MYTHICAL, 100.0));
 
         long previous = 0L;
@@ -62,7 +58,7 @@ class RaidCurrencyPolicyTest {
 
         // And the contribution rules it was built with survive being switched back on.
         assertEquals(BigInteger.ZERO, RaidCurrencyPolicy.payout(reenabled, RaidRarityTier.LEGENDARY, 9.99));
-        assertEquals(BigInteger.valueOf(6_000L),
+        assertEquals(BigInteger.valueOf(600L),
                 RaidCurrencyPolicy.payout(reenabled, RaidRarityTier.LEGENDARY, 50.0));
     }
 

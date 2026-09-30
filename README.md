@@ -103,9 +103,9 @@ separately.
   flat per claim. A currency this mod owns and the raid shop will spend, earnable nowhere else,
   so what a raid is worth does not depend on another mod's price list. `/cobbleraids points`
   shows a balance and what each tier pays; operators have `points give|take|set <player>`.
-- **Currency** — *off by default, replaced by Raid Points.* With CobbleDollars installed and
+- **Currency** — *on, at a token amount.* With CobbleDollars installed and
   `currency.enabled: true`, a claimed reward also pays
-  `currency.<tier>` (2000 / 5000 / 12000 / 25000 by default), split by damage share
+  `currency.<tier>` (200 / 500 / 1200 / 2500 by default), split by damage share
   and withheld below `currency.minimum_share_percentage` (10%). This is on top of the
   income CobbleDollars already pays every winner of a wild battle, which a raid is.
   `currency.enabled: false` switches it off; without CobbleDollars nothing is paid and
@@ -149,8 +149,10 @@ is checked by CI against the parser, so it cannot drift out of date.
 
 A definition that names **no** rewards of its own is *policy-driven*: what it grants comes from
 `config/cobbleraids/reward_policy.json` and the tables built into the core JAR. All 130 bundled definitions work this way. Each claim is one **specialty** selection plus two
-**general** ones, and contribution adds up to three more general selections — 3 to 6 in total, with
-the specialty selection happening exactly once however hard the player fought.
+**general** ones: three items, flat, whatever the player's contribution (contribution still scales
+Raid Points and CobbleDollars). Key fragments are not a separate grant; they are a category of the
+general table, so a fragment takes one of the three slots. The rates are set so a key takes about
+6 / 9 / 12 / 15 raids (starter / powerhouse / legendary / mythical).
 
 ```text
 cobbleraids:specialty/<tier>            one premium roll: mega stones, charms, TMs, capsules…

@@ -59,18 +59,29 @@ public record RaidRewardPolicy(
         return new RaidRewardPolicy(
                 CURRENT_VERSION,
                 2,
-                List.of(new ContributionMath.Threshold(20.0, 1),
-                        new ContributionMath.Threshold(35.0, 2),
-                        new ContributionMath.Threshold(50.0, 3)),
+                // Flat: every claim is one specialty and two general selections, three items, and
+                // contribution no longer adds any. A single threshold at 0% is how "no bonus" is
+                // spelled, because an empty list falls back to the defaults rather than meaning none.
+                List.of(new ContributionMath.Threshold(0.0, 0)),
                 "cobbleraids:general/" + TIER_TOKEN,
                 "cobbleraids:specialty/" + TIER_TOKEN,
                 "cobbleraids:specialty/boss/" + SPECIES_TOKEN,
                 "cobbleraids:keys/" + TIER_TOKEN,
-                // One for turning up, and more for carrying the fight, indexed by the same bonus
-                // roll count the contribution thresholds already produce. Six fragments make a
-                // key, so this is the pacing dial: a passenger needs six raids, someone doing half
-                // the damage needs two.
-                List.of(1, 2, 2, 3));
+                // No guaranteed fragments. They are a category inside the general tables now, so
+                // they compete for one of the three slots; see build_tables.GENERAL_CATEGORIES for
+                // the per-tier rates that make a key take 6/9/12/15 raids on average.
+                List.of(0, 0, 0, 0));
+    }
+
+    /** The shipped policy before flat three-slot claims: the only file the migration rewrites. */
+    private static boolean isSupersededDefault(int standardRolls,
+                                               List<ContributionMath.Threshold> thresholds,
+                                               List<Integer> fragments) {
+        return standardRolls == 2
+                && thresholds.equals(List.of(new ContributionMath.Threshold(20.0, 1),
+                        new ContributionMath.Threshold(35.0, 2),
+                        new ContributionMath.Threshold(50.0, 3)))
+                && fragments.equals(List.of(1, 2, 2, 3));
     }
 
     public String keyFragmentTableFor(RaidRarityTier tier) {
@@ -169,16 +180,26 @@ public record RaidRewardPolicy(
         }
         if (thresholds.isEmpty()) thresholds = defaults.contributionThresholds();
 
+        int standardRolls = Json.integer(root, "standard_general_rolls", defaults.standardGeneralRolls());
+        List<Integer> fragments = fragments(root, defaults);
+        // An operator who never touched the old shipped file gets the new shipped policy; one who
+        // changed anything keeps exactly what they wrote. Comparing to the old defaults is the only
+        // way to tell the two apart, since the file carries no record of who wrote it.
+        if (isSupersededDefault(standardRolls, thresholds, fragments)) {
+            thresholds = defaults.contributionThresholds();
+            fragments = defaults.keyFragmentsByBonusRolls();
+        }
+
         JsonObject tables = Json.object(root, "tables");
         return new RaidRewardPolicy(
                 Json.integer(root, "version", defaults.version()),
-                Json.integer(root, "standard_general_rolls", defaults.standardGeneralRolls()),
+                standardRolls,
                 thresholds,
                 Json.string(tables, "general", defaults.generalTable()),
                 Json.string(tables, "specialty", defaults.specialtyTable()),
                 Json.string(tables, "boss_specialty", defaults.bossSpecialtyTable()),
                 Json.string(tables, "key_fragment", defaults.keyFragmentTable()),
-                fragments(root, defaults));
+                fragments);
     }
 
     /**

@@ -7,12 +7,17 @@
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:base/powerhouse",
-          "weight": 53
+          "weight": 44
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:general/leaf/cards",
-          "weight": 47
+          "weight": 23
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:keys/powerhouse",
+          "weight": 33
         }
       ]
     }

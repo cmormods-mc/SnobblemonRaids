@@ -124,6 +124,29 @@ class CobbleRaidsConfigRoundTripTest {
     }
 
     @Test
+    @DisplayName("an untouched pre-cut currency block moves to the new defaults; an edited one stays")
+    void currencyMigratesOnlyWhenUntouched() {
+        JsonObject untouched = CobbleRaidsConfig.defaults().toJson();
+        var old = new JsonObject();
+        old.addProperty("enabled", false);
+        old.addProperty("starter", 2_000L);
+        old.addProperty("powerhouse", 5_000L);
+        old.addProperty("legendary", 12_000L);
+        old.addProperty("mythical", 25_000L);
+        old.addProperty("scale_with_contribution", true);
+        old.addProperty("minimum_share_percentage", 10.0);
+        untouched.add("currency", old);
+        assertEquals(CobbleRaidsConfig.defaults().currency(), CobbleRaidsConfig.fromJson(untouched).currency());
+
+        JsonObject edited = CobbleRaidsConfig.defaults().toJson();
+        old = old.deepCopy();
+        old.addProperty("legendary", 13_000L);
+        edited.add("currency", old);
+        assertEquals(13_000L, CobbleRaidsConfig.fromJson(edited).currency().legendary());
+        assertFalse(CobbleRaidsConfig.fromJson(edited).currency().enabled());
+    }
+
+    @Test
     @DisplayName("an older config without the new blocks loads on defaults, not on zeroes")
     void olderConfigGainsDefaults() {
         // Exactly what an existing server.json looks like before the upgrade: both new blocks
