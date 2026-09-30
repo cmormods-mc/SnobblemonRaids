@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.139-plain-base-loot'
+version = '0.8.140-quick-ball-no-large-candy'
 group = 'com.cobbleraids'
 
 base {

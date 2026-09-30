@@ -58,26 +58,25 @@ POOL_TOTAL = 10000
 # Ball needs that: at weight 2 it is 0.31%% of a mythical bundle, about one per 320 mythical raids.
 BASE_POOL_TOTAL = 1000
 
-# 2026-09-30: base is deliberately small and plain -- four balls, three sizes of Exp Candy, and the
+# 2026-09-30: base is deliberately small and plain -- four balls, two sizes of Exp Candy, and the
 # top grades of healing and revival. It used to be 15 ball types, twelve EV items, six PP and
 # medicine rows and twelve held items; that spread is gone on purpose, so what a raid pays in base
 # is supplies rather than a lottery. Held items, EV items and the Master Ball are no longer paid
 # by any table here. Each row is (item, weight per tier, quantity per tier), in TIERS order.
 #
 # Balls lean on the cheap ones early and on Ultra Balls late, which is the only tier-shaping they
-# carry. Exp Candy stops at L: XL and Rare Candy grant a level or more outright and are not base
-# loot (Rare Candy and Large are specialty rows, where their rate is deliberate).
+# carry. Exp Candy stops at M: L, XL and Rare Candy grant a level or more outright and are not base
+# loot. Large was a specialty row as well and was removed from raid loot entirely on the same day.
 BASE_BALLS = [
     ("cobblemon:poke_ball",  [160, 100, 50, 30],  [5, 5, 5, 5]),
     ("cobblemon:great_ball", [140, 140, 100, 70], [3, 4, 5, 5]),
     ("cobblemon:ultra_ball", [80, 120, 160, 190], [2, 3, 4, 5]),
-    ("cobblemon:fast_ball",  [70, 70, 90, 110],   [3, 3, 3, 4]),
+    ("cobblemon:quick_ball", [70, 70, 90, 110],   [3, 3, 3, 4]),
 ]
 
 BASE_CANDIES = [
-    ("cobblemon:exp_candy_s", [200, 130, 90, 60],  [3, 3, 3, 3]),
-    ("cobblemon:exp_candy_m", [110, 150, 150, 130], [2, 2, 3, 3]),
-    ("cobblemon:exp_candy_l", [30, 60, 100, 150],  [1, 1, 1, 2]),
+    ("cobblemon:exp_candy_s", [220, 150, 110, 80],  [3, 3, 3, 3]),
+    ("cobblemon:exp_candy_m", [120, 190, 230, 260], [2, 2, 3, 3]),
 ]
 
 # Only the grades worth receiving. No Potion, Super Potion or Hyper Potion.
@@ -173,7 +172,6 @@ SPECIALTY_ROWS = [
     ("redchain random ball", "cobblesafari:redchain_random_ball", [0, 0, 2, 5]),
     ("golden auspicious ball", "cobblesafari:auspiciouspokeball_gold", [0, 0, 2, 5]),
     ("rare candy", "cobblemon:rare_candy", [100, 200, 300, 400]),
-    ("large exp candy", "cobblemon:exp_candy_l", [0, 500, 800, 1000]),
     # Raid-exclusive held items (see the progression-and-identity plan). Behind their own leaf
     # tables like the optional-mod rows above, even though "cobbleraids" is in this file's own
     # ALWAYS_PRESENT: validate_economy_probabilities's no-mixing check does not special-case this
