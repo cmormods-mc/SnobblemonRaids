@@ -33,6 +33,13 @@ class ShopDefaultCatalogResolvesTest {
     /** Namespaces every server running this mod is guaranteed to have. */
     private static final Set<String> ALWAYS_PRESENT = Set.of("minecraft", "cobblemon");
 
+    /**
+     * Cobblemon Cards, for the card-pack shelf. Allowed only because the shop hides an entry whose
+     * item is not registered and refuses the purchase before charging; the shelf is the single place
+     * an optional mod appears, and it is pinned below so a second one cannot slip in beside it.
+     */
+    private static final Set<String> OPTIONAL_BUT_HIDDEN = Set.of("cobblemon-cards");
+
     private static final Path MANIFEST = Path.of("validation", "economy", "manifest.json");
 
     @Test
@@ -74,11 +81,26 @@ class ShopDefaultCatalogResolvesTest {
         for (ShopEntry entry : ShopCatalog.defaults().byId().values()) {
             if (entry.item() == null) continue;
             String namespace = entry.item().itemId().split(":", 2)[0];
-            if (!ALWAYS_PRESENT.contains(namespace)) {
+            if (!ALWAYS_PRESENT.contains(namespace) && !OPTIONAL_BUT_HIDDEN.contains(namespace)) {
                 optional.add(entry.id() + " -> " + entry.item().itemId());
             }
         }
         assertTrue(optional.isEmpty(), "shipped catalogue depends on optional mods: " + optional);
+    }
+
+    @Test
+    @DisplayName("the only shelf naming an optional mod is the card-pack one")
+    void optionalModsStayOnTheirOwnShelf() {
+        for (ShopSection section : ShopCatalog.defaults().sections()) {
+            for (ShopEntry entry : section.entries()) {
+                if (entry.item() == null) continue;
+                String namespace = entry.item().itemId().split(":", 2)[0];
+                if (OPTIONAL_BUT_HIDDEN.contains(namespace)) {
+                    assertTrue(section.id().equals(ShopCatalog.CARDS_SECTION),
+                            entry.id() + " names " + namespace + " outside the card shelf: " + section.id());
+                }
+            }
+        }
     }
 
     @Test

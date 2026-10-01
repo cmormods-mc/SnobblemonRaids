@@ -37,13 +37,13 @@ class ShopRotationTest {
     @Test
     @DisplayName("the hardest species at the top level costs exactly the ceiling, and nothing costs more")
     void ceilingIsTheMaximum() {
-        assertEquals(1250, ShopRotation.price(45, 600, CONFIG.maxLevel(), CONFIG));
-        assertEquals(1250, ShopRotation.price(3, 720, CONFIG.maxLevel(), CONFIG), "rarer than the ceiling is clamped");
+        assertEquals(500, ShopRotation.price(45, 600, CONFIG.maxLevel(), CONFIG));
+        assertEquals(500, ShopRotation.price(3, 720, CONFIG.maxLevel(), CONFIG), "rarer than the ceiling is clamped");
         for (int catchRate = 3; catchRate <= 255; catchRate += 4) {
             for (int bst = 180; bst <= 720; bst += 30) {
                 for (int level = CONFIG.minLevel(); level <= CONFIG.maxLevel(); level += 5) {
                     int price = ShopRotation.price(catchRate, bst, level, CONFIG);
-                    assertTrue(price <= 1250 && price >= CONFIG.minPrice(), price + " is outside the band");
+                    assertTrue(price <= 500 && price >= CONFIG.minPrice(), price + " is outside the band");
                 }
             }
         }
@@ -64,15 +64,91 @@ class ShopRotationTest {
     }
 
     @Test
-    @DisplayName("a common weak species at a low level is cheap, and a pseudo-legendary at a high level is dear")
+    @DisplayName("a common weak species is at the floor, and a pseudo-legendary at the top level is the ceiling")
     void anchorPrices() {
-        int rattata = ShopRotation.price(255, 253, 10, CONFIG);
-        int dratiniLevel15 = ShopRotation.price(45, 300, 15, CONFIG);
+        int rattata = ShopRotation.price(255, 253, CONFIG.minLevel(), CONFIG);
+        int dratiniAtTheBottom = ShopRotation.price(45, 300, CONFIG.minLevel(), CONFIG);
         int dragonite = ShopRotation.price(45, 600, 50, CONFIG);
 
-        assertTrue(rattata < 50, "a level-10 Rattata is " + rattata);
-        assertTrue(dratiniLevel15 > rattata && dratiniLevel15 < 400, "a level-15 Dratini is " + dratiniLevel15);
-        assertEquals(1250, dragonite);
+        assertEquals(100, rattata, "a level-25 Rattata is " + rattata);
+        assertTrue(dratiniAtTheBottom > rattata && dratiniAtTheBottom < 300, "a level-25 Dratini is " + dratiniAtTheBottom);
+        assertEquals(500, dragonite);
+    }
+
+    @Test
+    @DisplayName("the page offers levels 25 to 50 and nothing costs less than 100 or more than 500")
+    void bandsAreTheRetunedOnes() {
+        assertEquals(25, CONFIG.minLevel());
+        assertEquals(50, CONFIG.maxLevel());
+        assertEquals(100, CONFIG.minPrice());
+        assertEquals(500, CONFIG.maxPrice());
+    }
+
+    @Test
+    @DisplayName("a starter line costs 250 / 375 / 500 by stage, whatever the level, and nothing else is flat")
+    void starterLinesAreFlatByStage() {
+        List<ShopRotation.Candidate> starters = List.of(
+                species("charmander", 45, 309), species("charmeleon", 45, 405), species("charizard", 45, 534),
+                species("torchic", 45, 310), species("blaziken", 45, 530), species("rowlet", 45, 320),
+                species("somemod:charmander", 45, 309));
+
+        for (long window = 1; window <= 60; window++) {
+            for (ShopRotation.Listing listing : ShopRotation.roll(window, starters, CONFIG)) {
+                String id = listing.gift().species();
+                switch (id) {
+                    case "charmander", "torchic", "rowlet" -> assertEquals(250, listing.cost(), id);
+                    case "charmeleon" -> assertEquals(375, listing.cost(), id);
+                    case "charizard", "blaziken" -> assertEquals(500, listing.cost(), id);
+                    default -> assertTrue(listing.cost() >= 100 && listing.cost() <= 500, id + " " + listing.cost());
+                }
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("lowering max_price lowers the starter prices with it, so nothing on the page can exceed it")
+    void starterPricesStayUnderTheCeiling() {
+        ShopRotationConfig cheap = new ShopRotationConfig(true, 10, 25, 50, 50, 300, List.of(), 250, 375, 500);
+
+        assertEquals(250, cheap.starterPriceFor("charmander").getAsInt());
+        assertEquals(300, cheap.starterPriceFor("charmeleon").getAsInt());
+        assertEquals(300, cheap.starterPriceFor("charizard").getAsInt());
+        assertTrue(cheap.starterPriceFor("pikachu").isEmpty());
+    }
+
+    @Test
+    @DisplayName("an untouched pre-retune rotation block moves to the new bands; operator values stay")
+    void rotationMigratesOnlyWhenUntouched() {
+        var old = new com.google.gson.JsonObject();
+        var block = new com.google.gson.JsonObject();
+        block.addProperty("min_level", 5);
+        block.addProperty("max_level", 50);
+        block.addProperty("min_price", 25);
+        block.addProperty("max_price", 1250);
+        old.add("rotation", block);
+        ShopRotationConfig migrated = ShopRotationConfig.fromJson(old);
+
+        assertEquals(25, migrated.minLevel());
+        assertEquals(100, migrated.minPrice());
+        assertEquals(500, migrated.maxPrice());
+        assertEquals(250, migrated.starterBasePrice(), "a key new to this version gets its default");
+
+        var custom = new com.google.gson.JsonObject();
+        var mine = new com.google.gson.JsonObject();
+        mine.addProperty("min_level", 10);
+        mine.addProperty("max_price", 900);
+        custom.add("rotation", mine);
+        ShopRotationConfig kept = ShopRotationConfig.fromJson(custom);
+        assertEquals(10, kept.minLevel());
+        assertEquals(900, kept.maxPrice());
+
+        var narrow = new com.google.gson.JsonObject();
+        var small = new com.google.gson.JsonObject();
+        small.addProperty("min_level", 5);
+        small.addProperty("max_level", 20);
+        narrow.add("rotation", small);
+        assertEquals(5, ShopRotationConfig.fromJson(narrow).minLevel(),
+                "migrating min_level past a custom max_level would discard the whole block");
     }
 
     @Test
@@ -106,8 +182,8 @@ class ShopRotationTest {
             Set<String> seen = new HashSet<>();
             for (ShopRotation.Listing listing : listings) {
                 assertTrue(seen.add(listing.gift().species()), "duplicate species in window " + window);
-                assertTrue(listing.gift().level() >= 5 && listing.gift().level() <= 50);
-                assertTrue(listing.cost() <= 1250 && listing.cost() >= 25);
+                assertTrue(listing.gift().level() >= 25 && listing.gift().level() <= 50);
+                assertTrue(listing.cost() <= 500 && listing.cost() >= 100);
                 assertEquals(false, listing.gift().shiny(), "a shop Pokemon is never shiny");
                 assertEquals(6, listing.gift().ivs().size());
                 listing.gift().ivs().values().forEach(iv -> assertTrue(iv >= 0 && iv <= 31));
@@ -139,7 +215,7 @@ class ShopRotationTest {
     @Test
     @DisplayName("switching the rotation off leaves the page empty")
     void disabled() {
-        ShopRotationConfig off = new ShopRotationConfig(false, 10, 5, 50, 25, 1250, List.of());
+        ShopRotationConfig off = new ShopRotationConfig(false, 10, 5, 50, 25, 1250, List.of(), 250, 375, 500);
 
         assertTrue(ShopRotation.roll(1L, pool(), off).isEmpty());
     }

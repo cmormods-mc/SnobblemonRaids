@@ -10,6 +10,7 @@
 //   DROP             tear the TCP connection down without a goodbye, like a crash or a cable pull
 //   QUIT             a clean disconnect
 //   SAY <text>       chat / run a command as this player
+//   SHOPBUY <id>     send a raid-shop purchase for that entry id, as the shop screen does
 //
 // Events: READY, KICKED <why>, END <why>, MSG <chat>, BATTLE_INIT, BATTLE_END, REQUEST moves=.., PROMPT,
 //         SENT <move>, PAYLOAD <channel>
@@ -172,6 +173,15 @@ readline.createInterface({input: process.stdin}).on('line', (line) => {
     case 'DROP': emit('DROPPING'); bot._client.socket.destroy(); break;
     case 'QUIT': bot.quit(); break;
     case 'SAY': bot.chat(argument); break;
+    case 'SHOPBUY': {
+      // cobbleraids:shop_action_v1 = VAR_INT page index + string entry id; the server answers in chat.
+      bot._client.write('custom_payload', {
+        channel: 'cobbleraids:shop_action_v1',
+        data: Buffer.concat([varint(0), mcString(argument)]),
+      });
+      emit(`SHOPBUY ${argument}`);
+      break;
+    }
     default: emit(`UNKNOWN_COMMAND ${command}`);
   }
 });

@@ -98,7 +98,7 @@ class ShopCatalogTest {
     void badEntriesAreDroppedIndividually() {
         ShopCatalog catalog = ShopCatalog.fromJson(parse("""
                 {
-                  "version": 1,
+                  "version": 3,
                   "per_page": 64,
                   "sections": [{
                     "id": "misc", "title": "Misc",
@@ -428,7 +428,7 @@ class ShopCatalogTest {
     @DisplayName("an untouched pre-repricing candy listing moves to the new one; an edited one stays")
     void oldCandyListingsMigrate() {
         JsonObject old = parse("""
-                {"version": 2, "sections": [{"id": "c", "title": "C", "entries": [
+                {"version": 3, "sections": [{"id": "c", "title": "C", "entries": [
                   {"id": "rare_candy", "cost": 75, "limit": 5, "reset": "daily", "item": "cobblemon:rare_candy", "count": 1},
                   {"id": "exp_candy_l", "cost": 40, "limit": 5, "reset": "daily", "item": "cobblemon:exp_candy_l", "count": 4},
                   {"id": "exp_candy_xl", "cost": 95, "limit": 5, "reset": "daily", "item": "cobblemon:exp_candy_xl", "count": 2}]}]}
@@ -488,7 +488,7 @@ class ShopCatalogTest {
     @DisplayName("the untouched old Dratini example is dropped with its empty section; an edited one stays")
     void oldDratiniExampleMigrates() {
         String untouched = """
-                {"version": 2, "sections": [{"id": "pokemon", "title": "Pokemon", "entries": [
+                {"version": 3, "sections": [{"id": "pokemon", "title": "Pokemon", "entries": [
                   {"id": "starter_dratini", "cost": 2500, "limit": 1, "reset": "daily", "species": "dratini",
                    "level": 15, "traits": {"nature": "adamant", "ivs": {"hp": 31, "attack": 31, "speed": 31}}}]}]}
                 """;
@@ -499,10 +499,66 @@ class ShopCatalogTest {
     }
 
     @Test
+    @DisplayName("the shipped catalogue sells all 19 card packs at 75 RP, two a week each")
+    void cardPacksShip() {
+        ShopSection cards = ShopCatalog.defaults().sections().stream()
+                .filter(section -> section.id().equals(ShopCatalog.CARDS_SECTION)).findFirst().orElseThrow();
+
+        assertEquals(19, cards.entries().size());
+        for (ShopEntry pack : cards.entries()) {
+            assertEquals(75, pack.cost(), pack.id());
+            assertEquals(2, pack.limit(), pack.id());
+            assertEquals(ShopResetPeriod.WEEKLY, pack.reset(), pack.id());
+            assertEquals("cobblemon-cards:" + pack.id(), pack.item().itemId());
+            assertEquals(1, pack.item().count());
+        }
+        assertTrue(cards.entries().stream().anyMatch(pack -> pack.id().equals("booster_pack")), "the generic pack");
+        assertTrue(cards.entries().stream().anyMatch(pack -> pack.id().equals("booster_pack_water")), "the water pack");
+    }
+
+    @Test
+    @DisplayName("a catalogue from before the card packs gets their shelf once, as the last page")
+    void oldCatalogueGainsTheShelfOnce() {
+        ShopCatalog migrated = ShopCatalog.fromJson(parse("{\"version\": 2, \"sections\": ["
+                + "{\"id\": \"mine\", \"title\": \"Mine\", \"entries\": ["
+                + "{\"id\": \"poke_ball\", \"cost\": 5, \"item\": \"cobblemon:poke_ball\", \"count\": 8}]}]}"));
+
+        assertEquals(ShopCatalog.CURRENT_VERSION, migrated.version());
+        assertEquals("mine", migrated.sections().get(0).id());
+        assertEquals(ShopCatalog.CARDS_SECTION, migrated.sections().get(migrated.sections().size() - 1).id());
+        assertEquals(19, migrated.sections().get(migrated.sections().size() - 1).entries().size());
+
+        // Saved at the current version, so an operator who deletes the shelf does not get it back.
+        ShopCatalog reloaded = ShopCatalog.fromJson(migrated.toJson());
+        assertEquals(migrated.sections().size(), reloaded.sections().size());
+        var withoutCards = migrated.toJson();
+        var kept = new com.google.gson.JsonArray();
+        withoutCards.getAsJsonArray("sections").forEach(element -> {
+            if (!element.getAsJsonObject().get("id").getAsString().equals(ShopCatalog.CARDS_SECTION)) kept.add(element);
+        });
+        withoutCards.add("sections", kept);
+        assertTrue(ShopCatalog.fromJson(withoutCards).sections().stream()
+                .noneMatch(section -> section.id().equals(ShopCatalog.CARDS_SECTION)));
+    }
+
+    @Test
+    @DisplayName("an operator who already used a pack's id for something else keeps theirs")
+    void packIdsNeverOverrideTheOperator() {
+        ShopCatalog migrated = ShopCatalog.fromJson(parse("{\"version\": 2, \"sections\": ["
+                + "{\"id\": \"mine\", \"title\": \"Mine\", \"entries\": ["
+                + "{\"id\": \"booster_pack\", \"cost\": 999, \"item\": \"cobblemon:poke_ball\", \"count\": 1}]}]}"));
+
+        assertEquals(999, migrated.byId().get("booster_pack").cost());
+        assertEquals("cobblemon:poke_ball", migrated.byId().get("booster_pack").item().itemId());
+        assertEquals(18, migrated.sections().get(migrated.sections().size() - 1).entries().size());
+        assertEquals(migrated.totalEntries(), migrated.byId().size(), "entry ids stay unique");
+    }
+
+    @Test
     @DisplayName("the rotation block survives a round trip through the catalogue file")
     void rotationRoundTrips() {
         ShopCatalog custom = new ShopCatalog(2, 64, ShopLimits.DEFAULTS, List.of(),
-                new ShopRotationConfig(true, 6, 10, 40, 50, 900, List.of("legendary")));
+                new ShopRotationConfig(true, 6, 10, 40, 50, 900, List.of("legendary"), 200, 300, 450));
 
         assertEquals(custom.rotation(), ShopCatalog.fromJson(custom.toJson()).rotation());
         assertEquals(ShopRotationConfig.DEFAULTS, ShopCatalog.fromJson(parse("{\"sections\": []}")).rotation());

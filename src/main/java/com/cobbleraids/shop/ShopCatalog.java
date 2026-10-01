@@ -31,7 +31,32 @@ public record ShopCatalog(int version, int perPage, ShopLimits limits, List<Shop
                           ShopRotationConfig rotation) {
 
     /** Bumped when the schema changes in a way an older file cannot be read as. */
-    public static final int CURRENT_VERSION = 2;
+    public static final int CURRENT_VERSION = 3;
+
+    /** The section the Cobblemon Cards packs sit in, and what a pack costs and how often it can be bought. */
+    public static final String CARDS_SECTION = "cards";
+    static final int CARD_PACK_COST = 75;
+    static final int CARD_PACK_LIMIT = 2;
+    private static final List<String> CARD_PACKS = List.of("booster_pack",
+            "booster_pack_bug", "booster_pack_dark", "booster_pack_dragon", "booster_pack_electric",
+            "booster_pack_fairy", "booster_pack_fighting", "booster_pack_fire", "booster_pack_flying",
+            "booster_pack_ghost", "booster_pack_grass", "booster_pack_ground", "booster_pack_ice",
+            "booster_pack_normal", "booster_pack_poison", "booster_pack_psychic", "booster_pack_rock",
+            "booster_pack_steel", "booster_pack_water");
+
+    /**
+     * One pack of each of the 19 kinds, weekly-limited per pack. This is the one shelf that names an
+     * optional mod: a server without Cobblemon Cards sees no such page (the shop hides an entry whose
+     * item is not registered) and a stale click is refused before anything is charged.
+     */
+    static ShopSection cardsSection() {
+        List<ShopEntry> entries = new ArrayList<>();
+        for (String pack : CARD_PACKS) {
+            entries.add(ShopEntry.ofItem(pack, CARD_PACK_COST, "cobblemon-cards:" + pack, 1,
+                    CARD_PACK_LIMIT, ShopResetPeriod.WEEKLY));
+        }
+        return new ShopSection(CARDS_SECTION, "Card Packs", entries);
+    }
 
     /** The sliced art's grid is eight by eight, so a page can never usefully hold more. */
     public static final int MAX_PER_PAGE = 64;
@@ -90,7 +115,8 @@ public record ShopCatalog(int version, int perPage, ShopLimits limits, List<Shop
                         heldItem("destiny_knot", 50, "cobblemon:destiny_knot"),
                         heldItem("everstone", 35, "cobblemon:everstone"),
                         heldItem("link_cable", 75, "cobblemon:link_cable"),
-                        heldItem("mirror_herb", 35, "cobblemon:mirror_herb"))));
+                        heldItem("mirror_herb", 35, "cobblemon:mirror_herb"))),
+                cardsSection());
         return new ShopCatalog(CURRENT_VERSION, MAX_PER_PAGE, ShopLimits.DEFAULTS, sections,
                 ShopRotationConfig.DEFAULTS);
     }
@@ -152,7 +178,19 @@ public record ShopCatalog(int version, int perPage, ShopLimits limits, List<Shop
             if (droppedSuperseded && kept.isEmpty()) continue;
             sections.add(new ShopSection(section.id(), section.title(), kept));
         }
-        return new ShopCatalog(version, perPage, limits, sections, ShopRotationConfig.fromJson(root));
+        // A catalogue written before the card packs existed gets their shelf once, as the last page so
+        // no remembered page number moves. The version it is saved with is what stops it coming back
+        // after an operator deletes it, and an entry id they already used for something else wins.
+        if (version < 3 && sections.stream().noneMatch(section -> section.id().equals(CARDS_SECTION))
+                && seenSections.add(CARDS_SECTION)) {
+            List<ShopEntry> packs = new ArrayList<>();
+            for (ShopEntry pack : cardsSection().entries()) {
+                if (seenEntries.add(pack.id())) packs.add(pack);
+            }
+            if (!packs.isEmpty()) sections.add(new ShopSection(CARDS_SECTION, "Card Packs", packs));
+        }
+        return new ShopCatalog(Math.max(version, CURRENT_VERSION), perPage, limits, sections,
+                ShopRotationConfig.fromJson(root));
     }
 
     /** A held item or one-off tool: one per purchase, one purchase a day. */

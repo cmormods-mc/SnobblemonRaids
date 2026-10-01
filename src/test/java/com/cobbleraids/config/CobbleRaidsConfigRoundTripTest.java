@@ -161,6 +161,27 @@ class CobbleRaidsConfigRoundTripTest {
     }
 
     @Test
+    @DisplayName("a boss shop still at either earlier shipped price list moves to 500 / 750 / 1000 / 1500; an edited one stays")
+    void bossShopPricesMigrateOnlyWhenUntouched() {
+        for (CobbleRaidsConfig.PersonalBossShop old : new CobbleRaidsConfig.PersonalBossShop[] {
+                CobbleRaidsConfig.PersonalBossShop.supersededDefaults(),
+                CobbleRaidsConfig.PersonalBossShop.previousDefaults()}) {
+            JsonObject json = CobbleRaidsConfig.defaults().toJson();
+            JsonObject block = json.getAsJsonObject("personal_boss_shop");
+            block.addProperty("buy_cost_starter", old.buyCostStarter());
+            block.addProperty("buy_cost_powerhouse", old.buyCostPowerhouse());
+            block.addProperty("buy_cost_legendary", old.buyCostLegendary());
+            block.addProperty("buy_cost_mythical", old.buyCostMythical());
+
+            assertEquals(CobbleRaidsConfig.defaults().personalBossShop(), CobbleRaidsConfig.fromJson(json).personalBossShop());
+        }
+
+        JsonObject edited = CobbleRaidsConfig.defaults().toJson();
+        edited.getAsJsonObject("personal_boss_shop").addProperty("buy_cost_starter", 320);
+        assertEquals(320, CobbleRaidsConfig.fromJson(edited).personalBossShop().buyCostStarter());
+    }
+
+    @Test
     @DisplayName("an untouched pre-cut currency block moves to the new defaults; an edited one stays")
     void currencyMigratesOnlyWhenUntouched() {
         JsonObject untouched = CobbleRaidsConfig.defaults().toJson();
@@ -247,8 +268,10 @@ class CobbleRaidsConfigRoundTripTest {
 
         assertTrue(shop.enabled());
         assertEquals(50, shop.rerollCost());
-        assertEquals(200, shop.buyCostFor(RaidRarityTier.STARTER));
-        assertEquals(3_000, shop.buyCostFor(RaidRarityTier.MYTHICAL));
+        assertEquals(500, shop.buyCostFor(RaidRarityTier.STARTER));
+        assertEquals(750, shop.buyCostFor(RaidRarityTier.POWERHOUSE));
+        assertEquals(1_000, shop.buyCostFor(RaidRarityTier.LEGENDARY));
+        assertEquals(1_500, shop.buyCostFor(RaidRarityTier.MYTHICAL));
         assertThrows(IllegalArgumentException.class,
                 () -> new CobbleRaidsConfig.PersonalBossShop(true, -1, 40, 80, 160, 300), "reroll cost cannot be negative");
         assertThrows(IllegalArgumentException.class,

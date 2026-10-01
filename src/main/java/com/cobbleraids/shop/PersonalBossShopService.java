@@ -3,6 +3,7 @@ package com.cobbleraids.shop;
 import com.cobbleraids.RaidLog;
 import com.cobbleraids.catching.BossSnapshot;
 import com.cobbleraids.catching.BossSnapshotService;
+import com.cobbleraids.pokemon.PokemonLeveling;
 import com.cobbleraids.catching.DefeatedBossSnapshots;
 import com.cobbleraids.config.CobbleRaidsConfig;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
@@ -46,6 +47,9 @@ public final class PersonalBossShopService {
 
         Pokemon pokemon = deserialize(player, snapshot);
         if (pokemon == null) return ShopPurchaseResult.UNRESOLVED;
+        // Back down to the level its raid asks for, however high the party that beat it raised it.
+        // applyLevel also resets current health to the new maximum, and heal() below finishes the job.
+        PokemonLeveling.applyLevel(pokemon, BossSnapshotService.buyBackLevel(snapshot));
         pokemon.heal();
 
         int cost = CobbleRaidsConfigManager.get().personalBossShop().buyCostFor(snapshot.rarityTier());
@@ -87,7 +91,7 @@ public final class PersonalBossShopService {
         RaidPlayerRecords.flush(player.getServer());
         DefeatedBossSnapshots.flush(player.getServer());
         RaidLog.info("Personal shop: " + player.getGameProfile().getName() + " bought back " + species
-                + " for " + cost + " RP");
+                + " at level " + pokemon.getLevel() + " for " + cost + " RP");
         return delivered;
     }
 

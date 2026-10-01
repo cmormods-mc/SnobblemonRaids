@@ -140,8 +140,11 @@ public final class ShopRotation {
 
             ShopPokemonGift gift = new ShopPokemonGift(candidate.speciesId(), level, false, nature, ability,
                     gender, null, null, null, ivs, Map.of());
-            listings.add(new Listing(slot, gift,
-                    price(candidate.catchRate(), candidate.baseStatTotal(), level, config)));
+            // A starter line has a flat price by stage, whatever its level; everything else is priced
+            // by how hard it is to come by and how high its level is.
+            int cost = config.starterPriceFor(candidate.speciesId())
+                    .orElseGet(() -> price(candidate.catchRate(), candidate.baseStatTotal(), level, config));
+            listings.add(new Listing(slot, gift, cost));
         }
         return List.copyOf(listings);
     }

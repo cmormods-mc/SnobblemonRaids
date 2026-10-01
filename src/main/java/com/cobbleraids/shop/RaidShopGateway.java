@@ -1,6 +1,7 @@
 package com.cobbleraids.shop;
 
 import com.cobbleraids.catching.BossSnapshot;
+import com.cobbleraids.catching.BossSnapshotService;
 import com.cobbleraids.catching.DefeatedBossSnapshots;
 import com.cobbleraids.catching.RaidPlayerRecord;
 import com.cobbleraids.catching.RaidPlayerRecords;
@@ -17,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -94,7 +96,7 @@ public final class RaidShopGateway {
     }
 
     private static void sendPage(ServerPlayer player, int requestedPage) {
-        List<ShopPageView> catalogPages = ShopCatalogManager.pages();
+        List<ShopPageView> catalogPages = listablePages(ShopCatalogManager.pages());
         Map<ResourceLocation, BossSnapshot> personal = DefeatedBossSnapshots.forPlayer(player.getUUID());
         boolean hasPersonalPage = !personal.isEmpty();
         List<ShopRotation.Listing> rotating = ShopRotationService.current(Instant.now());
@@ -127,6 +129,32 @@ public final class RaidShopGateway {
         }
         ServerPlayNetworking.send(player, new ShopPagePayload(heading, index, pageCount,
                 RaidPointsStore.balance(player.getUUID()), entries));
+    }
+
+    /**
+     * The catalogue as this server can actually sell it: an item entry whose item is not registered
+     * (Cobblemon Cards not installed) is left out, and a page that was only such entries goes with it.
+     * A page an operator deliberately left empty stays. The purchase path refuses an unregistered item
+     * before charging anyone, so this is about not showing a cell that can only ever say no.
+     */
+    private static List<ShopPageView> listablePages(List<ShopPageView> pages) {
+        List<ShopPageView> visible = new ArrayList<>(pages.size());
+        for (ShopPageView page : pages) {
+            List<ShopEntry> kept = new ArrayList<>(page.entries().size());
+            for (ShopEntry entry : page.entries()) {
+                if (isListable(entry)) kept.add(entry);
+            }
+            if (kept.isEmpty() && !page.entries().isEmpty()) continue;
+            visible.add(new ShopPageView(page.sectionId(), page.title(), page.indexInSection(),
+                    page.pagesInSection(), kept));
+        }
+        return visible;
+    }
+
+    private static boolean isListable(ShopEntry entry) {
+        if (entry.isPokemon()) return true;
+        ResourceLocation itemId = ResourceLocation.tryParse(entry.item().itemId());
+        return itemId != null && BuiltInRegistries.ITEM.containsKey(itemId);
     }
 
     private static List<ShopEntryPayload> buildCatalogEntries(ShopPageView page, ServerPlayer player) {
@@ -189,7 +217,7 @@ public final class RaidShopGateway {
                     // key their lookups on the same bare species name a catalogue entry's own
                     // pokemon().species() already provides, and this needs to match it exactly to
                     // resolve the same icons.
-                    snapshot.species().getPath(), snapshot.level(), snapshot.shiny(),
+                    snapshot.species().getPath(), BossSnapshotService.buyBackLevel(snapshot), snapshot.shiny(),
                     snapshot.ivPercent(), snapshot.evPercent(), true, config.rerollCost()));
         }
         return entries;
