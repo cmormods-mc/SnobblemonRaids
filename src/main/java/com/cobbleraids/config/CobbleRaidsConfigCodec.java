@@ -147,7 +147,8 @@ final class CobbleRaidsConfigCodec {
                 Json.integer(personalBossShopObject, "buy_cost_legendary", pbs.buyCostLegendary()),
                 Json.integer(personalBossShopObject, "buy_cost_mythical", pbs.buyCostMythical()));
         // A block still holding the old shipped prices was never tuned, so it moves to the new ones.
-        if (personalBossShop.equals(CobbleRaidsConfig.PersonalBossShop.supersededDefaults())) {
+        if (personalBossShop.equals(CobbleRaidsConfig.PersonalBossShop.supersededDefaults())
+                || personalBossShop.equals(CobbleRaidsConfig.PersonalBossShop.previousDefaults())) {
             personalBossShop = pbs;
         }
 

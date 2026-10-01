@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.153-renown-stronger'
+version = '0.8.154-shop-retune'
 group = 'com.cobbleraids'
 
 base {

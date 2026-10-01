@@ -465,16 +465,22 @@ public record CobbleRaidsConfig(
         }
 
         /**
-         * Roughly 8 / 10 / 20 / 30 raids of Raid Points, at 25 / 50 / 75 / 100 a raid. They were
-         * 40 / 80 / 160 / 300, which made a mythical about three mythical raids of income.
+         * 500 / 750 / 1000 / 1500: about 20, 15, 13 and 15 raids of Raid Points at 25 / 50 / 75 / 100 a
+         * raid, so buying a boss back costs a similar number of raids whatever its tier. They were
+         * 200 / 500 / 1500 / 3000, which made a starter eight raids and a mythical thirty.
          */
         public static PersonalBossShop defaults() {
-            return new PersonalBossShop(true, 50, 200, 500, 1_500, 3_000);
+            return new PersonalBossShop(true, 50, 500, 750, 1_000, 1_500);
         }
 
-        /** What shipped before the repricing. Used only to recognise an untouched block. */
+        /** What shipped before the first repricing. Used only to recognise an untouched block. */
         public static PersonalBossShop supersededDefaults() {
             return new PersonalBossShop(true, 50, 40, 80, 160, 300);
+        }
+
+        /** What shipped before the second repricing (200 / 500 / 1500 / 3000). */
+        public static PersonalBossShop previousDefaults() {
+            return new PersonalBossShop(true, 50, 200, 500, 1_500, 3_000);
         }
 
         public int buyCostFor(RaidRarityTier tier) {
