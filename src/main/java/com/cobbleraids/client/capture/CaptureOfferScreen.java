@@ -76,6 +76,12 @@ public final class CaptureOfferScreen extends Screen {
     }
 
     @Override
+    public void removed() {
+        CaptureArt.release();
+        super.removed();
+    }
+
+    @Override
     public boolean isPauseScreen() {
         return false;
     }

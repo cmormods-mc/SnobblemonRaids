@@ -32,7 +32,7 @@ final class CaptureUi {
         panel(g, layout.x() + 6, layout.y() + 6, layout.width() - 12, 26, NAVY, CYAN);
         int headingWidth = layout.width() >= 460 ? layout.width() - 220 : layout.width() - 34;
         text(g, font, heading, layout.x() + 17, layout.headerY(), headingWidth, WHITE);
-        CaptureArt.footer(g, layout);
+        CaptureArt.drawFooter(g, layout);
         panel(g, layout.infoX(), layout.contentY(), layout.infoWidth(), layout.contentHeight(), NAVY, CYAN);
         panel(g, layout.chamberX(), layout.contentY(), layout.chamberWidth(), layout.contentHeight(), NAVY, CYAN);
     }
@@ -49,7 +49,7 @@ final class CaptureUi {
         int w = layout.chamberWidth() - 10, h = layout.contentHeight() - 10;
         g.enableScissor(x, y, x + w, y + h);
         try {
-            CaptureArt.chamber(g, x, y, w, h);
+            CaptureArt.drawChamber(g, x, y, w, h);
             if (ball) {
                 int size = Math.max(14, Math.min(30, h / 3));
                 int shift = (int) (Math.sin(animationMs / 85.0) * 3);

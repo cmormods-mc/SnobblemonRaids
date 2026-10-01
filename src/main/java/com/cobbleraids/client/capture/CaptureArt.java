@@ -16,7 +16,48 @@ final class CaptureArt {
 
     private CaptureArt() {}
 
-    static void line(GuiGraphics g, int x, int y, int ex, int ey, int color) {
+    /** The one primitive the art is built from; a live {@code GuiGraphics} or a baked image can back it. */
+    @FunctionalInterface
+    interface Pen {
+        void fill(int x1, int y1, int x2, int y2, int color);
+    }
+
+    /** Rows the footer's decoration spans; its band starts {@link #footerTop} below the frame's top. */
+    static final int FOOTER_ROWS = 30;
+
+    static int footerTop(CaptureUiLayout layout) {
+        return layout.height() - 13 - 21;
+    }
+
+    private static final BakedArt CHAMBER = new BakedArt("chamber");
+    private static final BakedArt FOOTER = new BakedArt("footer");
+    private static final BakedArt SCANNER = new BakedArt("scanner");
+
+    /** Frees the baked textures; called when a capture screen closes so none outlive it. */
+    static void release() {
+        CHAMBER.release();
+        FOOTER.release();
+        SCANNER.release();
+    }
+
+    /** The chamber, painted once per size into a texture and blitted: it never changes between frames. */
+    static void drawChamber(GuiGraphics g, int x, int y, int w, int h) {
+        CHAMBER.draw(g, x, y, w, h, 0, pen -> chamber(pen, 0, 0, w, h));
+    }
+
+    /** Decorative circuitry along the frame's bottom edge; hidden at compact GUI scales. */
+    static void drawFooter(GuiGraphics g, CaptureUiLayout layout) {
+        if (layout.width() < 480) return;
+        int top = footerTop(layout);
+        FOOTER.draw(g, layout.x(), layout.y() + top, layout.width(), FOOTER_ROWS, layout.height(),
+                pen -> footer(shifted(pen, top), layout.width(), layout.height()));
+    }
+
+    static Pen shifted(Pen pen, int dy) {
+        return (x1, y1, x2, y2, c) -> pen.fill(x1, y1 - dy, x2, y2 - dy, c);
+    }
+
+    static void line(Pen g, int x, int y, int ex, int ey, int color) {
         int dx = Math.abs(ex - x), sx = x < ex ? 1 : -1;
         int dy = -Math.abs(ey - y), sy = y < ey ? 1 : -1;
         int error = dx + dy;
@@ -29,7 +70,7 @@ final class CaptureArt {
         }
     }
 
-    static void ellipse(GuiGraphics g, int cx, int cy, int rx, int ry, int color) {
+    static void ellipse(Pen g, int cx, int cy, int rx, int ry, int color) {
         if (rx < 1 || ry < 1) return;
         for (int yy = -ry; yy <= ry; yy++) {
             int xx = (int) Math.round(rx * Math.sqrt(Math.max(0, 1 - yy * (double) yy / (ry * ry))));
@@ -37,7 +78,7 @@ final class CaptureArt {
         }
     }
 
-    static void outlineEllipse(GuiGraphics g, int cx, int cy, int rx, int ry, int color) {
+    static void outlineEllipse(Pen g, int cx, int cy, int rx, int ry, int color) {
         for (int yy = -ry; yy <= ry; yy++) {
             int outer = (int) Math.round(rx * Math.sqrt(Math.max(0, 1 - yy * (double) yy / (ry * ry))));
             int inner = Math.abs(yy) >= ry - 2 ? 0
@@ -48,7 +89,7 @@ final class CaptureArt {
     }
 
     /** Fills a simple polygon by scanline, since {@code GuiGraphics} has no native polygon fill. */
-    static void polygon(GuiGraphics g, int[] xs, int[] ys, int color) {
+    static void polygon(Pen g, int[] xs, int[] ys, int color) {
         int min = java.util.Arrays.stream(ys).min().orElse(0);
         int max = java.util.Arrays.stream(ys).max().orElse(0);
         for (int y = min; y < max; y++) {
@@ -64,7 +105,7 @@ final class CaptureArt {
         }
     }
 
-    static void bracket(GuiGraphics g, int x, int y, int w, int h, int length, int color) {
+    static void bracket(Pen g, int x, int y, int w, int h, int length, int color) {
         for (int side = 0; side < 2; side++) {
             for (int bottom = 0; bottom < 2; bottom++) {
                 int px = side == 0 ? x : x + w - 2;
@@ -76,7 +117,7 @@ final class CaptureArt {
     }
 
     /** The hologram chamber: perspective wall panels and ribs (scan-converted polygons), light rings. */
-    static void chamber(GuiGraphics g, int x, int y, int w, int h) {
+    static void chamber(Pen g, int x, int y, int w, int h) {
         g.fill(x, y, x + w, y + h, DARK);
         int cx = x + w / 2, beam = w * 3 / 5, left = cx - beam / 2, right = left + beam;
         for (int side = 0; side < 2; side++) {
@@ -135,18 +176,7 @@ final class CaptureArt {
     /** The targeting-bracket scanner grid and its three progress boxes; hidden when too small to read. */
     static void scanner(GuiGraphics g, Font font, int x, int y, int w, int h, int completed) {
         if (h < 40 || w < 90) return;
-        g.fill(x, y, x + w, y + h, DARK);
-        for (int xx = x; xx < x + w; xx += 12) g.fill(xx, y, xx + 1, y + h, 0xFF0A5074);
-        for (int yy = y; yy < y + h; yy += 12) g.fill(x, yy, x + w, yy + 1, 0xFF0A5074);
-        int radius = Math.min(h / 2 - 6, w / 4), cx = x + w / 3, cy = y + h / 2;
-        outlineEllipse(g, cx, cy, radius, radius, CYAN);
-        g.fill(cx - radius + 2, cy - 3, cx + radius - 1, cy + 3, DARK);
-        g.fill(cx - radius + 2, cy - 3, cx + radius - 1, cy - 1, CYAN);
-        g.fill(cx - radius + 2, cy + 1, cx + radius - 1, cy + 3, CYAN);
-        ellipse(g, cx, cy, 7, 7, CYAN);
-        ellipse(g, cx, cy, 5, 5, DARK);
-        ellipse(g, cx, cy, 3, 3, CYAN);
-        bracket(g, cx - radius - 4, cy - radius - 4, radius * 2 + 8, radius * 2 + 8, 6, CYAN);
+        SCANNER.draw(g, x, y, w, h, 0, pen -> scannerStatic(pen, w, h));
         int gx = x + w * 4 / 5, gy = y + h / 3, gr = Math.min(14, h / 5);
         for (int i = 0; i < 12; i++) {
             double a = Math.toRadians(i * 30 - 90);
@@ -162,6 +192,23 @@ final class CaptureArt {
         }
     }
 
+    /** The scanner's unchanging half, in local coordinates: grid, targeting ring and crosshair. */
+    static void scannerStatic(Pen g, int w, int h) {
+        int x = 0, y = 0;
+        g.fill(x, y, x + w, y + h, DARK);
+        for (int xx = x; xx < x + w; xx += 12) g.fill(xx, y, xx + 1, y + h, 0xFF0A5074);
+        for (int yy = y; yy < y + h; yy += 12) g.fill(x, yy, x + w, yy + 1, 0xFF0A5074);
+        int radius = Math.min(h / 2 - 6, w / 4), cx = x + w / 3, cy = y + h / 2;
+        outlineEllipse(g, cx, cy, radius, radius, CYAN);
+        g.fill(cx - radius + 2, cy - 3, cx + radius - 1, cy + 3, DARK);
+        g.fill(cx - radius + 2, cy - 3, cx + radius - 1, cy - 1, CYAN);
+        g.fill(cx - radius + 2, cy + 1, cx + radius - 1, cy + 3, CYAN);
+        ellipse(g, cx, cy, 7, 7, CYAN);
+        ellipse(g, cx, cy, 5, 5, DARK);
+        ellipse(g, cx, cy, 3, 3, CYAN);
+        bracket(g, cx - radius - 4, cy - radius - 4, radius * 2 + 8, radius * 2 + 8, 6, CYAN);
+    }
+
     /** A small crisp RP crystal icon, kept clear of the dynamic RP amount it sits beside. */
     static void crystal(GuiGraphics g, int x, int y) {
         for (int yy = 0; yy < 14; yy++) {
@@ -171,19 +218,18 @@ final class CaptureArt {
         }
     }
 
-    /** Decorative circuitry along the frame's bottom edge; hidden at compact GUI scales. */
-    static void footer(GuiGraphics g, CaptureUiLayout layout) {
-        if (layout.width() < 480) return;
-        int y = layout.y() + layout.height() - 13;
+    /** The footer circuitry in the frame's local coordinates (origin at the frame's top-left). */
+    static void footer(Pen g, int width, int height) {
+        int y = height - 13;
         for (int side = 0; side < 2; side++) {
-            int a = side == 0 ? layout.x() + 18 : layout.x() + layout.width() - 18;
+            int a = side == 0 ? 18 : width - 18;
             int dir = side == 0 ? 1 : -1;
             for (int i = 0; i < 3; i++) {
                 g.fill(a + dir * (35 + i * 10) - 2, y - 16, a + dir * (35 + i * 10) + 2, y - 1, DARK);
             }
             line(g, a, y + 7, a, y - 8, CYAN);
             line(g, a, y - 8, a - dir * 12, y - 20, CYAN);
-            int start = a + dir * 72, end = a + dir * (layout.width() / 2 - 115);
+            int start = a + dir * 72, end = a + dir * (width / 2 - 115);
             if (Math.abs(end - start) > 10) {
                 line(g, start, y - 11, start + dir * 10, y - 11, DARK);
                 line(g, start + dir * 10, y - 11, start + dir * 17, y - 4, DARK);
