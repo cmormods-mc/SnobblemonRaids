@@ -174,6 +174,7 @@ public final class CaptureMinigameScreen extends Screen {
     @Override
     public void removed() {
         CapturePokemonPreview.clear();
+        CaptureArt.release();
         super.removed();
     }
 

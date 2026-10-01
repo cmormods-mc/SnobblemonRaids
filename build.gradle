@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.144-wandering-pokemon'
+version = '0.8.147-capture-baked-art'
 group = 'com.cobbleraids'
 
 base {
