@@ -19,11 +19,15 @@ import com.cobbleraids.network.PendingRewardRevealPayload;
 import com.cobbleraids.network.RenownBoonSyncPayload;
 import com.cobbleraids.network.RewardResultPayload;
 import com.cobbleraids.network.ShopPagePayload;
+import com.cobbleraids.network.TrophyRoomActionPayload;
 import com.cobbleraids.network.TrophyRoomPagePayload;
 import com.cobbleraids.renown.RenownBoon;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 
 /** The only class in CobbleRaids that touches ClientPlayNetworking -- everything else stays common code. */
 public final class CobbleRaidsClient implements ClientModInitializer {
@@ -70,5 +74,39 @@ public final class CobbleRaidsClient implements ClientModInitializer {
                 })));
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
                 RaidFaultBarrier.guard("capture-screen:disconnect-cleanup", CaptureDetailsCache::clear));
+
+        RaidKeyBindings.register();
+        // Polled once a tick. consumeClick drains every press since the last tick, so a key pressed
+        // while a screen was open is spent here and never fires late when the screen closes.
+        ClientTickEvents.END_CLIENT_TICK.register(client -> RaidFaultBarrier.guard("keybinds", () -> {
+            while (RaidKeyBindings.trophy().consumeClick()) openTrophyRoom(client);
+            while (RaidKeyBindings.leaderboard().consumeClick()) openLeaderboard(client);
+        }));
+    }
+
+    /**
+     * T. Asks the server for the first page, the same request /cobbleraids trophies makes; the screen
+     * opens when the page arrives. Ignored with a screen already open -- the key may be a letter the
+     * player is typing into a search box -- and told to the player when the server has no trophy room.
+     */
+    private static void openTrophyRoom(Minecraft client) {
+        if (client.player == null || client.screen != null) return;
+        if (!ClientPlayNetworking.canSend(TrophyRoomActionPayload.TYPE)) {
+            client.player.displayClientMessage(
+                    Component.literal("This server does not have the CobbleRaids trophy room."), true);
+            return;
+        }
+        // The server cannot know the window's width yet; the screen asks again with its real column count.
+        ClientPlayNetworking.send(TrophyRoomActionPayload.initial(com.cobbleraids.catching.TrophyGalleryQuery.MAX_COLUMNS));
+    }
+
+    /**
+     * L. There is no leaderboard screen yet, so for now this prints the all-time raids-won board in
+     * chat. Replace the body with the screen's open call when it exists; the key, the screen check
+     * and the tick polling above are already what that needs.
+     */
+    private static void openLeaderboard(Minecraft client) {
+        if (client.player == null || client.screen != null) return;
+        client.player.connection.sendCommand("cobbleraids top raids_won alltime");
     }
 }

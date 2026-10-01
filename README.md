@@ -243,6 +243,11 @@ if you are not on it. `/cobbleraids stats` is your own record and `stats server`
 - Everything is saved in `cobbleraids_stats` in the world data. Counting is a few in-memory updates
   per raid event, and a board is sorted only when someone asks for one.
 
+**Keys** (Controls, under CobbleRaids): **T** opens the trophy room and **L** the leaderboard. Both are
+vanilla's own defaults -- T is chat and L is advancements -- so on a fresh install a press may reach the
+vanilla action instead; rebind either one, and the controls screen shows the clash in red. Until there is a
+leaderboard screen, L prints the all-time raids-won board in chat (`CobbleRaidsClient.openLeaderboard`).
+
 A leaderboard screen should call `com.cobbleraids.stats.Leaderboards.board(...)`, which returns the
 rows, how many players are ranked and the viewer's own row, rather than parsing the command output.
 

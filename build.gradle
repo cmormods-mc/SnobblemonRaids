@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.155-raid-stats'
+version = '0.8.156-keybinds'
 group = 'com.cobbleraids'
 
 base {
