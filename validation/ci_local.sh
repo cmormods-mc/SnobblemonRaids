@@ -97,6 +97,9 @@ step "Validate mixin targets are not shadowed"
 step "Validate raid-patch.js behaviour against Cobblemon's real Showdown fork"
 "$py" validation/validate_showdown_raid_patch_behavior.py
 
+step "Fuzz the raid battle model on the real Showdown fork"
+"$py" validation/validate_showdown_fuzz.py
+
 step "Validate public API boundary (bytecode)"
 "$py" validation/validate_api_boundary.py
 
