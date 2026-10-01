@@ -14,5 +14,8 @@
   "item.cobbleraids.raid_core.tooltip": "Held item. Boosts Raid Points earned by whoever is carrying it when a raid boss falls.",
   "item.cobbleraids.guardian_scale": "Guardian Scale",
   "item.cobbleraids.guardian_scale.tooltip": "Held item. Once per battle, survives a hit that would faint it with %s%% HP instead.",
-  "itemGroup.cobbleraids.raid_keys": "CobbleRaids"
+  "itemGroup.cobbleraids.raid_keys": "CobbleRaids",
+  "key.categories.cobbleraids": "CobbleRaids",
+  "key.cobbleraids.trophies": "Open Trophy Room",
+  "key.cobbleraids.leaderboard": "Open Leaderboard"
 }
