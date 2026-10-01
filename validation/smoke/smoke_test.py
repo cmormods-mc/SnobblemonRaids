@@ -155,7 +155,7 @@ class Server:
         if not self.process or self.process.poll() is not None:
             return
         try:
-            with Rcon("127.0.0.1", 25575, read_password(self.directory), timeout=15) as rcon:
+            with Rcon("127.0.0.1", rcon_port(self.directory), read_password(self.directory), timeout=15) as rcon:
                 rcon.command("stop")
         except Exception:
             pass
@@ -225,6 +225,21 @@ def wait_for_free_port(port: int, timeout: float = 150.0) -> None:
             print(f"  waiting for port {port} to become bindable")
             announced = True
         time.sleep(3)
+
+
+def rcon_port(directory: Path) -> int:
+    """The RCON port this server directory is configured for.
+
+    Never hardcode 25575. Two rigs on one machine is normal, and a script that assumes the default
+    port silently drives -- and then stops -- whichever server owns it, which is not necessarily the
+    one the script just booted. That is exactly what happened on 2026-09-30.
+    """
+    for line in (directory / "server.properties").read_text(encoding="utf-8").splitlines():
+        if line.startswith("rcon.port="):
+            value = line.split("=", 1)[1].strip()
+            if value:
+                return int(value)
+    return 25575
 
 
 def read_password(directory: Path) -> str:
@@ -410,7 +425,7 @@ def scenarios() -> list[Check]:
 def run_scenarios(server: Server) -> list[Result]:
     results: list[Result] = []
     password = read_password(server.directory)
-    with Rcon("127.0.0.1", 25575, password) as rcon:
+    with Rcon("127.0.0.1", rcon_port(server.directory), password) as rcon:
         for check in scenarios():
             try:
                 output = rcon.command(check.command)

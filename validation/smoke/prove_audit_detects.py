@@ -11,7 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from smoke_test import ROOT, Server, install_jar, project_version, read_password  # noqa: E402
+from smoke_test import ROOT, Server, install_jar, project_version, rcon_port, read_password  # noqa: E402
 from rcon import Rcon  # noqa: E402
 
 # A plausible-looking entity UUID that is not a tracked raid boss.
@@ -43,7 +43,7 @@ def main():
     server.start()
     try:
         server.wait_until_ready()
-        with Rcon("127.0.0.1", 25575, read_password(server_dir)) as rcon:
+        with Rcon("127.0.0.1", rcon_port(server_dir), read_password(server_dir)) as rcon:
             baseline = rcon.command("cobbleraids debug audit")
             check("audit is clean before we break anything",
                   "raid state consistent" in baseline, baseline[:200])

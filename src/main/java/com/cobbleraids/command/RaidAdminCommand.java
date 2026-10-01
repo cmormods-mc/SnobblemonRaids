@@ -144,6 +144,8 @@ public final class RaidAdminCommand {
                                         .executes(ctx -> RaidAdminDebugOps.rotation(ctx.getSource())))
                                 .then(Commands.literal("raids")
                                         .executes(ctx -> RaidAdminDebugOps.raids(ctx.getSource())))
+                                .then(Commands.literal("battle")
+                                        .executes(ctx -> RaidAdminDebugOps.battle(ctx.getSource())))
                                 .then(Commands.literal("history")
                                         .executes(ctx -> RaidAdminDebugOps.history(ctx.getSource())))
                                 .then(Commands.literal("config")

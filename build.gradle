@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.149-showdown-fuzz-harness'
+version = '0.8.152-held-player-prompt'
 group = 'com.cobbleraids'
 
 base {

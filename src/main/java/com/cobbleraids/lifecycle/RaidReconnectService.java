@@ -129,8 +129,39 @@ public final class RaidReconnectService {
                 server.getTickCount() + RESUME_OPEN_DELAY_TICKS, hold.heldOnShowdown()));
     }
 
+    /**
+     * Keeps a held player from blocking the shared turn on the Java side.
+     *
+     * <p>{@code >raidhold} makes the SHOWDOWN side passive, but Cobblemon's own dispatcher is separate:
+     * it forwards nobody's choice to Showdown until no actor {@code mustChoose}, and every new turn
+     * sets that flag again for every actor -- including one whose player is gone. So a held player
+     * froze the raid for everyone until the grace window ran out, which is the opposite of what holding
+     * a slot is for. Found by validation/smoke/java_layer_test.py: with two players and one dropped,
+     * the other got no further turn for as long as it was left to run.
+     *
+     * <p>Run every tick rather than once at the hold, because the flag comes back with each turn's
+     * request. The request itself is left alone, so {@link #resumeBattleUi} can still re-prompt them.
+     * Only players held on Showdown are touched; the solo / last-one-out case deliberately keeps
+     * waiting, since nobody else is present to be stalled.
+     */
+    private static void releaseHeldActors(MinecraftServer server) {
+        for (Map.Entry<UUID, GraceHold> entry : HOLDS.entrySet()) {
+            if (!entry.getValue().heldOnShowdown()) continue;
+            RaidSession raid = findRaid(entry.getValue().raidId());
+            if (raid == null || raid.getStatus() != RaidSession.Status.ACTIVE) continue;
+            PokemonBattle battle = raid.getBattle();
+            if (battle == null || battle.getEnded()) continue;
+            BattleActor actor = battle.getActor(entry.getKey());
+            if (actor == null || !actor.getMustChoose()) continue;
+            actor.setMustChoose(false);
+            // The others may already have answered; this is the call that lets the turn go.
+            battle.checkForInputDispatch();
+        }
+    }
+
     public static void tick(MinecraftServer server) {
         long now = server.getTickCount();
+        if (!HOLDS.isEmpty()) releaseHeldActors(server);
         for (Iterator<Map.Entry<UUID, GraceHold>> it = HOLDS.entrySet().iterator(); it.hasNext(); ) {
             Map.Entry<UUID, GraceHold> entry = it.next();
             if (entry.getValue().deadlineTick() > now) continue;
@@ -148,7 +179,7 @@ public final class RaidReconnectService {
             // They disconnected again before the delay elapsed; the next real disconnect/join pair
             // will queue its own resume, so this stale one is simply dropped.
             if (player == null) continue;
-            resumeBattleUi(findRaid(entry.getValue().raidId()), player);
+            resumeBattleUi(findRaid(entry.getValue().raidId()), player, entry.getValue().heldOnShowdown());
         }
     }
 
@@ -167,7 +198,7 @@ public final class RaidReconnectService {
         return false;
     }
 
-    private static void resumeBattleUi(RaidSession raid, ServerPlayer player) {
+    private static void resumeBattleUi(RaidSession raid, ServerPlayer player, boolean wasHeldOnShowdown) {
         if (raid == null || raid.getStatus() != RaidSession.Status.ACTIVE) return;
         PokemonBattle battle = raid.getBattle();
         if (battle.getEnded()) return;
@@ -184,6 +215,17 @@ public final class RaidReconnectService {
         // RequestInstruction itself sends whenever Showdown emits a fresh |request|.
         if (actor.getRequest() != null) {
             actor.sendUpdate(new BattleQueueRequestPacket(actor.getRequest()));
+        }
+        // A player who was held on Showdown missed the turn's own prompt: Cobblemon sets mustChoose and
+        // sends the prompt when a turn STARTS, and the request raid-patch.js re-issues on >raidresume
+        // arrives mid-turn, so nothing would ever ask them. They came back to a battle that waited on
+        // them in silence (found by validation/smoke/java_layer_test.py). A real request they have not
+        // answered is a move owed, so ask for it -- the same call a fresh turn makes.
+        if (wasHeldOnShowdown && !actor.getMustChoose() && actor.getResponses().isEmpty()) {
+            var request = actor.getRequest();
+            if (request != null && !request.getWait() && request.getActive() != null && !request.getActive().isEmpty()) {
+                actor.setMustChoose(true);
+            }
         }
         if (actor.getMustChoose()) {
             actor.sendUpdate(new BattleMakeChoicePacket());
