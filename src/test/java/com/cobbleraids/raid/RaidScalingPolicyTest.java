@@ -39,6 +39,28 @@ class RaidScalingPolicyTest {
     }
 
     @Test
+    @DisplayName("every renowned boss gets the base bonus, and the hp_pool boon stacks on top of it")
+    void renownPoolStacksBaseAndBoon() {
+        // 550 at level 25, raised to 35 by the renown level bonus: 770, the pool the party really faces.
+        long atLevel = RaidScalingPolicy.forLevel(550L, 25, 35);
+        assertEquals(770L, atLevel);
+
+        assertEquals(1001L, RaidScalingPolicy.renownPool(atLevel, 0.30, false, 0.15), "base bonus only");
+        assertEquals(1151L, RaidScalingPolicy.renownPool(atLevel, 0.30, true, 0.15), "base bonus, then the boon");
+        assertEquals(atLevel, RaidScalingPolicy.renownPool(atLevel, 0.0, false, 0.15), "no bonus changes nothing");
+    }
+
+    @Test
+    @DisplayName("a shipped-default renowned starter has about 1.8x the pool of an ordinary one")
+    void renownStarterIsAboutTwiceAsDurable() {
+        long ordinary = 550L;
+        long renowned = RaidScalingPolicy.renownPool(RaidScalingPolicy.forLevel(ordinary, 25, 35), 0.30, false, 0.15);
+        double ratio = renowned / (double) ordinary;
+
+        assertTrue(ratio > 1.7 && ratio < 1.95, "ratio was " + ratio);
+    }
+
+    @Test
     @DisplayName("raising the level raises the pool in proportion")
     void poolFollowsTheLevel() {
         // Four times the level, four times the pool -- the party that raised it hits about four

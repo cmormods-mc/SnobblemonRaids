@@ -40,6 +40,17 @@ public final class RaidScalingPolicy {
      * bonus is the same share of the fight however many players turned up or how far the boss was
      * raised.
      */
+    /**
+     * The pool a renowned boss presents: the base bonus every renowned boss has, then the hp_pool
+     * boon's own share when its epithet carries one. Two multiplications rather than one summed
+     * share, so each is "this much more than the pool it is applied to" and neither silently
+     * absorbs the other; with the shipped numbers that is 1.30 x 1.15.
+     */
+    public static long renownPool(long pool, double baseBonus, boolean hasHpPoolBoon, double boonBonus) {
+        long withBase = forRenown(pool, baseBonus);
+        return hasHpPoolBoon ? forRenown(withBase, boonBonus) : withBase;
+    }
+
     public static long forRenown(long pool, double bonus) {
         if (!(bonus > 0.0)) return pool;
         double scaled = pool * (1.0 + bonus);

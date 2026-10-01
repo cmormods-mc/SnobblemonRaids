@@ -177,7 +177,12 @@ public final class RaidLobbyManager {
                                          List<ServerPlayer> eligible) {
         // Falls back to the definition's own level, which is what the health pool is sized against
         // when nothing scales -- so a failure here cannot produce a mismatched pool either.
-        int[] applied = { definition.level() };
+        // The floor is the level the boss actually spawned at, not the definition's: a renowned boss
+        // spawns levels above it, and that is what its pool must be sized against whether or not
+        // dynamic scaling is switched on. An ordinary boss spawns at the definition's level, so for
+        // it nothing changes.
+        int floor = Math.max(definition.level(), boss.getPokemon().getLevel());
+        int[] applied = { floor };
         RaidFaultBarrier.guard("lobby:dynamic-level", () -> {
             CobbleRaidsConfig.DynamicLevel config = CobbleRaidsConfigManager.get().dynamicLevel();
             if (!config.enabled()) return;
@@ -190,7 +195,7 @@ public final class RaidLobbyManager {
             }
 
             double average = RaidLevelPolicy.average(levels);
-            int level = RaidLevelPolicy.bossLevel(definition.level(), average, config);
+            int level = RaidLevelPolicy.bossLevel(floor, average, config);
             String party = String.format(java.util.Locale.ROOT, "%.1f", average);
 
             if (level == boss.getPokemon().getLevel()) {
@@ -231,10 +236,11 @@ public final class RaidLobbyManager {
      */
     private static long withRenownHealth(PokemonEntity boss, long pool) {
         long[] result = { pool };
-        RaidFaultBarrier.guard("lobby:renown-health", () -> RaidRenownMarker.read(boss)
-                .filter(renown -> renown.boon().kind() == RenownBoon.Kind.HP_POOL)
-                .ifPresent(renown -> result[0] = RaidScalingPolicy.forRenown(pool,
-                        CobbleRaidsConfigManager.get().renown().healthBonus())));
+        RaidFaultBarrier.guard("lobby:renown-health", () -> RaidRenownMarker.read(boss).ifPresent(renown -> {
+            CobbleRaidsConfig.Renown config = CobbleRaidsConfigManager.get().renown();
+            result[0] = RaidScalingPolicy.renownPool(pool, config.baseHealthBonus(),
+                    renown.boon().kind() == RenownBoon.Kind.HP_POOL, config.healthBonus());
+        }));
         return result[0];
     }
 

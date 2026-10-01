@@ -4,6 +4,7 @@ import com.cobbleraids.RaidLog;
 import com.cobbleraids.config.CobbleRaidsConfig;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.config.RaidBossTraits;
+import com.cobbleraids.pokemon.PokemonLeveling;
 import com.cobbleraids.pokemon.PokemonStatNames;
 import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.fault.RaidFaultBarrier;
@@ -224,6 +225,11 @@ public final class RaidBossSpawner {
             for (ElementalType type : pokemon.getTypes()) types.add(type.getShowdownId().toLowerCase(Locale.ROOT));
             Optional<RaidRenown> drawn = RenownRegistry.pools().draw(definition.rarityTier(), types, random);
             if (drawn.isEmpty()) return;
+
+            // Levels first: the stat focus below adds EVs to a Pokemon whose stats are about to be
+            // recomputed at the new level, and the caller sets current health after this returns.
+            int boosted = Math.min(100, pokemon.getLevel() + config.levelBonus());
+            PokemonLeveling.applyLevel(pokemon, boosted);
 
             RenownBoon boon = drawn.get().boon();
             if (boon.kind() == RenownBoon.Kind.STAT_FOCUS) {
