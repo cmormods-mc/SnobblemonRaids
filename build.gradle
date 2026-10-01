@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.147-capture-baked-art'
+version = '0.8.148-boss-late-choice-fix'
 group = 'com.cobbleraids'
 
 base {

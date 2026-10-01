@@ -125,8 +125,77 @@ for (const playerCount of [1, 2, 3, 4]) {
       patch.isEliminatedPlayerSide(bossNeverEliminated), false);
 }
 
+// --- bossLateMoveUnusable: a late AI choice for a move the boss cannot use must be dropped ---
+// Pure predicate over a side's moveSlots and request, so plain object literals are the contract.
+{
+  const boss = (slots, requestMoves) => ({
+    active: [{fainted: false, moveSlots: slots}],
+    activeRequest: requestMoves ? {active: [{moves: requestMoves}]} : null,
+  });
+  const slots = [{id: 'splash', disabled: true}, {id: 'tackle', disabled: false}, {id: 'ember', disabled: 'hidden'}];
+  check('unusable: visibly disabled slot', patch.bossLateMoveUnusable(boss(slots), 'move 1'), true);
+  check('usable: enabled slot', patch.bossLateMoveUnusable(boss(slots), 'move 2'), false);
+  check('unusable: hidden-disabled slot (Imprison)', patch.bossLateMoveUnusable(boss(slots), 'move 3'), true);
+  check('unusable: no such slot', patch.bossLateMoveUnusable(boss(slots), 'move 9'), true);
+  check('unusable: disabled in the request only',
+      patch.bossLateMoveUnusable(boss(slots, [{}, {disabled: true}, {}]), 'move 2'), true);
+  check('usable by name', patch.bossLateMoveUnusable(boss(slots), 'move tackle'), false);
+  check('unusable by name', patch.bossLateMoveUnusable(boss(slots), 'move splash'), true);
+  check('a target suffix does not change the verdict', patch.bossLateMoveUnusable(boss(slots), 'move 2 1'), false);
+  check('a switch is never judged here', patch.bossLateMoveUnusable(boss(slots), 'switch 2'), false);
+  check('"default" is never judged here', patch.bossLateMoveUnusable(boss(slots), 'default'), false);
+  check('a fainted boss is never judged here',
+      patch.bossLateMoveUnusable({active: [{fainted: true, moveSlots: slots}]}, 'move 1'), false);
+}
+
+// --- the real dispatcher + the real sim: Taunt must not leave the boss with no choice ---
+// Reproduced on 2026-09-30 from a live raid freeze ("[Unavailable choice] Can't move: Blaziken's
+// Flare Blitz is disabled"): Showdown's choose() clears the boss's valid pre-fill BEFORE it validates
+// the late AI choice, so a choice for a taunted/disabled move left the boss with none and the turn
+// waited forever. Asserts presence of the surviving choice, not just the absence of an error.
+{
+  const {Battle} = require(path.join(fixtureDir, 'sim/index.js'));
+  const {BattleStream} = require(path.join(fixtureDir, 'sim/battle-stream'));
+  const set = (species, moves) => ({
+    name: species, species, level: 100, gender: 'M', moves,
+    movesInfo: moves.map(() => ({pp: 40, maxPp: 40})), ability: 'Pressure', item: '', nature: 'Hardy',
+    evs: {hp: 85, atk: 85, def: 85, spa: 85, spd: 85, spe: 85},
+    ivs: {hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31},
+  });
+  const sim = new Battle({formatid: 'gen9customgame'});
+  sim.gameType = 'raid';
+  sim.setPlayer('p1', {team: [set('Regieleki', ['taunt', 'tackle'])]});
+  sim.setPlayer('p2', {team: [set('Arceus', ['splash', 'tackle'])]});
+  if (sim.requestState === 'teampreview') {
+    sim.choose('p1', 'team 1');
+    sim.choose('p2', 'team 1');
+  }
+  const stream = new BattleStream();
+  stream.battle = sim;
+  const errors = [];
+  const send = sim.send.bind(sim);
+  sim.send = (type, data) => {
+    if (/\|error\|/.test(String(data))) errors.push(String(data));
+    return send(type, data);
+  };
+  const chosen = () => sim.p2.choice.actions.map(action => action.moveid).join(',');
+
+  sim.choose('p1', 'move 1'); // Taunt: splash is now disabled for the boss
+  check('precondition: the boss pre-filled a usable move', chosen(), 'tackle');
+  stream._writeLine('p2', 'move 1'); // the AI names the taunted move
+  check('a late choice for a disabled move leaves the pre-filled choice in place', chosen(), 'tackle');
+  check('the boss still has a complete choice', sim.p2.isChoiceDone(), true);
+  check('no |error| is emitted for the dropped choice', errors.length, 0);
+
+  stream._writeLine('p2', 'move 2'); // a valid late choice must still be applied as before
+  check('a valid late choice is still applied', chosen(), 'tackle');
+  const before = sim.turn;
+  sim.choose('p1', 'move 2');
+  check('the turn advances rather than waiting on the boss', sim.turn, before + 1);
+}
+
 if (failures > 0) {
   console.error(`${failures} assertion(s) failed`);
   process.exit(1);
 }
-console.log('raid-patch.js topology predicates: PASS');
+console.log('raid-patch.js topology predicates and late boss choices: PASS');
