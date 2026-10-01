@@ -441,6 +441,8 @@ final class RaidAdminDebugOps {
                 config.renown().legendary(), config.renown().mythical()));
         setting(source, "health_bonus", config.renown().healthBonus());
         setting(source, "stat_focus_evs", config.renown().statFocusEvs());
+        setting(source, "level_bonus", config.renown().levelBonus());
+        setting(source, "base_health_bonus", config.renown().baseHealthBonus());
         setting(source, "points_multiplier", config.renown().pointsMultiplier());
         setting(source, "currency_multiplier", config.renown().currencyMultiplier());
 

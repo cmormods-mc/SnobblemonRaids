@@ -18,6 +18,20 @@ import org.junit.jupiter.api.Test;
  */
 class RaidLevelPolicyTest {
 
+    @Test
+    @DisplayName("a renowned boss's raised level is the floor: a weak party cannot pull it back down")
+    void renownLevelIsTheFloor() {
+        CobbleRaidsConfig.DynamicLevel on = new CobbleRaidsConfig.DynamicLevel(true, 0, 100);
+
+        // A level-25 starter spawned 10 levels up; a party averaging 17.5 stays at the raised level.
+        assertEquals(35, RaidLevelPolicy.bossLevel(35, 17.5, on));
+        // A party above the floor still raises it, as it always did.
+        assertEquals(60, RaidLevelPolicy.bossLevel(35, 60.0, on));
+        // And with dynamic scaling off the floor is returned untouched.
+        assertEquals(35, RaidLevelPolicy.bossLevel(35, 90.0, new CobbleRaidsConfig.DynamicLevel(false, 0, 100)));
+    }
+
+
     private static final CobbleRaidsConfig.DynamicLevel ON = CobbleRaidsConfig.DynamicLevel.defaults();
     private static final CobbleRaidsConfig.DynamicLevel OFF =
             new CobbleRaidsConfig.DynamicLevel(false, 0, 100);

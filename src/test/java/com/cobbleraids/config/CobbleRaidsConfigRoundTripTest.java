@@ -62,7 +62,7 @@ class CobbleRaidsConfigRoundTripTest {
                 CobbleRaidsConfig.defaults().tierScaling(),
                 CobbleRaidsConfig.defaults().bossGlow(),
                 CobbleRaidsConfig.defaults().bossMovement(),
-                new CobbleRaidsConfig.Renown(false, 0.2, 0.3, 0.4, 0.5, 0.25, 64, 1.5, 2.0),
+                new CobbleRaidsConfig.Renown(false, 0.2, 0.3, 0.4, 0.5, 0.25, 64, 1.5, 2.0, 7, 0.4),
                 new CobbleRaidsConfig.ReconnectGrace(false, 120),
                 true);
 
@@ -99,6 +99,8 @@ class CobbleRaidsConfigRoundTripTest {
         assertEquals(0.25, reparsed.renown().healthBonus(), 0.0);
         assertEquals(64, reparsed.renown().statFocusEvs());
         assertEquals(2.0, reparsed.renown().currencyMultiplier(), 0.0);
+        assertEquals(7, reparsed.renown().levelBonus());
+        assertEquals(0.4, reparsed.renown().baseHealthBonus(), 0.0);
         assertFalse(reparsed.reconnectGrace().enabled());
         assertEquals(120, reparsed.reconnectGrace().graceSeconds());
     }
@@ -114,13 +116,48 @@ class CobbleRaidsConfigRoundTripTest {
         assertEquals(0.10, renown.chanceFor(RaidRarityTier.LEGENDARY), 0.0);
         assertEquals(0.12, renown.chanceFor(RaidRarityTier.MYTHICAL), 0.0);
         assertThrows(IllegalArgumentException.class,
-                () -> new CobbleRaidsConfig.Renown(true, 0, 0, 0, 0, 0.6, 128, 1.25, 1.25), "health bonus cap");
+                () -> new CobbleRaidsConfig.Renown(true, 0, 0, 0, 0, 0.6, 128, 1.25, 1.25, 10, 0.3), "health bonus cap");
         assertThrows(IllegalArgumentException.class,
-                () -> new CobbleRaidsConfig.Renown(true, 0, 0, 0, 0, 0.15, 253, 1.25, 1.25), "EV cap");
+                () -> new CobbleRaidsConfig.Renown(true, 0, 0, 0, 0, 0.15, 253, 1.25, 1.25, 10, 0.3), "EV cap");
         assertThrows(IllegalArgumentException.class,
-                () -> new CobbleRaidsConfig.Renown(true, 0, 0, 0, 0, 0.15, 128, 0.9, 1.25), "renown never pays less");
+                () -> new CobbleRaidsConfig.Renown(true, 0, 0, 0, 0, 0.15, 128, 0.9, 1.25, 10, 0.3), "renown never pays less");
         assertThrows(IllegalArgumentException.class,
-                () -> new CobbleRaidsConfig.Renown(true, 12.0, 0, 0, 0, 0.15, 128, 1.25, 1.25), "a chance is not a percentage");
+                () -> new CobbleRaidsConfig.Renown(true, 12.0, 0, 0, 0, 0.15, 128, 1.25, 1.25, 10, 0.3), "a chance is not a percentage");
+        assertThrows(IllegalArgumentException.class,
+                () -> new CobbleRaidsConfig.Renown(true, 0, 0, 0, 0, 0.15, 128, 1.25, 1.25, 51, 0.3), "level bonus cap");
+        assertThrows(IllegalArgumentException.class,
+                () -> new CobbleRaidsConfig.Renown(true, 0, 0, 0, 0, 0.15, 128, 1.25, 1.25, -1, 0.3), "no negative levels");
+        assertThrows(IllegalArgumentException.class,
+                () -> new CobbleRaidsConfig.Renown(true, 0, 0, 0, 0, 0.15, 128, 1.25, 1.25, 10, 1.5), "base pool bonus cap");
+    }
+
+    @Test
+    @DisplayName("renowned bosses ship 10 levels up, with a 30% larger pool and 200-EV focus")
+    void renownIsStrongerThanItWas() {
+        CobbleRaidsConfig.Renown renown = CobbleRaidsConfig.defaults().renown();
+
+        assertEquals(10, renown.levelBonus());
+        assertEquals(0.30, renown.baseHealthBonus(), 0.0);
+        assertEquals(200, renown.statFocusEvs());
+    }
+
+    @Test
+    @DisplayName("an untouched pre-bonus renown block moves to the new strengths; an edited one stays")
+    void renownStrengthsMigrateOnlyWhenUntouched() {
+        JsonObject untouched = CobbleRaidsConfig.defaults().toJson();
+        JsonObject old = untouched.getAsJsonObject("renown");
+        old.addProperty("stat_focus_evs", 128);
+        old.remove("level_bonus");
+        old.remove("base_health_bonus");
+
+        CobbleRaidsConfig.Renown migrated = CobbleRaidsConfig.fromJson(untouched).renown();
+        assertEquals(200, migrated.statFocusEvs(), "the old shipped value is replaced");
+        assertEquals(10, migrated.levelBonus(), "a key new to this version gets its default");
+        assertEquals(0.30, migrated.baseHealthBonus(), 0.0);
+
+        JsonObject edited = CobbleRaidsConfig.defaults().toJson();
+        edited.getAsJsonObject("renown").addProperty("stat_focus_evs", 64);
+        assertEquals(64, CobbleRaidsConfig.fromJson(edited).renown().statFocusEvs(), "an operator value stays");
     }
 
     @Test

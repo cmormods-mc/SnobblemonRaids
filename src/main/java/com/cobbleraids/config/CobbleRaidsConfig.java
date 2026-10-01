@@ -583,16 +583,32 @@ public record CobbleRaidsConfig(
      *       capped at +50%.</li>
      *   <li>{@code stat_focus_evs} -- EVs added to the focused stat, alongside a maximum IV; never
      *       past Cobblemon's 252 per stat or 510 total.</li>
+     *   <li>{@code level_bonus} -- levels a renowned boss has over its ordinary self, for every
+     *       epithet. It is the floor dynamic level scaling starts from, so it also raises the raid
+     *       health pool in proportion (see RaidScalingPolicy#forLevel) whether or not dynamic level
+     *       is enabled.</li>
+     *   <li>{@code base_health_bonus} -- share added to the raid health pool of EVERY renowned boss,
+     *       on top of the level's own increase. The {@code hp_pool} boon's {@code health_bonus} is
+     *       a further share for that epithet alone.</li>
      * </ul>
      *
      * <p>The payout multipliers apply to Raid Points and currency. Contribution bonus rolls are
      * deliberately left alone: renown pays in the shop currency, not in extra loot selections. Both
      * floor, and neither can go below 1 -- renown never pays less than an ordinary boss.
      *
-     * <p>The shipped strengths are a starting point that has not been balanced in live play yet.
+     * <p>The shipped strengths are a starting point that has not been balanced in live play yet. They
+     * were raised once already: a level-25 renowned starter fell in under five turns, so every
+     * renowned boss now also fights {@value #DEFAULT_LEVEL_BONUS} levels up with a larger pool.
      */
     public record Renown(boolean enabled, double starter, double powerhouse, double legendary, double mythical,
-                         double healthBonus, int statFocusEvs, double pointsMultiplier, double currencyMultiplier) {
+                         double healthBonus, int statFocusEvs, double pointsMultiplier, double currencyMultiplier,
+                         int levelBonus, double baseHealthBonus) {
+        public static final int DEFAULT_LEVEL_BONUS = 10;
+        public static final double DEFAULT_BASE_HEALTH_BONUS = 0.30;
+        /** What shipped before the level and base pool bonuses existed; see the codec's migration. */
+        public static final int PREVIOUS_STAT_FOCUS_EVS = 128;
+        public static final int DEFAULT_STAT_FOCUS_EVS = 200;
+
         public Renown {
             validateChance("starter", starter);
             validateChance("powerhouse", powerhouse);
@@ -604,9 +620,16 @@ public record CobbleRaidsConfig(
                 throw new IllegalArgumentException("renown.stat_focus_evs must be 0..252");
             validateMultiplier("points_multiplier", pointsMultiplier);
             validateMultiplier("currency_multiplier", currencyMultiplier);
+            if (levelBonus < 0 || levelBonus > 50)
+                throw new IllegalArgumentException("renown.level_bonus must be 0..50");
+            if (!(baseHealthBonus >= 0.0) || baseHealthBonus > 1.0)
+                throw new IllegalArgumentException("renown.base_health_bonus must be 0..1");
         }
 
-        public static Renown defaults() { return new Renown(true, 0.05, 0.07, 0.10, 0.12, 0.15, 128, 1.25, 1.25); }
+        public static Renown defaults() {
+            return new Renown(true, 0.05, 0.07, 0.10, 0.12, 0.15, DEFAULT_STAT_FOCUS_EVS, 1.25, 1.25,
+                    DEFAULT_LEVEL_BONUS, DEFAULT_BASE_HEALTH_BONUS);
+        }
 
         public double chanceFor(RaidRarityTier tier) {
             return switch (tier) {

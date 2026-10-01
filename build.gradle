@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.152-held-player-prompt'
+version = '0.8.153-renown-stronger'
 group = 'com.cobbleraids'
 
 base {

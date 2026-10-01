@@ -221,8 +221,15 @@ moderate boon:
 
 | Boon | Effect | Config |
 |---|---|---|
-| `hp_pool` | Larger raid health pool, after player count and level | `renown.health_bonus` (0.15, max 0.5) |
-| `stat_focus:<stat>` | Max IV plus extra EVs in one stat, within Cobblemon's 252/510 limits | `renown.stat_focus_evs` (128) |
+| `hp_pool` | A further larger raid health pool, after player count and level | `renown.health_bonus` (0.15, max 0.5) |
+| `stat_focus:<stat>` | Max IV plus extra EVs in one stat, within Cobblemon's 252/510 limits | `renown.stat_focus_evs` (200) |
+
+Every renowned boss, whatever its epithet, is also **stronger than the ordinary one**: it fights
+`renown.level_bonus` levels up (10, so a level-25 starter spawns at 35, capped at 100) and its raid
+health pool carries `renown.base_health_bonus` more (0.30). The raised level is the floor dynamic
+level scaling starts from, so the pool grows in proportion to it whether or not dynamic level is on --
+about 1.8x the pool of an ordinary starter at the shipped numbers. An existing server's untouched
+`stat_focus_evs` of 128 moves to 200 on load; a value you set yourself is left alone.
 
 Beating one pays `renown.points_multiplier` Raid Points and `renown.currency_multiplier`
 currency (1.25x each, floored). Contribution bonus rolls are unchanged.

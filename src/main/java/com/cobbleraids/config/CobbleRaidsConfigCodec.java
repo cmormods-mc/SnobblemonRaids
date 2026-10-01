@@ -178,6 +178,11 @@ final class CobbleRaidsConfigCodec {
         JsonObject renownObject = Json.object(root, "renown");
         JsonObject renownChance = Json.object(renownObject, "chance");
         CobbleRaidsConfig.Renown rn = defaults.renown();
+        // An operator who never touched the old shipped value gets the new one; anyone who set their
+        // own keeps it. The file carries no record of who wrote it, so equality with the old default
+        // is the only way to tell -- the same rule RaidRewardPolicy applies to its own defaults.
+        int statFocusEvs = Json.integer(renownObject, "stat_focus_evs", rn.statFocusEvs());
+        if (statFocusEvs == CobbleRaidsConfig.Renown.PREVIOUS_STAT_FOCUS_EVS) statFocusEvs = rn.statFocusEvs();
         CobbleRaidsConfig.Renown renown = new CobbleRaidsConfig.Renown(
                 Json.bool(renownObject, "enabled", rn.enabled()),
                 Json.decimal(renownChance, "starter", rn.starter()),
@@ -185,9 +190,11 @@ final class CobbleRaidsConfigCodec {
                 Json.decimal(renownChance, "legendary", rn.legendary()),
                 Json.decimal(renownChance, "mythical", rn.mythical()),
                 Json.decimal(renownObject, "health_bonus", rn.healthBonus()),
-                Json.integer(renownObject, "stat_focus_evs", rn.statFocusEvs()),
+                statFocusEvs,
                 Json.decimal(renownObject, "points_multiplier", rn.pointsMultiplier()),
-                Json.decimal(renownObject, "currency_multiplier", rn.currencyMultiplier()));
+                Json.decimal(renownObject, "currency_multiplier", rn.currencyMultiplier()),
+                Json.integer(renownObject, "level_bonus", rn.levelBonus()),
+                Json.decimal(renownObject, "base_health_bonus", rn.baseHealthBonus()));
 
         JsonObject reconnectGraceObject = Json.object(root, "reconnect_grace");
         CobbleRaidsConfig.ReconnectGrace rg = defaults.reconnectGrace();
@@ -378,6 +385,8 @@ final class CobbleRaidsConfigCodec {
         renownJson.addProperty("stat_focus_evs", renown.statFocusEvs());
         renownJson.addProperty("points_multiplier", renown.pointsMultiplier());
         renownJson.addProperty("currency_multiplier", renown.currencyMultiplier());
+        renownJson.addProperty("level_bonus", renown.levelBonus());
+        renownJson.addProperty("base_health_bonus", renown.baseHealthBonus());
         root.add("renown", renownJson);
 
         CobbleRaidsConfig.ReconnectGrace reconnectGrace = config.reconnectGrace();
