@@ -166,6 +166,22 @@ function refreshOpponentAnchors(battle) {
 }
 
 function passivatePlayerSide(side) {
+  // A withdrawn player's forced switch still has to be answered or the shared turn can never move on:
+  // every other side is waiting for it, the withdrawn side can no longer answer, and neither resuming
+  // nor leaving re-asks. Found by validation/showdown_fuzz.js -- a held player whose Pokemon fainted
+  // froze the whole raid. Their next Pokemon is chosen for them (the same implicit pick a forced
+  // "default" gets) and the choice is KEPT, which clearChoice() below would otherwise throw away.
+  if (side.requestState === 'switch' && !isEliminatedPlayerSide(side) && !side.isChoiceDone()) {
+    try {
+      side.autoChoose();
+    } catch (err) {
+      side.battle.add('-message', `${side.name}'s forced switch could not be resolved: ${err && err.message}`);
+    }
+    const wait = {wait: true, side: side.getRequestData()};
+    if (!side.activeRequest?.wait) side.emitRequest(wait);
+    else side.activeRequest = wait;
+    return;
+  }
   const request = {wait: true, side: side.getRequestData()};
   if (!side.activeRequest?.wait) side.emitRequest(request);
   else side.activeRequest = request;
@@ -548,6 +564,18 @@ BattleStream.prototype._writeLine = function(type, message) {
     if (!side || !isPlayerSide(side) || !side.raidWithdrawn) return false;
     side.raidWithdrawn = false;
     refreshOpponentAnchors(battle);
+    // The turn already in progress was requested while this side was held, so its request is the
+    // synthetic "wait" and nothing will re-issue it: the resumed player would sit with no prompt while
+    // everyone else waits on them (found by validation/showdown_fuzz.js -- the last player standing,
+    // held and resumed). Rebuild just this side's real request. getRequests() is pure, and a side's
+    // requestState is derived from its active request, so this is all it takes to owe a choice again.
+    if (battle.requestState === 'move' && !isEliminatedPlayerSide(side)) {
+      const real = battle.getRequests('move')[side.n];
+      if (real && !real.wait) {
+        side.clearChoice();
+        side.emitRequest(real);
+      }
+    }
     battle.inputLog.push(`>raidresume ${side.id}`);
     battle.add('-message', `${side.name} reconnected and rejoined the raid.`);
     battle.sendUpdates();
@@ -609,12 +637,65 @@ BattleStream.prototype._writeLine = function(type, message) {
   // just freezes. Reproduced in the sim with Taunt: boss done:false [] after the late choice.
   // A late choice for an unusable move is dropped instead, leaving the valid pre-fill in place;
   // no error is emitted, so Cobblemon has no invalid choice to react to either.
-  if (sideNumber && isBossSide(this.battle.getSide(type)) && bossLateMoveUnusable(this.battle.getSide(type), message)) {
-    return true;
+  //
+  // The predicate only knows the cases already seen, so the rest is a transaction: a late boss choice
+  // that leaves a previously complete side incomplete is rolled back. Whatever else Showdown decides
+  // to reject -- a slot the request does not list, a switch the boss cannot make, a target -- the boss
+  // can never be left with nothing. Cobblemon still sees the |error| and may re-ask; that is harmless.
+  const bossSideNow = sideNumber ? this.battle.getSide(type) : null;
+  if (bossSideNow && isBossSide(bossSideNow)) {
+    if (bossLateMoveUnusable(bossSideNow, message)) return true;
+    const turn = this.battle.turn;
+    const state = bossSideNow.requestState;
+    const snapshot = bossSideNow.isChoiceDone() ? snapshotChoice(bossSideNow) : null;
+    const result = oldWriteLine.call(this, type, message);
+    if (snapshot && this.battle.turn === turn && bossSideNow.requestState === state && !bossSideNow.isChoiceDone()) {
+      bossSideNow.choice = snapshot;
+    }
+    return result;
   }
 
   return oldWriteLine.call(this, type, message);
 };
+
+/**
+ * A forced-switch request whose only owner was a withdrawn player is answered for them in
+ * passivatePlayerSide, inside makeRequest -- and nobody is left to send the choice that would
+ * normally trigger the commit, because stock Showdown commits from choose(). Without this the raid
+ * freezes for everyone (found by validation/showdown_fuzz.js): a held player's Pokemon faints, every
+ * other side waits, and neither resuming nor leaving re-asks.
+ *
+ * It runs after an input has been fully handled rather than from inside makeRequest, because
+ * commitDecisions() re-enters go(): called mid-go it would let the outer loop advance the turn a
+ * second time. Only 'switch' is committed this way -- a 'move' request with every human passive is
+ * the deliberate "wait for the party to come back" state (RaidReconnectService#hasActivePresence).
+ */
+function commitStuckForcedSwitch(battle) {
+  for (let guard = 0; guard < 8 && isRaid(battle) && battle.requestState === 'switch' && !battle.ended &&
+      battle.allChoicesDone(); guard++) {
+    battle.commitDecisions();
+  }
+}
+
+const innerWriteLine = BattleStream.prototype._writeLine;
+BattleStream.prototype._writeLine = function(type, message) {
+  try {
+    return innerWriteLine.call(this, type, message);
+  } finally {
+    commitStuckForcedSwitch(this.battle);
+  }
+};
+
+/** A copy of everything Side#choose clears, so a rejected replacement can be undone. */
+function snapshotChoice(side) {
+  const choice = side.choice;
+  return {
+    ...choice,
+    actions: choice.actions.map(action => ({...action})),
+    switchIns: new Set(choice.switchIns),
+    error: '',
+  };
+}
 
 /**
  * True when a boss's "move ..." choice names a slot that is missing, disabled (visibly or hidden) or
@@ -633,6 +714,9 @@ function bossLateMoveUnusable(side, message) {
     : pokemon.moveSlots.find(move => move.id === token.toLowerCase().replace(/[^a-z0-9]/g, ''));
   if (!slot) return true;
   const request = side.activeRequest && side.activeRequest.active && side.activeRequest.active[0];
+  // The request is what Showdown validates against, and it can list fewer moves than the Pokemon
+  // knows (a locked move, or Struggle once every move is out of PP).
+  if (request && request.moves && index >= 0 && index >= request.moves.length) return true;
   const requested = request && request.moves && index >= 0 ? request.moves[index] : null;
   return Boolean(slot.disabled || (requested && requested.disabled));
 }

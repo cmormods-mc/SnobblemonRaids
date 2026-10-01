@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.148-boss-late-choice-fix'
+version = '0.8.149-showdown-fuzz-harness'
 group = 'com.cobbleraids'
 
 base {
