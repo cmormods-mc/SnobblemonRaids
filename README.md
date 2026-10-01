@@ -209,8 +209,42 @@ requires permission level 2.
 /cobbleraids debug definition <species> | loot <loot_table> | record <player> | join <player>
 ```
 
+Open to every player: `/cobbleraids top [<board> [weekly|alltime] [rows]]` and
+`/cobbleraids stats [<player>|server]` (see Statistics and leaderboards below).
+
 `testwild` bypasses the spawn roll and species cooldown while keeping placement,
 biome checks, tracking, announcements and active caps.
+
+## Statistics and leaderboards
+
+The server keeps a permanent record of every player's raids, all-time and for the current week
+(Monday to Sunday, UTC, the same window as the shop's weekly limits), plus server-wide totals.
+
+| Board | Counts |
+|---|---|
+| `raids_won` `raids_joined` `raids_lost` `raids_fled` | raids by outcome; leaving a raid is "fled", not "lost" |
+| `wins_starter` `wins_powerhouse` `wins_legendary` `wins_mythical` | wins by tier |
+| `rp_earned` | Raid Points granted for raids and captures (never shop refunds or admin grants) |
+| `total_damage` `best_raid_damage` | damage dealt, in raid health-pool units, and the most in one raid |
+| `bosses_caught` `renown_defeated` | captures and renowned bosses beaten |
+| `win_streak` | the longest run of consecutive wins; a loss or leaving a raid ends a run |
+| `fastest_win` | the shortest winning raid in combat seconds; the one board where lower is better |
+
+`/cobbleraids top fastest_win weekly 5` shows the top five; your own rank is shown beneath the list
+if you are not on it. `/cobbleraids stats` is your own record and `stats server` the totals.
+
+- A player who withdrew or lost their connection still has the damage they dealt counted, but is not
+  given the win. A raid everyone had left is not counted as a defeat.
+- Only ordinary raids count. An encounter owned by another mod counts only if its owner left raid
+  history on.
+- The first start after upgrading seeds each player from the raid history already on the server:
+  wins, wins by tier, captures and renowned bosses beaten. Damage, Raid Points earned, losses,
+  streaks and speed start counting from that day, because the old records never held them.
+- Everything is saved in `cobbleraids_stats` in the world data. Counting is a few in-memory updates
+  per raid event, and a board is sorted only when someone asks for one.
+
+A leaderboard screen should call `com.cobbleraids.stats.Leaderboards.board(...)`, which returns the
+rows, how many players are ranked and the viewer's own row, rather than parsing the command output.
 
 ## Renowned bosses
 

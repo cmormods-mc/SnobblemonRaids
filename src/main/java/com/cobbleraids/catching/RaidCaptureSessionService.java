@@ -409,8 +409,10 @@ public final class RaidCaptureSessionService {
      */
     private static RaidCaptureSession settleDecline(MinecraftServer server, ArrayDeque<RaidCaptureSession> queue, RaidCaptureSession resolved) {
         if (resolved.bankedRaidPoints() > 0) {
-            RaidFaultBarrier.guard("capture-decline:raid-points",
-                    () -> RaidPointsStore.award(server, resolved.playerId(), resolved.bankedRaidPoints()));
+            RaidFaultBarrier.guard("capture-decline:raid-points", () -> {
+                RaidPointsStore.award(server, resolved.playerId(), resolved.bankedRaidPoints());
+                com.cobbleraids.stats.RaidStats.onPointsEarned(server, resolved.playerId(), resolved.bankedRaidPoints());
+            });
         }
         removeFromQueue(queue, resolved);
         persistNow(server);
@@ -447,6 +449,7 @@ public final class RaidCaptureSessionService {
         }
 
         RaidPlayerRecords.recordCatch(server, resolved.playerId());
+        RaidFaultBarrier.guard("stats:catch", () -> com.cobbleraids.stats.RaidStats.onCatch(server, resolved.playerId()));
         RaidFaultBarrier.guard("title-unlock:catch", () -> TitleService.checkUnlocks(server, resolved.playerId()));
         removeFromQueue(queue, resolved);
         persistNow(server);

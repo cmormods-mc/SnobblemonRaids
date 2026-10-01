@@ -14,6 +14,8 @@ import com.cobbleraids.command.RaidLegendsCommand;
 import com.cobbleraids.command.RaidNotifyCommand;
 import com.cobbleraids.command.RaidPointsCommand;
 import com.cobbleraids.command.RaidShopCommand;
+import com.cobbleraids.command.RaidStatsCommand;
+import com.cobbleraids.stats.RaidStatsStore;
 import com.cobbleraids.command.RaidTitleCommand;
 import com.cobbleraids.command.RaidTrophyCommand;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
@@ -124,6 +126,7 @@ public final class CobbleRaids implements ModInitializer {
         RaidRewardCommand.register();
         RaidPointsCommand.register();
         RaidShopCommand.register();
+        RaidStatsCommand.register();
         RaidTrophyCommand.register();
         RaidLegendsCommand.register();
         RaidTitleCommand.register();
@@ -198,6 +201,10 @@ public final class CobbleRaids implements ModInitializer {
         // The server-wide sibling of the trophy ledger just above: same substrate, same restore point.
         ServerLifecycleEvents.SERVER_STARTED.register(server ->
                 RaidFaultBarrier.guard("startup:hall-of-legends", () -> HallOfLegends.onServerStarted(server)));
+        // After the player records and the trophy ledger: the first start seeds the leaderboards from
+        // what those two already hold, so they have to be restored first.
+        ServerLifecycleEvents.SERVER_STARTED.register(server ->
+                RaidFaultBarrier.guard("startup:raid-stats", () -> RaidStatsStore.onServerStarted(server)));
         // Presents a reward that outlived a disconnect or restart. Without this the queue is
         // restored but nothing ever offers it, so the reveal screen is only ever seen by players
         // who happened to be online when the raid was won.
@@ -260,6 +267,7 @@ public final class CobbleRaids implements ModInitializer {
             RaidFaultBarrier.guard("shutdown:boss-snapshots", DefeatedBossSnapshots::onServerStopped);
             RaidFaultBarrier.guard("shutdown:trophy-ledger", TrophyLedger::onServerStopped);
             RaidFaultBarrier.guard("shutdown:hall-of-legends", HallOfLegends::onServerStopped);
+            RaidFaultBarrier.guard("shutdown:raid-stats", RaidStatsStore::onServerStopped);
             int raids = counts[0];
             int lobbies = counts[1];
             RaidFaultBarrier.onServerStopped();

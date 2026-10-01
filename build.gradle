@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.154-shop-retune'
+version = '0.8.155-raid-stats'
 group = 'com.cobbleraids'
 
 base {

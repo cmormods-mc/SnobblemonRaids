@@ -114,6 +114,8 @@ public final class RaidRewardGrantEngine {
         RaidFaultBarrier.guard("reward:raid-points", () -> {
             RaidPointsStore.award(player.getServer(), player.getUUID(), finalAmount);
             awarded[0] = finalAmount;
+            RaidFaultBarrier.guard("stats:points", () ->
+                    com.cobbleraids.stats.RaidStats.onPointsEarned(player.getServer(), player.getUUID(), finalAmount));
         });
         return awarded[0];
     }

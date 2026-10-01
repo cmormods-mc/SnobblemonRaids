@@ -14,6 +14,7 @@ import com.cobbleraids.renown.RenownBoon;
 import com.cobbleraids.pokemon.PokemonLeveling;
 import com.cobbleraids.raid.RaidLevelPolicy;
 import com.cobbleraids.raid.RaidScalingPolicy;
+import com.cobbleraids.stats.RaidStats;
 import com.cobbleraids.spawn.RaidBossEntityMarker;
 import com.cobbleraids.spawn.RaidSpawnScheduler;
 import com.cobblemon.mod.common.battles.pokemon.BattlePokemon;
@@ -152,6 +153,9 @@ public final class RaidLobbyManager {
         try {
             RaidFactory.startFromWildBoss(eligible, definition, boss, scaledHealth);
             lobby.started();
+            // After the raid exists, so a raid that failed to start never counts as one that began.
+            RaidFaultBarrier.guard("stats:start", () ->
+                    RaidStats.onRaidStarted(server, eligible.stream().map(ServerPlayer::getUUID).toList()));
             BY_BOSS.remove(boss.getUUID(), lobby);
         } catch (RuntimeException ex) {
             lobby.cancel();

@@ -11,6 +11,7 @@ import com.cobbleraids.catching.HallOfLegendsAnnouncementService;
 import com.cobbleraids.catching.LegendEntry;
 import com.cobbleraids.catching.RaidCaptureSessionService;
 import com.cobbleraids.catching.RaidPlayerRecords;
+import com.cobbleraids.stats.RaidStats;
 import com.cobbleraids.catching.TrophyLedger;
 import com.cobbleraids.config.CobbleRaidsConfig;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
@@ -97,13 +98,36 @@ public final class RaidLifecycleCoordinator {
         }
     }
 
+    /** The raid was lost with these players still in it. Its own barrier: statistics never block a finalize. */
+    private static void recordLoss(RaidSession raid) {
+        RaidFaultBarrier.guard("stats:loss", () -> {
+            var level = raid.getBossEntity() == null ? null : raid.getBossEntity().level();
+            if (level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+                RaidStats.onLoss(serverLevel.getServer(), raid);
+            }
+        });
+    }
+
+    /** A player left for good, by their own choice or because their connection did not come back. */
+    private static void recordLeft(RaidSession raid, UUID playerId) {
+        RaidFaultBarrier.guard("stats:left", () -> {
+            var level = raid.getBossEntity() == null ? null : raid.getBossEntity().level();
+            if (level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+                RaidStats.onLeft(serverLevel.getServer(), raid, playerId);
+            }
+        });
+    }
+
     /** Fallback for a Cobblemon flee event that escaped the explicit raid-forfeit interception. */
     public static void onPlayerFled(PokemonBattle battle, UUID playerId) {
         RaidSession raid = RaidRegistry.get(battle);
         if (raid == null || raid.getStatus() != RaidSession.Status.ACTIVE) return;
         // Before any finalization below, so an owner hears who left ahead of how it ended. Only when
         // this call removed them: a player who already withdrew has been reported once.
-        if (raid.removeParticipant(playerId)) EncounterService.notifyLeft(raid, playerId, LeaveReason.FLED);
+        if (raid.removeParticipant(playerId)) {
+            EncounterService.notifyLeft(raid, playerId, LeaveReason.FLED);
+            recordLeft(raid, playerId);
+        }
         if (raid.failIfNoActiveParticipants()) finalizeNonVictory(raid);
     }
 
@@ -118,6 +142,7 @@ public final class RaidLifecycleCoordinator {
         if (raid == null || player == null || raid.getStatus() != RaidSession.Status.ACTIVE) return false;
         UUID playerId = player.getUUID();
         if (!raid.removeParticipant(playerId)) return false;
+        recordLeft(raid, playerId);
 
         PokemonBattle battle = raid.getBattle();
         BattleActor actor = battle.getActor(player);
@@ -148,6 +173,7 @@ public final class RaidLifecycleCoordinator {
     public static void onPlayerDisconnected(RaidSession raid, UUID playerId) {
         if (raid == null || playerId == null || raid.getStatus() != RaidSession.Status.ACTIVE) return;
         if (!raid.removeParticipant(playerId)) return;
+        recordLeft(raid, playerId);
         PokemonBattle battle = raid.getBattle();
         BattleActor actor = battle.getActor(playerId);
         if (actor != null) {
@@ -222,6 +248,9 @@ public final class RaidLifecycleCoordinator {
         // existed. An owned encounter has only the ones its owner asked for.
         EncounterPolicy policy = raid.isOwned() ? raid.getOwnership().policy() : null;
         FINALIZATION.finalizeOnce(raid.getId(), () -> {
+            // Its own barrier, first: a statistic that cannot be recorded must not be the reason a
+            // reward is not paid, and nothing below depends on it having run.
+            RaidFaultBarrier.guard("stats:victory", () -> RaidStats.onVictory(server, raid));
             // Before the reward screen is queued, so a level-up and its evolution offer reach the
             // chat ahead of the screen rather than arriving behind it. Victory paths only: a lost,
             // timed-out or aborted raid pays nothing, exactly as it pays no items.
@@ -343,7 +372,12 @@ public final class RaidLifecycleCoordinator {
     private static void finalizeAfterBattleEnded(RaidSession raid) {
         RaidCombatRuleService.forget(raid.getId());
         FINALIZATION.finalizeOnce(raid.getId(),
-                () -> RaidBattleStateCarryover.apply(raid),
+                // The ordinary way a raid is lost -- the boss wins in Showdown -- so this is where most
+                // losses are recorded; finalizeNonVictory below only sees timeouts and withdrawals.
+                () -> {
+                    recordLoss(raid);
+                    RaidBattleStateCarryover.apply(raid);
+                },
                 // Separate steps, so one that throws cannot skip the others; see RaidFinalizationGuard.
                 () -> RaidRegistry.remove(raid.getBattle()),
                 () -> releaseBossAfterFailure(raid),
@@ -362,7 +396,13 @@ public final class RaidLifecycleCoordinator {
         PokemonBattle battle = raid.getBattle();
         FINALIZATION.finalizeOnce(raid.getId(),
                 // Read the clones before end(), which retires the actors this walks.
-                () -> RaidBattleStateCarryover.apply(raid),
+                () -> {
+                    // An administrative abort is not a loss: it counts for nobody, like it costs the boss
+                    // no failed attempt. Recorded before the actors are retired, while the participants
+                    // who were still in the raid can be told apart from those who left.
+                    if (countsAsFailedAttempt) recordLoss(raid);
+                    RaidBattleStateCarryover.apply(raid);
+                },
                 // Ending the battle is cleanup, not a side effect: skipping it strands Cobblemon's
                 // actors and leaves every player sitting in a battle UI they cannot leave.
                 // PokemonBattle.end() sends BattleEndPacket, lets entity-backed actors clear
