@@ -489,7 +489,7 @@ Battle.prototype.setPlayer = function(slot, options) {
   return result;
 };
 
-module.exports = {isRaid, bossIndex, bossSide, isBossSide, isPlayerSide, isEliminatedPlayerSide};
+module.exports = {isRaid, bossIndex, bossSide, isBossSide, isPlayerSide, isEliminatedPlayerSide, bossLateMoveUnusable};
 
 // Controlled cooperative victory command. Cobblemon writes Showdown INPUT, so emitting a raw
 // "|win|..." line from Java is invalid. >raidwin is consumed here and produces the normal
@@ -600,5 +600,39 @@ BattleStream.prototype._writeLine = function(type, message) {
     return true;
   }
 
+  // The same late boss choice reaches the boss on p2..p4 too, and there it IS applied -- the AI's
+  // pick is meant to win over the pre-fill. But Showdown's choose() clears the side's existing choice
+  // BEFORE it validates the new one, so when the AI names a move the boss cannot use (Taunt, Disable,
+  // Torment... switch it off between the AI's request and its answer) the pre-fill is wiped and the
+  // new choice is then rejected with "[Unavailable choice] Can't move: X is disabled". The side is
+  // left with no choice at all, the shared turn waits on it forever, and nothing throws -- the raid
+  // just freezes. Reproduced in the sim with Taunt: boss done:false [] after the late choice.
+  // A late choice for an unusable move is dropped instead, leaving the valid pre-fill in place;
+  // no error is emitted, so Cobblemon has no invalid choice to react to either.
+  if (sideNumber && isBossSide(this.battle.getSide(type)) && bossLateMoveUnusable(this.battle.getSide(type), message)) {
+    return true;
+  }
+
   return oldWriteLine.call(this, type, message);
 };
+
+/**
+ * True when a boss's "move ..." choice names a slot that is missing, disabled (visibly or hidden) or
+ * out of the boss's own moves. Anything that is not a plain move choice -- a switch, "default",
+ * "undo" -- is never treated as unusable here, so only the one known-fatal case changes behaviour.
+ */
+function bossLateMoveUnusable(side, message) {
+  const match = /^move\s+(\S+)/.exec(String(message).trim());
+  if (!match) return false;
+  const pokemon = side && side.active && side.active[0];
+  if (!pokemon || pokemon.fainted) return false;
+  const token = match[1];
+  const index = /^\d+$/.test(token) ? Number(token) - 1 : -1;
+  const slot = index >= 0
+    ? pokemon.moveSlots[index]
+    : pokemon.moveSlots.find(move => move.id === token.toLowerCase().replace(/[^a-z0-9]/g, ''));
+  if (!slot) return true;
+  const request = side.activeRequest && side.activeRequest.active && side.activeRequest.active[0];
+  const requested = request && request.moves && index >= 0 ? request.moves[index] : null;
+  return Boolean(slot.disabled || (requested && requested.disabled));
+}

@@ -34,7 +34,8 @@ public final class RaidBossBattleActor extends PokemonBattleActor {
     public void sendUpdate(NetworkPacket<?> packet) {
         super.sendUpdate(packet);
         if (packet instanceof BattleMadeInvalidChoicePacket) {
-            RaidLog.warn("Boss's move choice was rejected mid-turn (trapping/disabling undo); re-invoking its AI so the raid turn doesn't hang.");
+            RaidLog.warn("Boss's move choice was rejected mid-turn (trapping/disabling undo); re-invoking its AI so the raid turn doesn't hang."
+                    + " [mustChoose=" + getMustChoose() + ", request=" + (getRequest() != null) + ", queuedResponses=" + getResponses().size() + "]");
             onChoiceRequested();
         }
     }
