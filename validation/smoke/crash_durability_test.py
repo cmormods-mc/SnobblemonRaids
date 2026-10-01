@@ -28,7 +28,7 @@ sys.path.insert(0, str(HERE))
 
 from load_test import Bot  # noqa: E402
 from rcon import Rcon  # noqa: E402
-from smoke_test import Result, Server, install_jar, project_version, read_password, server_port  # noqa: E402
+from smoke_test import Result, Server, install_jar, project_version, rcon_port, read_password, server_port  # noqa: E402
 
 BOT = "DurabilityBot"
 
@@ -73,7 +73,7 @@ def main() -> None:
         server.start()
         server.wait_until_ready()
         bot = Bot(BOT, server_port(server_dir))
-        with Rcon("127.0.0.1", 25575, read_password(server_dir)) as rcon:
+        with Rcon("127.0.0.1", rcon_port(server_dir), read_password(server_dir)) as rcon:
             if not wait_online(rcon, BOT):
                 raise RuntimeError("bot never joined: " + str(bot.lost))
             # Baseline. `reward clear` is itself only marked dirty, so without the flush a reward an
@@ -96,7 +96,7 @@ def main() -> None:
         print("Restarting")
         server.start()
         server.wait_until_ready()
-        with Rcon("127.0.0.1", 25575, read_password(server_dir)) as rcon:
+        with Rcon("127.0.0.1", rcon_port(server_dir), read_password(server_dir)) as rcon:
             roster = rcon.command("cobbleraids reward list")
             print("  after restart: " + roster.strip()[:300])
             results.append(Result("a granted reward survives a hard kill before the next autosave",

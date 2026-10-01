@@ -48,6 +48,12 @@ rcon.password=<something>
 online-mode=false
 ```
 
+**Every script here reads `server-port` and `rcon.port` from this file.** Never hardcode 25575: a
+script that assumes the default port drives -- and then stops -- whichever server owns it, which is
+not necessarily the one it just booted. That happened on 2026-09-30, when a rig on a non-default port
+was smoke-tested while another session's server held 25575. Check that nothing else is listening on
+your rig's ports before you start, and give a second rig its own pair.
+
 ## Checking that the harness still bites
 
 A green run only means something if a broken build goes red. To confirm, drop a truncated definition
@@ -165,3 +171,40 @@ The baseline matters. `reward clear` is itself only marked dirty, so the test cl
 `save-all flush` before granting; without that, a reward an earlier run left on disk survives the
 kill and passes the test on a broken build. After the restart it looks for the bot's offline-mode
 UUID, since `reward list` shows offline players by UUID rather than name.
+
+## Live scenarios for the Java side of a battle
+
+`java_layer_test.py` is the live counterpart of `validation/showdown_fuzz.js`. The fuzz harness
+covers the Showdown half of a raid battle exhaustively but cannot see what Cobblemon's Java does with
+Showdown's answers, and every raid freeze so far has lived on that boundary. These scenarios connect
+real mineflayer players (`raidbot.js` answers real `battle_select_actions` prompts) and assert that the
+battle keeps going.
+
+```sh
+python validation/smoke/java_layer_test.py --server-dir <rig> --java <jdk21 java> [--scenario NAME] [--jar <jar>]
+```
+
+Run on a throwaway rig: it switches dynamic level scaling off in `config/cobbleraids/server.json` (pass
+`--keep-config` to leave it alone). Not part of `ci_local.sh` or GitHub Actions -- it needs a server.
+
+| scenario | what it asserts |
+|---|---|
+| `duo-baseline`, `solo-baseline` | the control: a raid with no disconnect prompts the players and can be won. If these fail, the rig or the bot is broken and nothing else means anything. |
+| `solo-resume` | the only player drops and returns inside the grace window and is asked for a move again. |
+| `hold-before-choice`, `hold-between-turns` | with two players and one dropped, the other keeps getting turns. Failed on every build before 0.8.151: a held player's Java actor kept `mustChoose=true` and froze the shared turn. |
+| `held-player-returns-first` | both drop; the player held on Showdown returns first and is asked for a move for the turn in progress. Needs both halves of the fix: the Showdown `>raidresume` re-request (0.8.149) and the Java prompt on resume (0.8.152). |
+
+**Prove a scenario can fail before trusting it.** Build a jar with the old behaviour (a copy of the
+current jar with the older `raid-patch.js` swapped in is enough for Showdown changes) and run the
+scenario against it with `--jar`; it must go red. `held-player-returns-first` does on the 0.8.148 patch.
+
+`cobbleraids debug battle` (op-only) prints each live raid battle's Java-side state -- per actor
+`mustChoose`, whether a request is present, queued responses, send-out count. A frozen battle is silent,
+so this is what shows what it is waiting on; the scenarios print it into their failure messages.
+
+Two things about the bot that cost time on 2026-09-30:
+- A `ReferenceError` thrown inside a mineflayer packet listener does not just fail that handler: it
+  kills the client's packet stream, so the bot goes deaf, the server times it out, and it looks exactly
+  like "the server never sent the prompt". When a bot "stops receiving", check the bot first --
+  `raidbot.js` emits a `HEARTBEAT packets=N` line every 5s for exactly this.
+- A patch script whose `str.replace` matches nothing fails silently. Assert that it changed the file.

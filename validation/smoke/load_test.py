@@ -54,6 +54,7 @@ from smoke_test import (  # noqa: E402
     Server,
     install_jar,
     project_version,
+    rcon_port,
     read_password,
     server_port,
 )
@@ -147,7 +148,7 @@ def main() -> None:
         server.wait_until_ready()
         password = read_password(server_dir)
 
-        with Rcon("127.0.0.1", 25575, password, timeout=60) as rcon:
+        with Rcon("127.0.0.1", rcon_port(server_dir), password, timeout=60) as rcon:
             rcon.command("gamerule doMobSpawning false")
             # Natural spawning off: this test wants exactly the bosses it places, so a wild raid
             # appearing mid-run cannot move the slot counts underneath the assertions.

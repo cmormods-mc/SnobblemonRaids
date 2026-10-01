@@ -38,7 +38,7 @@ sys.path.insert(0, str(HERE))
 
 from load_test import Bot  # noqa: E402
 from rcon import Rcon  # noqa: E402
-from smoke_test import Result, Server, project_version, read_password, server_port  # noqa: E402
+from smoke_test import Result, Server, project_version, rcon_port, read_password, server_port  # noqa: E402
 
 BOT = "EconomyBot"
 
@@ -226,7 +226,7 @@ def main() -> None:
         server.wait_until_ready()
         port = server_port(server_dir)
         bot = ChattyBot(BOT, port)
-        with Rcon("127.0.0.1", 25575, read_password(server_dir)) as rcon:
+        with Rcon("127.0.0.1", rcon_port(server_dir), read_password(server_dir)) as rcon:
             # The server's view, not mineflayer's. A client on this modset is often dropped on a
             # keep-alive timeout ~30s after joining, so waiting on its spawn event meant the player
             # was already gone by the time the claim ran -- and the failure looked like the mod.
@@ -253,7 +253,7 @@ def main() -> None:
         server.stop()
         server.start()
         server.wait_until_ready()
-        with Rcon("127.0.0.1", 25575, read_password(server_dir)) as rcon:
+        with Rcon("127.0.0.1", rcon_port(server_dir), read_password(server_dir)) as rcon:
             restored = rcon.command("cobbleraids reward list")
             after = ROSTER_COUNT.search(restored)
             before = next((int(r.detail) for r in results if r.name == "__roster_before__"), 0)

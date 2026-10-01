@@ -21,6 +21,8 @@ import com.cobbleraids.reward.currency.RaidCurrencyBackends;
 import com.cobbleraids.spawn.RaidBossEntityMarker;
 import com.cobbleraids.spawn.RaidSpawnHistory;
 import com.cobbleraids.spawn.RaidSpawnScheduler;
+import com.cobblemon.mod.common.api.battles.model.PokemonBattle;
+import com.cobblemon.mod.common.api.battles.model.actor.BattleActor;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import java.util.Arrays;
@@ -135,6 +137,39 @@ final class RaidAdminDebugOps {
                 .collect(Collectors.joining(" · "));
         source.sendSuccess(() -> CommandFormat.row(CommandFormat.pad("most", 10) + top), false);
         return record.raidsWon();
+    }
+
+    /**
+     * What each live raid battle's Java side is waiting on, one line per actor. A frozen battle is
+     * silent -- nothing throws -- so this is the only way to see whether a stuck turn is waiting on
+     * an actor that must choose, an actor with no request, or a send-out that never finished. Read
+     * by validation/smoke/java_layer_test.py.
+     */
+    static int battle(CommandSourceStack source) {
+        int shown = 0;
+        for (RaidSession session : RaidRegistry.all()) {
+            PokemonBattle battle = session.getBattle();
+            if (battle == null) continue;
+            shown++;
+            String header = "raid " + session.getId().toString().substring(0, 8) + " " + session.getStatus()
+                    + " battle started=" + battle.getStarted() + " ended=" + battle.getEnded() + " turn=" + battle.getTurn()
+                    + " captureActions=" + battle.getCaptureActions().size();
+            source.sendSuccess(() -> CommandFormat.header(header), false);
+            for (BattleActor actor : battle.getActors()) {
+                String line = actor.getClass().getSimpleName() + " " + actor.getShowdownId()
+                        + " mustChoose=" + actor.getMustChoose()
+                        + " request=" + (actor.getRequest() != null)
+                        + " queuedResponses=" + actor.getResponses().size()
+                        + " expectingPass=" + actor.getExpectingPassActions().size()
+                        + " active=" + actor.getActivePokemon().size()
+                        + " sendingOut=" + actor.getStillSendingOutCount();
+                source.sendSuccess(() -> CommandFormat.detail(line), false);
+            }
+        }
+        if (shown == 0) {
+            source.sendSuccess(() -> Component.literal("No raid battles are running.").withStyle(ChatFormatting.YELLOW), false);
+        }
+        return shown;
     }
 
     static int raids(CommandSourceStack source) {
