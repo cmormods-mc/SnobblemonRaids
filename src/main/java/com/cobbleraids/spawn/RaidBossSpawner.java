@@ -270,8 +270,15 @@ public final class RaidBossSpawner {
      * mixin needed. It does NOT cover explosions, entity collisions or fishing rods, which reach
      * the entity through other paths; RaidBossPushImmunityMixin and RaidBossFishingImmunityMixin
      * close those.
+     *
+     * <p>Public because it is applied more than once. Cobblemon 1.8's PokemonServerDelegate#tick
+     * runs updateAttributes whenever the Pokemon's level differs from the one it last
+     * acknowledged -- always on a fresh entity's first tick, and again whenever raid scaling
+     * changes the level -- and updateAttributes opens with removeAllEffects(). A single call at
+     * spawn therefore lasted about six ticks on 1.8.1; RaidBossAttributeResetMixin puts the lock
+     * back each time.
      */
-    private static void applyMovementLock(PokemonEntity boss) {
+    public static void applyMovementLock(PokemonEntity boss) {
         CobbleRaidsConfig.BossMovement config = CobbleRaidsConfigManager.get().bossMovement();
         if (config.slownessEnabled()) {
             boss.addEffect(new MobEffectInstance(

@@ -2,6 +2,7 @@ package com.cobbleraids.client.shop;
 
 import com.cobblemon.mod.common.api.pokemon.PokemonSpecies;
 import com.cobblemon.mod.common.client.gui.PokemonGuiUtilsKt;
+import com.cobblemon.mod.common.client.gui.ProfileTransformType;
 import com.cobblemon.mod.common.client.render.models.blockbench.FloatingState;
 import com.cobblemon.mod.common.client.render.models.blockbench.PosableState;
 import com.cobblemon.mod.common.entity.PoseType;
@@ -114,12 +115,15 @@ final class ShopPokemonPortraits {
                     entry.state(),
                     partialTicks,
                     PROFILE_SCALE,
-                    true,
+                    ProfileTransformType.PROFILE,
                     // Ignored while the profile transform is on, and false is what Cobblemon's own
                     // callers leave it at; passing true implied it was doing something.
                     false,
                     1.0F, 1.0F, 1.0F, 1.0F,
-                    0.0F, 0.0F);
+                    0.0F, 0.0F,
+                    // Trailing int added in Cobblemon 1.8: 13 is the default its own Kotlin overload
+                    // supplies when the caller omits it.
+                    13);
             return true;
         } catch (RuntimeException | LinkageError ex) {
             // One bad model must not take the screen with it, and must not retry every frame.
