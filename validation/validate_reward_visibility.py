@@ -98,7 +98,7 @@ def main() -> None:
     validate_skiesguis_optional()
     for argument in sys.argv[1:]:
         validate_jar(Path(argument))
-    print("Phase 36 reward visibility / SkiesGUIs optionality validation: PASS")
+    print("Reward visibility / SkiesGUIs optionality validation: PASS")
 
 
 if __name__ == "__main__":

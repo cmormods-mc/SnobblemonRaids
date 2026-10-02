@@ -44,11 +44,11 @@ if [ -n "$hidden" ]; then
 fi
 
 step "Validate core source and resources"
-bash validation/validate_phase31.sh
+bash validation/validate_core_sources.sh
 
-for n in 32 36 37 38 39 40; do
-  step "Validate phase $n (sources)"
-  "$py" "validation/validate_phase$n.py"
+for name in raid_integrity reward_visibility reveal_screen cinematic_reveal reward_panel_textures reward_texture_art; do
+  step "Validate $name (sources)"
+  "$py" "validation/validate_$name.py"
 done
 
 step "Validate logging discipline"
@@ -112,9 +112,9 @@ if [ ! -f "$jar" ]; then
   exit 1
 fi
 
-for n in 31 32 36 37 38 39 40; do
-  step "Validate phase $n (jar)"
-  "$py" "validation/validate_phase$n.py" "$jar"
+for name in core_sources raid_integrity reward_visibility reveal_screen cinematic_reveal reward_panel_textures reward_texture_art; do
+  step "Validate $name (jar)"
+  "$py" "validation/validate_$name.py" "$jar"
 done
 
 step "Validate mixin fault barriers (jar)"

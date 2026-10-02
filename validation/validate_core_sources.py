@@ -157,7 +157,7 @@ def main() -> None:
     validate_reward_template()
     for argument in sys.argv[1:]:
         validate_jar(Path(argument))
-    print("Phase 31 source/resource validation: PASS")
+    print("Core source/resource validation: PASS")
 
 
 if __name__ == "__main__":

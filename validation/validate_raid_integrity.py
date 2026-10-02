@@ -106,7 +106,7 @@ def main() -> None:
     validate_raid_healing()
     for argument in sys.argv[1:]:
         validate_jar(Path(argument))
-    print("Phase 32 raid integrity validation: PASS")
+    print("Raid integrity validation: PASS")
 
 
 if __name__ == "__main__":

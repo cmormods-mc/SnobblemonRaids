@@ -220,7 +220,7 @@ def main():
                   "reward item " + item_id + " does not exist in the pack -- seen in " + where)
 
     # --- every definition is on the policy path -------------------------------------------------
-    # This replaces validate_phase41's data assertions, which said the opposite: that every
+    # This replaces the old phase-41 validator's data assertions, which said the opposite: that every
     # definition names its tier bundle. That was the legacy wiring, and it is gone.
     legacy = []
     for boss, definition in sorted(definitions.items()):

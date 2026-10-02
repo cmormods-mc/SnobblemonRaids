@@ -153,7 +153,7 @@ def main() -> None:
     validate_no_new_gradle_dependency()
     for argument in sys.argv[1:]:
         validate_jar(Path(argument))
-    print("Phase 39 textured reward panel validation: PASS")
+    print("Textured reward panel validation: PASS")
 
 
 if __name__ == "__main__":

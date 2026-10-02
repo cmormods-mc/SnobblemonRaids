@@ -119,7 +119,7 @@ def main() -> None:
     validate_no_new_gradle_dependency()
     for argument in sys.argv[1:]:
         validate_jar(Path(argument))
-    print("Phase 40 real texture art validation: PASS")
+    print("Real texture art validation: PASS")
 
 
 if __name__ == "__main__":
