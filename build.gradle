@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.158-run-button'
+version = '0.8.159-trophy-search'
 group = 'com.cobbleraids'
 
 base {

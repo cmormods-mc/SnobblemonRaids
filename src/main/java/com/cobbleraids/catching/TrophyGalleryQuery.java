@@ -64,8 +64,10 @@ public final class TrophyGalleryQuery {
      * @param columns   how many cases the screen has room for (1-3); also the page size. Clamped,
      *                  since it travels over the network from a client whose window the server has
      *                  no reason to trust.
-     * @param query     a species-name substring, case-insensitive; spaces are treated as underscores
-     *                  so typing "mr mime" matches {@code cobblemon:mr_mime}. Empty matches everything.
+     * @param query     a species-name substring, case-insensitive, with everything but letters and
+     *                  digits ignored: Cobblemon ids carry no separators at all ({@code mrmime},
+     *                  {@code tapukoko}, {@code typenull}), so "mr mime", "Mr. Mime" and "tapu-koko"
+     *                  must all land on them. Empty matches everything.
      * @param tierName  a {@code RaidRarityTier} serialized name, or empty for every tier.
      * @param shiny     narrows by shininess.
      * @param sort      the order results are returned in.
@@ -82,7 +84,7 @@ public final class TrophyGalleryQuery {
         for (TrophyEntry entry : all) {
             total++;
             if (entry.shiny()) shinyTotal++;
-            if (!entry.species().getPath().contains(needle)) continue;
+            if (!squash(entry.species().getPath()).contains(needle)) continue;
             if (!tier.isEmpty() && !entry.rarityTier().serializedName().equals(tier)) continue;
             if (shiny == Shiny.SHINY_ONLY && !entry.shiny()) continue;
             if (shiny == Shiny.NORMAL_ONLY && entry.shiny()) continue;
@@ -100,9 +102,14 @@ public final class TrophyGalleryQuery {
                 List.copyOf(matched.subList(from, to)));
     }
 
-    /** Lowercased, trimmed, and space-to-underscore so "mr mime" reaches {@code mr_mime}. */
+    /** Lowercased with everything but letters and digits dropped, so "mr mime" reaches {@code mrmime}. */
     private static String normalizeQuery(String query) {
-        return (query == null ? "" : query).trim().toLowerCase(Locale.ROOT).replace(' ', '_');
+        return squash(query == null ? "" : query);
+    }
+
+    /** Applied to the species path as well, so a custom species id that does use a separator still matches. */
+    private static String squash(String text) {
+        return text.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]", "");
     }
 
     private static Comparator<TrophyEntry> comparatorFor(Sort sort) {

@@ -41,14 +41,26 @@ class TrophyGalleryQueryTest {
     }
 
     @Test
-    @DisplayName("a query with spaces matches an underscored species path")
-    void spacesInQueryMatchUnderscoredSpecies() {
-        TrophyEntry mrMime = entry("mr_mime", false, 50, 0, RaidRarityTier.STARTER);
+    @DisplayName("separators in a query are ignored, because real Cobblemon species ids have none")
+    void separatorsInQueryAreIgnored() {
+        // The ids are the real ones (no underscore, hyphen or space in any of the 1025), which is the
+        // whole point: an earlier version turned spaces into underscores and so matched nothing.
+        List<TrophyEntry> roster = List.of(
+                entry("mrmime", false, 50, 0, RaidRarityTier.STARTER),
+                entry("tapukoko", false, 60, 0, RaidRarityTier.LEGENDARY),
+                entry("typenull", false, 70, 0, RaidRarityTier.LEGENDARY));
 
-        TrophyGalleryQuery.Page page = TrophyGalleryQuery.select(List.of(mrMime), 0, 3, "mr mime", "",
-                TrophyGalleryQuery.Shiny.ALL, TrophyGalleryQuery.Sort.NEWEST);
-
-        assertEquals(1, page.filteredCount());
+        for (String typed : List.of("mr mime", "Mr. Mime", "mr_mime", "MR-MIME", "mrmime")) {
+            assertEquals(1, TrophyGalleryQuery.select(roster, 0, 3, typed, "",
+                    TrophyGalleryQuery.Shiny.ALL, TrophyGalleryQuery.Sort.NEWEST).filteredCount(), typed);
+        }
+        assertEquals(1, TrophyGalleryQuery.select(roster, 0, 3, "tapu koko", "",
+                TrophyGalleryQuery.Shiny.ALL, TrophyGalleryQuery.Sort.NEWEST).filteredCount());
+        assertEquals(1, TrophyGalleryQuery.select(roster, 0, 3, "type: null", "",
+                TrophyGalleryQuery.Shiny.ALL, TrophyGalleryQuery.Sort.NEWEST).filteredCount());
+        assertEquals(3, TrophyGalleryQuery.select(roster, 0, 3, "  ", "",
+                TrophyGalleryQuery.Shiny.ALL, TrophyGalleryQuery.Sort.NEWEST).filteredCount(),
+                "a query of only separators is empty, and empty matches everything");
     }
 
     @Test
