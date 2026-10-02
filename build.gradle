@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.156-keybinds'
+version = '0.8.157-cobblemon-1.8.1'
 group = 'com.cobbleraids'
 
 base {
@@ -32,7 +32,7 @@ dependencies {
     modImplementation 'net.fabricmc.fabric-api:fabric-api:0.116.6+1.21.1'
 
     // Exact public releases used by the live-tested runtime builds.
-    modImplementation 'maven.modrinth:MdwFAVRL:kF7CvxTo' // Cobblemon 1.7.3
+    modImplementation 'maven.modrinth:MdwFAVRL:gBW3vLC7' // Cobblemon 1.8.1
     modImplementation 'maven.modrinth:eTmjDQ2A:azTJ3S8C' // SkiesGUIs 1.8.1
     // Compile-only: the %cobbleraids:points% token is published when this is installed and
     // skipped when it is not, so it must never be pulled in as a hard dependency.

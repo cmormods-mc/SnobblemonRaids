@@ -12,6 +12,7 @@
     "battle.RaidBossFishingImmunityMixin",
     "battle.BattleClonePersistenceMixin",
     "battle.BattleCloneNoDeathDropsMixin",
+    "battle.RaidBossAttributeResetMixin",
     "battle.RaidBattleSelectActionsMixin",
     "battle.RaidMoveActionResponseMixin",
     "battle.RaidPokemonBattleMixin",
