@@ -93,8 +93,11 @@ public final class RaidLobbyManager {
         long seconds = Math.max(0L, (lobby.closesAtTick() - now + 19L) / 20L);
         player.sendSystemMessage(Component.literal("Joined raid: " + lobby.joinedCount() + "/" + definition.recruitment().maxPlayers()
                 + " players. Starts in " + seconds + "s.").withStyle(ChatFormatting.GOLD));
+        // Everyone nearby but the joiner, who was just told directly: they would otherwise read the
+        // same count twice in a row.
         broadcastNearby(lobby, Component.literal(player.getGameProfile().getName() + " joined the raid ("
-                + lobby.joinedCount() + "/" + definition.recruitment().maxPlayers() + ").").withStyle(ChatFormatting.YELLOW));
+                + lobby.joinedCount() + "/" + definition.recruitment().maxPlayers() + ").").withStyle(ChatFormatting.YELLOW),
+                player.getUUID());
         return created ? JoinResult.STARTED_RECRUITMENT : JoinResult.JOINED;
     }
 
@@ -265,8 +268,12 @@ public final class RaidLobbyManager {
      * radius should still hear the countdown and get the chance to walk in.
      */
     private static void broadcastNearby(RaidLobby lobby, Component message) {
+        broadcastNearby(lobby, message, null);
+    }
+
+    private static void broadcastNearby(RaidLobby lobby, Component message, UUID except) {
         double radius = Math.max(16.0, lobby.definition().recruitment().radius() * 2.0);
-        RaidBroadcast.near(lobby.boss(), radius, message);
+        RaidBroadcast.nearExcept(lobby.boss(), radius, message, except);
     }
 
 

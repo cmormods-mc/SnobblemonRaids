@@ -429,6 +429,47 @@ def scenario_solo_run_button(rig: Rig) -> list[Result]:
     return results
 
 
+def scenario_admin_queue_commands(rig: Rig) -> list[Result]:
+    """The operator commands for a queue a player is holding: list who holds something, clear one player.
+
+    Unclaimed rewards and capture sessions share PendingHolderCommands for both, so every message is
+    asserted word for word against what each had before they were merged. A real connected player is
+    needed because the target is an online-player argument.
+    """
+    results: list[Result] = []
+
+    def check(name: str, ok: bool, detail: str = "") -> None:
+        results.append(Result(name, ok, detail))
+
+    bot = rig.bot("Queue")
+    rig.settle([bot])
+    name = bot.name
+
+    # --- reward queue
+    check("reward list is empty to begin with",
+          "Nobody has an unclaimed raid reward." in rig.command("cobbleraids reward list"))
+    granted = rig.command(f"cobbleraids reward grant {name} garchomp")
+    check("a reward can be queued for the player", "Queued" in granted, granted.strip())
+    roster = rig.command("cobbleraids reward list")
+    check("the roster names the holder with a count",
+          "Players with unclaimed rewards (1)" in roster and name in roster, roster.strip())
+    cleared = rig.command(f"cobbleraids reward clear {name}")
+    check("clearing reports what it removed",
+          f"Cleared 1 unclaimed raid reward(s) from {name}." in cleared, cleared.strip())
+    again = rig.command(f"cobbleraids reward clear {name}")
+    check("clearing an empty queue says so", f"{name} had no unclaimed raid rewards." in again, again.strip())
+    check("the roster is empty afterwards",
+          "Nobody has an unclaimed raid reward." in rig.command("cobbleraids reward list"))
+
+    # --- capture sessions (none can be created without winning a raid, so the empty paths only)
+    check("capture status is empty",
+          "Nobody has an active raid capture session." in rig.command("cobbleraids capture status"))
+    nothing = rig.command(f"cobbleraids capture clear {name}")
+    check("clearing a player with no capture session says so",
+          f"{name} had no active raid capture session." in nothing, nothing.strip())
+    return results
+
+
 def scenario_duo_baseline(rig: Rig) -> list[Result]:
     """Two players, no disconnect: the control for every multiplayer scenario."""
     results: list[Result] = []
@@ -447,6 +488,16 @@ def scenario_duo_baseline(rig: Rig) -> list[Result]:
     check("both players are in a started battle", started, "the lobby never became a battle")
     if not started:
         return results
+    # What each player is told when they join. The joiner is standing beside the boss, so a broadcast
+    # to everyone in range reached them too: "Joined raid: 1/4" immediately followed by
+    # "<own name> joined the raid (1/4)", which read as the same line printed twice.
+    for bot, other in ((first, second), (second, first)):
+        check(f"{bot.name} gets exactly one personal join line", bot.count("Joined raid:") == 1,
+              f"saw {bot.count('Joined raid:')}: {bot.since(0.0, 'oined')}")
+        check(f"{bot.name} is not also told about their own join", bot.count(f"{bot.name} joined the raid") == 0,
+              str(bot.since(0.0, "oined")))
+        check(f"{bot.name} still hears when {other.name} joins", bot.count(f"{other.name} joined the raid") >= 1,
+              "the other player's join was not announced to this one")
     prompted = all(bot.wait_for("PROMPT", 30) for bot in (first, second))
     check("both players are asked for a move", prompted,
           "no battle prompt in 30s: " + rig.command("cobbleraids debug battle").strip())
@@ -460,6 +511,7 @@ SCENARIOS = {
     "duo-baseline": scenario_duo_baseline,
     "solo-baseline": scenario_solo_baseline,
     "solo-run-button": scenario_solo_run_button,
+    "admin-queue-commands": scenario_admin_queue_commands,
     "held-player-returns-first": scenario_held_player_returns_first,
     "solo-resume": scenario_solo_resume,
 }
