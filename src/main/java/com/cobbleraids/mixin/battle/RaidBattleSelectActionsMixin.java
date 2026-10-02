@@ -11,6 +11,7 @@ import com.cobblemon.mod.common.api.battles.model.actor.BattleActor;
 import com.cobblemon.mod.common.battles.ActiveBattlePokemon;
 import com.cobblemon.mod.common.battles.BagItemActionResponse;
 import com.cobblemon.mod.common.battles.BattleRegistry;
+import com.cobblemon.mod.common.battles.FleeAttemptActionResponse;
 import com.cobblemon.mod.common.battles.ForfeitActionResponse;
 import com.cobblemon.mod.common.battles.HealItemActionResponse;
 import com.cobblemon.mod.common.battles.InBattleGimmickMove;
@@ -95,6 +96,10 @@ public abstract class RaidBattleSelectActionsMixin {
                 } else if (rules.bans(id)) {
                     refusal = RaidBannedMoves.displayName(id) + " is not allowed in this battle.";
                 }
+            } else if (response instanceof FleeAttemptActionResponse) {
+                // The 1.8 client's Run button, shown because the boss actor is WILD. Cobblemon would
+                // refuse it with its own generic message; this one says where the exit actually is.
+                refusal = "You cannot run from a raid. Use /cobbleraids leave to leave it.";
             } else if (response instanceof SwitchActionResponse && !rules.switchingAllowed()) {
                 refusal = "Switching is not allowed in this battle.";
             } else if ((response instanceof BagItemActionResponse || response instanceof HealItemActionResponse)

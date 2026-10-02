@@ -76,6 +76,16 @@ function sendMove(moveName) {
   emit(`SENT ${moveName}`);
 }
 
+// A response with no payload after its type ordinal: FORFEIT=7, FLEE_ATTEMPT=8 (ShowdownActionResponseType
+// declaration order on Cobblemon 1.8.1). FLEE_ATTEMPT is what the 1.8 client's Run button sends in a
+// singles battle against a wild actor; the 1.7.3 client opened a forfeit confirmation instead.
+function sendBare(ordinal, label) {
+  if (!battleId) { emit('NO_BATTLE_ID'); return; }
+  const payload = Buffer.concat([battleId, Buffer.from([1]), Buffer.from([ordinal])]);
+  bot._client.write('custom_payload', {channel: 'cobblemon:battle_select_actions', data: payload});
+  emit(`SENT ${label}`);
+}
+
 // battle_queue_request is binary, not JSON: 00, active count, move count, then per move an id string,
 // a display-name string and 7 fixed bytes (pp, max pp, flags). Read from a live 1.7.3 server.
 function parseMoves(buf) {
@@ -169,6 +179,8 @@ readline.createInterface({input: process.stdin}).on('line', (line) => {
   switch (command.toUpperCase()) {
     case 'FIGHT': fighting = true; emit('AUTOFIGHT on'); break;
     case 'STOP': fighting = false; emit('AUTOFIGHT off'); break;
+    case 'FLEE': sendBare(8, 'FLEE_ATTEMPT'); break;
+    case 'FORFEIT': sendBare(7, 'FORFEIT'); break;
     case 'MOVE': preferred = argument.split(',').map((m) => m.trim()).filter(Boolean); preferredCursor = 0; emit(`MOVES ${preferred.join(',')}`); break;
     case 'DROP': emit('DROPPING'); bot._client.socket.destroy(); break;
     case 'QUIT': bot.quit(); break;
