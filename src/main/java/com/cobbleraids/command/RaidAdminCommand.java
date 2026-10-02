@@ -149,7 +149,7 @@ public final class RaidAdminCommand {
                                 .then(Commands.literal("history")
                                         .executes(ctx -> RaidAdminDebugOps.history(ctx.getSource())))
                                 .then(Commands.literal("config")
-                                        .executes(ctx -> RaidAdminDebugOps.config(ctx.getSource())))
+                                        .executes(ctx -> RaidAdminConfigOps.show(ctx.getSource())))
                                 .then(Commands.literal("record")
                                         .then(Commands.argument("target", EntityArgument.player())
                                                 .executes(ctx -> RaidAdminDebugOps.record(

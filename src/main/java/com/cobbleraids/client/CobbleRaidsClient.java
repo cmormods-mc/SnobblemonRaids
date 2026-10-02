@@ -1,6 +1,5 @@
 package com.cobbleraids.client;
 
-import com.cobbleraids.RaidLog;
 import com.cobbleraids.client.capture.CaptureDetailsCache;
 import com.cobbleraids.client.capture.CaptureMinigameScreen;
 import com.cobbleraids.client.capture.CaptureOfferScreen;
@@ -65,13 +64,10 @@ public final class CobbleRaidsClient implements ClientModInitializer {
                 context.client().execute(() -> RaidFaultBarrier.guard("capture-screen:result",
                         () -> CaptureMinigameScreen.applyResult(payload))));
         ClientPlayNetworking.registerGlobalReceiver(RenownBoonSyncPayload.TYPE, (payload, context) ->
-                context.client().execute(() -> RaidFaultBarrier.guard("renown-boon-sync", () -> {
-                    // TEMPORARY diagnostic while the boon-icon feature is being live-tested.
-                    java.util.Optional<RenownBoon> decoded = RenownBoon.decode(payload.boonEncoded());
-                    RaidLog.info("[boon-sync] client received pokemonUuid={} boonEncoded={} decoded={}",
-                            payload.pokemonUuid(), payload.boonEncoded(), decoded.isPresent());
-                    decoded.ifPresent(boon -> RenownBoonClientCache.remember(payload.pokemonUuid(), boon));
-                })));
+                context.client().execute(() -> RaidFaultBarrier.guard("renown-boon-sync", () ->
+                        // Resent by the server once a second to every tracker, so this must stay silent.
+                        RenownBoon.decode(payload.boonEncoded())
+                                .ifPresent(boon -> RenownBoonClientCache.remember(payload.pokemonUuid(), boon)))));
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
                 RaidFaultBarrier.guard("capture-screen:disconnect-cleanup", CaptureDetailsCache::clear));
 

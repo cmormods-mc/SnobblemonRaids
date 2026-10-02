@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.159-trophy-search'
+version = '0.8.160-cleanup'
 group = 'com.cobbleraids'
 
 base {

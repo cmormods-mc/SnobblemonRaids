@@ -1,10 +1,8 @@
 package com.cobbleraids.client.renown;
 
-import com.cobbleraids.RaidLog;
 import com.cobbleraids.renown.RenownBoon;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -21,25 +19,16 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class RenownBoonClientCache {
     private static final Map<UUID, RenownBoon> CACHE = new ConcurrentHashMap<>();
-    // TEMPORARY diagnostic while the boon-icon feature is being live-tested -- remove once confirmed
-    // working. Logs a miss once per uuid rather than every frame a mixin queries it.
-    private static final Set<UUID> LOGGED_MISSES = ConcurrentHashMap.newKeySet();
 
     private RenownBoonClientCache() {}
 
     public static void remember(UUID pokemonUuid, RenownBoon boon) {
         if (pokemonUuid == null || boon == null) return;
         CACHE.put(pokemonUuid, boon);
-        LOGGED_MISSES.remove(pokemonUuid);
     }
 
     public static Optional<RenownBoon> forPokemonUuid(UUID pokemonUuid) {
         if (pokemonUuid == null) return Optional.empty();
-        RenownBoon boon = CACHE.get(pokemonUuid);
-        if (boon == null && LOGGED_MISSES.add(pokemonUuid)) {
-            RaidLog.info("[boon-sync] cache miss for pokemonUuid={} ({} entries cached: {})",
-                    pokemonUuid, CACHE.size(), CACHE.keySet());
-        }
-        return Optional.ofNullable(boon);
+        return Optional.ofNullable(CACHE.get(pokemonUuid));
     }
 }

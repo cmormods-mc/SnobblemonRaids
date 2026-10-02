@@ -56,8 +56,8 @@ and an unknown namespace.
 The steps individually, if you want to run just one:
 
 ```sh
-bash validation/validate_phase31.sh
-for n in 32 36 37 38 39 40; do python validation/validate_phase$n.py; done
+bash validation/validate_core_sources.sh
+for name in raid_integrity reward_visibility reveal_screen cinematic_reveal reward_panel_textures reward_texture_art; do python validation/validate_$name.py; done
 python validation/validate_logging.py
 python validation/validate_showdown_js_syntax.py
 python validation/validate_raid_banned_moves.py
@@ -73,7 +73,7 @@ python validation/validate_mixin_guards.py
 python validation/validate_mixin_target_shadowing.py
 python validation/validate_showdown_raid_patch_behavior.py
 python validation/validate_api_boundary.py
-for n in 31 32 36 37 38 39 40; do python validation/validate_phase$n.py build/libs/CobbleRaids-<version>.jar; done
+for name in core_sources raid_integrity reward_visibility reveal_screen cinematic_reveal reward_panel_textures reward_texture_art; do python validation/validate_$name.py build/libs/CobbleRaids-<version>.jar; done
 python validation/validate_mixin_guards.py build/libs/CobbleRaids-<version>.jar
 python validation/validate_api_boundary.py build/libs/CobbleRaids-<version>.jar
 ```
@@ -114,9 +114,9 @@ behaviour. It cannot catch a bug — code can contain the right words and do the
 fails on refactors that break nothing. That is the expensive failure mode: a red CI on a correct
 change teaches people to edit the check instead of believing it.
 
-This repo learned that twice. `validate_phase32` asserted `ActiveSpawn` was still a record, then that
+This repo learned that twice. `validate_raid_integrity` asserted `ActiveSpawn` was still a record, then that
 it was still a class in `RaidSpawnScheduler`; both times CI went red for a change that broke nothing.
-`validate_phase31` did the same over `announceNaturalSpawn`, `sendSpawnInfo` and `testWild` when the
+`validate_core_sources` did the same over `announceNaturalSpawn`, `sendSpawnInfo` and `testWild` when the
 spawn package was split.
 
 ## What replaced them
@@ -135,3 +135,19 @@ with Fabric, that the tracking key is not an entity reference, that assets and d
 
 Ask what breaks it. If the answer is "renaming a method", write a unit test instead. If the answer is
 "deleting the behaviour", it belongs here.
+
+## Validator names, and the phase numbers they replaced
+
+These were once `validate_phase31` ... `validate_phase40`, named for the development phase that
+introduced them. Comments inside them and in older notes still say "Phase 37 invariant" and the like;
+this is the key.
+
+| Old | Name now | Checks |
+|---|---|---|
+| phase 31 | `validate_core_sources` | core source and resource invariants |
+| phase 32 | `validate_raid_integrity` | boss lifecycle integrity and healing |
+| phase 36 | `validate_reward_visibility` | reward-grant visibility, SkiesGUIs staying optional |
+| phase 37 | `validate_reveal_screen` | the native reward reveal screen and its network boundary |
+| phase 38 | `validate_cinematic_reveal` | the cinematic reveal presentation |
+| phase 39 | `validate_reward_panel_textures` | the textured reward panel |
+| phase 40 | `validate_reward_texture_art` | the real texture art on that panel |

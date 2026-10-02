@@ -131,7 +131,7 @@ def main() -> None:
     validate_no_new_gradle_dependency()
     for argument in sys.argv[1:]:
         validate_jar(Path(argument))
-    print("Phase 37 native reveal screen validation: PASS")
+    print("Native reveal screen validation: PASS")
 
 
 if __name__ == "__main__":

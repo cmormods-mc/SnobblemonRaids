@@ -348,8 +348,8 @@ and policy rules, and the Showdown file patcher.
 ## Validation
 
 ```text
-validation/validate_phase31.sh
-python3 validation/validate_phase{32,36,37,38,39,40}.py [jar]
+validation/validate_core_sources.sh
+python3 validation/validate_{raid_integrity,reward_visibility,reveal_screen,cinematic_reveal,reward_panel_textures,reward_texture_art}.py [jar]
 python3 validation/validate_{logging,callback_guards}.py
 python3 validation/validate_mixin_guards.py [jar]      # after a build: reads bytecode
 python3 validation/validate_api_boundary.py [jar]      # after a build: reads bytecode

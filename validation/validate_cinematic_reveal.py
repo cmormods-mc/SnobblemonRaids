@@ -34,7 +34,7 @@ def read(path: Path) -> str:
 
 def validate_new_files_exist() -> None:
     # PokeBallMesh.java was Phase 38's own centerpiece but was deliberately retired in Phase 39
-    # (superseded by a textured-panel layout) -- see validate_phase39.py, which asserts it's gone.
+    # (superseded by a textured-panel layout) -- see validate_reward_panel_textures.py, which asserts it's gone.
     for name in ("RevealSounds.java", "RevealParticles.java", "RaidRewardRevealScreen.java"):
         assert (REVEAL / name).is_file(), f"missing {name}"
 
@@ -103,7 +103,7 @@ def validate_no_new_gradle_dependency() -> None:
 
 
 def validate_no_new_sound_assets() -> None:
-    # Textures were legitimately added in Phase 39 (see validate_phase39.py) -- this mod still bundles
+    # Textures were legitimately added in Phase 39 (see validate_reward_panel_textures.py) -- this mod still bundles
     # no sound files of its own, reusing Cobblemon's existing ball send-out sounds by reference.
     assert not (RESOURCES / "assets/cobbleraids/sounds").exists()
 
@@ -127,7 +127,7 @@ def main() -> None:
     validate_no_new_sound_assets()
     for argument in sys.argv[1:]:
         validate_jar(Path(argument))
-    print("Phase 38 cinematic reveal validation: PASS")
+    print("Cinematic reveal validation: PASS")
 
 
 if __name__ == "__main__":

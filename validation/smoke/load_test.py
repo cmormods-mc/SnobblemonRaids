@@ -163,18 +163,22 @@ def main() -> None:
             if len(ready) < PLAYERS_PER_RAID:
                 raise RuntimeError("not enough clients connected to form even one raid")
 
-            # Cobblemon loads a player's storage asynchronously after they join, and a pokegive that
+            # Cobblemon loads a player's storage asynchronously after they join, and a give that
             # lands before it is ready has nothing to write into. Give it a moment.
             time.sleep(5)
             print("  giving parties and placing bosses")
             # Checked, not assumed. A raid refuses a player with an empty party at lock, and it does
-            # so by cancelling the lobby with a message only nearby players see -- so a pokegive that
+            # so by cancelling the lobby with a message only nearby players see -- so a give that
             # silently failed looked exactly like "raids do not work", with nothing in the log.
+            # pokegiveother, not pokegive: from the console a plain pokegive answers "A player is
+            # required to run this command here" and gives nothing, which the old check below did
+            # not recognise, so every bot ended up with an empty party and the battle phase was
+            # reported as skipped rather than failed.
             give_failures = []
             for bot in ready:
                 rcon.command(f"op {bot.name}")
-                response = rcon.command(f"pokegive {bot.name} pikachu level=50")
-                if "Unknown" in response or "Incorrect" in response or "error" in response.lower():
+                response = rcon.command(f"pokegiveother {bot.name} pikachu level=50")
+                if not response.startswith("Gave"):
                     give_failures.append(f"{bot.name}: {response.strip()[:120]}")
             check("every client receives a party", not give_failures,
                   "; ".join(give_failures[:3]))
@@ -214,17 +218,15 @@ def main() -> None:
                   + ", ".join(f"{bot.name} {bot.lost}" for bot in ready if not bot.still_connected())[:200])
 
             status = rcon.command("cobbleraids debug raids")
-            live = len(re.findall(r"[0-9a-f]{8}-[0-9a-f]{4}-", status))
+            # One "active · <hp> hp · <n>/<max> players" fragment per raid in battle. This used to count
+            # UUID-shaped strings, which `debug raids` stopped printing; with the old skip branch
+            # in place nothing noticed, because the party it needed had never been given anyway.
+            live = len(re.findall(r"active · \S+ hp · [1-9]\d*/\d+ players", status))
             if live >= len(groups):
                 check(f"lobbies froze into {len(groups)} live raid sessions", True)
             else:
-                skip("lobbies freeze into live raid sessions",
-                     "lobbies form and fill correctly, but no battle starts under this harness. The"
-                     " lobby is gone by lock time with nothing in the log, which points at"
-                     " isEligibleAtLock rejecting every bot -- most likely the Cobblemon party that"
-                     " pokegive appears to create is not visible to toBattleTeam for an offline-mode"
-                     " client. Recruitment, joining and slot release ARE covered above; the battle"
-                     f" and reward phases are not. Observed: {status[:160]}")
+                check("lobbies froze into live raid sessions", False,
+                      f"{live} live session(s) for {len(groups)} group(s): {status[:160]}")
 
             audit_live = rcon.command("cobbleraids debug audit")
             check("audit is clean with concurrent raids live",
