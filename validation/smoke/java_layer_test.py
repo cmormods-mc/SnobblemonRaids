@@ -435,35 +435,53 @@ def scenario_admin_queue_commands(rig: Rig) -> list[Result]:
     Unclaimed rewards and capture sessions share PendingHolderCommands for both, so every message is
     asserted word for word against what each had before they were merged. A real connected player is
     needed because the target is an online-player argument.
+
+    The rig world is not empty: earlier runs leave offline holders behind. So the roster is judged by
+    how it changes (one more holder after a grant, back to where it was after a clear) and by whether
+    this run's player is in it, never by it being empty.
     """
     results: list[Result] = []
 
     def check(name: str, ok: bool, detail: str = "") -> None:
         results.append(Result(name, ok, detail))
 
+    def holders(listing: str, noun: str, empty: str) -> int:
+        if empty in listing:
+            return 0
+        match = re.search(rf"Players with {noun} \((\d+)\)", listing)
+        return int(match.group(1)) if match else -1
+
     bot = rig.bot("Queue")
     rig.settle([bot])
     name = bot.name
 
     # --- reward queue
-    check("reward list is empty to begin with",
-          "Nobody has an unclaimed raid reward." in rig.command("cobbleraids reward list"))
-    granted = rig.command(f"cobbleraids reward grant {name} garchomp")
+    empty_rewards = "Nobody has an unclaimed raid reward."
+    before = holders(rig.command("cobbleraids reward list"), "unclaimed rewards", empty_rewards)
+    check("the reward roster is readable", before >= 0, "neither the empty line nor a header was printed")
+
+    granted = rig.command(f"cobbleraids reward grant {name} cobbleraids:garchomp")
     check("a reward can be queued for the player", "Queued" in granted, granted.strip())
     roster = rig.command("cobbleraids reward list")
-    check("the roster names the holder with a count",
-          "Players with unclaimed rewards (1)" in roster and name in roster, roster.strip())
+    check("the roster counts one more holder and names the player",
+          holders(roster, "unclaimed rewards", empty_rewards) == before + 1 and name in roster,
+          f"was {before}: {roster[:160].strip()}")
+
     cleared = rig.command(f"cobbleraids reward clear {name}")
     check("clearing reports what it removed",
           f"Cleared 1 unclaimed raid reward(s) from {name}." in cleared, cleared.strip())
     again = rig.command(f"cobbleraids reward clear {name}")
     check("clearing an empty queue says so", f"{name} had no unclaimed raid rewards." in again, again.strip())
-    check("the roster is empty afterwards",
-          "Nobody has an unclaimed raid reward." in rig.command("cobbleraids reward list"))
+    after = rig.command("cobbleraids reward list")
+    check("the roster is back to where it was and no longer lists the player",
+          holders(after, "unclaimed rewards", empty_rewards) == before and name not in after,
+          f"expected {before}: {after[:160].strip()}")
 
-    # --- capture sessions (none can be created without winning a raid, so the empty paths only)
-    check("capture status is empty",
-          "Nobody has an active raid capture session." in rig.command("cobbleraids capture status"))
+    # --- capture sessions: none can be created without winning a raid, so only the empty paths.
+    empty_capture = "Nobody has an active raid capture session."
+    status = rig.command("cobbleraids capture status")
+    check("the capture roster is readable, and does not list this player",
+          holders(status, "active capture sessions", empty_capture) >= 0 and name not in status, status[:160].strip())
     nothing = rig.command(f"cobbleraids capture clear {name}")
     check("clearing a player with no capture session says so",
           f"{name} had no active raid capture session." in nothing, nothing.strip())

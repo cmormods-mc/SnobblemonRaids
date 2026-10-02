@@ -54,36 +54,14 @@ final class RaidAdminCaptureOps {
     }
 
     private static int statusAll(CommandSourceStack source) {
-        Set<UUID> holders = RaidCaptureSessionService.playersWithSessions();
-        if (holders.isEmpty()) {
-            source.sendSuccess(() -> Component.literal("Nobody has an active raid capture session.")
-                    .withStyle(ChatFormatting.YELLOW), false);
-            return 0;
-        }
-        source.sendSuccess(() -> CommandFormat.header("Players with active capture sessions (" + holders.size() + ")"), false);
-        for (UUID playerId : holders) {
-            ServerPlayer online = source.getServer().getPlayerList().getPlayer(playerId);
-            // Offline holders are exactly who this command needs to find, so they are listed by id
-            // rather than skipped -- that id still resolves through /capture clear.
-            String label = online != null ? online.getGameProfile().getName() : playerId.toString();
-            int count = RaidCaptureSessionService.pendingFor(playerId).size();
-            source.sendSuccess(() -> CommandFormat.row(CommandFormat.pad(label, 38) + count
-                    + (online == null ? "  (offline)" : "")), false);
-        }
-        return holders.size();
+        return PendingHolderCommands.listHolders(source, RaidCaptureSessionService.playersWithSessions(),
+                playerId -> RaidCaptureSessionService.pendingFor(playerId).size(),
+                "Nobody has an active raid capture session.", "active capture sessions");
     }
 
     static int clear(CommandSourceStack source, ServerPlayer target) {
         int removed = RaidCaptureSessionService.clearPending(target.getUUID(), source.getServer());
-        String name = target.getGameProfile().getName();
-        if (removed == 0) {
-            source.sendSuccess(() -> Component.literal(name + " had no active raid capture session.")
-                    .withStyle(ChatFormatting.YELLOW), false);
-            return 0;
-        }
-        source.sendSuccess(() -> Component.literal("Cleared " + removed + " raid capture session(s) from "
-                        + name + ". Neither RP nor a Pokemon was granted for them.")
-                .withStyle(ChatFormatting.GREEN), true);
-        return removed;
+        return PendingHolderCommands.reportCleared(source, target, removed, "active raid capture session",
+                "raid capture session(s)", " Neither RP nor a Pokemon was granted for them.");
     }
 }
