@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.157-cobblemon-1.8.1'
+version = '0.8.158-run-button'
 group = 'com.cobbleraids'
 
 base {

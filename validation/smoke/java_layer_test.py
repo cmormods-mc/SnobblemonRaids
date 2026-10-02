@@ -387,6 +387,48 @@ def scenario_solo_baseline(rig: Rig) -> list[Result]:
     return results
 
 
+def scenario_solo_run_button(rig: Rig) -> list[Result]:
+    """What the 1.8 client's Run button does in a raid.
+
+    In a singles battle against a wild actor the 1.8 client sends FLEE_ATTEMPT directly, where the 1.7.3
+    client opened a forfeit confirmation first. A raid must not be leavable that way: the only exits are
+    the ones RaidBattleSelectActionsMixin governs (forfeit/leave), so a flee attempt has to leave the
+    player in the battle and be asked for a move again.
+    """
+    results: list[Result] = []
+
+    def check(name: str, ok: bool, detail: str = "") -> None:
+        results.append(Result(name, ok, detail))
+
+    solo = rig.bot("Run")
+    rig.settle([solo])
+    rig.give(solo, *SOLO_PARTY)
+    solo.send("MOVE blizzard")
+    rig.start_raid([solo])
+    started = solo.wait_for("BATTLE_INIT", 120)
+    check("the player is in a started battle", started, "the lobby never became a battle")
+    if not started:
+        return results
+    check("the player is asked for a move", solo.wait_for("PROMPT", 30), "no battle prompt in 30s")
+    # Autofight goes on first so the re-prompt the flee attempt provokes is answered; one that arrives
+    # while autofight is off is simply never answered, and the fight would look stalled.
+    solo.send("FIGHT")
+    before = time.time()
+    solo.send("FLEE")
+    check("the flee attempt is sent", solo.wait_for("SENT FLEE_ATTEMPT", 10, since=before), "bot never sent it")
+    check("the player is told where the exit is", solo.wait_for("/cobbleraids leave", 10, since=before),
+          f"no pointer to the leave command: {solo.since(before, 'MSG')}")
+    check("the player is asked for a move again", solo.wait_for("PROMPT", 20, since=before),
+          "no new prompt: " + rig.command("cobbleraids debug battle").strip())
+    check("the battle has not ended", solo.count("BATTLE_END", before) == 0, "BATTLE_END after a flee attempt")
+    status = rig.command("cobbleraids debug battle").strip()
+    check("the raid battle is still registered", "no active" not in status.lower() and bool(status), status)
+    print(f"  after the flee attempt: {status[:200]}")
+    print(f"  bot saw: {solo.since(before, '')[:12]}")
+    check("the player can still finish the raid", solo.wait_for("BATTLE_END", 120), "the battle never ended")
+    return results
+
+
 def scenario_duo_baseline(rig: Rig) -> list[Result]:
     """Two players, no disconnect: the control for every multiplayer scenario."""
     results: list[Result] = []
@@ -417,6 +459,7 @@ SCENARIOS = {
     "hold-between-turns": scenario_hold_between_turns,
     "duo-baseline": scenario_duo_baseline,
     "solo-baseline": scenario_solo_baseline,
+    "solo-run-button": scenario_solo_run_button,
     "held-player-returns-first": scenario_held_player_returns_first,
     "solo-resume": scenario_solo_resume,
 }
