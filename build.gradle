@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.160-cleanup'
+version = '0.8.161-join-message'
 group = 'com.cobbleraids'
 
 base {
