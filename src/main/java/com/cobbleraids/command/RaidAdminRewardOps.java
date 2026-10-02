@@ -77,35 +77,14 @@ final class RaidAdminRewardOps {
     }
 
     private static int listAll(CommandSourceStack source) {
-        Set<UUID> holders = RaidRewardService.playersWithPending();
-        if (holders.isEmpty()) {
-            source.sendSuccess(() -> Component.literal("Nobody has an unclaimed raid reward.")
-                    .withStyle(ChatFormatting.YELLOW), false);
-            return 0;
-        }
-        source.sendSuccess(() -> CommandFormat.header("Players with unclaimed rewards (" + holders.size() + ")"), false);
-        for (UUID playerId : holders) {
-            ServerPlayer online = source.getServer().getPlayerList().getPlayer(playerId);
-            // Offline holders are the reason this command exists, so they are listed by id rather
-            // than skipped -- that id still works as the argument to reward clear.
-            String label = online != null ? online.getGameProfile().getName() : playerId.toString();
-            int count = RaidRewardService.pendingFor(playerId).size();
-            source.sendSuccess(() -> CommandFormat.row(CommandFormat.pad(label, 38) + count
-                    + (online == null ? "  (offline)" : "")), false);
-        }
-        return holders.size();
+        return PendingHolderCommands.listHolders(source, RaidRewardService.playersWithPending(),
+                playerId -> RaidRewardService.pendingFor(playerId).size(),
+                "Nobody has an unclaimed raid reward.", "unclaimed rewards");
     }
 
     static int clear(CommandSourceStack source, ServerPlayer target) {
         int removed = RaidRewardService.clearPending(target.getUUID(), source.getServer());
-        String name = target.getGameProfile().getName();
-        if (removed == 0) {
-            source.sendSuccess(() -> Component.literal(name + " had no unclaimed raid rewards.")
-                    .withStyle(ChatFormatting.YELLOW), false);
-            return 0;
-        }
-        source.sendSuccess(() -> Component.literal("Cleared " + removed + " unclaimed raid reward(s) from "
-                + name + ".").withStyle(ChatFormatting.GREEN), true);
-        return removed;
+        return PendingHolderCommands.reportCleared(source, target, removed, "unclaimed raid rewards",
+                "unclaimed raid reward(s)", "");
     }
 }
