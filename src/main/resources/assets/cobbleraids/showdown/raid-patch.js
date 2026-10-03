@@ -720,3 +720,23 @@ function bossLateMoveUnusable(side, message) {
   const requested = request && request.moves && index >= 0 ? request.moves[index] : null;
   return Boolean(slot.disabled || (requested && requested.disabled));
 }
+
+// Extension modules other mods registered through CobbleRaids' ShowdownExtensions API, installed beside this file
+// as ext-<id>.js. Loaded last, in name order, so everything above is already in place for them to build on.
+//
+// Each is isolated: a module that throws while loading is reported and skipped. It must never be allowed to
+// throw out of here, because this file is required from index.js, and an exception at that point would take the
+// whole simulator -- every battle on the server -- down for the sake of somebody else's patch.
+try {
+  const fs = require('fs');
+  const extensions = fs.readdirSync(__dirname).filter(name => /^ext-[a-z0-9][a-z0-9_-]*\.js$/.test(name)).sort();
+  for (const name of extensions) {
+    try {
+      require('./' + name);
+    } catch (err) {
+      console.log('[CobbleRaids] Showdown extension ' + name + ' failed to load and was skipped: ' + ((err && err.stack) || err));
+    }
+  }
+} catch (err) {
+  console.log('[CobbleRaids] Could not scan for Showdown extensions: ' + ((err && err.stack) || err));
+}
