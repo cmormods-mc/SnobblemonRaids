@@ -92,6 +92,41 @@ public final class ShowdownIntegrationInstaller {
         patchIndexBootstrap(Path.of("showdown/index.js"));
         patchOutputPump(Path.of("showdown/index.js"));
         ready = true;
+        // After `ready`, and never allowed to undo it: extensions are other mods' business, and a module that
+        // cannot be written must cost that mod its extension, not the raids (or the battles) that depend on us.
+        installExtensions(Path.of("showdown"), ShowdownExtensionRegistry.modules());
+    }
+
+    /**
+     * Writes each registered extension module as {@code ext-<id>.js} beside raid-patch.js, and removes any other
+     * {@code ext-*.js} this mod left there before: a mod that was uninstalled must not keep loading its patch.
+     * Idempotent, and never throws -- see {@link #install()}.
+     */
+    static void installExtensions(Path showdownDir,
+                                  java.util.Map<String, java.util.function.Supplier<InputStream>> modules) {
+        try {
+            if (!Files.isDirectory(showdownDir)) return;
+            java.util.Set<String> keep = new java.util.HashSet<>();
+            for (java.util.Map.Entry<String, java.util.function.Supplier<InputStream>> module : modules.entrySet()) {
+                String name = "ext-" + module.getKey() + ".js";
+                try (InputStream in = module.getValue().get()) {
+                    if (in == null) throw new FileNotFoundException("no source for Showdown extension " + module.getKey());
+                    Files.copy(in, showdownDir.resolve(name), StandardCopyOption.REPLACE_EXISTING);
+                    keep.add(name);
+                } catch (IOException | RuntimeException ex) {
+                    RaidLog.error("Could not install Showdown extension '{}'; it will not load this session.",
+                            module.getKey(), ex);
+                }
+            }
+            try (java.util.stream.Stream<Path> files = Files.list(showdownDir)) {
+                for (Path file : (Iterable<Path>) files::iterator) {
+                    String name = file.getFileName().toString();
+                    if (name.startsWith("ext-") && name.endsWith(".js") && !keep.contains(name)) Files.deleteIfExists(file);
+                }
+            }
+        } catch (IOException | RuntimeException ex) {
+            RaidLog.error("Could not update the Showdown extension files.", ex);
+        }
     }
 
     /**

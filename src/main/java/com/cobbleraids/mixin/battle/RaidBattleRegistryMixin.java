@@ -9,6 +9,8 @@ import com.cobblemon.mod.common.battles.BattleRegistry;
 import com.cobblemon.mod.common.battles.runner.ShowdownService;
 import com.cobbleraids.lifecycle.RaidReconnectService;
 import com.cobbleraids.raid.RaidRegistry;
+import com.cobbleraids.showdown.ShowdownExtensionRegistry;
+import com.cobbleraids.showdown.ShowdownFormatExtras;
 import com.cobbleraids.raid.RaidSession;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -81,7 +83,7 @@ public abstract class RaidBattleRegistryMixin {
 
     private void cobbleRaids$startShowdownOrThrow(ShowdownService service, PokemonBattle battle, String[] messages) {
         if (!"raid".equals(battle.getFormat().getBattleType().getName())) {
-            service.startBattle(battle, messages);
+            service.startBattle(battle, cobbleRaids$withExtensionFields(battle, messages));
             return;
         }
 
@@ -110,7 +112,23 @@ public abstract class RaidBattleRegistryMixin {
             if (result.startsWith(">start ")) result = withRaidPlayerCount(result, ordered.size());
             rewritten[i] = result;
         }
-        service.startBattle(battle, rewritten);
+        service.startBattle(battle, cobbleRaids$withExtensionFields(battle, rewritten));
+    }
+
+    /**
+     * Adds whatever fields other mods registered through ShowdownExtensions to this battle's format. Never
+     * throws: a failure here hands back the messages untouched, so the battle starts as it would have.
+     */
+    private static String[] cobbleRaids$withExtensionFields(PokemonBattle battle, String[] messages) {
+        try {
+            List<java.util.UUID> players = new ArrayList<>();
+            for (ServerPlayer player : battle.getPlayers()) players.add(player.getUUID());
+            return ShowdownFormatExtras.apply(messages, battle.getBattleId(), players,
+                    ShowdownExtensionRegistry.providers());
+        } catch (Throwable ex) {
+            RaidFaultBarrier.report("mixin:startShowdown:extensions", ex instanceof Exception e ? e : new RuntimeException(ex));
+            return messages;
+        }
     }
 
     private static String rewriteActorTokens(String input, Map<String, String> mapping) {
