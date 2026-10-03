@@ -724,19 +724,32 @@ function bossLateMoveUnusable(side, message) {
 // Extension modules other mods registered through CobbleRaids' ShowdownExtensions API, installed beside this file
 // as ext-<id>.js. Loaded last, in name order, so everything above is already in place for them to build on.
 //
+// The list comes from extensions.js, which the Java installer writes, and NOT from scanning the directory: this runs
+// inside Cobblemon's GraalJS context, where Node built-ins such as the file-system module do not exist (asking for it
+// throws "Cannot load module"). Only plain relative require() of a file works there.
+//
 // Each is isolated: a module that throws while loading is reported and skipped. It must never be allowed to
 // throw out of here, because this file is required from index.js, and an exception at that point would take the
 // whole simulator -- every battle on the server -- down for the sake of somebody else's patch.
 try {
-  const fs = require('fs');
-  const extensions = fs.readdirSync(__dirname).filter(name => /^ext-[a-z0-9][a-z0-9_-]*\.js$/.test(name)).sort();
-  for (const name of extensions) {
+  let ids = [];
+  try {
+    ids = require('./extensions.js');
+  } catch (err) {
+    // No manifest means nothing registered an extension (or this install predates the API), which is fine -- but say
+    // so, once per boot: a manifest that EXISTS and cannot be read looks exactly the same, and silence is how the
+    // first version of this loader failed unnoticed.
+    console.log('[CobbleRaids] No Showdown extension manifest was loaded: ' + ((err && err.message) || err));
+  }
+  for (const id of Array.isArray(ids) ? ids : []) {
+    if (typeof id !== 'string' || !/^[a-z0-9][a-z0-9_-]{0,47}$/.test(id)) continue;
     try {
-      require('./' + name);
+      require('./ext-' + id + '.js');
+      console.log('[CobbleRaids] Showdown extension ' + id + ' loaded.');
     } catch (err) {
-      console.log('[CobbleRaids] Showdown extension ' + name + ' failed to load and was skipped: ' + ((err && err.stack) || err));
+      console.log('[CobbleRaids] Showdown extension ' + id + ' failed to load and was skipped: ' + ((err && err.stack) || err));
     }
   }
 } catch (err) {
-  console.log('[CobbleRaids] Could not scan for Showdown extensions: ' + ((err && err.stack) || err));
+  console.log('[CobbleRaids] Could not load Showdown extensions: ' + ((err && err.stack) || err));
 }

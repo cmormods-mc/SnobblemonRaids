@@ -23,8 +23,13 @@ import java.util.function.Supplier;
  *       same road CobbleRaids' own field conditions travel.</li>
  * </ul>
  *
- * <p>Both must be called before the server starts (a mod initializer is the place): the simulator is unbundled
- * and its context built during server start-up, and a module registered later is only installed on the next boot.
+ * <p><b>Register from a Fabric {@code preLaunch} entrypoint, not from a mod initializer.</b> Cobblemon starts its
+ * Showdown service on its own thread while mods are still initializing, unbundles the simulator and builds its
+ * JavaScript context, and CobbleRaids writes the extension files and the list {@code raid-patch.js} loads from at
+ * that moment. A module registered by a mod initializer can arrive after that thread has already read an empty list,
+ * so it is installed but not loaded until the next boot (found live: CobbleTowers did exactly this). This package is
+ * plain Java with no Minecraft types, so it is safe to call that early. A module registered even later is installed
+ * on the next boot.
  *
  * <p>Signatures use only {@code java.*}, which a build-time check enforces, the same rule as the other API
  * packages. <b>Experimental</b>: {@link #API_VERSION} 1 is shaped by its first consumer, CobbleTowers.
