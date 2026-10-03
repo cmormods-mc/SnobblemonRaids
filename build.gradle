@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.162-admin-helper'
+version = '0.8.163-towers-api'
 group = 'com.cobbleraids'
 
 base {
