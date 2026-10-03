@@ -129,4 +129,36 @@ class ShowdownExtensionInstallTest {
             assertEquals("// b2", new String(in.readAllBytes(), StandardCharsets.UTF_8));
         }
     }
+
+    @Test
+    @DisplayName("extensions.js lists exactly the modules that were written, in order, and is written even when empty")
+    void manifestListsInstalledModules() throws Exception {
+        ShowdownIntegrationInstaller.installExtensions(showdown, new LinkedHashMap<>());
+        assertTrue(Files.readString(showdown.resolve("extensions.js")).contains("module.exports = [];"));
+
+        Map<String, Supplier<InputStream>> modules = new LinkedHashMap<>();
+        modules.put("zeta", source("// z"));
+        modules.put("alpha", source("// a"));
+        modules.put("broken", () -> null);   // no source: not written, so must not be listed
+        ShowdownIntegrationInstaller.installExtensions(showdown, modules);
+        assertTrue(Files.readString(showdown.resolve("extensions.js")).contains("module.exports = [\"alpha\", \"zeta\"];"),
+                Files.readString(showdown.resolve("extensions.js")));
+
+        ShowdownIntegrationInstaller.installExtensions(showdown, new LinkedHashMap<>());
+        assertTrue(Files.readString(showdown.resolve("extensions.js")).contains("module.exports = [];"),
+                "a removed mod's entry does not linger");
+        assertFalse(Files.exists(showdown.resolve("ext-alpha.js")));
+    }
+
+    @Test
+    @DisplayName("raid-patch.js never requires a Node built-in: Showdown runs in GraalJS, where require('fs') throws")
+    void loaderUsesNoNodeBuiltins() throws Exception {
+        try (InputStream in = ShowdownExtensionInstallTest.class.getResourceAsStream("/assets/cobbleraids/showdown/raid-patch.js")) {
+            String js = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+            for (String builtin : new String[] {"fs", "path", "os", "child_process", "util", "crypto"}) {
+                assertFalse(js.contains("require('" + builtin + "')") || js.contains("require(\"" + builtin + "\")"),
+                        "raid-patch.js requires the Node built-in '" + builtin + "'");
+            }
+        }
+    }
 }
