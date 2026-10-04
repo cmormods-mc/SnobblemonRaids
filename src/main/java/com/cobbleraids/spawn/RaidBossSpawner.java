@@ -105,7 +105,7 @@ public final class RaidBossSpawner {
                 spawned.setInvulnerable(true);
                 if (renown != null) RaidRenownMarker.mark(spawned, renown);
                 spawned.setCustomName(RaidBossNameplate.of(definition.rarityTier(),
-                        spawned.getPokemon().getSpecies().getTranslatedName(), renown, 0));
+                        spawned.getPokemon().getSpecies().getTranslatedName(), renown));
                 spawned.setCustomNameVisible(true);
                 return Unit.INSTANCE;
             });

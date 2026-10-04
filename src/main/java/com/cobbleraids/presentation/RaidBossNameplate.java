@@ -26,13 +26,12 @@ public final class RaidBossNameplate {
     private RaidBossNameplate() {}
 
     /**
-     * @param scaledLevel the level a boss was raised to, or 0 when it fights at its definition level.
-     *                    Cobblemon already labels the level, so it is only repeated once it changed.
+     * No level is written into the name: Cobblemon labels it itself on the world nameplate and on the
+     * battle tile, and the tile takes its name from this text, so a second "Lv." printed over the
+     * tile's own.
      */
-    public static MutableComponent of(RaidRarityTier tier, Component speciesName, RaidRenown renown, int scaledLevel) {
-        Component species = scaledLevel > 0
-                ? Component.literal(speciesName.getString() + " Lv. " + scaledLevel)
-                : speciesName;
+    public static MutableComponent of(RaidRarityTier tier, Component speciesName, RaidRenown renown) {
+        Component species = speciesName;
         if (renown == null) return RaidTierPresentation.styledName(tier, species);
         return Component.empty()
                 .append(ornament(SKULL + " "))

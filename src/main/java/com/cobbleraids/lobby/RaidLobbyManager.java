@@ -218,15 +218,12 @@ public final class RaidLobbyManager {
             applied[0] = level;
 
             PokemonLeveling.applyLevel(boss.getPokemon(), level);
-            // Put the level on the nameplate, but only now that it is not the one the definition
-            // advertises. Cobblemon already draws a level on its own entity label, so saying it
-            // again on an unscaled boss would be pure duplication -- whereas a boss that has been
-            // raised to meet the party is the one case where the number is worth stating outright.
-            // Through RaidBossNameplate, which also carries a renowned boss's title -- rebuilding the
-            // name from the species here used to be the one place that title would have been lost.
+            // Rebuild the name through RaidBossNameplate, which also carries a renowned boss's title --
+            // rebuilding it from the species here used to be the one place that title would have been
+            // lost. The level is not written into it; Cobblemon draws its own.
             boss.setCustomName(RaidBossNameplate.of(definition.rarityTier(),
                     boss.getPokemon().getSpecies().getTranslatedName(),
-                    RaidRenownMarker.read(boss).orElse(null), level));
+                    RaidRenownMarker.read(boss).orElse(null)));
             boss.setCustomNameVisible(true);
 
             RaidLog.info("{} scaled from level {} to {}: {} player(s) averaging {} across {} Pokemon",

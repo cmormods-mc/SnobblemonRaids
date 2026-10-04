@@ -190,7 +190,7 @@ public final class EncounterService {
         Pokemon pokemon = boss.getPokemon();
         PokemonLeveling.applyLevel(pokemon, level);
         boss.setCustomName(RaidBossNameplate.of(definition.rarityTier(),
-                pokemon.getSpecies().getTranslatedName(), null, level == definition.level() ? 0 : level));
+                pokemon.getSpecies().getTranslatedName(), null));
         boss.setCustomNameVisible(true);
     }
 

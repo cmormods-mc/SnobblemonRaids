@@ -69,7 +69,7 @@ public final class RaidSpawnAnnouncementService {
         } else {
             // Led by the title, in the same styling as the boss's nameplate, so the name a player
             // reads in chat is the one they find floating over the boss.
-            message.append(RaidBossNameplate.of(tier, speciesName, renown, 0))
+            message.append(RaidBossNameplate.of(tier, speciesName, renown))
                     .append(Component.literal(", a renowned ").withStyle(ChatFormatting.YELLOW))
                     .append(Component.literal(tier.displayName()).withStyle(RaidTierPresentation.color(tier)))
                     .append(Component.literal(" raid, has appeared in ").withStyle(ChatFormatting.YELLOW));
