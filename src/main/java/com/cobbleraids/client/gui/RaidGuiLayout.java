@@ -72,7 +72,7 @@ public final class RaidGuiLayout {
         }
         return Optional.of(new Layout(new Rect(x,y,width,height),
             new Rect(x+20,y+34,grid+12,grid+12), new Rect(x+26,y+40,grid,grid), slots,
-            new Rect(x+width/2-40,y+23,14,12), new Rect(x+width/2+26,y+23,14,12),
+            new Rect(x+22,y+23,14,12), new Rect(x+width-36,y+23,14,12),
             new Rect(x+(width-82)/2,y+height-21,82,11), cell, columns, rows));
     }
 }

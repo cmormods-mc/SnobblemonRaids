@@ -126,11 +126,11 @@ public final class RaidGuiSkin {
      * hit rectangles in the layout stay where they are, and the screen simply does not offer them.
      */
     public static void renderArrows(GuiGraphics g, Layout layout) {
-        Rect f = layout.frame();
+        Rect previous = layout.previous(), next = layout.next();
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        sprite(g,PREVIOUS,f.x()+f.width()/2-38,f.y()+25,10,9);
-        sprite(g,NEXT,f.x()+f.width()/2+28,f.y()+25,10,9);
+        sprite(g,PREVIOUS,previous.x()+2,previous.y()+2,10,9);
+        sprite(g,NEXT,next.x()+2,next.y()+2,10,9);
         RenderSystem.disableBlend();
     }
 

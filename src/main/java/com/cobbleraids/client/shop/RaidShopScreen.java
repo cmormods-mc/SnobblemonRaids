@@ -85,10 +85,11 @@ public final class RaidShopScreen extends Screen {
     /** The two trimmed strings, which only change when the page or the balance does. */
     private void cacheChrome() {
         if (font == null || layout == null) return;
-        String heading = page.pageCount() > 1
-                ? page.heading() + " " + (page.pageIndex() + 1) + "/" + page.pageCount()
-                : page.heading();
-        headingText = trimTo(heading, 50);
+        // The arrows sit at the two ends of the header strip, so the title gets all the room
+        // between them. The page number is kept whole and only the title is shortened to fit.
+        int room = layout.next().x() - (layout.previous().x() + layout.previous().width()) - 6;
+        String pageSuffix = page.pageCount() > 1 ? " " + (page.pageIndex() + 1) + "/" + page.pageCount() : "";
+        headingText = trimTo(page.heading(), room - font.width(pageSuffix)) + pageSuffix;
         balanceText = trimTo(page.balance() + " RP", layout.button().width() - 6);
     }
 
