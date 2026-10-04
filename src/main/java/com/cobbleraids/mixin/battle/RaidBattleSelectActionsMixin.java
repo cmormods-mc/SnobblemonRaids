@@ -3,6 +3,7 @@ package com.cobbleraids.mixin.battle;
 import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobbleraids.api.encounter.EncounterRules;
 import com.cobbleraids.battle.RaidBannedMoves;
+import com.cobbleraids.battle.RaidSwitchRules;
 import com.cobbleraids.lifecycle.RaidLifecycleCoordinator;
 import com.cobbleraids.raid.RaidRegistry;
 import com.cobbleraids.raid.RaidSession;
@@ -47,6 +48,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  *
  * 2) Explicit forfeits never reach stock PokemonBattle.checkForfeit(); raid withdrawal semantics
  *    are handled by RaidLifecycleCoordinator instead.
+ *
+ * 2b) "No switching" refuses a chosen switch, never the forced replacement of a fainted Pokemon (RaidSwitchRules).
  *
  * 3) A RaidBannedMoves entry is rejected before it reaches Showdown, since a faint caused outside
  *    the raid's -raiddamage/-raidheal pipeline (e.g. Perish Song fainting every active Pokemon at
@@ -100,7 +103,8 @@ public abstract class RaidBattleSelectActionsMixin {
                 // The 1.8 client's Run button, shown because the boss actor is WILD. Cobblemon would
                 // refuse it with its own generic message; this one says where the exit actually is.
                 refusal = "You cannot run from a raid. Use /cobbleraids leave to leave it.";
-            } else if (response instanceof SwitchActionResponse && !rules.switchingAllowed()) {
+            } else if (response instanceof SwitchActionResponse
+                    && RaidSwitchRules.refusesSwitch(rules.switchingAllowed(), cobbleRaids$isForcedReplacement(battle, player))) {
                 refusal = "Switching is not allowed in this battle.";
             } else if ((response instanceof BagItemActionResponse || response instanceof HealItemActionResponse)
                     && !rules.itemsAllowed()) {
@@ -143,6 +147,13 @@ public abstract class RaidBattleSelectActionsMixin {
         }
 
         RaidLifecycleCoordinator.withdrawPlayer(raid, player);
+    }
+
+    /** Whether the request this player is answering is Showdown asking them to replace a fainted Pokemon. */
+    private static boolean cobbleRaids$isForcedReplacement(PokemonBattle battle, ServerPlayer player) {
+        BattleActor actor = battle.getActor(player);
+        ShowdownActionRequest request = actor == null ? null : actor.getRequest();
+        return request != null && RaidSwitchRules.isForcedReplacement(request.getForceSwitch());
     }
 
     private static void cobbleRaids$fillMissingBossTargets(BattleSelectActionsPacket packet,
