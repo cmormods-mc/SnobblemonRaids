@@ -70,6 +70,10 @@ public final class RaidFactory {
         // the way up must not leave its rules waiting for the next one.
         BattleStartResult result;
         RaidPendingRules.set(ownership == null ? EncounterRules.none() : ownership.rules());
+        // An ordinary raid lets AscensionLib's battle effects act; an owned one (CobbleTowers) arms its own battle.
+        List<java.util.UUID> playerIds = ordered.stream().map(ServerPlayer::getUUID).toList();
+        boolean armed = ownership == null && AscensionLibArming.declareAndArm(playerIds, bossEntity.getPokemon().getUuid(),
+                bossEntity.getPokemon().getSpecies().getResourceIdentifier().toString(), bossEntity.getPokemon().getLevel());
         try {
             result = BattleRegistry.startBattle(
                     format,
@@ -79,8 +83,12 @@ public final class RaidFactory {
             );
         } finally {
             RaidPendingRules.clear();
+            if (armed) AscensionLibArming.disarm(playerIds);
         }
-        if (!(result instanceof SuccessfulBattleStart successful)) throw new IllegalStateException("Unable to start raid: " + result);
+        if (!(result instanceof SuccessfulBattleStart successful)) {
+            if (armed) AscensionLibArming.end(bossEntity.getPokemon().getUuid());
+            throw new IllegalStateException("Unable to start raid: " + result);
+        }
 
         PokemonBattle battle = successful.getBattle();
         Optional<RaidRenown> renown = RaidRenownMarker.read(bossEntity);

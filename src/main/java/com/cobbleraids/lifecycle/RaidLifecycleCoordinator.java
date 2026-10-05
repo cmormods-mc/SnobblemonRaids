@@ -260,6 +260,9 @@ public final class RaidLifecycleCoordinator {
             // read the same per-player history, so they run together and before it.
             recordAndOfferCatch(raid, server, policy);
             if (policy == null || policy.raidRewards()) RaidRewardService.grant(RaidRewardEligibility.victory(raid), server);
+            // An ordinary raid also moves its victors' Pokemon toward promotion (an owned one pays through its owner).
+            if (policy == null) RaidFaultBarrier.guard("ascensionlib:attunement",
+                    () -> com.cobbleraids.raid.AscensionLibArming.settleVictory(raid.getBossActorId(), raid.getActiveParticipants()));
         },
                 // Separate steps, so one that throws cannot skip the others; see RaidFinalizationGuard.
                 () -> RaidRegistry.remove(raid.getBattle()),

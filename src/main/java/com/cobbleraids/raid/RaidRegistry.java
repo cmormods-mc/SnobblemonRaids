@@ -28,7 +28,11 @@ public final class RaidRegistry {
     }
 
     public static void remove(PokemonBattle battle) {
-        if (battle != null) BY_BATTLE.remove(battle.getBattleId());
+        if (battle == null) return;
+        RaidSession removed = BY_BATTLE.remove(battle.getBattleId());
+        // The raid is over, however it ended: AscensionLib forgets its boss and any Scouter reveals (an owned raid's encounter is
+        // its owner's to end).
+        if (removed != null && !removed.isOwned()) AscensionLibArming.end(removed.getBossActorId());
     }
 
     public static boolean contains(PokemonBattle battle) { return get(battle) != null; }
