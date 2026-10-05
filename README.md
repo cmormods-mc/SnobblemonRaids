@@ -194,6 +194,14 @@ full), with a floor of 10%. The default ceiling is 1,250 RP, which only the hard
 at level 50 reaches. `/cobbleraids debug rotation` prints the current ten; the `rotation` block in
 `shop.json` sets the listing count, level range, price band and excluded labels.
 
+**Ascension rarity.** A Pokemon entry in `shop.json` may carry `"rarity"` (`common`, `uncommon`, `rare`,
+`epic`, `legendary` or `mythical`), written beside `species` and `level`. When the optional AscensionLib mod is
+installed, the bought Pokemon gets an ascension profile at exactly that rarity; only its modifier slots are
+rolled, once per purchase, so two buyers get the same rarity and different modifiers. An entry without `rarity`
+gets no profile, as before, and the rotating page never sets one. An unknown rarity drops that entry at load
+(logged) rather than selling a Pokemon without the rarity it was priced for. Without AscensionLib the field is
+ignored. If the profile cannot be granted the purchase still stands and the log names the Pokemon and rarity.
+
 ## Commands
 
 `/cobbleraids reward claim` is player-facing; `info` is unrestricted. Everything else

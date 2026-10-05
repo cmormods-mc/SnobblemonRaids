@@ -121,6 +121,47 @@ class ShopCatalogTest {
     }
 
     @Test
+    @DisplayName("an operator-set rarity survives a round trip and is written only when set")
+    void rarityRoundTrip() {
+        ShopPokemonGift rated = new ShopPokemonGift("dratini", 15, false, null, null, null, null, null, null,
+                Map.of(), Map.of(), " Epic ");
+        ShopPokemonGift plain = new ShopPokemonGift("dratini", 15, false, null, null, null, null, null, null,
+                Map.of(), Map.of());
+        assertEquals("epic", rated.rarity());
+        assertNull(plain.rarity());
+        assertFalse(plain.toJson().has("rarity"), "no rarity key for an entry that has none, so old files rewrite unchanged");
+
+        ShopCatalog catalog = new ShopCatalog(1, ShopCatalog.MAX_PER_PAGE, ShopLimits.DEFAULTS, List.of(
+                new ShopSection("mons", "Pokemon", List.of(
+                        ShopEntry.ofPokemon("rated", 100, rated), ShopEntry.ofPokemon("plain", 100, plain)))));
+        ShopCatalog reloaded = ShopCatalog.fromJson(catalog.toJson());
+
+        assertEquals("epic", reloaded.byId().get("rated").pokemon().rarity());
+        assertNull(reloaded.byId().get("plain").pokemon().rarity());
+        // A version-1 file is migrated on first read, so stability is checked from the reloaded form on.
+        assertEquals(reloaded.toJson(), ShopCatalog.fromJson(reloaded.toJson()).toJson());
+    }
+
+    @Test
+    @DisplayName("an entry naming an unknown rarity is dropped, so nobody pays for a rarity they cannot get")
+    void unknownRarityDropsTheEntry() {
+        ShopCatalog catalog = ShopCatalog.fromJson(parse("""
+                {
+                  "version": 3,
+                  "sections": [{"id": "mons", "title": "Pokemon", "entries": [
+                    {"id": "ok", "cost": 10, "species": "dratini", "level": 5, "rarity": "Legendary"},
+                    {"id": "typo", "cost": 10, "species": "dratini", "level": 5, "rarity": "legendry"}
+                  ]}]
+                }
+                """));
+
+        assertEquals(Set.of("ok"), catalog.byId().keySet());
+        assertEquals("legendary", catalog.byId().get("ok").pokemon().rarity());
+        assertThrows(IllegalArgumentException.class, () -> new ShopPokemonGift("dratini", 5, false, null, null,
+                null, null, null, null, Map.of(), Map.of(), "super"));
+    }
+
+    @Test
     @DisplayName("a duplicate entry id is dropped, catalogue-wide, not just within its section")
     void duplicateEntryIdsAreDropped() {
         // A purchase names an id. Two entries answering to one means the player gets whichever the

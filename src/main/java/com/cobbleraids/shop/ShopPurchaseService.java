@@ -93,9 +93,11 @@ public final class ShopPurchaseService {
 
         settle(player, entry, now);
         if (partyHasRoom && party.add(pokemon)) {
+            AscensionShopHook.apply(pokemon, entry.pokemon(), entry.id());
             return ShopPurchaseResult.BOUGHT;
         }
         if (Cobblemon.INSTANCE.getStorage().getPC(player).add(pokemon)) {
+            AscensionShopHook.apply(pokemon, entry.pokemon(), entry.id());
             return ShopPurchaseResult.BOUGHT_TO_PC;
         }
         // The room check above only rules out "no free slot"; it cannot rule out add() itself

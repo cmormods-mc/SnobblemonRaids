@@ -3,6 +3,7 @@ package com.cobbleraids.shop;
 import com.cobbleraids.RaidLog;
 import com.cobbleraids.config.RaidBossTraits;
 import com.google.gson.JsonObject;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
@@ -20,6 +21,10 @@ import java.util.TreeMap;
  * party, so reusing it here would silently strip legitimate held items from a purchase. The stat
  * block is still read through its reader, so what a stat is called has exactly one owner.
  *
+ * <p>The one thing that is not a trait is {@code rarity}: an optional AscensionLib rarity (common to mythical)
+ * the operator fixes for the entry. It is never rolled either; only the modifier slots under it are, once per
+ * purchase. Null leaves the Pokemon without an ascension profile, which is how every entry behaved before.
+ *
  * <p>Free of Cobblemon types: every value is a plain string, resolved against the registries only
  * at the moment of granting. That keeps the catalogue loadable and testable without a server.
  */
@@ -34,8 +39,12 @@ public record ShopPokemonGift(
         String teraType,
         String heldItem,
         Map<String, Integer> ivs,
-        Map<String, Integer> evs
+        Map<String, Integer> evs,
+        String rarity
 ) {
+    /** The rarity ids AscensionLib accepts, weakest first. Mirrored here so a catalogue loads without that mod. */
+    public static final List<String> RARITIES = List.of("common", "uncommon", "rare", "epic", "legendary", "mythical");
+
     public static final int MIN_LEVEL = 1;
     public static final int MAX_LEVEL = 100;
 
@@ -48,6 +57,19 @@ public record ShopPokemonGift(
         }
         ivs = Map.copyOf(ivs == null ? Map.of() : ivs);
         evs = Map.copyOf(evs == null ? Map.of() : evs);
+        if (rarity != null) {
+            rarity = rarity.trim().toLowerCase(Locale.ROOT);
+            if (!RARITIES.contains(rarity)) {
+                throw new IllegalArgumentException("rarity " + rarity + " is not one of " + RARITIES);
+            }
+        }
+    }
+
+    /** A gift with no ascension rarity: the form every entry had before rarity existed. */
+    public ShopPokemonGift(String species, int level, boolean shiny, String nature, String ability, String gender,
+                           String form, String teraType, String heldItem, Map<String, Integer> ivs,
+                           Map<String, Integer> evs) {
+        this(species, level, shiny, nature, ability, gender, form, teraType, heldItem, ivs, evs, null);
     }
 
     /** Null when the block is unusable, having said why. */
@@ -67,6 +89,12 @@ public record ShopPokemonGift(
                 ? root.getAsJsonObject("traits")
                 : new JsonObject();
         String context = "shop entry " + entryId;
+        String rarity = text(root, "rarity");
+        if (rarity != null && !RARITIES.contains(rarity)) {
+            // Dropped rather than ignored: a buyer who paid for an Epic must not receive an unrated Pokemon.
+            RaidLog.error("shop entry " + entryId + ": rarity " + rarity + " is not one of " + RARITIES);
+            return null;
+        }
         return new ShopPokemonGift(
                 species,
                 level,
@@ -78,7 +106,8 @@ public record ShopPokemonGift(
                 text(traits, "tera_type"),
                 text(traits, "held_item"),
                 RaidBossTraits.readStats(traits, "ivs", 0, 31, context),
-                RaidBossTraits.readStats(traits, "evs", 0, 252, context));
+                RaidBossTraits.readStats(traits, "evs", 0, 252, context),
+                rarity);
     }
 
     JsonObject toJson() {
@@ -86,6 +115,8 @@ public record ShopPokemonGift(
         root.addProperty("species", species);
         root.addProperty("level", level);
         if (shiny) root.addProperty("shiny", true);
+        // Written only when set, so a catalogue nobody gave a rarity is rewritten byte for byte as before.
+        if (rarity != null) root.addProperty("rarity", rarity);
         JsonObject traits = new JsonObject();
         put(traits, "nature", nature);
         put(traits, "ability", ability);
