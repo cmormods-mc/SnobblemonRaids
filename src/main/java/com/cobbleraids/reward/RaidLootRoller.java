@@ -57,6 +57,9 @@ public final class RaidLootRoller {
         for (ResourceLocation tableId : tables) {
             try {
                 for (ItemStack stack : roll(player, tableId, context, seed)) {
+                    // The 777 Unique can enlarge a drop, up to the stack limit; the line shown to the player is the scaled count.
+                    int scaled = AscensionItemBonus.scale(player, stack.getCount(), context + "|" + tableId + "|" + System.nanoTime());
+                    if (scaled > stack.getCount()) stack.setCount(Math.min(scaled, stack.getMaxStackSize()));
                     // Read the line before granting: placeItemBackInInventory consumes the stack, so
                     // one inspected afterwards reports minecraft:air and a count of zero.
                     granted.add(new RaidDefinition.RewardItem(

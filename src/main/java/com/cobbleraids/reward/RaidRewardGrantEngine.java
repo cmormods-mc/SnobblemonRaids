@@ -204,12 +204,14 @@ public final class RaidRewardGrantEngine {
                                                  RewardPlan.Legacy plan, Random claimRandom, BigInteger currency) {
         List<RaidDefinition.RewardItem> base = new ArrayList<>();
         for (RaidDefinition.RewardItem item : plan.items()) {
-            if (give(player, item, definitionId)) base.add(item);
+            var granted = give(player, item, definitionId);
+            if (granted != null) base.add(granted);
         }
         List<RaidDefinition.RewardItem> chanceGranted = new ArrayList<>();
         for (RaidDefinition.RewardItem item : plan.chanceItems()) {
-            if (claimRandom.nextDouble() < item.chance() && give(player, item, definitionId)) {
-                chanceGranted.add(item);
+            if (claimRandom.nextDouble() < item.chance()) {
+                var granted = give(player, item, definitionId);
+                if (granted != null) chanceGranted.add(granted);
             }
         }
         // Loot tables borrow another mod's own balancing instead of restating it item by item.
@@ -223,7 +225,8 @@ public final class RaidRewardGrantEngine {
         List<RaidDefinition.RewardItem> bonusGranted = new ArrayList<>();
         for (int index = 0; index < plan.bonusRolls() && !plan.bonusPool().isEmpty(); index++) {
             RaidDefinition.RewardItem rolled = weighted(plan.bonusPool(), claimRandom);
-            if (give(player, rolled, definitionId)) bonusGranted.add(rolled);
+            var granted = give(player, rolled, definitionId);
+            if (granted != null) bonusGranted.add(granted);
         }
         return new RewardGrantResult(base, chanceGranted, bonusGranted,
                 payCurrency(player, definitionId, currency), 0);
@@ -290,14 +293,17 @@ public final class RaidRewardGrantEngine {
      * never be completed. Skipping the line leaves the rest of the reward intact and the claim
      * properly spent, which is what a modpack that has just dropped a mod needs.
      */
-    private static boolean give(ServerPlayer player, RaidDefinition.RewardItem reward, ResourceLocation definitionId) {
+    private static RaidDefinition.RewardItem give(ServerPlayer player, RaidDefinition.RewardItem reward, ResourceLocation definitionId) {
         Item item = BuiltInRegistries.ITEM.get(reward.item());
         if (!BuiltInRegistries.ITEM.getKey(item).equals(reward.item())) {
             RaidLog.error("" + definitionId + " reward item '" + reward.item()
                     + "' is not registered; skipping it. Is the mod that owns it installed?");
-            return false;
+            return null;
         }
-        ItemGiving.giveStacked(player, item, reward.amount());
-        return true;
+        // The 777 Unique can enlarge an item reward; what is listed to the player is what was given. A claim is consumed once, so
+        // the clock only varies the rounding of a fraction between claims.
+        int amount = Math.min(64_000, AscensionItemBonus.scale(player, reward.amount(), definitionId + "|" + reward.item() + "|" + System.nanoTime()));
+        ItemGiving.giveStacked(player, item, amount);
+        return amount == reward.amount() ? reward : new RaidDefinition.RewardItem(reward.item(), amount, reward.chance(), reward.weight());
     }
 }
