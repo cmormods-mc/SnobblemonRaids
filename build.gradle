@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.163-damage-sync'
+version = '0.8.164-audit-fixes'
 group = 'com.cobbleraids'
 
 base {

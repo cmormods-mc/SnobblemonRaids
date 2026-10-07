@@ -69,7 +69,10 @@ public final class CobbleRaidsClient implements ClientModInitializer {
                         RenownBoon.decode(payload.boonEncoded())
                                 .ifPresent(boon -> RenownBoonClientCache.remember(payload.pokemonUuid(), boon)))));
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
-                RaidFaultBarrier.guard("capture-screen:disconnect-cleanup", CaptureDetailsCache::clear));
+                RaidFaultBarrier.guard("capture-screen:disconnect-cleanup", () -> {
+                    CaptureDetailsCache.clear();
+                    RenownBoonClientCache.clear();
+                }));
 
         RaidKeyBindings.register();
         // Polled once a tick. consumeClick drains every press since the last tick, so a key pressed

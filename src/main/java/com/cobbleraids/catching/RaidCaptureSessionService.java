@@ -131,8 +131,15 @@ public final class RaidCaptureSessionService {
 
     private static void persistNow(MinecraftServer server) {
         if (server == null) return;
-        RaidCaptureSessionStore.get(server).update(SESSIONS);
-        RaidFaultBarrier.guard("capture-session-flush", () -> server.overworld().getDataStorage().save());
+        RaidCaptureSessionStore store = RaidCaptureSessionStore.get(server);
+        store.update(SESSIONS);
+        RaidFaultBarrier.guard("capture-session-flush", () -> {
+            try {
+                store.flush(server);
+            } catch (java.io.IOException ex) {
+                throw new java.io.UncheckedIOException(ex);
+            }
+        });
     }
 
     private static Object lockFor(UUID playerId) {

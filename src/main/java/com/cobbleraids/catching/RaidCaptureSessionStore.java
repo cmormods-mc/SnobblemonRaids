@@ -49,6 +49,19 @@ public final class RaidCaptureSessionStore extends SavedData {
         return overworld.getDataStorage().computeIfAbsent(factory(), FILE_ID);
     }
 
+    /**
+     * Writes this store to disk now and nothing else. {@code DimensionDataStorage.save()} walks every
+     * store of every mod that happens to be dirty, which is more synchronous disk work than a capture
+     * session expiring should cost the server thread. The path is the one DimensionDataStorage itself
+     * uses for the overworld ({@code <world>/data/<id>.dat}), and {@code SavedData.save} clears the
+     * dirty flag, so the ordinary autosave does not write the same file again.
+     */
+    public void flush(MinecraftServer server) throws java.io.IOException {
+        java.nio.file.Path dataDir = server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).resolve("data");
+        java.nio.file.Files.createDirectories(dataDir);
+        save(dataDir.resolve(FILE_ID + ".dat").toFile(), server.registryAccess());
+    }
+
     public Map<UUID, ArrayDeque<RaidCaptureSession>> take() {
         Map<UUID, ArrayDeque<RaidCaptureSession>> result = loaded;
         loaded = new LinkedHashMap<>();

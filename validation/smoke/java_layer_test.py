@@ -563,7 +563,45 @@ def scenario_damage_after_animation(rig: Rig) -> list[Result]:
     return results
 
 
+def scenario_capture_session_flush(rig: Rig) -> list[Result]:
+    """A capture session reaches disk the moment it is created, while the server is still running.
+
+    The store is flushed on its own now rather than through DimensionDataStorage.save(), so this asserts
+    the file really is written (a wrong path would write nothing and still look fine until a crash).
+    """
+    results: list[Result] = []
+
+    def check(name: str, ok: bool, detail: str = "") -> None:
+        results.append(Result(name, ok, detail))
+
+    path = rig.dir / "world" / "data" / "cobbleraids_capture_sessions.dat"
+    before = path.stat().st_mtime if path.exists() else 0.0
+    solo = rig.bot("Flush")
+    rig.settle([solo])
+    rig.give(solo, *SOLO_PARTY)
+    solo.send("MOVE blizzard")
+    solo.send("FIGHT")
+    rig.start_raid([solo])
+    if not solo.wait_for("BATTLE_INIT", 120):
+        check("the player is in a started battle", False, "the lobby never became a battle")
+        return results
+    check("the raid can be finished", solo.wait_for("BATTLE_END", 120), "the battle never ended")
+    deadline = time.time() + 20
+    while time.time() < deadline and not (path.exists() and path.stat().st_mtime > before):
+        time.sleep(0.5)
+    check("the capture session file was written while the server ran",
+          path.exists() and path.stat().st_mtime > before, f"{path} did not change")
+    if path.exists():
+        import gzip
+        with gzip.open(path, "rb") as handle:
+            data = handle.read()
+        check("the flushed file holds a session, not an empty store", b"players" in data and len(data) > 100,
+              f"{len(data)} bytes")
+    return results
+
+
 SCENARIOS = {
+    "capture-session-flush": scenario_capture_session_flush,
     "damage-after-animation": scenario_damage_after_animation,
     "hold-before-choice": scenario_hold_before_choice,
     "hold-between-turns": scenario_hold_between_turns,
