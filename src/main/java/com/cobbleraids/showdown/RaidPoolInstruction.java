@@ -7,6 +7,7 @@ import com.cobblemon.mod.common.api.battles.interpreter.BattleMessage;
 import com.cobblemon.mod.common.api.battles.model.PokemonBattle;
 import com.cobblemon.mod.common.api.battles.model.actor.BattleActor;
 import com.cobblemon.mod.common.battles.ActiveBattlePokemon;
+import com.cobblemon.mod.common.battles.dispatch.InstructionSet;
 import com.cobblemon.mod.common.battles.dispatch.InterpreterInstruction;
 import com.cobblemon.mod.common.battles.pokemon.BattlePokemon;
 import com.cobblemon.mod.common.net.messages.client.battle.BattleHealthChangePacket;
@@ -28,8 +29,12 @@ abstract class RaidPoolInstruction implements InterpreterInstruction {
     protected final BattleActor actor;
     protected final BattleMessage publicMessage;
     protected final BattleMessage privateMessage;
+    /** The set this instruction was parsed into; used to find the move that caused it. May be null. */
+    private final InstructionSet instructionSet;
 
-    protected RaidPoolInstruction(BattleActor actor, BattleMessage publicMessage, BattleMessage privateMessage) {
+    protected RaidPoolInstruction(InstructionSet instructionSet, BattleActor actor, BattleMessage publicMessage,
+                                  BattleMessage privateMessage) {
+        this.instructionSet = instructionSet;
         this.actor = actor;
         this.publicMessage = publicMessage;
         this.privateMessage = privateMessage;
@@ -44,12 +49,21 @@ abstract class RaidPoolInstruction implements InterpreterInstruction {
         if (amount == null) return;
 
         applyToPool(raid, battle, amount);
-        // syncBossHealth writes a Pokemon's health and sends packets, neither of which is safe off
-        // the server thread. Cobblemon 1.7.3 runs instructions there (interpretMessage goes through
-        // runOnServer); this reports it if a Cobblemon update or another mod's mixin changes that.
-        RaidThreadGuard.expectServerThread("showdown-instruction");
-        syncBossHealth(raid, battle);
-        afterPool(raid, battle);
+        // Snapshot now: by the time the animation finishes, a later hit in the same batch may have
+        // moved the pool again, and each bar update should show its own hit, not the final total.
+        float healthAfter = raid.getCurrentHealth();
+
+        // The pool moves immediately (authoritative, ordered), but what players see waits for the
+        // causing move's animation. syncBossHealth writes a Pokemon's health and sends packets, which
+        // is only safe on the server thread; Cobblemon runs dispatches there, and this reports it if a
+        // Cobblemon update or another mod changes that.
+        RaidPresentationGate.afterCause(battle, instructionSet, this, () -> {
+            RaidThreadGuard.expectServerThread("showdown-instruction");
+            // The raid may have ended (left, timed out) while the animation played.
+            if (RaidRegistry.get(battle) != raid) return;
+            syncBossHealth(raid, battle, healthAfter);
+            afterPool(raid, battle);
+        });
     }
 
     /** Moves the shared pool. Called once the amount is known and the raid is confirmed. */
@@ -87,7 +101,7 @@ abstract class RaidPoolInstruction implements InterpreterInstruction {
      * Pushes the pool's new state to both sides: the boss's actor sees absolute pool HP, everyone
      * else a ratio, and the real entity is moved to the same fraction so its model matches the bar.
      */
-    private void syncBossHealth(RaidSession raid, PokemonBattle battle) {
+    private void syncBossHealth(RaidSession raid, PokemonBattle battle, float health) {
         BattleActor bossActor = battle.getActor(raid.getBossActorId());
         ActiveBattlePokemon bossActive = RaidBattleTargets.bossActive(bossActor);
         BattlePokemon target = bossActive == null
@@ -96,8 +110,8 @@ abstract class RaidPoolInstruction implements InterpreterInstruction {
         String pnx = bossActive == null ? RaidBattleTargets.pnx(publicMessage.argumentAt(0)) : bossActive.getPNX();
         if (target == null || target.getEffectedPokemon() == null || bossActor == null || pnx == null) return;
 
-        float ratio = Math.max(0.0f, Math.min(1.0f, raid.getCurrentHealth() / raid.getMaxHealth()));
-        int displayHp = Math.max(0, Math.round(raid.getCurrentHealth()));
+        float ratio = Math.max(0.0f, Math.min(1.0f, health / raid.getMaxHealth()));
+        int displayHp = Math.max(0, Math.round(health));
         int physicalMax = target.getEffectedPokemon().getMaxHealth();
         target.getEffectedPokemon().setCurrentHealth(Math.max(0, Math.round(physicalMax * ratio)));
         battle.sendSidedUpdate(

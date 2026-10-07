@@ -24,18 +24,18 @@ public final class RaidInstructionRegistrar {
         // on this one update line.
         ShowdownInterpreter.registerUpdateInstructionParser("-raiddamage",
             (Function4<PokemonBattle, InstructionSet, BattleMessage, Iterator<BattleMessage>, InterpreterInstruction>)
-                (battle, set, message, iterator) -> new RaidDamageInstruction(null, message, message));
+                (battle, set, message, iterator) -> new RaidDamageInstruction(set, null, message, message));
         ShowdownInterpreter.registerUpdateInstructionParser("-raidheal",
             (Function4<PokemonBattle, InstructionSet, BattleMessage, Iterator<BattleMessage>, InterpreterInstruction>)
-                (battle, set, message, iterator) -> new RaidHealInstruction(null, message, message));
+                (battle, set, message, iterator) -> new RaidHealInstruction(set, null, message, message));
 
         // Retain split registration for compatibility with any future/private Showdown transport.
         ShowdownInterpreter.registerSplitInstructionParser("-raiddamage",
             (Function6<PokemonBattle, BattleActor, InstructionSet, BattleMessage, BattleMessage, Iterator<BattleMessage>, InterpreterInstruction>)
-                (battle, actor, set, publicMessage, privateMessage, iterator) -> new RaidDamageInstruction(actor, publicMessage, privateMessage));
+                (battle, actor, set, publicMessage, privateMessage, iterator) -> new RaidDamageInstruction(set, actor, publicMessage, privateMessage));
         ShowdownInterpreter.registerSplitInstructionParser("-raidheal",
             (Function6<PokemonBattle, BattleActor, InstructionSet, BattleMessage, BattleMessage, Iterator<BattleMessage>, InterpreterInstruction>)
-                (battle, actor, set, publicMessage, privateMessage, iterator) -> new RaidHealInstruction(actor, publicMessage, privateMessage));
+                (battle, actor, set, publicMessage, privateMessage, iterator) -> new RaidHealInstruction(set, actor, publicMessage, privateMessage));
         // Diagnostics only: Showdown reporting back what its field actually holds after an
         // EncounterRules weather or terrain was applied, so "it worked" is observed rather than
         // assumed. See RaidFieldInstruction.

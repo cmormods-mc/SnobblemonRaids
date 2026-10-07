@@ -523,7 +523,48 @@ def scenario_duo_baseline(rig: Rig) -> list[Result]:
     return results
 
 
+def scenario_damage_after_animation(rig: Rig) -> list[Result]:
+    """The boss's health bar must not move until the move that hurt it has finished animating.
+
+    -raiddamage used to apply, and push the bar, the moment a message batch was parsed -- before any
+    animation had played (and on a killing blow it also cleared the queued animations). The timeline a
+    bot records shows it: the first boss `HEALTH` packet arrived at the start of the turn, ahead of the
+    attacker's own particles. A bot cannot see a screen, but it sees packet order, and order is the bug.
+    """
+    results: list[Result] = []
+
+    def check(name: str, ok: bool, detail: str = "") -> None:
+        results.append(Result(name, ok, detail))
+
+    solo = rig.bot("Anim")
+    rig.settle([solo])
+    rig.give(solo, *SOLO_PARTY)
+    solo.send("MOVE blizzard")        # the player's own move; its message names the owner
+    solo.send("FIGHT")
+    rig.start_raid([solo])
+    if not solo.wait_for("BATTLE_INIT", 120):
+        check("the player is in a started battle", False, "the lobby never became a battle")
+        return results
+    check("the raid can be finished", solo.wait_for("BATTLE_END", 120), "the battle never ended")
+
+    with solo.lock:
+        events = list(solo.events)
+    used = next((when for when, text in events if "BMSG" in text and "owned_pokemon" in text and "cobblemon.move." in text), None)
+    particle = next((when for when, text in events
+                     if used is not None and when >= used and "spawn_snowstorm_entity_particle" in text), None)
+    boss_health = next((when for when, text in events if text.startswith("HEALTH p2a")), None)
+    check("the player's move was seen", used is not None, "the player's move never reached the client; on a killing blow the old code cleared its queued animation")
+    check("the move's effect was seen", particle is not None, "no particle packet followed the move message")
+    check("the boss bar moved", boss_health is not None, "no health change was ever sent for the boss")
+    if None not in (particle, boss_health):
+        check("the boss bar moves after the move's animation, not before",
+              boss_health >= particle,
+              f"the bar moved {particle - boss_health:.1f}s before the move's first particle")
+    return results
+
+
 SCENARIOS = {
+    "damage-after-animation": scenario_damage_after_animation,
     "hold-before-choice": scenario_hold_before_choice,
     "hold-between-turns": scenario_hold_between_turns,
     "duo-baseline": scenario_duo_baseline,

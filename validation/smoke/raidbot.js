@@ -142,9 +142,21 @@ process.on('uncaughtException', (err) => emit(`UNCAUGHT ${String(err.message).sp
 
 bot._client.on('custom_payload', (packet) => {
   const channel = packet.channel;
-  if (!channel || !channel.startsWith('cobblemon:battle')) return;
+  if (!channel || !channel.startsWith('cobblemon:')) return;
   const data = Buffer.from(packet.data || []);
+  // Anything that is not a battle packet is logged by name only, so a timeline of one move can show
+  // its animation packet next to the health change without spamming entity traffic.
+  if (!channel.startsWith('cobblemon:battle')) {
+    if (/action|effect|animation|move|particle/.test(channel)) emit(`PAYLOAD ${channel} ${data.length}`);
+    return;
+  }
   emit(`PAYLOAD ${channel} ${data.length}`);
+  if (channel === 'cobblemon:battle_health_change' && data.length >= 6) {
+    // string pnx, float newHealth, nullable float newMaxHealth. Which Pokemon moved is what a timing
+    // check needs: the player's own Pokemon take damage through this packet too.
+    const n = data[0];
+    emit(`HEALTH ${data.subarray(1, 1 + n).toString('utf8')} ${data.readFloatBE(1 + n).toFixed(3)}`);
+  }
   if (channel === 'cobblemon:battle_message') {
     emit(`BMSG ${data.toString('utf8').replace(/[^ -~]+/g, ' ').trim().slice(0, 240)}`);
   }

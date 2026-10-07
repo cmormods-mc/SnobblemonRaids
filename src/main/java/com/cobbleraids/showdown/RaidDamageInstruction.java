@@ -6,6 +6,7 @@ import com.cobbleraids.raid.RaidSession;
 import com.cobblemon.mod.common.api.battles.interpreter.BattleMessage;
 import com.cobblemon.mod.common.api.battles.model.PokemonBattle;
 import com.cobblemon.mod.common.api.battles.model.actor.BattleActor;
+import com.cobblemon.mod.common.battles.dispatch.InstructionSet;
 import com.cobblemon.mod.common.battles.pokemon.BattlePokemon;
 
 import java.util.UUID;
@@ -13,8 +14,8 @@ import java.util.UUID;
 /** Applies shared raid damage, credits it to whoever dealt it, and ends the raid when the pool empties. */
 public final class RaidDamageInstruction extends RaidPoolInstruction {
 
-    public RaidDamageInstruction(BattleActor actor, BattleMessage publicMessage, BattleMessage privateMessage) {
-        super(actor, publicMessage, privateMessage);
+    public RaidDamageInstruction(InstructionSet instructionSet, BattleActor actor, BattleMessage publicMessage, BattleMessage privateMessage) {
+        super(instructionSet, actor, publicMessage, privateMessage);
     }
 
     @Override
