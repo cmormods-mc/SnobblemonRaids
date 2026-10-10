@@ -6,7 +6,6 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.io.Reader;
-import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -68,9 +67,8 @@ public final class JsonFileStore {
         }
     }
 
+    /** Serialised before anything touches disk, then written atomically; see {@link AtomicFiles}. */
     private static void write(Path path, JsonObject json) throws Exception {
-        try (Writer writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
-            GSON.toJson(json, writer);
-        }
+        AtomicFiles.writeString(path, GSON.toJson(json));
     }
 }

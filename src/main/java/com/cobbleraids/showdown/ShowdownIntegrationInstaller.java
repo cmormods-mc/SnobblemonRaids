@@ -1,6 +1,7 @@
 package com.cobbleraids.showdown;
 
 import com.cobbleraids.RaidLog;
+import com.cobbleraids.config.AtomicFiles;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -139,7 +140,7 @@ public final class ShowdownIntegrationInstaller {
                 first = false;
             }
             manifest.append("];\n");
-            Files.writeString(showdownDir.resolve(EXTENSIONS_MANIFEST), manifest.toString());
+            AtomicFiles.writeString(showdownDir.resolve(EXTENSIONS_MANIFEST), manifest.toString());
         } catch (IOException | RuntimeException ex) {
             RaidLog.error("Could not update the Showdown extension files.", ex);
         }
@@ -215,8 +216,7 @@ public final class ShowdownIntegrationInstaller {
             if (matcher.find()) {
                 throw new IllegalStateException("Unexpected duplicate Showdown playerCount signature");
             }
-            Files.writeString(path, source.substring(0, start) + replacement + source.substring(end),
-                    StandardCharsets.UTF_8);
+            AtomicFiles.writeString(path, source.substring(0, start) + replacement + source.substring(end));
         } catch (IOException e) {
             throw new IllegalStateException("Failed to patch Cobblemon Showdown playerCount handling", e);
         }
@@ -264,8 +264,7 @@ public final class ShowdownIntegrationInstaller {
             if (matcher.find()) {
                 throw new IllegalStateException("Unexpected duplicate Showdown output pump signature");
             }
-            Files.writeString(path, source.substring(0, start) + replacement + source.substring(end),
-                    StandardCharsets.UTF_8);
+            AtomicFiles.writeString(path, source.substring(0, start) + replacement + source.substring(end));
         } catch (IOException e) {
             throw new IllegalStateException("Failed to patch Cobblemon Showdown output pump", e);
         }
@@ -325,10 +324,7 @@ public final class ShowdownIntegrationInstaller {
             }
 
             String separator = source.endsWith("\n") || source.endsWith("\r") ? "" : System.lineSeparator();
-            Files.writeString(
-                    path,
-                    source + separator + INDEX_RAID_HOOK + System.lineSeparator(),
-                    StandardCharsets.UTF_8);
+            AtomicFiles.writeString(path, source + separator + INDEX_RAID_HOOK + System.lineSeparator());
         } catch (IOException e) {
             throw new IllegalStateException("Failed to install CobbleRaids Showdown bootstrap hook", e);
         }

@@ -1,10 +1,12 @@
 package com.cobbleraids.catching;
 
+import com.cobbleraids.network.RequestThrottle;
 import com.cobbleraids.network.TrophyRoomActionPayload;
 import com.cobbleraids.network.TrophyRoomEntryPayload;
 import com.cobbleraids.network.TrophyRoomPagePayload;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -23,6 +25,19 @@ public final class TrophyRoomGateway {
 
     private TrophyRoomGateway() {}
 
+    /**
+     * A flood guard on the request packets, not pacing: each one filters and sorts a player's whole
+     * ledger on the server thread, and nothing but a hostile client sends this many. The screen
+     * itself sends one request at a time and cannot recover from a dropped one, so the budget sits
+     * far above what a person can click.
+     */
+    private static final RequestThrottle THROTTLE = new RequestThrottle(20, 1000);
+
+    /** Forgets a disconnected player's request budget. */
+    public static void forget(UUID player) {
+        THROTTLE.forget(player);
+    }
+
     /** Opens the trophy room at its first page, with no search or filters applied yet. */
     public static void open(ServerPlayer player, int columns) {
         if (!ServerPlayNetworking.canSend(player, TrophyRoomPagePayload.TYPE)) {
@@ -40,6 +55,7 @@ public final class TrophyRoomGateway {
     /** Handles a page turn or a search/filter/sort change from the screen. */
     public static void handle(ServerPlayer player, TrophyRoomActionPayload action) {
         if (!ServerPlayNetworking.canSend(player, TrophyRoomPagePayload.TYPE)) return;
+        if (!THROTTLE.allow(player.getUUID(), System.currentTimeMillis())) return;
 
         TrophyGalleryQuery.Page page = TrophyGalleryQuery.select(
                 TrophyLedger.forPlayer(player.getUUID()).values(),

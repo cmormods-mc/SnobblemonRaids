@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.164-audit-fixes'
+version = '0.8.166-audit-hardening'
 group = 'com.cobbleraids'
 
 base {

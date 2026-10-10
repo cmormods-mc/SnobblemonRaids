@@ -9,6 +9,7 @@ import com.cobbleraids.network.CaptureDetailsPayload;
 import com.cobbleraids.network.CaptureOfferPayload;
 import com.cobbleraids.network.CapturePulseResultPayload;
 import com.cobbleraids.network.CaptureResultPayload;
+import com.cobbleraids.network.RequestThrottle;
 import com.cobbleraids.pokemon.PartyPcDelivery;
 import com.cobbleraids.reward.points.RaidPointsStore;
 import com.cobbleraids.title.TitleService;
@@ -313,8 +314,19 @@ public final class RaidCaptureSessionService {
         return RaidCaptureMath.judge(offset, tierConfig.pulseGoodZoneWidthMs(), tierConfig.pulsePerfectZoneWidthMs());
     }
 
+    /**
+     * One line a minute per player. The mismatch is harmless -- the session is found by player, never
+     * by the echoed id -- but a hostile client can send it every tick, and each line carries a stack-free
+     * error that would bury every real one in the log.
+     */
+    private static final RequestThrottle MISMATCH_LOG = new RequestThrottle(1, 60_000);
+
+    public static void forgetLogThrottle(UUID player) {
+        MISMATCH_LOG.forget(player);
+    }
+
     private static void warnOnRaidIdMismatch(ServerPlayer player, UUID echoed, UUID actual) {
-        if (!actual.equals(echoed)) {
+        if (!actual.equals(echoed) && MISMATCH_LOG.allow(player.getUUID(), System.currentTimeMillis())) {
             RaidLog.error("Capture packet raid id mismatch for " + player.getGameProfile().getName()
                     + ": client echoed " + echoed + ", acting on active session " + actual + " instead.");
         }

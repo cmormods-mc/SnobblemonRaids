@@ -215,6 +215,14 @@ public final class CobbleRaids implements ModInitializer {
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
                 RaidFaultBarrier.guard("player-join:capture-sessions",
                         () -> RaidCaptureSessionService.onPlayerJoin(handler.getPlayer())));
+        // Per-player request budgets and a log throttle live in plain maps; drop a player's entry on
+        // leaving so they cannot accumulate over a long uptime.
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
+                RaidFaultBarrier.guard("player-disconnect:request-throttles", () -> {
+                    TrophyRoomGateway.forget(handler.getPlayer().getUUID());
+                    LegendRoomGateway.forget(handler.getPlayer().getUUID());
+                    RaidCaptureSessionService.forgetLogThrottle(handler.getPlayer().getUUID());
+                }));
         // Resumes a raid a player was mid-disconnect-grace on -- see RaidReconnectService.
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
                 RaidFaultBarrier.guard("player-join:raid-reconnect",
