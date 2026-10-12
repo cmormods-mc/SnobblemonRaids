@@ -25,7 +25,8 @@
     "cobblemon": ">=1.8.1"
   },
   "recommends": {
-    "skiesguis": "1.8.1"
+    "skiesguis": "1.8.1",
+    "webgui": ">=1.8.1"
   },
   "suggests": {
     "placeholder-api": ">=2.4.0",

@@ -1,0 +1,34 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>CobbleRaids</title>
+<style>
+  html, body { margin: 0; height: 100%; }
+  body { display: grid; place-items: center; background: #0d1626; color: #dbe7ff;
+         font-family: system-ui, sans-serif; }
+  main { text-align: center; padding: 32px 48px; border: 2px solid #3a6ea5; background: #13233d; }
+  h1 { margin: 0 0 8px; font-size: 28px; }
+  p { margin: 6px 0; color: #9fb4d6; }
+  button { margin-top: 16px; padding: 10px 22px; font-size: 16px; color: #fff; background: #2b6cb0;
+           border: 0; cursor: pointer; }
+  button:hover { background: #3a82d0; }
+  #reply { margin-top: 14px; min-height: 1.4em; color: #9be59b; }
+</style>
+<main>
+  <h1>CobbleRaids web UI</h1>
+  <p id="who">Connecting&hellip;</p>
+  <p>Press Esc to close.</p>
+  <button id="ping">Ping the server</button>
+  <div id="reply"></div>
+</main>
+<script>
+  addEventListener('webgui:client', e => {
+    document.getElementById('who').textContent = 'Hello, ' + e.detail.username + '.';
+  });
+  addEventListener('webgui:hello_reply', e => {
+    document.getElementById('reply').textContent =
+      'Server answered for ' + e.detail.player + ' (it received: ' + e.detail.received + ')';
+  });
+  document.getElementById('ping').addEventListener('click', () => {
+    window.webgui.postToGame({ channel: 'cobbleraids.hello', sentAt: Date.now() });
+  });
+</script>
