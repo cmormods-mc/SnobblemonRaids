@@ -4,6 +4,7 @@ import com.cobbleraids.network.LegendActionPayload;
 import com.cobbleraids.network.LegendEntryPayload;
 import com.cobbleraids.network.LegendPagePayload;
 import com.cobbleraids.network.RequestThrottle;
+import com.cobbleraids.web.LegendWebPage;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -38,6 +39,8 @@ public final class LegendRoomGateway {
 
     /** Opens the Hall of Legends at its first page, browsing every legend, no filter applied yet. */
     public static void open(ServerPlayer player, int columns) {
+        // A client with WebGUI gets the web page, which asks for its first page itself.
+        if (LegendWebPage.open(player)) return;
         if (!ServerPlayNetworking.canSend(player, LegendPagePayload.TYPE)) {
             player.sendSystemMessage(Component.literal(
                             "Your client doesn't support the Hall of Legends yet -- update CobbleRaids.")
@@ -47,9 +50,14 @@ public final class LegendRoomGateway {
         handle(player, LegendActionPayload.initial(columns));
     }
 
-    /** Handles a page turn or a "mine"/tier filter change from the screen. */
+    /** Handles a page turn or a "mine"/tier filter change from the native screen. */
     public static void handle(ServerPlayer player, LegendActionPayload action) {
-        if (!ServerPlayNetworking.canSend(player, LegendPagePayload.TYPE)) return;
+        handle(player, action, false);
+    }
+
+    /** Handles one from either view; see {@link TrophyRoomGateway#handle(ServerPlayer, com.cobbleraids.network.TrophyRoomActionPayload, boolean)}. */
+    public static void handle(ServerPlayer player, LegendActionPayload action, boolean web) {
+        if (!web && !ServerPlayNetworking.canSend(player, LegendPagePayload.TYPE)) return;
         if (!THROTTLE.allow(player.getUUID(), System.currentTimeMillis())) return;
 
         LegendGalleryQuery.Page page = LegendGalleryQuery.select(HallOfLegends.all(), action.pageIndex(),
@@ -63,7 +71,12 @@ public final class LegendRoomGateway {
                     legend.tier().serializedName(), legend.boon().encode(), legend.defeatedAtEpochMs(),
                     victorIds, victorNames));
         }
-        ServerPlayNetworking.send(player, new LegendPagePayload(
-                page.index(), page.count(), page.total(), page.mineCount(), entries));
+        LegendPagePayload reply = new LegendPagePayload(
+                page.index(), page.count(), page.total(), page.mineCount(), entries);
+        if (web) {
+            LegendWebPage.deliver(player, reply);
+        } else {
+            ServerPlayNetworking.send(player, reply);
+        }
     }
 }

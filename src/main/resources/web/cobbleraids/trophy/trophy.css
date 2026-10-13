@@ -1,0 +1,44 @@
+@import url("../shared/font.css");
+/* The stage is the art's own 1672x941 canvas, so every coordinate below is the measured texture
+   coordinate the native screen used (TrophyGalleryLayout), scaled to the window by one transform. */
+:root { --s: 1; --font: "Monocraft", ui-monospace, Consolas, monospace; --cyan: #39f2ff; --white: #f1fbff; --dim: #76a3b8; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: transparent; user-select: none; }
+body { font-family: var(--font); }
+button, input { font-family: inherit; }
+
+#stage { position: absolute; left: 50%; top: 50%; width: 1672px; height: 941px;
+         transform: translate(-50%, -50%) scale(var(--s)); transform-origin: center;
+         background: url(gallery.png) no-repeat 0 0; font-size: 15px; line-height: 17px; color: var(--white); }
+#stage > *, #cases > *, #thumbs > * { position: absolute; box-sizing: border-box; }
+.txt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: none; }
+.c { text-align: center; }
+#title { left: 209px; top: 89px; width: 320px; color: var(--white); }
+#subtitle { left: 680px; top: 92px; width: 320px; color: var(--cyan); }
+#brand { left: 1170px; top: 94px; width: 315px; color: #b4eeff; }
+
+#search { left: 145px; top: 144px; width: 414px; height: 32px; padding: 0; border: 0; outline: 0; background: none;
+          color: var(--white); font-size: 15px; caret-color: var(--cyan); user-select: text; }
+#search::placeholder { color: var(--dim); opacity: 1; }
+
+.plate { height: 52px; padding: 0 8px; border: 0; background: none; color: var(--white); font-size: 15px; cursor: pointer; text-align: center; }
+.plate:hover:not(:disabled)::after { content: ""; position: absolute; inset: 4px; border: 4px solid var(--cyan); pointer-events: none; }
+.plate:disabled { color: var(--dim); cursor: default; }
+#tier { left: 583px; top: 134px; width: 308px; } #shiny { left: 906px; top: 134px; width: 309px; } #sort { left: 1230px; top: 134px; width: 307px; }
+#prev { left: 546px; top: 833px; width: 191px; } #next { left: 936px; top: 833px; width: 192px; } #back { left: 1374px; top: 833px; width: 172px; }
+
+#counts { left: 136px; top: 854px; width: 392px; color: #bef8ff; }
+#pager { left: 750px; top: 854px; width: 174px; color: var(--white); }
+
+.case { top: 198px; height: 501px; cursor: default; }
+.case .art { position: absolute; background-repeat: no-repeat; background-size: 100% 100%; image-rendering: pixelated; }
+.case .name, .case .tag, .case .shine, .case .ivev, .case .empty { position: absolute; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.case .bar { position: absolute; }
+.case .tag { color: #092238; }
+.case .empty { color: var(--dim); }
+.thumb { top: 723px; width: 173px; height: 84px; cursor: pointer; }
+.thumb .art { position: absolute; background-repeat: no-repeat; background-size: 100% 100%; image-rendering: pixelated; }
+.thumb.sel::before { content: ""; position: absolute; inset: 0; border: 4px solid var(--cyan); }
+.thumb.sel::after { content: ""; position: absolute; inset: 4px; border: 4px solid #b5ffff; }
+
+#tip { position: fixed; z-index: 10; pointer-events: none; padding: calc(4px * var(--s)) calc(6px * var(--s)); white-space: nowrap; font-size: calc(15px * var(--s)); line-height: calc(18px * var(--s));
+       background: #100010f0; border: 2px solid #2d0a63; color: #fff; }

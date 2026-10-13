@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import net.minecraft.server.level.ServerPlayer;
@@ -49,6 +50,11 @@ public final class WebUi {
                 RaidFaultBarrier.guard("startup:web-bundle", WebUi::installBundle));
         WebGuiBridge.onPageEvent(HELLO_CHANNEL, WebUi::onHello);
         ShopWebPage.register();
+        TrophyWebPage.register();
+        LegendWebPage.register();
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
+                RaidFaultBarrier.guard("player-disconnect:web-icons",
+                        () -> WebIconFeed.forgetEverywhere(handler.getPlayer().getUUID())));
     }
 
     /**

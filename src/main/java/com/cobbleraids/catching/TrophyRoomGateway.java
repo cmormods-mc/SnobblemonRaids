@@ -4,6 +4,7 @@ import com.cobbleraids.network.RequestThrottle;
 import com.cobbleraids.network.TrophyRoomActionPayload;
 import com.cobbleraids.network.TrophyRoomEntryPayload;
 import com.cobbleraids.network.TrophyRoomPagePayload;
+import com.cobbleraids.web.TrophyWebPage;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -40,6 +41,8 @@ public final class TrophyRoomGateway {
 
     /** Opens the trophy room at its first page, with no search or filters applied yet. */
     public static void open(ServerPlayer player, int columns) {
+        // A client with WebGUI gets the web page, which asks for its first page itself.
+        if (TrophyWebPage.open(player)) return;
         if (!ServerPlayNetworking.canSend(player, TrophyRoomPagePayload.TYPE)) {
             // Reachable only from an older client that predates this screen entirely -- the command
             // itself has no client-version check of its own, so this is the one place that can tell
@@ -52,9 +55,19 @@ public final class TrophyRoomGateway {
         handle(player, TrophyRoomActionPayload.initial(columns));
     }
 
-    /** Handles a page turn or a search/filter/sort change from the screen. */
+
+    /** Handles a page turn or a search/filter/sort change from the native screen. */
     public static void handle(ServerPlayer player, TrophyRoomActionPayload action) {
-        if (!ServerPlayNetworking.canSend(player, TrophyRoomPagePayload.TYPE)) return;
+        handle(player, action, false);
+    }
+
+    /**
+     * Handles one from either view. {@code web} says which one asked, and so which one the page goes
+     * back to: a client with WebGUI can still be looking at the native screen, so what the client has
+     * installed cannot decide it.
+     */
+    public static void handle(ServerPlayer player, TrophyRoomActionPayload action, boolean web) {
+        if (!web && !ServerPlayNetworking.canSend(player, TrophyRoomPagePayload.TYPE)) return;
         if (!THROTTLE.allow(player.getUUID(), System.currentTimeMillis())) return;
 
         TrophyGalleryQuery.Page page = TrophyGalleryQuery.select(
@@ -72,8 +85,13 @@ public final class TrophyRoomGateway {
                     trophy.ivPercent(), trophy.evPercent(), trophy.rarityTier().serializedName(),
                     trophy.firstDefeatedAtEpochMs(), trophy.timesDefeated()));
         }
-        ServerPlayNetworking.send(player, new TrophyRoomPagePayload(
-                page.index(), page.count(), page.total(), page.shinyTotal(), page.filteredCount(), entries));
+        TrophyRoomPagePayload reply = new TrophyRoomPagePayload(
+                page.index(), page.count(), page.total(), page.shinyTotal(), page.filteredCount(), entries);
+        if (web) {
+            TrophyWebPage.deliver(player, reply);
+        } else {
+            ServerPlayNetworking.send(player, reply);
+        }
     }
 
     /** A raw network ordinal, clamped rather than trusted -- a stale or hostile client sends an int. */

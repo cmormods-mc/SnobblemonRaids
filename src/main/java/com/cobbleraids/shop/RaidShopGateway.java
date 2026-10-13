@@ -12,7 +12,6 @@ import com.cobbleraids.network.ShopEntryPayload;
 import com.cobbleraids.network.ShopPagePayload;
 import com.cobbleraids.reward.points.RaidPointsStore;
 import com.cobbleraids.web.ShopWebPage;
-import com.cobbleraids.web.WebUi;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -52,12 +51,12 @@ public final class RaidShopGateway {
         // A client with WebGUI gets the web page, which asks for page 0 itself once it is listening;
         // anyone else still gets the native screen until that is removed.
         if (ShopWebPage.open(player)) return;
-        sendPage(player, 0);
+        sendPage(player, 0, false);
     }
 
     /** The one place a built page leaves the server, so the transport is chosen in one spot. */
-    private static void deliver(ServerPlayer player, ShopPagePayload payload) {
-        if (WebUi.canShow(player)) {
+    private static void deliver(ServerPlayer player, ShopPagePayload payload, boolean web) {
+        if (web) {
             ShopWebPage.deliver(player, payload);
         } else {
             ServerPlayNetworking.send(player, payload);
@@ -69,10 +68,19 @@ public final class RaidShopGateway {
     private static final String REROLL_PREFIX = "reroll:";
     private static final String ROTATING_PREFIX = "rotating.";
 
-    /** Handles a page turn or a purchase from the screen. */
+    /** Handles a page turn or a purchase from the native screen. */
     public static void handle(ServerPlayer player, ShopActionPayload action) {
+        handle(player, action, false);
+    }
+
+    /**
+     * Handles one from either view. {@code web} says which one asked, and so which one the page goes
+     * back to: decided by the request rather than by what the client has installed, since a client
+     * with WebGUI can still be looking at the native screen.
+     */
+    public static void handle(ServerPlayer player, ShopActionPayload action, boolean web) {
         if (!action.isPurchase()) {
-            sendPage(player, action.pageIndex());
+            sendPage(player, action.pageIndex(), web);
             return;
         }
         String id = action.entryId();
@@ -106,10 +114,10 @@ public final class RaidShopGateway {
         // Re-sent whether it worked or not: a refusal still has to leave the screen showing the
         // truth, and a limit being reached (or a slot being spent, or a reroll changing its own
         // numbers) is exactly what changes how a cell should look.
-        sendPage(player, action.pageIndex());
+        sendPage(player, action.pageIndex(), web);
     }
 
-    private static void sendPage(ServerPlayer player, int requestedPage) {
+    private static void sendPage(ServerPlayer player, int requestedPage, boolean web) {
         List<ShopPageView> catalogPages = listablePages(ShopCatalogManager.pages());
         Map<ResourceLocation, BossSnapshot> personal = DefeatedBossSnapshots.forPlayer(player.getUUID());
         boolean hasPersonalPage = !personal.isEmpty();
@@ -118,7 +126,7 @@ public final class RaidShopGateway {
         int pageCount = catalogPages.size() + (hasRotatingPage ? 1 : 0) + (hasPersonalPage ? 1 : 0);
         if (pageCount == 0) {
             deliver(player,
-                    new ShopPagePayload("Raid Shop", 0, 1, RaidPointsStore.balance(player.getUUID()), List.of()));
+                    new ShopPagePayload("Raid Shop", 0, 1, RaidPointsStore.balance(player.getUUID()), List.of()), web);
             return;
         }
         // Clamped rather than rejected: the catalogue (or the personal page's presence) can shrink
@@ -142,7 +150,7 @@ public final class RaidShopGateway {
             entries = buildPersonalEntries(personal);
         }
         deliver(player, new ShopPagePayload(heading, index, pageCount,
-                RaidPointsStore.balance(player.getUUID()), entries));
+                RaidPointsStore.balance(player.getUUID()), entries), web);
     }
 
     /**
