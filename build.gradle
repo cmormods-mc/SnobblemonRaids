@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.170-webgui-rooms'
+version = '0.8.173-webgui-reveal-crisp'
 group = 'com.cobbleraids'
 
 base {

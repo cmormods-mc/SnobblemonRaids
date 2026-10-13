@@ -7,6 +7,8 @@ import com.cobbleraids.network.PendingRewardRevealPayload;
 import com.cobbleraids.network.RewardChoicePayload;
 import com.cobbleraids.network.RewardItemPayload;
 import com.cobbleraids.network.RewardResultPayload;
+import com.cobbleraids.web.RewardWebPage;
+import com.cobbleraids.web.WebUi;
 import com.cobblemon.mod.common.api.pokemon.PokemonSpecies;
 import com.cobblemon.mod.common.pokemon.Species;
 import java.util.List;
@@ -19,10 +21,12 @@ public final class NativeRewardScreenGateway {
 
     /** Offers the native screen to a player. False means the client can't/won't render it -- caller should fall back. */
     public static boolean tryOpen(ServerPlayer player, PendingRaidReward pending) {
-        if (!ServerPlayNetworking.canSend(player, PendingRewardRevealPayload.TYPE)) return false;
+        // A client with WebGUI gets the web page; anyone else the native screen if they have it.
+        boolean web = WebUi.canShow(player);
+        if (!web && !ServerPlayNetworking.canSend(player, PendingRewardRevealPayload.TYPE)) return false;
         RaidDefinition definition = RaidDefinitionRegistry.get(pending.definitionId());
         if (definition == null) return false;
-        ServerPlayNetworking.send(player, new PendingRewardRevealPayload(
+        PendingRewardRevealPayload offer = new PendingRewardRevealPayload(
                 pending.raidId(),
                 pending.definitionId(),
                 pending.rarityTier().serializedName(),
@@ -33,12 +37,22 @@ public final class NativeRewardScreenGateway {
                 pending.contributionPercentage(),
                 pending.contributionBonusRolls(),
                 pending.elapsedCombatTicks(),
-                pending.participantCount()));
+                pending.participantCount());
+        if (web) return RewardWebPage.open(player, offer);
+        ServerPlayNetworking.send(player, offer);
         return true;
     }
 
-    /** Handles a RewardChoicePayload received from the client and reports back the actual result. */
+    /** Handles a RewardChoicePayload received from the native client and reports back the actual result. */
     public static void handleChoice(ServerPlayer player, RewardChoicePayload payload) {
+        ServerPlayNetworking.send(player, resolveChoice(player, payload));
+    }
+
+    /**
+     * Claims a choice and describes what happened. The one place a claim is turned into a reply, so
+     * the native screen and the web page can only ever be told the same thing.
+     */
+    public static RewardResultPayload resolveChoice(ServerPlayer player, RewardChoicePayload payload) {
         RewardGrantResult result = RaidRewardService.claimNative(player, payload.choiceId());
         boolean success = result != null;
         List<RewardItemPayload> granted = success
@@ -49,8 +63,7 @@ public final class NativeRewardScreenGateway {
         // scales that down. A failed claim reports zero rather than what the policy would have paid.
         long currency = success ? result.currencyGranted().longValue() : 0L;
         int points = success ? result.raidPointsGranted() : 0;
-        ServerPlayNetworking.send(player,
-                new RewardResultPayload(payload.raidId(), success, granted, currency, points, hasMoreQueued));
+        return new RewardResultPayload(payload.raidId(), success, granted, currency, points, hasMoreQueued);
     }
 
     private static String speciesDisplayName(RaidDefinition definition) {

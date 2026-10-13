@@ -1,0 +1,54 @@
+@import url("../shared/font.css");
+/* The stage is the art's own 1672x941 reference canvas, the same one the native screen scaled from, so
+   every rectangle below is a native rectangle (RaidRewardRevealScreen's NativeRects). */
+:root { --s: 1; --font: "Monocraft", ui-monospace, Consolas, monospace; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: transparent; user-select: none; }
+body { font-family: var(--font); }
+button { font-family: inherit; }
+
+/* Positioned on whole pixels from script and scaled from its corner: a centring translate lands on half
+   a pixel for most window sizes, and that softens every edge on the art. The textures are drawn nearest,
+   as the native screen drew them (blur: false in their .mcmeta). */
+#stage { position: absolute; left: 0; top: 0; width: 1672px; height: 941px;
+         transform: scale(var(--s)); transform-origin: 0 0; image-rendering: pixelated;
+         background: url(pokedex_backing.png) no-repeat 0 0; color: #fff; }
+#stage > *, #chamber > *, #side > * { position: absolute; box-sizing: border-box; }
+#summary { left: 94px; top: 122px; width: 313px; height: 731px; }
+img { image-rendering: pixelated; display: block; }
+
+.lab { left: 0; width: 313px; text-align: center; white-space: nowrap; transform-origin: top center; }
+#side { left: 94px; top: 122px; width: 313px; height: 731px; }
+
+#chamber { left: 420px; top: 112px; width: 1172px; height: 675px; }
+#chamber > img { left: 0; top: 0; width: 1172px; height: 675px; image-rendering: auto; }
+#summary { image-rendering: pixelated; }
+#banner { left: 0; right: 0; top: 30px; text-align: center; }
+
+#banner .plate { position: absolute; background: rgba(0, 0, 0, 0.63); }
+#banner > img, #banner > div { position: absolute; }
+#center { image-rendering: pixelated; width: 187px; height: 187px; left: 492px; top: 244px; background-repeat: no-repeat; background-size: 100% 100%; }
+
+#flash { left: 375px; top: 127px; width: 422px; height: 421px; opacity: 0; }
+#flash.go { animation: flash 600ms linear forwards; }
+@keyframes flash { 0% { opacity: 0; } 25% { opacity: 0.63; } 41.7% { opacity: 0.44; } 100% { opacity: 0; } }
+
+#sparks { left: 586px; top: 337px; width: 0; height: 0; }
+.spark { position: absolute; left: -10px; top: -10px; width: 20px; height: 20px; opacity: 0;
+         background: radial-gradient(circle, #fff 0 18%, #9ff 19% 45%, transparent 46%);
+         clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); }
+.spark.go { animation: spark 500ms linear forwards; }
+@keyframes spark { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.4); } }
+
+.slot { position: absolute; box-sizing: border-box; cursor: default; }
+.slot .ico { position: absolute; background-repeat: no-repeat; background-size: 100% 100%; image-rendering: pixelated; }
+.slot .cnt { position: absolute; color: #fff; text-shadow: 2px 2px 0 #3e3e3e; white-space: nowrap; }
+.slot .chip { position: absolute; left: 0; width: 100%; text-align: center; white-space: nowrap; }
+
+#status { left: 430px; top: 756px; width: 1150px; text-align: center; color: #ffff55; font-size: 21px; line-height: 24px; }
+#buttons > * { position: absolute; }
+.btn { border: 0; padding: 0; cursor: pointer; background: url(claim_button_blank.png) no-repeat 0 0 / 100% 100%; color: #fff; filter: brightness(0.96); }
+.btn:hover { filter: none; }
+.btn span { display: block; white-space: nowrap; }
+
+#tip { position: fixed; z-index: 10; pointer-events: none; padding: calc(4px * var(--s)) calc(6px * var(--s)); white-space: nowrap;
+       font-size: calc(21px * var(--s)); line-height: calc(25px * var(--s)); background: #100010f0; border: 2px solid #2d0a63; color: #fff; }
