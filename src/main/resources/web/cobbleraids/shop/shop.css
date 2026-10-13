@@ -1,0 +1,43 @@
+/* One logical Minecraft GUI pixel is --s real pixels. The window is the same 235x255 art the native
+   screen assembles at a 22-pixel slot, so every coordinate below is a native coordinate. */
+:root { --s: 2; --font: "Minecraft", "Monocraft", ui-monospace, Consolas, monospace; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: transparent; user-select: none; }
+body { font-family: var(--font); image-rendering: pixelated; }
+img { image-rendering: pixelated; display: block; }
+
+#stage { position: absolute; left: 50%; top: 50%; width: 235px; height: 255px;
+         transform: translate(-50%, -50%) scale(var(--s)); transform-origin: center;
+         background: url(shop_items.png) no-repeat 0 0; font-size: 8px; line-height: 9px; }
+#stage.pokemon { background-image: url(shop_pokemon.png); }
+
+#heading { position: absolute; left: 36px; right: 36px; top: 24px; text-align: center; white-space: nowrap;
+           color: #afffff; text-shadow: 1px 1px 0 #2a3a3a; }
+.arrow { position: absolute; top: 23px; width: 14px; height: 12px; padding: 0; border: 0; background: none; cursor: pointer; }
+.arrow img { position: absolute; left: 2px; top: 2px; width: 10px; height: 9px; }
+#prev { left: 22px; } #next { left: 199px; }
+.arrow:hover { background: rgba(255, 255, 255, 0.25); }
+#stage.single .arrow { display: none; }
+
+#balance { position: absolute; left: 76px; top: 234px; width: 82px; height: 11px; text-align: center;
+           line-height: 11px; color: #fff; text-shadow: 1px 1px 0 #3e3e3e; white-space: nowrap; }
+
+#grid { position: absolute; left: 26px; top: 40px; width: 183px; height: 183px; }
+.cell { position: absolute; cursor: pointer; overflow: hidden; }
+.cell .art { position: absolute; background-repeat: no-repeat; background-size: 100% 100%; image-rendering: pixelated; }
+.items .cell .art { left: 3px; top: 3px; width: 16px; height: 16px; }
+.pokemon .cell .art { left: 0; top: 7px; width: 45px; height: 30px; }
+.cell .dim { position: absolute; inset: 0; background: rgba(7, 10, 16, 0.6); display: none; }
+.cell.unaffordable .dim { display: block; }
+.cell:hover::after { content: ""; position: absolute; inset: 0; background: rgba(255, 255, 255, 0.25); }
+.cell .count { position: absolute; right: 1px; bottom: 0; color: #fff; text-shadow: 1px 1px 0 #3e3e3e; }
+.cell .stock { position: absolute; left: 1px; top: 1px; color: #b8d8ea; text-shadow: 1px 1px 0 #2a3338; }
+.cell.soldout .stock { color: #ff8a8a; }
+.cell .reroll { position: absolute; right: 1px; bottom: 0; color: #ffd84a; text-shadow: 1px 1px 0 #403610; }
+
+#tip { position: fixed; z-index: 10; pointer-events: none; padding: 3px 4px; white-space: nowrap;
+       background: #100010f0; border: 1px solid #2d0a63; box-shadow: 0 0 0 1px #100010;
+       font-size: 8px; line-height: 10px; transform: scale(var(--s)); transform-origin: top left; }
+#tip div { text-shadow: 1px 1px 0 #1c1c1c; }
+.c-white { color: #fff; } .c-gray { color: #aaa; } .c-yellow { color: #ffff55; } .c-aqua { color: #55ffff; }
+.c-red { color: #ff5555; } .c-dred { color: #aa0000; } .c-green { color: #55ff55; } .c-purple { color: #ff55ff; }
+.c-dgray { color: #555; }

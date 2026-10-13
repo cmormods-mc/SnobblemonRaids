@@ -11,6 +11,8 @@ import com.cobbleraids.network.ShopActionPayload;
 import com.cobbleraids.network.ShopEntryPayload;
 import com.cobbleraids.network.ShopPagePayload;
 import com.cobbleraids.reward.points.RaidPointsStore;
+import com.cobbleraids.web.ShopWebPage;
+import com.cobbleraids.web.WebUi;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -47,7 +49,19 @@ public final class RaidShopGateway {
 
     /** Opens the shop at its first page. */
     public static void open(ServerPlayer player) {
+        // A client with WebGUI gets the web page, which asks for page 0 itself once it is listening;
+        // anyone else still gets the native screen until that is removed.
+        if (ShopWebPage.open(player)) return;
         sendPage(player, 0);
+    }
+
+    /** The one place a built page leaves the server, so the transport is chosen in one spot. */
+    private static void deliver(ServerPlayer player, ShopPagePayload payload) {
+        if (WebUi.canShow(player)) {
+            ShopWebPage.deliver(player, payload);
+        } else {
+            ServerPlayNetworking.send(player, payload);
+        }
     }
 
     /** A personal entry's id, e.g. "personal:cobblemon:garchomp" or "reroll:cobblemon:garchomp". */
@@ -103,7 +117,7 @@ public final class RaidShopGateway {
         boolean hasRotatingPage = !rotating.isEmpty();
         int pageCount = catalogPages.size() + (hasRotatingPage ? 1 : 0) + (hasPersonalPage ? 1 : 0);
         if (pageCount == 0) {
-            ServerPlayNetworking.send(player,
+            deliver(player,
                     new ShopPagePayload("Raid Shop", 0, 1, RaidPointsStore.balance(player.getUUID()), List.of()));
             return;
         }
@@ -127,7 +141,7 @@ public final class RaidShopGateway {
             heading = "Your Bosses";
             entries = buildPersonalEntries(personal);
         }
-        ServerPlayNetworking.send(player, new ShopPagePayload(heading, index, pageCount,
+        deliver(player, new ShopPagePayload(heading, index, pageCount,
                 RaidPointsStore.balance(player.getUUID()), entries));
     }
 

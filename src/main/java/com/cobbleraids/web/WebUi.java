@@ -48,6 +48,7 @@ public final class WebUi {
         ServerLifecycleEvents.SERVER_STARTING.register(server ->
                 RaidFaultBarrier.guard("startup:web-bundle", WebUi::installBundle));
         WebGuiBridge.onPageEvent(HELLO_CHANNEL, WebUi::onHello);
+        ShopWebPage.register();
     }
 
     /**

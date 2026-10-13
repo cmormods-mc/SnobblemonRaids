@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.167-webgui-phase0'
+version = '0.8.169-webgui-shop-transparent'
 group = 'com.cobbleraids'
 
 base {
