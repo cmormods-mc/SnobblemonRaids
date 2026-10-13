@@ -13,6 +13,8 @@ import com.cobbleraids.network.RequestThrottle;
 import com.cobbleraids.pokemon.PartyPcDelivery;
 import com.cobbleraids.reward.points.RaidPointsStore;
 import com.cobbleraids.title.TitleService;
+import com.cobbleraids.web.CaptureWebPage;
+import com.cobbleraids.web.WebUi;
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
 import com.cobblemon.mod.common.api.pokemon.PokemonSpecies;
 import com.cobblemon.mod.common.pokemon.Pokemon;
@@ -178,6 +180,27 @@ public final class RaidCaptureSessionService {
     }
 
     /**
+     * Queues a capture session for one player with no boss fight behind it, for support and testing --
+     * the capture counterpart of {@code /cobbleraids reward grant}. The caller queues the matching reward
+     * under the same raid id, since the choice is only shown once that reward is claimed.
+     *
+     * @return false when capture is switched off, or this tier's chance ceiling is zero, so nothing was queued
+     */
+    public static boolean offerManually(MinecraftServer server, RaidDefinition definition, UUID playerId,
+                                        UUID raidId, boolean shiny) {
+        if (server == null || definition == null) return false;
+        CobbleRaidsConfig.Catching config = CobbleRaidsConfigManager.get().catching();
+        if (!config.enabled() || config.isNoOp() || config.ceilingFor(definition.rarityTier()) <= 0.0) return false;
+        RaidCaptureSession session = RaidCaptureSession.offer(playerId, raidId, definition.id(),
+                definition.rarityTier(), definition.species(), null, definition.level(), shiny);
+        synchronized (lockFor(playerId)) {
+            SESSIONS.computeIfAbsent(playerId, ignored -> new ArrayDeque<>()).addLast(session);
+        }
+        persistNow(server);
+        return true;
+    }
+
+    /**
      * Called from {@code RaidRewardGrantEngine.awardPoints}, right before it would credit
      * {@code computedRaidPoints} for this claim. Returns {@code true} if this player has an
      * {@code AWAITING_CLAIM} session for exactly this raid -- meaning the caller must not credit the
@@ -199,21 +222,30 @@ public final class RaidCaptureSessionService {
             replaceInQueue(queue, session, claimed);
             persistNow(server);
 
-            if (ServerPlayNetworking.canSend(player, CaptureOfferPayload.TYPE)) {
+            // A client with WebGUI is shown the page; any other gets the native screen if it has one. Built
+            // once either way, so the two views can only ever be offered the same thing.
+            boolean web = WebUi.canShow(player);
+            if (web || ServerPlayNetworking.canSend(player, CaptureOfferPayload.TYPE)) {
                 CobbleRaidsConfig.CaptureTierConfig tierConfig = config.tierConfigFor(claimed.tier());
-                // Optional display metadata only -- the offer/input/result protocol below is unchanged
-                // whether or not this is sent, or whether the client's build even recognises it.
-                if (ServerPlayNetworking.canSend(player, CaptureDetailsPayload.TYPE)) {
-                    ServerPlayNetworking.send(player, new CaptureDetailsPayload(raidId, claimed.species(),
-                            tierConfig.baseChance(), tierConfig.stabilizationCap(), tierConfig.throwCap(),
-                            config.sequenceTimeoutSeconds()));
-                }
-                ServerPlayNetworking.send(player, new CaptureOfferPayload(raidId, claimed.definitionId(),
+                CaptureDetailsPayload details = new CaptureDetailsPayload(raidId, claimed.species(),
+                        tierConfig.baseChance(), tierConfig.stabilizationCap(), tierConfig.throwCap(),
+                        config.sequenceTimeoutSeconds());
+                CaptureOfferPayload offer = new CaptureOfferPayload(raidId, claimed.definitionId(),
                         claimed.tier().serializedName(), speciesDisplayName(claimed.species()), claimed.shiny(),
                         computedRaidPoints, config.choiceWindowSeconds(), tierConfig.pulseTravelDurationMs(),
                         tierConfig.pulseGoodZoneWidthMs(), tierConfig.pulsePerfectZoneWidthMs(),
                         tierConfig.throwTravelDurationMs(), tierConfig.throwGoodZoneWidthMs(),
-                        tierConfig.throwPerfectZoneWidthMs()));
+                        tierConfig.throwPerfectZoneWidthMs());
+                if (!(web && CaptureWebPage.open(player, offer, details))) {
+                    // Optional display metadata only -- the offer/input/result protocol below is unchanged
+                    // whether or not this is sent, or whether the client's build even recognises it.
+                    if (ServerPlayNetworking.canSend(player, CaptureDetailsPayload.TYPE)) {
+                        ServerPlayNetworking.send(player, details);
+                    }
+                    if (ServerPlayNetworking.canSend(player, CaptureOfferPayload.TYPE)) {
+                        ServerPlayNetworking.send(player, offer);
+                    }
+                }
             }
             return true;
         }
@@ -277,9 +309,11 @@ public final class RaidCaptureSessionService {
             RaidCaptureSession updated = session.withPulseScored(score, now);
             replaceInQueue(queue, session, updated);
             persistNow(server);
-            if (ServerPlayNetworking.canSend(player, CapturePulseResultPayload.TYPE)) {
-                ServerPlayNetworking.send(player,
-                        new CapturePulseResultPayload(session.raidId(), pulseIndexEcho, score));
+            CapturePulseResultPayload reply = new CapturePulseResultPayload(session.raidId(), pulseIndexEcho, score);
+            if (CaptureWebPage.handles(player)) {
+                CaptureWebPage.deliverPulse(player, reply);
+            } else if (ServerPlayNetworking.canSend(player, CapturePulseResultPayload.TYPE)) {
+                ServerPlayNetworking.send(player, reply);
             }
         }
     }
@@ -412,12 +446,19 @@ public final class RaidCaptureSessionService {
 
     private static void sendResultIfOnline(MinecraftServer server, RaidCaptureSession resolved) {
         ServerPlayer player = server.getPlayerList().getPlayer(resolved.playerId());
-        if (player == null || !ServerPlayNetworking.canSend(player, CaptureResultPayload.TYPE)) return;
+        if (player == null) return;
+        boolean web = CaptureWebPage.handles(player);
+        if (!web && !ServerPlayNetworking.canSend(player, CaptureResultPayload.TYPE)) return;
         double stabQuality = resolved.stabilizationQuality() * 100.0;
         double throwQuality = resolved.throwScore() * 100.0;
-        ServerPlayNetworking.send(player, new CaptureResultPayload(resolved.raidId(), resolved.rollSucceeded(),
+        CaptureResultPayload reply = new CaptureResultPayload(resolved.raidId(), resolved.rollSucceeded(),
                 resolved.finalChanceUsed() * 100.0, stabQuality, throwQuality, resolved.delivery().name(),
-                speciesDisplayName(resolved.species()), resolved.shiny()));
+                speciesDisplayName(resolved.species()), resolved.shiny());
+        if (web) {
+            CaptureWebPage.deliverResult(player, reply);
+        } else {
+            ServerPlayNetworking.send(player, reply);
+        }
     }
 
     /**

@@ -1,6 +1,13 @@
 package com.cobbleraids.command;
 
 import com.cobbleraids.catching.RaidCaptureSession;
+import com.cobbleraids.config.RaidDefinition;
+import com.cobbleraids.config.RaidDefinitionRegistry;
+import com.cobbleraids.lifecycle.RaidRewardEligibility;
+import com.cobbleraids.lifecycle.RaidRewardService;
+import com.cobbleraids.lifecycle.RaidOutcome;
+import java.util.Map;
+import net.minecraft.resources.ResourceLocation;
 import com.cobbleraids.catching.RaidCaptureSessionService;
 import com.cobbleraids.presentation.CommandFormat;
 import com.cobbleraids.presentation.RaidTierPresentation;
@@ -24,6 +31,31 @@ import net.minecraft.server.level.ServerPlayer;
  */
 final class RaidAdminCaptureOps {
     private RaidAdminCaptureOps() {}
+
+    /**
+     * Queues a reward and a capture offer for one player, as if they had just beaten this raid. The
+     * capture choice appears after they claim the reward, exactly as it does for a real win.
+     */
+    static int grant(CommandSourceStack source, ServerPlayer target, ResourceLocation definitionId) {
+        RaidDefinition definition = RaidDefinitionRegistry.get(definitionId);
+        if (definition == null) {
+            source.sendFailure(Component.literal("No loaded raid definition '" + definitionId + "'. Use /cobbleraids list."));
+            return 0;
+        }
+        UUID playerId = target.getUUID();
+        UUID raidId = UUID.randomUUID();
+        if (!RaidCaptureSessionService.offerManually(source.getServer(), definition, playerId, raidId, false)) {
+            source.sendFailure(Component.literal("Capture is off, or " + definition.rarityTier().displayName()
+                    + " raids have no capture chance, so no offer was queued."));
+            return 0;
+        }
+        RaidRewardService.grant(new RaidRewardEligibility(raidId, definitionId, RaidOutcome.VICTORY,
+                Map.of(playerId, 1.0f), Set.of(playerId), 0, "", ""), source.getServer());
+        source.sendSuccess(() -> Component.literal("Queued a " + CommandFormat.shortId(definitionId)
+                + " reward and capture offer for " + target.getGameProfile().getName() + ".")
+                .withStyle(ChatFormatting.GREEN), true);
+        return 1;
+    }
 
     /** One player's sessions, or a roster of everyone holding one when no player is given. */
     static int status(CommandSourceStack source, ServerPlayer target) {

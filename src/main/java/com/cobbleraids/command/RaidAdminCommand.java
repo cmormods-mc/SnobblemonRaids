@@ -127,6 +127,14 @@ public final class RaidAdminCommand {
                                         .then(Commands.argument("target", EntityArgument.player())
                                                 .executes(ctx -> RaidAdminCaptureOps.status(
                                                         ctx.getSource(), EntityArgument.getPlayer(ctx, "target")))))
+                                .then(Commands.literal("grant")
+                                        .then(Commands.argument("target", EntityArgument.player())
+                                                .then(Commands.argument("definition", ResourceLocationArgument.id())
+                                                        .suggests(RaidSuggestions.DEFINITIONS)
+                                                        .executes(ctx -> RaidAdminCaptureOps.grant(
+                                                                ctx.getSource(),
+                                                                EntityArgument.getPlayer(ctx, "target"),
+                                                                ResourceLocationArgument.getId(ctx, "definition"))))))
                                 .then(Commands.literal("clear")
                                         .then(Commands.argument("target", EntityArgument.player())
                                                 .executes(ctx -> RaidAdminCaptureOps.clear(

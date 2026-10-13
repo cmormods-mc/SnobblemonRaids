@@ -1,0 +1,24 @@
+@import url("../shared/font.css");
+/* The Raid Capture Protocol panel in Minecraft GUI pixels: the native screen's 700x420 maximum layout
+   (CaptureUiLayout), scaled by a whole number so every drawn pixel stays a square block. */
+:root { --s: 2; --font: "Monocraft", ui-monospace, Consolas, monospace; --cyan: #37eeff; --white: #eafbff; --navy: #03283f; --muted: #9abacb; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: transparent; user-select: none; }
+body { font-family: var(--font); }
+button { font-family: inherit; }
+
+#stage { position: absolute; width: 700px; height: 420px; transform: scale(var(--s)); transform-origin: 0 0;
+         font-size: 8px; line-height: 9px; color: var(--white); image-rendering: pixelated; }
+#stage > *, .abs { position: absolute; box-sizing: border-box; }
+canvas { image-rendering: pixelated; display: block; position: absolute; }
+.t { position: absolute; white-space: nowrap; }
+.panel { box-shadow: inset 0 0 0 1px #001425, inset 0 0 0 3px var(--edge, #37eeff); background: var(--fill, #03283f); }
+
+.act { position: absolute; width: 100%; height: 24px; border: 0; padding: 0; cursor: pointer; color: var(--white); font-size: 8px; }
+.act:not(:disabled):hover { --fill: #0987b8; }
+.act:disabled { color: var(--muted); cursor: default; --edge: #537e92; }
+.act span { position: absolute; left: 5px; right: 5px; top: 8px; text-align: center; white-space: nowrap; overflow: hidden; }
+
+#indicator { position: absolute; width: 3px; height: 24px; background: var(--white); left: 0; top: -3px; will-change: transform; }
+@keyframes sweep { from { transform: translateX(0); } to { transform: translateX(var(--travel)); } }
+@keyframes shake { from { transform: translateX(-3px); } to { transform: translateX(3px); } }
+.shake { animation: shake 267ms ease-in-out infinite alternate; }
