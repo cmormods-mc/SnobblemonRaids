@@ -1,6 +1,7 @@
+@import url("../shared/font.css");
 /* One logical Minecraft GUI pixel is --s real pixels. The window is the same 235x255 art the native
    screen assembles at a 22-pixel slot, so every coordinate below is a native coordinate. */
-:root { --s: 2; --font: "Minecraft", "Monocraft", ui-monospace, Consolas, monospace; }
+:root { --s: 2; --font: "Monocraft", ui-monospace, Consolas, monospace; }
 html, body { margin: 0; height: 100%; overflow: hidden; background: transparent; user-select: none; }
 body { font-family: var(--font); image-rendering: pixelated; }
 img { image-rendering: pixelated; display: block; }
