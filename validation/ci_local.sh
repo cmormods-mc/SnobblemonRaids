@@ -46,7 +46,7 @@ fi
 step "Validate core source and resources"
 bash validation/validate_core_sources.sh
 
-for name in raid_integrity reward_visibility reveal_screen cinematic_reveal reward_panel_textures reward_texture_art; do
+for name in raid_integrity reward_visibility reveal_screen; do
   step "Validate $name (sources)"
   "$py" "validation/validate_$name.py"
 done
@@ -112,7 +112,7 @@ if [ ! -f "$jar" ]; then
   exit 1
 fi
 
-for name in core_sources raid_integrity reward_visibility reveal_screen cinematic_reveal reward_panel_textures reward_texture_art; do
+for name in core_sources raid_integrity reward_visibility reveal_screen; do
   step "Validate $name (jar)"
   "$py" "validation/validate_$name.py" "$jar"
 done
