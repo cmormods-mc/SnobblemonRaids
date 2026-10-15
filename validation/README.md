@@ -147,7 +147,4 @@ this is the key.
 | phase 31 | `validate_core_sources` | core source and resource invariants |
 | phase 32 | `validate_raid_integrity` | boss lifecycle integrity and healing |
 | phase 36 | `validate_reward_visibility` | reward-grant visibility, SkiesGUIs staying optional |
-| phase 37 | `validate_reveal_screen` | the native reward reveal screen and its network boundary |
-| phase 38 | `validate_cinematic_reveal` | the cinematic reveal presentation |
-| phase 39 | `validate_reward_panel_textures` | the textured reward panel |
-| phase 40 | `validate_reward_texture_art` | the real texture art on that panel |
+| phase 37 | `validate_reveal_screen` | the reward reveal path, and that the mod stays server-only |

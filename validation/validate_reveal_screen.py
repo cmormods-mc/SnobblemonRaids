@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Phase 37 invariants: native raid-reward reveal screen (MVP slice).
+"""Invariants: the reward reveal path, and that the mod stays server-only.
 
 The physical-side boundary (client code must never run on a dedicated server, server code must
 never require a client) and the "server still rolls everything" trust model are easy to silently
@@ -32,26 +32,17 @@ def read(path: Path) -> str:
 
 
 def validate_physical_side_boundary() -> None:
-    client_dir = JAVA / "client"
-    assert client_dir.is_dir(), "no client package found"
-    client_files = list(client_dir.rglob("*.java"))
-    assert client_files, "client package is empty"
-
-    # ClientPlayNetworking must never be referenced outside com/cobbleraids/client/.
-    for path in JAVA.rglob("*.java"):
-        if client_dir in path.parents or path.parent == client_dir:
-            continue
-        text = read(path)
-        assert "ClientPlayNetworking" not in text, f"{path} references ClientPlayNetworking outside client/"
-
-    initializer = read(JAVA / "CobbleRaids.java")
+    # The mod is server-only: no client code, no client entrypoint, and no packets a client must know.
+    assert not (JAVA / "client").exists(), "a client package has come back"
+    assert not (JAVA / "mixin/client").exists(), "client mixins have come back"
     manifest = json.loads(read(RESOURCES / "fabric.mod.json"))
-    assert manifest["entrypoints"]["client"] == ["com.cobbleraids.client.CobbleRaidsClient"]
-
-    # Payload-type registration must happen in common code (CobbleRaids.java), not only client-side --
-    # both physical sides need to agree on the same codec before either side can send.
-    assert "RaidRewardPayloads.registerPayloadTypes()" in initializer
-    assert "ServerPlayNetworking.registerGlobalReceiver(RewardChoicePayload.TYPE" in initializer
+    assert "client" not in manifest["entrypoints"], "a client entrypoint has come back"
+    mixins = json.loads(read(RESOURCES / "mixins/cobbleraids.mixins.json"))
+    assert not mixins.get("client"), "client mixins are listed again"
+    for path in JAVA.rglob("*.java"):
+        text = strip_comments(read(path))
+        assert "ClientPlayNetworking" not in text, f"{path} references ClientPlayNetworking"
+        assert "PayloadTypeRegistry" not in text, f"{path} registers a packet a client would need"
 
 
 def validate_server_authority_preserved() -> None:
@@ -77,8 +68,8 @@ def validate_server_authority_preserved() -> None:
     assert "static synchronized" not in service_code, "a global claim monitor has come back"
     assert "RaidRewardService.claim(player, StringArgumentType.getString(ctx, \"choice\"))" in command
 
-    # The native path's C2S payload is a choiceId only; the server always resolves its own queue.
-    assert "static void handleChoice(ServerPlayer player, RewardChoicePayload payload)" in gateway
+    # The web page's request is a choiceId only; the server always resolves its own queue.
+    assert "static RewardResultPayload resolveChoice(ServerPlayer player, RewardChoicePayload payload)" in gateway
     assert "RaidRewardService.claimNative(player, payload.choiceId())" in gateway
 
     # The claim-failure safety net (restore the pending claim) must survive the claim/claimInternal split.
@@ -105,22 +96,24 @@ def validate_reveal_pipe_wiring() -> None:
     assert "sendChatFallbackChoices(player, pending)" in open_current
 
     # Per-player capability gating, not a server-wide static switch.
-    assert "ServerPlayNetworking.canSend(player, PendingRewardRevealPayload.TYPE)" in gateway
+    assert "WebUi.canShow(player)" in gateway
 
 
 def validate_no_new_gradle_dependency() -> None:
     build_gradle = read(ROOT / "build.gradle")
     mod_implementations = [line for line in build_gradle.splitlines() if line.strip().startswith("modImplementation")]
-    assert len(mod_implementations) == 4, mod_implementations
+    expected = ("fabric-loader", "fabric-api", "MdwFAVRL", "eTmjDQ2A", "polymer-core", "polymer-resource-pack", "polymer-common")
+    assert len(mod_implementations) == len(expected), mod_implementations
+    for needle in expected:
+        assert any(needle in line for line in mod_implementations), f"missing dependency {needle}"
 
 
 def validate_jar(path: Path) -> None:
     with zipfile.ZipFile(path) as archive:
         names = set(archive.namelist())
         manifest = json.loads(archive.read("fabric.mod.json"))
-        assert manifest["entrypoints"]["client"] == ["com.cobbleraids.client.CobbleRaidsClient"]
-        assert "com/cobbleraids/client/CobbleRaidsClient.class" in names
-        assert "com/cobbleraids/network/RaidRewardPayloads.class" in names
+        assert "client" not in manifest["entrypoints"]
+        assert not any(name.startswith("com/cobbleraids/client/") for name in names), "client classes in the jar"
         assert "com/cobbleraids/reward/NativeRewardScreenGateway.class" in names
 
 
@@ -131,7 +124,7 @@ def main() -> None:
     validate_no_new_gradle_dependency()
     for argument in sys.argv[1:]:
         validate_jar(Path(argument))
-    print("Native reveal screen validation: PASS")
+    print("Reveal path and server-only validation: PASS")
 
 
 if __name__ == "__main__":

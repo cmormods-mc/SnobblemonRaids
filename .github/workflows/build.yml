@@ -42,17 +42,8 @@ jobs:
       - name: Validate reward visibility and SkiesGUIs optionality
         run: python3 validation/validate_reward_visibility.py
 
-      - name: Validate native reward reveal screen
+      - name: Validate reward reveal path and server-only boundary
         run: python3 validation/validate_reveal_screen.py
-
-      - name: Validate cinematic reveal
-        run: python3 validation/validate_cinematic_reveal.py
-
-      - name: Validate textured reward panel
-        run: python3 validation/validate_reward_panel_textures.py
-
-      - name: Validate real texture art
-        run: python3 validation/validate_reward_texture_art.py
 
       - name: Validate logging discipline
         run: python3 validation/validate_logging.py
@@ -115,9 +106,6 @@ jobs:
           python3 validation/validate_raid_integrity.py "$jar"
           python3 validation/validate_reward_visibility.py "$jar"
           python3 validation/validate_reveal_screen.py "$jar"
-          python3 validation/validate_cinematic_reveal.py "$jar"
-          python3 validation/validate_reward_panel_textures.py "$jar"
-          python3 validation/validate_reward_texture_art.py "$jar"
           python3 validation/validate_mixin_guards.py "$jar"
           python3 validation/validate_api_boundary.py "$jar"
 
