@@ -54,12 +54,15 @@ public final class WebUi {
         LegendWebPage.register();
         RewardWebPage.register();
         CaptureWebPage.register();
+        LeaderboardWebPage.register();
+        HubWebPage.register();
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
                 RaidFaultBarrier.guard("player-disconnect:web-icons",
                         () -> {
                             WebIconFeed.forgetEverywhere(handler.getPlayer().getUUID());
                             RewardWebPage.forget(handler.getPlayer().getUUID());
                             CaptureWebPage.forget(handler.getPlayer().getUUID());
+                            LeaderboardWebPage.forget(handler.getPlayer().getUUID());
                         }));
     }
 

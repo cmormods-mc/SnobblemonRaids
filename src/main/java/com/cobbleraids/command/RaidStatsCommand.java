@@ -1,7 +1,6 @@
 package com.cobbleraids.command;
 
 import com.cobbleraids.presentation.CommandFormat;
-import com.cobbleraids.shop.ShopResetPeriod;
 import com.cobbleraids.stats.LeaderboardStat;
 import com.cobbleraids.stats.Leaderboards;
 import com.cobbleraids.stats.PlayerStats;
@@ -13,7 +12,6 @@ import com.cobbleraids.stats.StatScope;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
-import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -178,10 +176,6 @@ public final class RaidStatsCommand {
 
     /** How long until the weekly boards turn over: the next Monday 00:00 UTC. */
     private static String weekResetIn() {
-        Instant now = Instant.now();
-        long window = ShopResetPeriod.WEEKLY.windowOf(now);
-        long day = now.getEpochSecond() / 86_400L;
-        while (ShopResetPeriod.weekOfDay(day) == window) day++;
-        return CommandFormat.duration(day * 86_400L - now.getEpochSecond());
+        return CommandFormat.duration(RaidStats.secondsUntilWeekReset());
     }
 }

@@ -33,6 +33,8 @@ final class WebGuiBridge {
     private static MethodHandle emitToPage;
     private static MethodHandle onPageEvent;
     private static MethodHandle reloadAssets;
+    private static MethodHandle sendMainMenu;
+    private static MethodHandle configuredMainMenu;
     private static boolean bound;
 
     /** Resolves every WebGUI call this mod makes. Returns false, and says why, if any is missing. */
@@ -48,6 +50,10 @@ final class WebGuiBridge {
             onPageEvent = lookup.findStatic(api, "onPageEvent",
                     MethodType.methodType(void.class, String.class, BiConsumer.class));
             reloadAssets = lookup.findStatic(assets, "reload", MethodType.methodType(void.class));
+            sendMainMenu = lookup.findStatic(api, "sendMainMenuUrl",
+                    MethodType.methodType(void.class, ServerPlayer.class, String.class));
+            configuredMainMenu = lookup.findStatic(Class.forName("land.webgui.server.WebviewServerConfig"),
+                    "mainMenuUrl", MethodType.methodType(String.class));
             bound = true;
         } catch (ReflectiveOperationException | LinkageError e) {
             bound = false;
@@ -77,6 +83,22 @@ final class WebGuiBridge {
 
     static void emit(ServerPlayer player, String event, String json) {
         invoke(() -> emitToPage.invoke(player, event, json));
+    }
+
+    /** Sets the page this player's main-menu key (F6 by default) opens. */
+    static void sendMainMenuUrl(ServerPlayer player, String url) {
+        invoke(() -> sendMainMenu.invoke(player, url));
+    }
+
+    /** The main-menu page the server operator has set in WebGUI's own config; blank when they have not. */
+    static String configuredMainMenuUrl() {
+        if (!bound) return "";
+        try {
+            String url = (String) configuredMainMenu.invoke();
+            return url == null ? "" : url;
+        } catch (Throwable t) {
+            return "";
+        }
     }
 
     static void onPageEvent(String channel, BiConsumer<ServerPlayer, String> handler) {

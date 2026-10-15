@@ -28,6 +28,15 @@ public final class RaidStats {
 
     private RaidStats() {}
 
+    /** Seconds until the weekly boards turn over: the next Monday 00:00 UTC. */
+    public static long secondsUntilWeekReset() {
+        Instant now = Instant.now();
+        long window = ShopResetPeriod.WEEKLY.windowOf(now);
+        long day = now.getEpochSecond() / 86_400L;
+        while (ShopResetPeriod.weekOfDay(day) == window) day++;
+        return day * 86_400L - now.getEpochSecond();
+    }
+
     /** The current week, by the same Monday-UTC windows the shop's weekly limits use. */
     public static long window() {
         return ShopResetPeriod.WEEKLY.windowOf(Instant.now());
