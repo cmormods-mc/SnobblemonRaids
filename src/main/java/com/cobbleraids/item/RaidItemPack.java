@@ -1,6 +1,7 @@
 package com.cobbleraids.item;
 
 import com.cobbleraids.RaidLog;
+import com.cobbleraids.fault.RaidFaultBarrier;
 import eu.pb4.polymer.resourcepack.api.PolymerResourcePackUtils;
 import java.io.IOException;
 import java.io.InputStream;
@@ -22,12 +23,13 @@ public final class RaidItemPack {
             "legendary_raid_key_fragment", "raid_core", "guardian_scale");
 
     public static void register() {
-        PolymerResourcePackUtils.RESOURCE_PACK_CREATION_EVENT.register(builder -> {
-            for (String name : NAMES) {
-                add(builder, "assets/cobbleraids/models/item/" + name + ".json");
-                add(builder, "assets/cobbleraids/textures/item/" + name + ".png");
-            }
-        });
+        PolymerResourcePackUtils.RESOURCE_PACK_CREATION_EVENT.register(builder ->
+                RaidFaultBarrier.guard("resource-pack:item-art", () -> {
+                    for (String name : NAMES) {
+                        add(builder, "assets/cobbleraids/models/item/" + name + ".json");
+                        add(builder, "assets/cobbleraids/textures/item/" + name + ".png");
+                    }
+                }));
     }
 
     private static void add(eu.pb4.polymer.resourcepack.api.ResourcePackBuilder builder, String path) {
