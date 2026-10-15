@@ -4,7 +4,7 @@ Cooperative wild raid bosses for **Cobblemon 1.7.3** on **Minecraft 1.21.1 / Fab
 
 Right-click a wild boss to open a recruitment window, up to four players join, and
 one shared Showdown battle runs against a single boss HP pool with per-player
-contribution tracking. Winning opens a reward screen; losing costs the party and
+contribution tracking. Winning opens a reward page; losing costs the party and
 wears the boss down.
 
 ## Requirements
@@ -12,9 +12,20 @@ wears the boss down.
 | | |
 |---|---|
 | Java | 21 |
-| Fabric Loader | 0.17.2+ |
+| Fabric Loader | 0.18.0+ (WebGUI needs it) |
 | Fabric API | 0.116.6+1.21.1 |
-| Cobblemon | exactly 1.7.3 |
+| Cobblemon | 1.8.2+ |
+| Polymer | 0.9.19+ (core, resource-pack, common, autohost) |
+| WebGUI | 1.8.1+ (recommended; shows every screen) |
+
+**CobbleRaids is server-side only.** Players install nothing from this mod. The raid keys, key
+fragments, Raid Core and Guardian Scale are Polymer items: a player sees a vanilla item with a custom
+model, supplied by a small resource pack that Polymer builds and sends. Set `"enabled": true` in
+`config/polymer/auto-host.json` or players will see the plain vanilla items.
+
+Every screen (shop, trophy room, Hall of Legends, reward reveal, capture minigame, hub and
+leaderboards) is a WebGUI page, so players who want them need the WebGUI client mod. A player without
+it can still claim rewards from chat with `/cobbleraids reward claim`.
 
 **Optional.** `SkiesGUIs` 1.8.1 gives reward claiming a chest GUI; without it the same
 rewards are claimed from chat with `/cobbleraids reward claim`, and a SkiesGUIs that
@@ -251,19 +262,15 @@ if you are not on it. `/cobbleraids stats` is your own record and `stats server`
 - Everything is saved in `cobbleraids_stats` in the world data. Counting is a few in-memory updates
   per raid event, and a board is sorted only when someone asks for one.
 
-**Keys** (Controls, under CobbleRaids): **T** opens the trophy room and **L** the leaderboard. Both are
-vanilla's own defaults -- T is chat and L is advancements -- so on a fresh install a press may reach the
-vanilla action instead; rebind either one, and the controls screen shows the clash in red. Until there is a
-leaderboard screen, L prints the all-time raids-won board in chat (`CobbleRaidsClient.openLeaderboard`).
-
-A leaderboard screen should call `com.cobbleraids.stats.Leaderboards.board(...)`, which returns the
-rows, how many players are ranked and the viewer's own row, rather than parsing the command output.
+The leaderboards are also a WebGUI page, opened from the hub (`/cobbleraids menu`). Anything building
+its own view should call `com.cobbleraids.stats.Leaderboards.board(...)`, which returns the rows, how
+many players are ranked and the viewer's own row, rather than parsing the command output.
 
 ## Renowned bosses
 
 Each spawn has a per-tier chance (5% / 7% / 10% / 12% by default) to be **renowned**: it
 carries a generated title such as **☠ Kaelen, the Relentless Gyarados ☠** on its nameplate,
-in the spawn announcement and across the top of the reward screen, and its epithet grants one
+in the spawn announcement and across the top of the reward page, and its epithet grants one
 moderate boon:
 
 | Boon | Effect | Config |
@@ -288,8 +295,6 @@ picks a boon *kind*; the strength always comes from the server config. Typed epi
 an entry to rarer bosses. Bad entries are skipped with a warning.
 
 `/cobbleraids spawn <species> [x y z] renown <roll|force|none>` forces the outcome for testing.
-The reward-screen packet is `pending_reward_reveal_v2`: clients on an older CobbleRaids build
-fall back to the chat claim path instead of disconnecting.
 
 ## Configuration
 
@@ -357,7 +362,7 @@ and policy rules, and the Showdown file patcher.
 
 ```text
 validation/validate_core_sources.sh
-python3 validation/validate_{raid_integrity,reward_visibility,reveal_screen,cinematic_reveal,reward_panel_textures,reward_texture_art}.py [jar]
+python3 validation/validate_{raid_integrity,reward_visibility,reveal_screen}.py [jar]
 python3 validation/validate_{logging,callback_guards}.py
 python3 validation/validate_mixin_guards.py [jar]      # after a build: reads bytecode
 python3 validation/validate_api_boundary.py [jar]      # after a build: reads bytecode

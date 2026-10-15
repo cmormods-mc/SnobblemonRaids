@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.180-polymer-items'
+version = '0.8.181-cleanup'
 group = 'com.cobbleraids'
 
 base {
