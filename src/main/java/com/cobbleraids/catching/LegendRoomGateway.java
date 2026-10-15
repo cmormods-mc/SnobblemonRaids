@@ -8,7 +8,6 @@ import com.cobbleraids.web.LegendWebPage;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -39,25 +38,15 @@ public final class LegendRoomGateway {
 
     /** Opens the Hall of Legends at its first page, browsing every legend, no filter applied yet. */
     public static void open(ServerPlayer player, int columns) {
-        // A client with WebGUI gets the web page, which asks for its first page itself.
-        if (LegendWebPage.open(player)) return;
-        if (!ServerPlayNetworking.canSend(player, LegendPagePayload.TYPE)) {
+        if (!LegendWebPage.open(player)) {
             player.sendSystemMessage(Component.literal(
-                            "Your client doesn't support the Hall of Legends yet -- update CobbleRaids.")
+                            "The Hall of Legends needs the WebGUI mod on your client.")
                     .withStyle(ChatFormatting.RED));
-            return;
         }
-        handle(player, LegendActionPayload.initial(columns));
     }
 
-    /** Handles a page turn or a "mine"/tier filter change from the native screen. */
+    /** Handles a page turn or a "mine"/tier filter change from the web page. */
     public static void handle(ServerPlayer player, LegendActionPayload action) {
-        handle(player, action, false);
-    }
-
-    /** Handles one from either view; see {@link TrophyRoomGateway#handle(ServerPlayer, com.cobbleraids.network.TrophyRoomActionPayload, boolean)}. */
-    public static void handle(ServerPlayer player, LegendActionPayload action, boolean web) {
-        if (!web && !ServerPlayNetworking.canSend(player, LegendPagePayload.TYPE)) return;
         if (!THROTTLE.allow(player.getUUID(), System.currentTimeMillis())) return;
 
         LegendGalleryQuery.Page page = LegendGalleryQuery.select(HallOfLegends.all(), action.pageIndex(),
@@ -73,10 +62,6 @@ public final class LegendRoomGateway {
         }
         LegendPagePayload reply = new LegendPagePayload(
                 page.index(), page.count(), page.total(), page.mineCount(), entries);
-        if (web) {
-            LegendWebPage.deliver(player, reply);
-        } else {
-            ServerPlayNetworking.send(player, reply);
-        }
+        LegendWebPage.deliver(player, reply);
     }
 }

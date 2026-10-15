@@ -26,6 +26,7 @@ import com.cobbleraids.fault.RaidConsistencyAuditScheduler;
 import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobbleraids.interaction.RaidBossInteractionListener;
 import com.cobbleraids.item.RaidHeldItems;
+import com.cobbleraids.item.RaidItemPack;
 import com.cobbleraids.item.RaidKeyItems;
 import com.cobbleraids.lifecycle.RaidBattleEventCoordinator;
 import com.cobbleraids.lifecycle.RaidCombatRuleService;
@@ -33,17 +34,8 @@ import com.cobbleraids.lifecycle.RaidLifecycleCoordinator;
 import com.cobbleraids.lifecycle.RaidReconnectService;
 import com.cobbleraids.lifecycle.RaidRewardService;
 import com.cobbleraids.lobby.RaidLobbyManager;
-import com.cobbleraids.network.CaptureChoicePayload;
-import com.cobbleraids.network.CapturePulseInputPayload;
-import com.cobbleraids.network.CaptureThrowInputPayload;
-import com.cobbleraids.network.RaidRewardPayloads;
-import com.cobbleraids.network.RewardChoicePayload;
-import com.cobbleraids.network.ShopActionPayload;
-import com.cobbleraids.network.LegendActionPayload;
-import com.cobbleraids.network.TrophyRoomActionPayload;
 import com.cobbleraids.placeholder.RaidPlaceholders;
 import com.cobbleraids.presentation.RaidBossGlowService;
-import com.cobbleraids.presentation.RenownBoonSyncService;
 import com.cobbleraids.raid.RaidRegistry;
 import com.cobbleraids.renown.RenownRegistry;
 import com.cobbleraids.reward.NativeRewardScreenGateway;
@@ -66,7 +58,6 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.minecraft.server.packs.PackType;
 
@@ -85,35 +76,9 @@ public final class CobbleRaids implements ModInitializer {
 
         // Before anything that could look an item up by id, and before the reward policy is used:
         // a loot table naming an unregistered id costs the whole table, not just the entry.
+        RaidItemPack.register();
         RaidKeyItems.register();
         RaidHeldItems.register();
-
-        RaidRewardPayloads.registerPayloadTypes();
-        ServerPlayNetworking.registerGlobalReceiver(RewardChoicePayload.TYPE, (payload, context) ->
-                context.server().execute(() -> RaidFaultBarrier.guard("reward-choice-packet",
-                        () -> NativeRewardScreenGateway.handleChoice(context.player(), payload))));
-
-        ServerPlayNetworking.registerGlobalReceiver(ShopActionPayload.TYPE, (payload, context) ->
-                context.server().execute(() -> RaidFaultBarrier.guard("shop-action-packet",
-                        () -> RaidShopGateway.handle(context.player(), payload))));
-
-        ServerPlayNetworking.registerGlobalReceiver(TrophyRoomActionPayload.TYPE, (payload, context) ->
-                context.server().execute(() -> RaidFaultBarrier.guard("trophy-room-action-packet",
-                        () -> TrophyRoomGateway.handle(context.player(), payload))));
-
-        ServerPlayNetworking.registerGlobalReceiver(LegendActionPayload.TYPE, (payload, context) ->
-                context.server().execute(() -> RaidFaultBarrier.guard("legend-room-action-packet",
-                        () -> LegendRoomGateway.handle(context.player(), payload))));
-
-        ServerPlayNetworking.registerGlobalReceiver(CaptureChoicePayload.TYPE, (payload, context) ->
-                context.server().execute(() -> RaidFaultBarrier.guard("capture-choice-packet",
-                        () -> RaidCaptureSessionService.handleChoice(context.player(), payload.raidId(), payload.attempt()))));
-        ServerPlayNetworking.registerGlobalReceiver(CapturePulseInputPayload.TYPE, (payload, context) ->
-                context.server().execute(() -> RaidFaultBarrier.guard("capture-pulse-packet",
-                        () -> RaidCaptureSessionService.handlePulse(context.player(), payload.raidId(), payload.pulseIndex()))));
-        ServerPlayNetworking.registerGlobalReceiver(CaptureThrowInputPayload.TYPE, (payload, context) ->
-                context.server().execute(() -> RaidFaultBarrier.guard("capture-throw-packet",
-                        () -> RaidCaptureSessionService.handleThrow(context.player(), payload.raidId()))));
 
         RaidInstructionRegistrar.register();
         RaidBattleEventCoordinator.register();
@@ -150,7 +115,6 @@ public final class CobbleRaids implements ModInitializer {
             RaidFaultBarrier.safeTick("reconnect-grace", server, RaidReconnectService::tick);
             RaidFaultBarrier.safeTick("combat-timer", server, RaidCombatRuleService::tick);
             RaidFaultBarrier.safeTick("boss-glow", server, RaidBossGlowService::tick);
-            RaidFaultBarrier.safeTick("renown-boon-sync", server, RenownBoonSyncService::tick);
             RaidFaultBarrier.safeTick("consistency-audit", server, RaidConsistencyAuditScheduler::tick);
         });
         // Guarded like everything else, but for a different reason than the rest: reload() throws
@@ -249,8 +213,6 @@ public final class CobbleRaids implements ModInitializer {
                 RaidFaultBarrier.guard("shutdown:spawn-scheduler", () -> RaidSpawnScheduler.onServerStopping(server)));
         ServerLifecycleEvents.SERVER_STOPPING.register(server ->
                 RaidFaultBarrier.guard("shutdown:boss-glow", () -> RaidBossGlowService.onServerStopping(server)));
-        ServerLifecycleEvents.SERVER_STOPPING.register(server ->
-                RaidFaultBarrier.guard("shutdown:renown-boon-sync", () -> RenownBoonSyncService.onServerStopping(server)));
         // Everything above needs a live server (discarding bosses, removing scoreboard teams).
         // Everything below is pure memory hygiene, so it waits for SERVER_STOPPED -- after every
         // world is closed and saved -- where it cannot race the write of a SavedData.
@@ -306,11 +268,6 @@ public final class CobbleRaids implements ModInitializer {
         // consistency audit, and can never be cleaned up for real once the boss is later destroyed.
         ServerEntityEvents.ENTITY_LOAD.register(
                 RaidFaultBarrier.entityLoad("entity-load:glow", RaidBossGlowService::onEntityLoaded));
-        // Same gap again, for the boon-sync service: a renowned boss that survived a restart never
-        // went through RaidBossSpawner.spawnAt() either, so its boon stops syncing to clients until
-        // this recovers it from the entity's own RaidRenownMarker tags.
-        ServerEntityEvents.ENTITY_LOAD.register(RaidFaultBarrier.entityLoad(
-                "entity-load:renown-boon-sync", RenownBoonSyncService::onEntityLoaded));
         // The converse: release a tracked boss's raid slot as soon as the entity is destroyed.
         // discard() removes it from ServerLevel's UUID lookup synchronously, so the scheduler's
         // once-a-second maintenance pass can never observe the removal itself and would hold the
@@ -323,10 +280,6 @@ public final class CobbleRaids implements ModInitializer {
         // scoreboard team, which is saved into the world.
         ServerEntityEvents.ENTITY_UNLOAD.register(
                 RaidFaultBarrier.entityUnload("entity-unload:glow", RaidBossGlowService::onEntityUnloaded));
-        // Same signal, same reason: a renowned boss that merely unloaded must stay tracked so its
-        // boon keeps syncing to trackers once its chunk returns.
-        ServerEntityEvents.ENTITY_UNLOAD.register(RaidFaultBarrier.entityUnload(
-                "entity-unload:renown-boon-sync", RenownBoonSyncService::onEntityUnloaded));
         // A dimension-managing mod can close a ServerLevel outright (not just unload its chunks),
         // which would otherwise leave a tracked boss there occupying a raid slot until its despawn
         // timer expires, since it can never resolve again.

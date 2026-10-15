@@ -12,7 +12,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
@@ -28,12 +28,13 @@ import net.minecraft.world.level.Level;
  * six, so a player holding three keys' worth necessarily has three slots of them, and converting
  * only the held stack would cost a click per slot to no purpose.
  */
-public class RaidKeyFragmentItem extends Item {
+public class RaidKeyFragmentItem extends RaidPolymerItem {
 
     private final RaidRarityTier tier;
 
     public RaidKeyFragmentItem(Properties properties, RaidRarityTier tier) {
-        super(properties);
+        super(properties, Items.PRISMARINE_SHARD, tier.serializedName() + "_raid_key_fragment",
+                tier.displayName() + " Raid Key Fragment");
         this.tier = tier;
     }
 
@@ -51,9 +52,8 @@ public class RaidKeyFragmentItem extends Item {
         int keys = owned / RaidKeyItems.FRAGMENTS_PER_KEY;
         if (keys <= 0) {
             if (!level.isClientSide) {
-                player.displayClientMessage(Component.translatable(
-                        "item.cobbleraids.raid_key_fragment.need_more",
-                        RaidKeyItems.FRAGMENTS_PER_KEY - owned)
+                int missing = RaidKeyItems.FRAGMENTS_PER_KEY - owned;
+                player.displayClientMessage(Component.literal(missing + " more fragments needed")
                         .withStyle(ChatFormatting.GRAY), true);
             }
             return InteractionResultHolder.fail(held);
@@ -137,12 +137,11 @@ public class RaidKeyFragmentItem extends Item {
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> lines,
                                 TooltipFlag flag) {
-        lines.add(Component.translatable("item.cobbleraids.raid_key_fragment.tooltip",
-                        RaidKeyItems.FRAGMENTS_PER_KEY)
+        // Plain text, not language keys: see RaidPolymerItem.
+        lines.add(Component.literal("Right-click to combine " + RaidKeyItems.FRAGMENTS_PER_KEY + " into a key")
                 .withStyle(ChatFormatting.GRAY));
-        lines.add(Component.translatable("item.cobbleraids.raid_key_fragment.tier",
-                        Component.literal(tier.displayName())
-                                .withStyle(RaidTierPresentation.color(tier)))
-                .withStyle(ChatFormatting.DARK_GRAY));
+        lines.add(Component.literal("Opens ").withStyle(ChatFormatting.DARK_GRAY)
+                .append(Component.literal(tier.displayName()).withStyle(RaidTierPresentation.color(tier)))
+                .append(Component.literal(" crates").withStyle(ChatFormatting.DARK_GRAY)));
     }
 }

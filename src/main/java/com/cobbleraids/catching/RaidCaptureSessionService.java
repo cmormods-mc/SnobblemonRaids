@@ -27,7 +27,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.nbt.CompoundTag;
@@ -222,10 +221,9 @@ public final class RaidCaptureSessionService {
             replaceInQueue(queue, session, claimed);
             persistNow(server);
 
-            // A client with WebGUI is shown the page; any other gets the native screen if it has one. Built
-            // once either way, so the two views can only ever be offered the same thing.
-            boolean web = WebUi.canShow(player);
-            if (web || ServerPlayNetworking.canSend(player, CaptureOfferPayload.TYPE)) {
+            // Without WebGUI the player is not shown the minigame; the session simply times out
+            // into its decline path, exactly as for a player who ignores the offer.
+            if (WebUi.canShow(player)) {
                 CobbleRaidsConfig.CaptureTierConfig tierConfig = config.tierConfigFor(claimed.tier());
                 CaptureDetailsPayload details = new CaptureDetailsPayload(raidId, claimed.species(),
                         tierConfig.baseChance(), tierConfig.stabilizationCap(), tierConfig.throwCap(),
@@ -236,16 +234,7 @@ public final class RaidCaptureSessionService {
                         tierConfig.pulseGoodZoneWidthMs(), tierConfig.pulsePerfectZoneWidthMs(),
                         tierConfig.throwTravelDurationMs(), tierConfig.throwGoodZoneWidthMs(),
                         tierConfig.throwPerfectZoneWidthMs());
-                if (!(web && CaptureWebPage.open(player, offer, details))) {
-                    // Optional display metadata only -- the offer/input/result protocol below is unchanged
-                    // whether or not this is sent, or whether the client's build even recognises it.
-                    if (ServerPlayNetworking.canSend(player, CaptureDetailsPayload.TYPE)) {
-                        ServerPlayNetworking.send(player, details);
-                    }
-                    if (ServerPlayNetworking.canSend(player, CaptureOfferPayload.TYPE)) {
-                        ServerPlayNetworking.send(player, offer);
-                    }
-                }
+                CaptureWebPage.open(player, offer, details);
             }
             return true;
         }
@@ -310,11 +299,7 @@ public final class RaidCaptureSessionService {
             replaceInQueue(queue, session, updated);
             persistNow(server);
             CapturePulseResultPayload reply = new CapturePulseResultPayload(session.raidId(), pulseIndexEcho, score);
-            if (CaptureWebPage.handles(player)) {
-                CaptureWebPage.deliverPulse(player, reply);
-            } else if (ServerPlayNetworking.canSend(player, CapturePulseResultPayload.TYPE)) {
-                ServerPlayNetworking.send(player, reply);
-            }
+            if (CaptureWebPage.handles(player)) CaptureWebPage.deliverPulse(player, reply);
         }
     }
 
@@ -447,18 +432,13 @@ public final class RaidCaptureSessionService {
     private static void sendResultIfOnline(MinecraftServer server, RaidCaptureSession resolved) {
         ServerPlayer player = server.getPlayerList().getPlayer(resolved.playerId());
         if (player == null) return;
-        boolean web = CaptureWebPage.handles(player);
-        if (!web && !ServerPlayNetworking.canSend(player, CaptureResultPayload.TYPE)) return;
+        if (!CaptureWebPage.handles(player)) return;
         double stabQuality = resolved.stabilizationQuality() * 100.0;
         double throwQuality = resolved.throwScore() * 100.0;
         CaptureResultPayload reply = new CaptureResultPayload(resolved.raidId(), resolved.rollSucceeded(),
                 resolved.finalChanceUsed() * 100.0, stabQuality, throwQuality, resolved.delivery().name(),
                 speciesDisplayName(resolved.species()), resolved.shiny());
-        if (web) {
-            CaptureWebPage.deliverResult(player, reply);
-        } else {
-            ServerPlayNetworking.send(player, reply);
-        }
+        CaptureWebPage.deliverResult(player, reply);
     }
 
     /**

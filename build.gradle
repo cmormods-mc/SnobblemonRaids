@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.178-cobblemon-1.8.2'
+version = '0.8.180-polymer-items'
 group = 'com.cobbleraids'
 
 base {
@@ -13,6 +13,7 @@ base {
 repositories {
     maven { url = 'https://maven.fabricmc.net/' }
     mavenCentral()
+    maven { url = 'https://maven.nucleoid.xyz/' }
     exclusiveContent {
         forRepository {
             maven {
@@ -33,6 +34,9 @@ dependencies {
 
     // Exact public releases used by the live-tested runtime builds.
     modImplementation 'maven.modrinth:MdwFAVRL:GJ2a1b8O' // Cobblemon 1.8.2
+    modImplementation 'eu.pb4:polymer-core:0.9.19+1.21.1'
+    modImplementation 'eu.pb4:polymer-resource-pack:0.9.19+1.21.1'
+    modImplementation 'eu.pb4:polymer-common:0.9.19+1.21.1'
     modImplementation 'maven.modrinth:eTmjDQ2A:azTJ3S8C' // SkiesGUIs 1.8.1
     // Compile-only: the %cobbleraids:points% token is published when this is installed and
     // skipped when it is not, so it must never be pulled in as a hard dependency.

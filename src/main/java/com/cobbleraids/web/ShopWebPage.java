@@ -46,13 +46,13 @@ public final class ShopWebPage {
         switch (WebJson.string(message, "action")) {
             case "ready" -> {
                 ICONS.reset(player.getUUID());
-                RaidShopGateway.handle(player, ShopActionPayload.turnTo(0), true);
+                RaidShopGateway.handle(player, ShopActionPayload.turnTo(0));
             }
-            case "turn" -> RaidShopGateway.handle(player, ShopActionPayload.turnTo(page), true);
+            case "turn" -> RaidShopGateway.handle(player, ShopActionPayload.turnTo(page));
             case "buy" -> {
                 String id = WebJson.string(message, "id");
                 if (!id.isEmpty() && id.length() <= ShopActionPayload.MAX_ID_LENGTH) {
-                    RaidShopGateway.handle(player, ShopActionPayload.buy(page, id), true);
+                    RaidShopGateway.handle(player, ShopActionPayload.buy(page, id));
                 }
             }
             default -> RaidLog.warn("Ignoring unknown shop page action from {}", player.getGameProfile().getName());

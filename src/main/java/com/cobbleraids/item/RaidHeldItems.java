@@ -6,6 +6,7 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 
 /**
  * Held items obtainable only from raid loot -- see the raid-exclusive-held-items plan.
@@ -38,10 +39,12 @@ public final class RaidHeldItems {
         // Idempotent for the same reason RaidKeyItems.register() is: a second call would throw on
         // the duplicate id and take the whole mod down at load.
         if (raidCore != null) return;
-        raidCore = register("raid_core", new Item(new Item.Properties().stacksTo(1)));
-        guardianScale = register("guardian_scale", new Item(new Item.Properties().stacksTo(1)
+        raidCore = register("raid_core", new RaidPolymerItem(new Item.Properties().stacksTo(1),
+                Items.HEART_OF_THE_SEA, "raid_core", "Raid Core"));
+        guardianScale = register("guardian_scale", new RaidPolymerItem(new Item.Properties().stacksTo(1)
                 .component(CobblemonItemComponents.HELD_ITEM_EFFECT,
-                        new HeldItemEffectComponent(GUARDIAN_SCALE_SHOWDOWN_ID, true))));
+                        new HeldItemEffectComponent(GUARDIAN_SCALE_SHOWDOWN_ID, true)),
+                Items.TURTLE_SCUTE, "guardian_scale", "Guardian Scale"));
     }
 
     private static Item register(String path, Item item) {

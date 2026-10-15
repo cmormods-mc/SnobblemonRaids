@@ -10,7 +10,6 @@ import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobbleraids.presentation.RaidBossGlowService;
 import com.cobbleraids.presentation.RaidBossNameplate;
-import com.cobbleraids.presentation.RenownBoonSyncService;
 import com.cobbleraids.renown.RaidRenown;
 import com.cobbleraids.renown.RaidRenownMarker;
 import com.cobbleraids.renown.RenownBoon;
@@ -115,7 +114,6 @@ public final class RaidBossSpawner {
         if (entity == null) throw new IllegalStateException("Cobblemon did not create a PokemonEntity for " + definition.id());
         applyMovementLock(entity);
         RaidBossGlowService.register(entity, level);
-        RenownBoonSyncService.register(entity, level, renown == null ? null : renown.boon());
         return entity;
     }
 

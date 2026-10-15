@@ -3,16 +3,11 @@ package com.cobbleraids.item;
 import com.cobbleraids.config.RaidRarityTier;
 import java.util.EnumMap;
 import java.util.Map;
-import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 /**
  * The only items CobbleRaids registers: a key fragment and a key, one pair per rarity tier.
@@ -43,33 +38,19 @@ public final class RaidKeyItems {
     private static final Map<RaidRarityTier, Item> FRAGMENTS = new EnumMap<>(RaidRarityTier.class);
     private static final Map<RaidRarityTier, Item> KEYS = new EnumMap<>(RaidRarityTier.class);
 
-    private static final ResourceKey<CreativeModeTab> TAB_KEY = ResourceKey.create(
-            Registries.CREATIVE_MODE_TAB,
-            ResourceLocation.fromNamespaceAndPath("cobbleraids", "raid_keys"));
-
     public static void register() {
         // Idempotent because a second call would throw on the duplicate id and take the whole mod
         // down at load; the entrypoint is the only caller, but a registry is exactly the sort of
         // thing a future refactor calls twice.
         if (!FRAGMENTS.isEmpty()) return;
         for (RaidRarityTier tier : RaidRarityTier.values()) {
-            Item key = register(keyId(tier), new Item(new Item.Properties().stacksTo(16)));
+            Item key = register(keyId(tier), new RaidPolymerItem(new Item.Properties().stacksTo(16),
+                    Items.ECHO_SHARD, tier.serializedName() + "_raid_key",
+                    tier.displayName() + " Raid Key"));
             KEYS.put(tier, key);
             FRAGMENTS.put(tier, register(fragmentId(tier),
                     new RaidKeyFragmentItem(new Item.Properties().stacksTo(FRAGMENTS_PER_KEY), tier)));
         }
-        // FabricItemGroup, not CreativeModeTab.builder(): vanilla's takes a (Row, int) slot
-        // position reserved for its own tabs, which a mod has no business claiming.
-        Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, TAB_KEY, FabricItemGroup.builder()
-                .title(Component.translatable("itemGroup.cobbleraids.raid_keys"))
-                .icon(() -> new ItemStack(KEYS.get(RaidRarityTier.LEGENDARY)))
-                .displayItems((parameters, output) -> {
-                    for (RaidRarityTier tier : RaidRarityTier.values()) {
-                        output.accept(FRAGMENTS.get(tier));
-                        output.accept(KEYS.get(tier));
-                    }
-                })
-                .build());
     }
 
     private static Item register(ResourceLocation id, Item item) {

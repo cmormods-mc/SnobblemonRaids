@@ -12,18 +12,15 @@ import com.cobbleraids.web.WebUi;
 import com.cobblemon.mod.common.api.pokemon.PokemonSpecies;
 import com.cobblemon.mod.common.pokemon.Species;
 import java.util.List;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.level.ServerPlayer;
 
-/** Bridges the server-authoritative reward queue to the client's native reveal screen, when present. */
+/** Bridges the server-authoritative reward queue to the reward reveal web page. */
 public final class NativeRewardScreenGateway {
     private NativeRewardScreenGateway() {}
 
-    /** Offers the native screen to a player. False means the client can't/won't render it -- caller should fall back. */
+    /** Offers the reveal page to a player. False means the client can't render it -- caller should fall back. */
     public static boolean tryOpen(ServerPlayer player, PendingRaidReward pending) {
-        // A client with WebGUI gets the web page; anyone else the native screen if they have it.
-        boolean web = WebUi.canShow(player);
-        if (!web && !ServerPlayNetworking.canSend(player, PendingRewardRevealPayload.TYPE)) return false;
+        if (!WebUi.canShow(player)) return false;
         RaidDefinition definition = RaidDefinitionRegistry.get(pending.definitionId());
         if (definition == null) return false;
         PendingRewardRevealPayload offer = new PendingRewardRevealPayload(
@@ -38,19 +35,11 @@ public final class NativeRewardScreenGateway {
                 pending.contributionBonusRolls(),
                 pending.elapsedCombatTicks(),
                 pending.participantCount());
-        if (web) return RewardWebPage.open(player, offer);
-        ServerPlayNetworking.send(player, offer);
-        return true;
-    }
-
-    /** Handles a RewardChoicePayload received from the native client and reports back the actual result. */
-    public static void handleChoice(ServerPlayer player, RewardChoicePayload payload) {
-        ServerPlayNetworking.send(player, resolveChoice(player, payload));
+        return RewardWebPage.open(player, offer);
     }
 
     /**
-     * Claims a choice and describes what happened. The one place a claim is turned into a reply, so
-     * the native screen and the web page can only ever be told the same thing.
+     * Claims a choice and describes what happened. The one place a claim is turned into a reply.
      */
     public static RewardResultPayload resolveChoice(ServerPlayer player, RewardChoicePayload payload) {
         RewardGrantResult result = RaidRewardService.claimNative(player, payload.choiceId());

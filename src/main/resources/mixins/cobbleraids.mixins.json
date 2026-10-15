@@ -21,10 +21,6 @@
     "battle.RaidActiveBattlePokemonMixin",
     "battle.RaidBattleMessagePnxMixin"
   ],
-  "client": [
-    "client.RaidBossNameplateIconMixin",
-    "client.BattleOverlayBoonIconMixin"
-  ],
   "injectors": {
     "defaultRequire": 1
   }

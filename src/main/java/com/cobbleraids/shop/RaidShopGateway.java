@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -48,19 +47,11 @@ public final class RaidShopGateway {
 
     /** Opens the shop at its first page. */
     public static void open(ServerPlayer player) {
-        // A client with WebGUI gets the web page, which asks for page 0 itself once it is listening;
-        // anyone else still gets the native screen until that is removed.
+        // The web page asks for page 0 itself once it is listening.
         if (ShopWebPage.open(player)) return;
-        sendPage(player, 0, false);
-    }
-
-    /** The one place a built page leaves the server, so the transport is chosen in one spot. */
-    private static void deliver(ServerPlayer player, ShopPagePayload payload, boolean web) {
-        if (web) {
-            ShopWebPage.deliver(player, payload);
-        } else {
-            ServerPlayNetworking.send(player, payload);
-        }
+            player.sendSystemMessage(Component.literal(
+                            "The shop needs the WebGUI mod on your client.")
+                    .withStyle(ChatFormatting.RED));
     }
 
     /** A personal entry's id, e.g. "personal:cobblemon:garchomp" or "reroll:cobblemon:garchomp". */
@@ -68,19 +59,10 @@ public final class RaidShopGateway {
     private static final String REROLL_PREFIX = "reroll:";
     private static final String ROTATING_PREFIX = "rotating.";
 
-    /** Handles a page turn or a purchase from the native screen. */
+    /** Handles a page turn or a purchase from the web page. */
     public static void handle(ServerPlayer player, ShopActionPayload action) {
-        handle(player, action, false);
-    }
-
-    /**
-     * Handles one from either view. {@code web} says which one asked, and so which one the page goes
-     * back to: decided by the request rather than by what the client has installed, since a client
-     * with WebGUI can still be looking at the native screen.
-     */
-    public static void handle(ServerPlayer player, ShopActionPayload action, boolean web) {
         if (!action.isPurchase()) {
-            sendPage(player, action.pageIndex(), web);
+            sendPage(player, action.pageIndex());
             return;
         }
         String id = action.entryId();
@@ -114,10 +96,10 @@ public final class RaidShopGateway {
         // Re-sent whether it worked or not: a refusal still has to leave the screen showing the
         // truth, and a limit being reached (or a slot being spent, or a reroll changing its own
         // numbers) is exactly what changes how a cell should look.
-        sendPage(player, action.pageIndex(), web);
+        sendPage(player, action.pageIndex());
     }
 
-    private static void sendPage(ServerPlayer player, int requestedPage, boolean web) {
+    private static void sendPage(ServerPlayer player, int requestedPage) {
         List<ShopPageView> catalogPages = listablePages(ShopCatalogManager.pages());
         Map<ResourceLocation, BossSnapshot> personal = DefeatedBossSnapshots.forPlayer(player.getUUID());
         boolean hasPersonalPage = !personal.isEmpty();
@@ -125,8 +107,8 @@ public final class RaidShopGateway {
         boolean hasRotatingPage = !rotating.isEmpty();
         int pageCount = catalogPages.size() + (hasRotatingPage ? 1 : 0) + (hasPersonalPage ? 1 : 0);
         if (pageCount == 0) {
-            deliver(player,
-                    new ShopPagePayload("Raid Shop", 0, 1, RaidPointsStore.balance(player.getUUID()), List.of()), web);
+            ShopWebPage.deliver(player,
+                    new ShopPagePayload("Raid Shop", 0, 1, RaidPointsStore.balance(player.getUUID()), List.of()));
             return;
         }
         // Clamped rather than rejected: the catalogue (or the personal page's presence) can shrink
@@ -149,8 +131,8 @@ public final class RaidShopGateway {
             heading = "Your Bosses";
             entries = buildPersonalEntries(personal);
         }
-        deliver(player, new ShopPagePayload(heading, index, pageCount,
-                RaidPointsStore.balance(player.getUUID()), entries), web);
+        ShopWebPage.deliver(player, new ShopPagePayload(heading, index, pageCount,
+                RaidPointsStore.balance(player.getUUID()), entries));
     }
 
     /**
