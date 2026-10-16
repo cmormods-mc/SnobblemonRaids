@@ -1,24 +1,52 @@
-@import url("../shared/font.css");
-/* The Raid Capture Protocol panel in Minecraft GUI pixels: the native screen's 700x420 maximum layout
-   (CaptureUiLayout), scaled by a whole number so every drawn pixel stays a square block. */
-:root { --s: 2; --font: "Monocraft", ui-monospace, Consolas, monospace; --cyan: #37eeff; --white: #eafbff; --navy: #03283f; --muted: #9abacb; }
-html, body { margin: 0; height: 100%; overflow: hidden; background: transparent; user-select: none; }
-body { font-family: var(--font); }
-button { font-family: inherit; }
+/* Raid Capture Protocol. Everything is positioned in container units so the timing track can be
+   percentages of its own width; only the marker's sweep needs a pixel distance, set from script. */
+#head { display: flex; align-items: center; gap: 1.6cqw; padding: 2.2cqw 3cqw 0; height: 7.4cqw; }
+#lamps { display: flex; gap: 0.5cqw; align-items: center; }
+#lamps i { width: 0.9cqw; height: 0.9cqw; border: 1px solid var(--hi); background: #001a30; }
+#lamps i.on { background: #70f8ff; box-shadow: 0 0 1cqw var(--hi); }
+#state { color: var(--hi); letter-spacing: 0.12em; font-size: var(--fs-s); white-space: nowrap; }
 
-#stage { position: absolute; width: 700px; height: 420px; transform: scale(var(--s)); transform-origin: 0 0;
-         font-size: 8px; line-height: 9px; color: var(--white); image-rendering: pixelated; }
-#stage > *, .abs { position: absolute; box-sizing: border-box; }
-canvas { image-rendering: pixelated; display: block; position: absolute; }
-.t { position: absolute; white-space: nowrap; }
-.panel { box-shadow: inset 0 0 0 1px #001425, inset 0 0 0 3px var(--edge, #37eeff); background: var(--fill, #03283f); }
+#info { position: absolute; left: 3cqw; top: 8.6cqw; width: 24cqw; bottom: 17.5cqw; padding: 1.4cqw 1.6cqw; display: flex; flex-direction: column; gap: 0.5cqw; overflow: hidden; }
+#info .sp-name { font: 700 max(13px, 1.7cqw) var(--pix); }
+#info .tier { color: var(--hi); letter-spacing: 0.12em; font-weight: 600; font-size: var(--fs-s); }
+#info .rp { color: var(--tx); display: flex; align-items: center; gap: 0.6cqw; }
+#info .rp svg { width: 1cqw; height: 1.4cqw; color: var(--hi); }
+#info .lbl { color: var(--mu); font-size: var(--fs-s); margin-top: 0.6cqw; }
+#info .odds { color: var(--hi); font-weight: 600; font-size: var(--fs-l); }
+#info .note { color: var(--tx); font-size: var(--fs-s); line-height: 1.45; margin-top: 0.4cqw; }
+#info .pulses { display: flex; flex-direction: column; gap: 0.35cqw; margin-top: 0.4cqw; }
+#info .pulses div { display: flex; justify-content: space-between; font-size: var(--fs); color: var(--mu); }
+#info .pulses .perfect, #info .pulses .good { color: var(--hi); }
+#info .pulses .missed { color: #ffc46b; }
 
-.act { position: absolute; width: 100%; height: 24px; border: 0; padding: 0; cursor: pointer; color: var(--white); font-size: 8px; }
-.act:not(:disabled):hover { --fill: #0987b8; }
-.act:disabled { color: var(--muted); cursor: default; --edge: #537e92; }
-.act span { position: absolute; left: 5px; right: 5px; top: 8px; text-align: center; white-space: nowrap; overflow: hidden; }
+#chamber { position: absolute; left: 29cqw; right: 8cqw; top: 8.6cqw; bottom: 17.5cqw; overflow: hidden; display: grid; place-items: center;
+  background: radial-gradient(ellipse 50% 40% at 50% 85%, rgba(70, 227, 255, 0.3), transparent 70%), linear-gradient(180deg, rgba(2, 12, 22, 0.95), rgba(5, 30, 50, 0.95)); }
+#sprite { width: 62%; aspect-ratio: 3 / 2; background-repeat: no-repeat; background-size: 100% 100%; image-rendering: pixelated; max-height: 88%; }
+#chamber .q { font: 700 6cqw var(--pix); color: var(--mu); }
+#ball { width: 9cqw; height: 9cqw; }
+#ball.shake { animation: shake 267ms ease-in-out infinite alternate; }
+@keyframes shake { from { transform: translateX(-0.5cqw) rotate(-6deg); } to { transform: translateX(0.5cqw) rotate(6deg); } }
 
-#indicator { position: absolute; width: 3px; height: 24px; background: var(--white); left: 0; top: -3px; will-change: transform; }
+#meter { position: absolute; right: 3cqw; width: 3.4cqw; top: 12cqw; bottom: 21cqw; padding: 0.6cqw; display: flex; flex-direction: column-reverse; gap: 0.3cqw; --cut: 0.8cqw; }
+#meter i { flex: 1; background: #075385; }
+#meter i.on { background: var(--hi); box-shadow: 0 0 0.8cqw rgba(70, 227, 255, 0.6); }
+#meterlbl { position: absolute; right: 2.4cqw; width: 4.6cqw; top: 9.4cqw; text-align: center; color: var(--mu); font-size: var(--fs-s); letter-spacing: 0.1em; }
+
+#prompt { position: absolute; left: 3cqw; right: 3cqw; bottom: 14cqw; text-align: center; font-size: var(--fs-l); }
+#prompt.sub { color: var(--tx); }
+#track { position: absolute; left: 3cqw; right: 3cqw; bottom: 8.4cqw; height: 4.4cqw; --cut: 0.9cqw; }
+#track .zones { position: absolute; left: 0.5cqw; right: 0.5cqw; top: 0.5cqw; bottom: 0.5cqw; overflow: visible; background: rgba(0, 26, 48, 0.9); }
+#track .tick { position: absolute; top: 35%; bottom: 35%; width: 1px; background: rgba(70, 227, 255, 0.5); }
+#track .good { position: absolute; top: 0; bottom: 0; background: #ffb32f; transform: translateX(-50%); }
+#track .perfect { position: absolute; top: 0; bottom: 0; background: #00cdeb; transform: translateX(-50%); }
+#track .mid { position: absolute; left: 50%; top: 22%; bottom: 22%; width: 0.2cqw; background: #eafbff; transform: translateX(-50%); }
+#track .arrow { position: absolute; top: 50%; transform: translateY(-50%); color: var(--hi); font-weight: 600; }
+#indicator { position: absolute; left: -0.25cqw; top: -0.5cqw; bottom: -0.5cqw; width: 0.5cqw; background: #fff; box-shadow: 0 0 1cqw #fff; will-change: transform; }
 @keyframes sweep { from { transform: translateX(0); } to { transform: translateX(var(--travel)); } }
-@keyframes shake { from { transform: translateX(-3px); } to { transform: translateX(3px); } }
-.shake { animation: shake 267ms ease-in-out infinite alternate; }
+#legend { position: absolute; left: 3cqw; right: 3cqw; bottom: 6.4cqw; text-align: center; color: var(--mu); font-size: var(--fs-s); letter-spacing: 0.1em; }
+
+#actions { position: absolute; left: 3cqw; right: 3cqw; bottom: 1.8cqw; height: 4.2cqw; display: flex; gap: 1.6cqw; justify-content: center; }
+#actions .btn { flex: 1; max-width: 34cqw; height: 100%; padding-top: 0; padding-bottom: 0; }
+#actions .btn.single { flex: 0 1 26cqw; }
+#outro { position: absolute; left: 3cqw; right: 3cqw; bottom: 8.4cqw; text-align: center; display: flex; flex-direction: column; gap: 0.6cqw; font-size: var(--fs-l); }
+#outro .detail { color: var(--hi); font-size: var(--fs); }

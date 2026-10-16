@@ -1,0 +1,76 @@
+/* The Raid Network look: one dark-blue terminal, thin cyan lines, cut corners, a faint grid.
+   Every page is a 16:9 .stage that fills the window and sizes its contents in container units (cqw),
+   so a layout looks the same at any window size. Fonts: Silkscreen and IBM Plex Mono, both SIL OFL
+   (Silkscreen-OFL.txt, IBMPlexMono-OFL.txt). */
+@font-face { font-family: "RC Pixel"; src: url(Silkscreen-400.woff2) format("woff2"); font-weight: 400; font-display: block; }
+@font-face { font-family: "RC Pixel"; src: url(Silkscreen-700.woff2) format("woff2"); font-weight: 700; font-display: block; }
+@font-face { font-family: "RC Mono"; src: url(IBMPlexMono-400.woff2) format("woff2"); font-weight: 400; font-display: block; }
+@font-face { font-family: "RC Mono"; src: url(IBMPlexMono-600.woff2) format("woff2"); font-weight: 600; font-display: block; }
+
+:root {
+  --bg: #04121f; --bg2: #08233a; --ln: #1d6f8f; --hi: #46e3ff; --tx: #e6f7ff; --mu: #7aa7bd;
+  --leg: #ffb02e; --pow: #5aa9ff; --sta: #7ddf64; --myt: #ff6bd6; --bad: #ff6b6b; --ok: #7ddf64;
+  --pix: "RC Pixel", ui-monospace, Consolas, monospace;
+  --mono: "RC Mono", ui-monospace, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: rgba(2, 8, 14, 0.8); user-select: none;
+             color: var(--tx); font-family: var(--mono); }
+button, input { font: inherit; color: inherit; }
+img { image-rendering: pixelated; display: block; }
+[hidden] { display: none !important; }
+svg { display: block; }
+
+.stage { position: absolute; left: 50%; top: 50%; width: min(96vw, 170.6vh); aspect-ratio: 16 / 9;
+         transform: translate(-50%, -50%); container-type: inline-size; overflow: hidden;
+         background: radial-gradient(120% 90% at 50% 0, #0a2c47 0, #04121f 62%); border: 1px solid var(--ln);
+         box-shadow: 0 0 6cqw rgba(70, 227, 255, 0.12), 0 0 0 1px #000 inset;
+         --fs: max(11px, 1.2cqw); --fs-s: max(10px, 1cqw); --fs-l: max(13px, 1.5cqw); font-size: var(--fs); line-height: 1.3; }
+.stage::before { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(rgba(70, 227, 255, 0.05) 1px, transparent 1px) 0 0 / 100% 3.2cqw,
+              linear-gradient(90deg, rgba(70, 227, 255, 0.05) 1px, transparent 1px) 0 0 / 3.2cqw 100%; }
+.stage > * { position: relative; }
+
+/* Header: title, a breadcrumb, a rule that fades out, then chips and the close button. */
+.top { display: flex; align-items: center; gap: 1.6cqw; padding: 2.2cqw 3cqw 0; height: 7.4cqw; }
+.title { font: 700 max(14px, 1.9cqw) var(--pix); color: var(--hi); letter-spacing: 0.06em; white-space: nowrap; }
+.crumb { color: var(--mu); letter-spacing: 0.14em; text-transform: uppercase; font-size: var(--fs-s); white-space: nowrap; }
+.sp { flex: 1; height: 1px; background: linear-gradient(90deg, var(--ln), transparent); min-width: 0; }
+
+/* Cut-corner shapes. --cut is the size of the cut. */
+.chip, .btn, .panel { --cut: 0.8cqw;
+  clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut)); }
+.chip { border: 1px solid var(--ln); padding: 0.5cqw 1.2cqw; color: var(--hi); background: rgba(70, 227, 255, 0.08);
+        font-size: var(--fs-s); letter-spacing: 0.1em; white-space: nowrap; }
+.panel { position: relative; --cut: 1.4cqw; border: 1px solid var(--ln);
+         background: linear-gradient(180deg, rgba(8, 35, 58, 0.94), rgba(5, 22, 38, 0.94)); }
+.panel::after { content: ""; position: absolute; left: 0; top: 0; width: 1.6cqw; height: 1.6cqw;
+                border-left: 2px solid var(--hi); border-top: 2px solid var(--hi); pointer-events: none; }
+button.panel { text-align: left; cursor: pointer; padding: 0; }
+button.panel:hover:not(:disabled), button.panel:focus-visible { border-color: var(--hi); outline: none;
+  background: linear-gradient(180deg, rgba(14, 70, 104, 0.95), rgba(7, 35, 58, 0.95));
+  box-shadow: 0 0 3cqw rgba(70, 227, 255, 0.25) inset; }
+
+.btn { border: 0; padding: 0.9cqw 1.8cqw; cursor: pointer; font: 700 max(11px, 1.3cqw) var(--pix); letter-spacing: 0.06em;
+       color: #021018; background: var(--hi); white-space: nowrap; --cut: 0.9cqw; }
+.btn:hover:not(:disabled), .btn:focus-visible { background: #8ff0ff; outline: none; }
+.btn:disabled { background: #2a5266; color: #7aa7bd; cursor: default; }
+.btn.ghost { color: var(--hi); background: transparent; box-shadow: 0 0 0 1px var(--ln) inset; }
+.btn.ghost:hover:not(:disabled), .btn.ghost:focus-visible { background: rgba(70, 227, 255, 0.12); box-shadow: 0 0 0 1px var(--hi) inset; }
+.btn.ghost:disabled { background: transparent; color: #4a6a7a; box-shadow: 0 0 0 1px #17475c inset; }
+
+.field { background: rgba(2, 14, 24, 0.9); border: 1px solid var(--ln); color: var(--tx); padding: 0.7cqw 1cqw;
+         font-size: var(--fs); min-width: 0; user-select: text; }
+.field:focus { outline: none; border-color: var(--hi); }
+.field::placeholder { color: #4f7a90; }
+
+.tip { position: fixed; z-index: 10; pointer-events: none; padding: 0.6vw 0.9vw; white-space: nowrap; max-width: 90vw;
+       background: rgba(3, 16, 28, 0.97); border: 1px solid var(--hi); box-shadow: 0 0 2vw rgba(70, 227, 255, 0.2);
+       font-size: max(11px, 1vw); line-height: 1.4; }
+.tip div { white-space: nowrap; }
+.mu { color: var(--mu); } .hi { color: var(--hi); } .bad { color: var(--bad); } .ok { color: var(--ok); }
+.t-leg { --tc: var(--leg); } .t-pow { --tc: var(--pow); } .t-sta { --tc: var(--sta); } .t-myt { --tc: var(--myt); }
+
+.empty { color: var(--mu); text-align: center; letter-spacing: 0.08em; }
+::-webkit-scrollbar { width: 0.6cqw; } ::-webkit-scrollbar-thumb { background: var(--ln); } ::-webkit-scrollbar-track { background: transparent; }
+@media (prefers-reduced-motion: reduce) { * { animation-duration: 0.001ms !important; transition: none !important; } }

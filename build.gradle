@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.181-cleanup'
+version = '0.8.182-raid-network-ui'
 group = 'com.cobbleraids'
 
 base {

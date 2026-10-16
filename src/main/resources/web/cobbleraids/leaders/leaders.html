@@ -1,14 +1,23 @@
 <!doctype html>
 <meta charset="utf-8">
 <title>Leaderboards</title>
+<link rel="stylesheet" href="../shared/theme.css">
 <link rel="stylesheet" href="leaders.css">
-<div id="stage">
-  <button class="plate" id="prev" style="left:0;top:0;width:40px">&lt;</button>
-  <div class="plate" id="title" style="left:44px;top:0;width:260px"></div>
-  <button class="plate" id="next" style="left:308px;top:0;width:40px">&gt;</button>
-  <button class="plate" id="scope" style="left:352px;top:0;width:168px"></button>
-  <div id="rows"></div>
-  <div id="counts"></div>
-  <button class="plate" id="back" style="left:450px;top:330px;width:70px">Back</button>
+<div class="stage">
+  <header class="top">
+    <b class="title">LEADERBOARDS</b><span class="crumb" id="crumb"></span><i class="sp"></i>
+    <button class="btn ghost" id="scope"></button><button class="btn ghost" id="close">Close</button>
+  </header>
+  <main class="panel" id="board">
+    <div id="nav">
+      <button class="btn ghost" id="prev">&lsaquo;</button>
+      <b id="boardTitle"></b>
+      <button class="btn ghost" id="next">&rsaquo;</button>
+    </div>
+    <div id="head"><span>RANK</span><span>PLAYER</span><span id="valueHead">VALUE</span></div>
+    <div id="rows"></div>
+    <div id="counts"></div>
+  </main>
 </div>
+<script src="../shared/ui.js"></script>
 <script src="leaders.js"></script>

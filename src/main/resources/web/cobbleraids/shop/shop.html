@@ -1,13 +1,20 @@
 <!doctype html>
 <meta charset="utf-8">
 <title>Raid Shop</title>
+<link rel="stylesheet" href="../shared/theme.css">
 <link rel="stylesheet" href="shop.css">
-<div id="stage" class="items">
-  <div id="heading"></div>
-  <button id="prev" class="arrow" title="Previous page"><img src="arrow_prev.png" alt=""></button>
-  <button id="next" class="arrow" title="Next page"><img src="arrow_next.png" alt=""></button>
-  <div id="grid"></div>
-  <div id="balance"></div>
+<div class="stage">
+  <header class="top">
+    <b class="title">RAID SHOP</b><span class="crumb" id="crumb"></span><i class="sp"></i>
+    <span class="chip" id="balance"></span><button class="btn ghost" id="close">Close</button>
+  </header>
+  <main id="grid"></main>
+  <footer id="pager">
+    <button class="btn ghost" id="prev">&lsaquo; Previous</button>
+    <span id="where"></span>
+    <button class="btn ghost" id="next">Next &rsaquo;</button>
+  </footer>
 </div>
-<div id="tip" hidden></div>
+<div id="tip" class="tip" hidden></div>
+<script src="../shared/ui.js"></script>
 <script src="shop.js"></script>

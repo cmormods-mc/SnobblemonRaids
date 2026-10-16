@@ -1,22 +1,25 @@
 <!doctype html>
 <meta charset="utf-8">
 <title>Trophy Room</title>
+<link rel="stylesheet" href="../shared/theme.css">
 <link rel="stylesheet" href="trophy.css">
-<div id="stage">
-  <div class="txt" id="title">Trophy Room</div>
-  <div class="txt c" id="subtitle">HALL OF VICTORIES</div>
-  <div class="txt" id="brand">COBBLEMON RAID NETWORK</div>
-  <input id="search" type="text" maxlength="64" placeholder="Search species..." autocomplete="off" spellcheck="false">
-  <button class="plate" id="tier"></button>
-  <button class="plate" id="shiny"></button>
-  <button class="plate" id="sort"></button>
-  <div id="cases"></div>
-  <div id="thumbs"></div>
-  <div class="txt" id="counts"></div>
-  <div class="txt c" id="pager"></div>
-  <button class="plate" id="prev">&lt; Previous</button>
-  <button class="plate" id="next">Next &gt;</button>
-  <button class="plate" id="back">Back</button>
+<div class="stage">
+  <header class="top">
+    <b class="title">TROPHY ROOM</b><span class="crumb" id="crumb"></span><i class="sp"></i>
+    <button class="btn ghost" id="close">Close</button>
+  </header>
+  <div id="filters">
+    <input class="field" id="search" type="text" maxlength="64" placeholder="Search species..." autocomplete="off" spellcheck="false">
+    <button class="btn ghost" id="tier"></button>
+    <button class="btn ghost" id="shiny"></button>
+    <button class="btn ghost" id="sort"></button>
+  </div>
+  <main id="cases"></main>
+  <footer id="pager">
+    <button class="btn ghost" id="prev">&lsaquo; Previous</button>
+    <span id="where"></span>
+    <button class="btn ghost" id="next">Next &rsaquo;</button>
+  </footer>
 </div>
-<div id="tip" hidden></div>
+<script src="../shared/ui.js"></script>
 <script src="trophy.js"></script>

@@ -1,14 +1,27 @@
 <!doctype html>
 <meta charset="utf-8">
 <title>Raid Hub</title>
+<link rel="stylesheet" href="../shared/theme.css">
 <link rel="stylesheet" href="hub.css">
-<div id="stage">
-  <div class="t" id="title">RAID HUB</div>
-  <div class="t" id="who"></div>
-  <button class="tile" data-open="shop" style="left:4px;top:36px"><b>Raid Shop</b><i>Spend your Raid Points</i><u id="shop"></u></button>
-  <button class="tile" data-open="trophy" style="left:266px;top:36px"><b>Trophy Room</b><i>Bosses you have beaten</i><u id="trophy"></u></button>
-  <button class="tile" data-open="legends" style="left:4px;top:142px"><b>Hall of Legends</b><i>First renowned wins</i><u id="legends"></u></button>
-  <button class="tile" data-open="leaders" style="left:266px;top:142px"><b>Leaderboards</b><i>See where you rank</i><u id="leaders"></u></button>
-  <button class="plate" id="back" style="left:450px;top:250px;width:70px">Back</button>
+<div class="stage">
+  <header class="top">
+    <b class="title">RAID HUB</b><span class="crumb" id="who"></span><i class="sp"></i>
+    <span class="chip" id="rp"></span><button class="btn ghost" id="close">Close</button>
+  </header>
+  <main id="tiles">
+    <button class="panel tile" data-open="shop">
+      <svg viewBox="0 0 24 24"><path d="M4 8h16l-1.4 12H5.4L4 8zm4-1a4 4 0 018 0" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+      <span class="key">01</span><b>Raid Shop</b><p>Spend your Raid Points</p><u id="shop"></u></button>
+    <button class="panel tile" data-open="trophy">
+      <svg viewBox="0 0 24 24"><path d="M7 4h10v5a5 5 0 01-10 0V4zM7 6H3.5v1.5A3.5 3.5 0 007 11M17 6h3.5v1.5A3.5 3.5 0 0117 11M12 14v4M8 20h8" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+      <span class="key">02</span><b>Trophy Room</b><p>Every boss you have beaten</p><u id="trophy"></u></button>
+    <button class="panel tile" data-open="legends">
+      <svg viewBox="0 0 24 24"><path d="M3 18L2 7l5 4 5-7 5 7 5-4-1 11H3z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+      <span class="key">03</span><b>Hall of Legends</b><p>The server's first renowned wins</p><u id="legends"></u></button>
+    <button class="panel tile" data-open="leaders">
+      <svg viewBox="0 0 24 24"><path d="M4 20V12h4v8M10 20V4h4v16M16 20V9h4v11" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+      <span class="key">04</span><b>Leaderboards</b><p>See where you rank</p><u id="leaders"></u></button>
+  </main>
 </div>
+<script src="../shared/ui.js"></script>
 <script src="hub.js"></script>

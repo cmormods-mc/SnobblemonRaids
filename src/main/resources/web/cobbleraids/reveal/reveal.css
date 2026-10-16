@@ -1,54 +1,44 @@
-@import url("../shared/font.css");
-/* The stage is the art's own 1672x941 reference canvas, the same one the native screen scaled from, so
-   every rectangle below is a native rectangle (RaidRewardRevealScreen's NativeRects). */
-:root { --s: 1; --font: "Monocraft", ui-monospace, Consolas, monospace; }
-html, body { margin: 0; height: 100%; overflow: hidden; background: transparent; user-select: none; }
-body { font-family: var(--font); }
-button { font-family: inherit; }
+#side { position: absolute; left: 3cqw; top: 9.2cqw; width: 24cqw; bottom: 3cqw; padding: 1.6cqw 1.8cqw; display: flex; flex-direction: column; gap: 0.2cqw; }
+#side h3 { margin: 0 0 0.8cqw; font: 700 max(11px, 1.3cqw) var(--pix); color: var(--hi); letter-spacing: 0.08em; }
+#side h3:not(:first-child) { margin-top: 1.4cqw; }
+.kv { display: flex; justify-content: space-between; gap: 1cqw; padding: 0.6cqw 0; border-bottom: 1px dashed rgba(70, 227, 255, 0.2); color: var(--mu); font-size: var(--fs); }
+.kv b { color: var(--tx); font-weight: 600; text-align: right; }
+.kv b.tier { color: var(--tc); }
 
-/* Positioned on whole pixels from script and scaled from its corner: a centring translate lands on half
-   a pixel for most window sizes, and that softens every edge on the art. The textures are drawn nearest,
-   as the native screen drew them (blur: false in their .mcmeta). */
-#stage { position: absolute; left: 0; top: 0; width: 1672px; height: 941px;
-         transform: scale(var(--s)); transform-origin: 0 0; image-rendering: pixelated;
-         background: url(pokedex_backing.png) no-repeat 0 0; color: #fff; }
-#stage > *, #chamber > *, #side > * { position: absolute; box-sizing: border-box; }
-#summary { left: 94px; top: 122px; width: 313px; height: 731px; }
-img { image-rendering: pixelated; display: block; }
+#chamber { position: absolute; left: 30cqw; right: 3cqw; top: 9.2cqw; bottom: 11.6cqw; overflow: hidden; }
+#beam { position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 22% 7% at 50% 78%, rgba(70, 227, 255, 0.55), transparent 70%),
+    radial-gradient(ellipse 34% 11% at 50% 80%, rgba(70, 227, 255, 0.18), transparent 70%),
+    linear-gradient(90deg, transparent 38%, rgba(70, 227, 255, 0.16) 44%, rgba(160, 244, 255, 0.28) 50%, rgba(70, 227, 255, 0.16) 56%, transparent 62%); }
+#chamber.done #beam { opacity: 0.35; }
+#banner { position: absolute; left: 0; right: 0; top: 1.4cqw; display: flex; justify-content: center; z-index: 2; }
+.plate { display: flex; align-items: center; gap: 0.9cqw; padding: 0.6cqw 1.8cqw; background: rgba(2, 10, 18, 0.88); border: 1px solid #5a2a2a; font: 700 max(13px, 1.8cqw) var(--pix); white-space: nowrap; }
+.plate img { width: 2.4cqw; height: 2.4cqw; }
+.plate svg { width: 1.8cqw; height: 1.8cqw; color: #ff5555; }
+.plate .nm { color: #ffaa00; } .plate .ep { color: #ff6b6b; }
+#prompt { position: absolute; left: 0; right: 0; top: 46%; text-align: center; color: var(--mu); letter-spacing: 0.14em; font-size: var(--fs); z-index: 2; }
+#prompt .big { font: 700 max(14px, 2cqw) var(--pix); color: var(--hi); margin-bottom: 0.5cqw; }
 
-.lab { left: 0; width: 313px; text-align: center; white-space: nowrap; transform-origin: top center; }
-#side { left: 94px; top: 122px; width: 313px; height: 731px; }
+#row { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-38%); display: flex; justify-content: center; flex-wrap: wrap; gap: 1.1cqw; z-index: 2; padding: 0 1.5cqw; }
+.slot { width: 10.6cqw; height: 10.6cqw; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5cqw; --cut: 1cqw; cursor: default; animation: pop 380ms cubic-bezier(.2, 1.4, .4, 1) both; }
+.slot .ico { width: 5.2cqw; height: 5.2cqw; background-size: 100% 100%; background-repeat: no-repeat; image-rendering: pixelated; }
+.slot .cnt { position: absolute; right: 0.8cqw; top: 0.5cqw; font-weight: 600; font-size: var(--fs); }
+.slot .cap { font-size: var(--fs-s); color: var(--mu); max-width: 92%; text-align: center; line-height: 1.2; }
+.slot.chip-slot .val { font: 700 max(13px, 1.8cqw) var(--pix); }
+.slot.rp { border-color: #1fb6c8; } .slot.rp .val { color: #8fe8f2; }
+.slot.cd { border-color: #d9a73a; } .slot.cd .val { color: #ffd666; }
+@keyframes pop { from { transform: translateY(1.2cqw) scale(0.8); opacity: 0; } to { transform: none; opacity: 1; } }
+#row .fail { color: var(--bad); font-size: var(--fs-l); }
 
-#chamber { left: 420px; top: 112px; width: 1172px; height: 675px; }
-#chamber > img { left: 0; top: 0; width: 1172px; height: 675px; image-rendering: auto; }
-#summary { image-rendering: pixelated; }
-#banner { left: 0; right: 0; top: 30px; text-align: center; }
+#flash { position: absolute; inset: 0; opacity: 0; z-index: 3; pointer-events: none; }
+#flash.go { animation: flash 600ms ease-out; }
+@keyframes flash { 0% { opacity: 0.85; } 100% { opacity: 0; } }
+#sparks { position: absolute; left: 50%; top: 62%; width: 0; height: 0; z-index: 3; }
+.spark { position: absolute; width: 0.7cqw; height: 0.7cqw; background: var(--hi); opacity: 0; }
+.spark.go { animation: fly 650ms ease-out forwards; }
+@keyframes fly { 0% { opacity: 1; transform: translate(0, 0); } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)); } }
 
-#banner .plate { position: absolute; background: rgba(0, 0, 0, 0.63); }
-#banner > img, #banner > div { position: absolute; }
-#center { image-rendering: pixelated; width: 187px; height: 187px; left: 492px; top: 244px; background-repeat: no-repeat; background-size: 100% 100%; }
-
-#flash { left: 375px; top: 127px; width: 422px; height: 421px; opacity: 0; }
-#flash.go { animation: flash 600ms linear forwards; }
-@keyframes flash { 0% { opacity: 0; } 25% { opacity: 0.63; } 41.7% { opacity: 0.44; } 100% { opacity: 0; } }
-
-#sparks { left: 586px; top: 337px; width: 0; height: 0; }
-.spark { position: absolute; left: -10px; top: -10px; width: 20px; height: 20px; opacity: 0;
-         background: radial-gradient(circle, #fff 0 18%, #9ff 19% 45%, transparent 46%);
-         clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); }
-.spark.go { animation: spark 500ms linear forwards; }
-@keyframes spark { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.4); } }
-
-.slot { position: absolute; box-sizing: border-box; cursor: default; }
-.slot .ico { position: absolute; background-repeat: no-repeat; background-size: 100% 100%; image-rendering: pixelated; }
-.slot .cnt { position: absolute; color: #fff; text-shadow: 2px 2px 0 #3e3e3e; white-space: nowrap; }
-.slot .chip { position: absolute; left: 0; width: 100%; text-align: center; white-space: nowrap; }
-
-#status { left: 430px; top: 756px; width: 1150px; text-align: center; color: #ffff55; font-size: 21px; line-height: 24px; }
-#buttons > * { position: absolute; }
-.btn { border: 0; padding: 0; cursor: pointer; background: url(claim_button_blank.png) no-repeat 0 0 / 100% 100%; color: #fff; filter: brightness(0.96); }
-.btn:hover { filter: none; }
-.btn span { display: block; white-space: nowrap; }
-
-#tip { position: fixed; z-index: 10; pointer-events: none; padding: calc(4px * var(--s)) calc(6px * var(--s)); white-space: nowrap;
-       font-size: calc(21px * var(--s)); line-height: calc(25px * var(--s)); background: #100010f0; border: 2px solid #2d0a63; color: #fff; }
+#buttons { position: absolute; left: 30cqw; right: 3cqw; bottom: 3cqw; height: 6.4cqw; display: flex; align-items: center; justify-content: center; gap: 1.6cqw; }
+#buttons .btn { height: 100%; flex: 1 1 0; min-width: 0; max-width: 30cqw; font-size: max(12px, 1.5cqw); overflow: hidden; text-overflow: ellipsis; }
+#status { color: var(--hi); letter-spacing: 0.2em; font: 700 max(12px, 1.4cqw) var(--pix); }

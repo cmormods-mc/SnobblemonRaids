@@ -1,26 +1,19 @@
-@import url("../shared/font.css");
-/* The leaderboards: a 520x360 panel in Minecraft GUI pixels, the same flat chrome as the Hall of Legends. */
-:root { --s: 2; --font: "Monocraft", ui-monospace, Consolas, monospace; --navy: #03283f; --cyan: #39f2ff; --white: #f1fbff; --dim: #76a3b8; }
-html, body { margin: 0; height: 100%; overflow: hidden; background: transparent; user-select: none; }
-body { font-family: var(--font); }
-button { font-family: inherit; }
-
-#stage { position: absolute; width: 520px; height: 360px; transform: scale(var(--s)); transform-origin: 0 0;
-         background: var(--navy); box-shadow: inset 0 0 0 1px #001425, inset 0 0 0 3px var(--cyan), inset 0 0 0 4px var(--navy);
-         font-size: 8px; line-height: 9px; color: var(--white); }
-#stage > button, #stage > div, #rows, .row, .row * { position: absolute; box-sizing: border-box; }
-.plate { height: 30px; padding: 0 4px; border: 0; background: var(--navy); color: var(--white); font-size: 8px; cursor: pointer; line-height: 30px; text-align: center;
-         box-shadow: inset 0 0 0 1px #001425, inset 0 0 0 3px var(--cyan), inset 0 0 0 4px var(--navy); white-space: nowrap; overflow: hidden; }
-button.plate:hover:not(:disabled)::after { content: ""; position: absolute; inset: 1px; border: 1px solid var(--cyan); pointer-events: none; }
-button.plate:disabled { color: var(--dim); cursor: default; }
-div.plate { cursor: default; color: var(--white); }
-
-#rows { left: 4px; top: 34px; width: 512px; height: 270px; }
-.row { left: 0; width: 512px; height: 24px; background: #072a45; overflow: hidden; }
-.row.you { background: #0b4a72; box-shadow: inset 3px 0 0 var(--cyan); }
-.row .rank { left: 8px; top: 8px; width: 40px; color: var(--dim); }
-.row .name { left: 52px; top: 8px; width: 330px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.row .val { right: 10px; top: 8px; width: 110px; text-align: right; color: var(--cyan); white-space: nowrap; }
-.row.r1 .rank { color: #ffd84a; } .row.r2 .rank { color: #d8e4ec; } .row.r3 .rank { color: #e08a4a; }
-.empty { position: absolute; left: 8px; right: 8px; top: 8px; text-align: center; color: var(--dim); }
-#counts { left: 0; top: 313px; width: 440px; padding-left: 8px; color: #bef8ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#board { margin: 1.4cqw 3cqw 0; height: calc(100% - 7.4cqw - 3cqw); padding: 1.6cqw 2.4cqw 1.2cqw; display: flex; flex-direction: column; gap: 0.8cqw; }
+#nav { display: flex; align-items: center; gap: 1.6cqw; }
+#nav .btn { padding: 0.5cqw 1.6cqw; }
+#boardTitle { flex: 1; text-align: center; font: 700 max(14px, 2cqw) var(--pix); letter-spacing: 0.04em; }
+#head, .row { display: grid; grid-template-columns: 7cqw 1fr 16cqw; align-items: center; gap: 1cqw; padding: 0 1.4cqw; }
+#head { color: var(--mu); font-size: var(--fs-s); letter-spacing: 0.14em; padding-bottom: 0.4cqw; border-bottom: 1px dashed rgba(70, 227, 255, 0.25); }
+#head span:last-child, .row .val { text-align: right; }
+#rows { flex: 1; display: flex; flex-direction: column; gap: 0.4cqw; min-height: 0; overflow: hidden; }
+.row { position: relative; flex: 1 1 0; max-height: 3.7cqw; min-height: 0; background: rgba(7, 42, 69, 0.6); border-left: 0.35cqw solid #1d6f8f; font-size: var(--fs-l); }
+.row .rank { color: var(--mu); font-weight: 600; }
+.row .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row .val { color: var(--hi); font-weight: 600; }
+.row.r1 { border-left-color: var(--leg); } .row.r1 .rank { color: var(--leg); }
+.row.r2 { border-left-color: #c8d6df; } .row.r2 .rank { color: #c8d6df; }
+.row.r3 { border-left-color: #d98b52; } .row.r3 .rank { color: #d98b52; }
+.row.you { background: rgba(70, 227, 255, 0.16); box-shadow: 0 0 0 1px var(--hi) inset; }
+.row.you .name::after { content: "  YOU"; color: var(--hi); font-size: var(--fs-s); letter-spacing: 0.1em; }
+#rows .empty { padding: 6cqw 0; }
+#counts { color: var(--mu); text-align: center; font-size: var(--fs-s); letter-spacing: 0.08em; }

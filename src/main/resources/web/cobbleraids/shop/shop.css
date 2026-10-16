@@ -1,44 +1,31 @@
-@import url("../shared/font.css");
-/* One logical Minecraft GUI pixel is --s real pixels. The window is the same 235x255 art the native
-   screen assembles at a 22-pixel slot, so every coordinate below is a native coordinate. */
-:root { --s: 2; --font: "Monocraft", ui-monospace, Consolas, monospace; }
-html, body { margin: 0; height: 100%; overflow: hidden; background: transparent; user-select: none; }
-body { font-family: var(--font); image-rendering: pixelated; }
-img { image-rendering: pixelated; display: block; }
+#grid { display: grid; gap: 1.2cqw; padding: 1.4cqw 3cqw 0; height: calc(100% - 7.4cqw - 6.6cqw); align-content: start; overflow-y: auto; }
+#grid.items { grid-template-columns: repeat(8, 1fr); grid-auto-rows: 8.4cqw; gap: 0.9cqw; }
+#grid.pokemon { grid-template-columns: repeat(4, 1fr); grid-auto-rows: 8.9cqw; }
 
-#stage { position: absolute; left: 50%; top: 50%; width: 235px; height: 255px;
-         transform: translate(-50%, -50%) scale(var(--s)); transform-origin: center;
-         background: url(shop_items.png) no-repeat 0 0; font-size: 8px; line-height: 9px; }
-#stage.pokemon { background-image: url(shop_pokemon.png); }
+.cell { position: relative; min-width: 0; --cut: 0.9cqw; cursor: pointer; overflow: hidden; }
+.cell::after { width: 1cqw; height: 1cqw; }
+.cell .art { position: absolute; background-repeat: no-repeat; background-position: center; background-size: 100% 100%; image-rendering: pixelated; }
+.cell .tag { position: absolute; color: var(--mu); font-size: var(--fs-s); }
+.cell.dim .art, .cell.dim .name, .cell.dim .meta { opacity: 0.45; }
+.cell.soldout .price { color: var(--bad); }
 
-#heading { position: absolute; left: 36px; right: 36px; top: 24px; text-align: center; white-space: nowrap;
-           color: #afffff; text-shadow: 1px 1px 0 #2a3a3a; }
-.arrow { position: absolute; top: 23px; width: 14px; height: 12px; padding: 0; border: 0; background: none; cursor: pointer; }
-.arrow img { position: absolute; left: 2px; top: 2px; width: 10px; height: 9px; }
-#prev { left: 22px; } #next { left: 199px; }
-.arrow:hover { background: rgba(255, 255, 255, 0.25); }
-#stage.single .arrow { display: none; }
+/* Item cells: a centred icon, the price underneath. */
+.items .cell .art { left: 50%; top: 0.9cqw; width: 4.4cqw; height: 4.4cqw; transform: translateX(-50%); }
+.items .cell .price { position: absolute; left: 0; right: 0; bottom: 0.7cqw; text-align: center; color: var(--hi); font-weight: 600; font-size: var(--fs-s); }
+.items .cell .tag { right: 0.7cqw; top: 0.4cqw; }
+.items .cell .count { position: absolute; left: 0.7cqw; top: 0.4cqw; font-weight: 600; font-size: var(--fs-s); }
 
-#balance { position: absolute; left: 76px; top: 234px; width: 82px; height: 11px; text-align: center;
-           line-height: 11px; color: #fff; text-shadow: 1px 1px 0 #3e3e3e; white-space: nowrap; }
+/* Pokemon cells: sprite on the left, details on the right. */
+.pokemon .cell .art { left: 0.6cqw; top: 50%; width: 9.6cqw; height: 6.4cqw; transform: translateY(-50%); }
+.pokemon .cell .body { position: absolute; left: 10.6cqw; right: 0.8cqw; top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: center; gap: 0.15cqw; min-width: 0; }
+.pokemon .cell .name { font-weight: 600; font-size: var(--fs-l); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pokemon .cell .meta { color: var(--mu); font-size: var(--fs-s); white-space: nowrap; }
+.pokemon .cell .price { color: var(--hi); font-weight: 600; font-size: var(--fs); }
+.pokemon .cell .tag { right: 0.8cqw; top: 0.4cqw; }
+.shiny { color: #ffe066; }
+.reroll { position: absolute; right: 0.6cqw; bottom: 0.5cqw; padding: 0.2cqw 0.7cqw; border: 1px solid #ffd84a; color: #ffd84a; font: 700 var(--fs-s) var(--pix); background: rgba(40, 32, 6, 0.9); cursor: pointer; }
+.reroll:hover { background: #ffd84a; color: #221a02; }
 
-#grid { position: absolute; left: 26px; top: 40px; width: 183px; height: 183px; }
-.cell { position: absolute; cursor: pointer; overflow: hidden; }
-.cell .art { position: absolute; background-repeat: no-repeat; background-size: 100% 100%; image-rendering: pixelated; }
-.items .cell .art { left: 3px; top: 3px; width: 16px; height: 16px; }
-.pokemon .cell .art { left: 0; top: 7px; width: 45px; height: 30px; }
-.cell .dim { position: absolute; inset: 0; background: rgba(7, 10, 16, 0.6); display: none; }
-.cell.unaffordable .dim { display: block; }
-.cell:hover::after { content: ""; position: absolute; inset: 0; background: rgba(255, 255, 255, 0.25); }
-.cell .count { position: absolute; right: 1px; bottom: 0; color: #fff; text-shadow: 1px 1px 0 #3e3e3e; }
-.cell .stock { position: absolute; left: 1px; top: 1px; color: #b8d8ea; text-shadow: 1px 1px 0 #2a3338; }
-.cell.soldout .stock { color: #ff8a8a; }
-.cell .reroll { position: absolute; right: 1px; bottom: 0; color: #ffd84a; text-shadow: 1px 1px 0 #403610; }
-
-#tip { position: fixed; z-index: 10; pointer-events: none; padding: 3px 4px; white-space: nowrap;
-       background: #100010f0; border: 1px solid #2d0a63; box-shadow: 0 0 0 1px #100010;
-       font-size: 8px; line-height: 10px; transform: scale(var(--s)); transform-origin: top left; }
-#tip div { text-shadow: 1px 1px 0 #1c1c1c; }
-.c-white { color: #fff; } .c-gray { color: #aaa; } .c-yellow { color: #ffff55; } .c-aqua { color: #55ffff; }
-.c-red { color: #ff5555; } .c-dred { color: #aa0000; } .c-green { color: #55ff55; } .c-purple { color: #ff55ff; }
-.c-dgray { color: #555; }
+#pager { position: absolute; left: 3cqw; right: 3cqw; bottom: 2.2cqw; display: flex; align-items: center; justify-content: space-between; }
+#where { color: var(--mu); letter-spacing: 0.14em; font-size: var(--fs-s); }
+.stage.single #pager button { visibility: hidden; }

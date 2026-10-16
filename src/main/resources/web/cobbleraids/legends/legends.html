@@ -1,14 +1,20 @@
 <!doctype html>
 <meta charset="utf-8">
 <title>Hall of Legends</title>
+<link rel="stylesheet" href="../shared/theme.css">
 <link rel="stylesheet" href="legends.css">
-<div id="stage">
-  <button class="plate" id="mine" style="left:0;top:0;width:256px"></button>
-  <button class="plate" id="tier" style="left:264px;top:0;width:256px"></button>
-  <div id="rows"></div>
-  <div id="counts"></div>
-  <button class="plate" id="prev" style="left:0;top:330px;width:221px">&lt; Previous</button>
-  <button class="plate" id="next" style="left:225px;top:330px;width:221px">Next &gt;</button>
-  <button class="plate" id="back" style="left:450px;top:330px;width:70px">Back</button>
+<div class="stage">
+  <header class="top">
+    <b class="title">HALL OF LEGENDS</b><span class="crumb" id="crumb"></span><i class="sp"></i>
+    <button class="btn ghost" id="mine"></button><button class="btn ghost" id="tier"></button>
+    <button class="btn ghost" id="close">Close</button>
+  </header>
+  <main id="rows"></main>
+  <footer id="pager">
+    <button class="btn ghost" id="prev">&lsaquo; Previous</button>
+    <span id="counts"></span>
+    <button class="btn ghost" id="next">Next &rsaquo;</button>
+  </footer>
 </div>
+<script src="../shared/ui.js"></script>
 <script src="legends.js"></script>
