@@ -21,7 +21,9 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import com.cobbleraids.web.WebSounds;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
 
 /**
  * What the shop screen is allowed to ask for, and what it is told back.
@@ -50,7 +52,8 @@ public final class RaidShopGateway {
         // The web page asks for page 0 itself once it is listening.
         if (ShopWebPage.open(player)) return;
             player.sendSystemMessage(Component.literal(
-                            "The shop needs the WebGUI mod on your client.")
+                            "The shop needs the WebGUI mod on your client. Without it, /cobbleraids shop lists the items"
+                                    + " and /cobbleraids shop buy <id> buys one.")
                     .withStyle(ChatFormatting.RED));
     }
 
@@ -93,6 +96,8 @@ public final class RaidShopGateway {
         }
         player.sendSystemMessage(Component.literal(message)
                 .withStyle(result.success() ? ChatFormatting.GREEN : ChatFormatting.RED));
+        if (result.success()) WebSounds.play(player, SoundEvents.EXPERIENCE_ORB_PICKUP, 0.7f, 1.2f);
+        else WebSounds.play(player, SoundEvents.VILLAGER_NO, 0.7f, 1.0f);
         // Re-sent whether it worked or not: a refusal still has to leave the screen showing the
         // truth, and a limit being reached (or a slot being spent, or a reroll changing its own
         // numbers) is exactly what changes how a cell should look.

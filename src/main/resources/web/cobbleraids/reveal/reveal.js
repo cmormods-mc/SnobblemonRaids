@@ -115,7 +115,7 @@ function drawButtons() {
   if (state === 'CHOOSING' && offer) {
     const n = offer.choices.length;
     offer.choices.forEach((id) => {
-      const b = RC.el('button', 'btn', n === 1 ? 'Claim Rewards' : id);
+      const b = RC.el('button', 'btn', n === 1 ? 'Claim Rewards' : id.replace(/[_.-]+/g, ' ').replace(/(^|\s)\w/g, (c) => c.toUpperCase()));
       b.addEventListener('click', () => choose(id));
       holder.appendChild(b);
     });

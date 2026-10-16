@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.182-raid-network-ui'
+version = '0.8.183-polish'
 group = 'com.cobbleraids'
 
 base {

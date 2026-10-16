@@ -23,7 +23,9 @@
 .pokemon .cell .price { color: var(--hi); font-weight: 600; font-size: var(--fs); }
 .pokemon .cell .tag { right: 0.8cqw; top: 0.4cqw; }
 .shiny { color: #ffe066; }
-.reroll { position: absolute; right: 0.6cqw; bottom: 0.5cqw; padding: 0.2cqw 0.7cqw; border: 1px solid #ffd84a; color: #ffd84a; font: 700 var(--fs-s) var(--pix); background: rgba(40, 32, 6, 0.9); cursor: pointer; }
+.pokemon .cell .pricerow { display: flex; align-items: center; justify-content: space-between; gap: 0.6cqw; min-width: 0; }
+.pokemon .cell .pricerow .price { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reroll { flex: none; padding: 0.15cqw 0.6cqw; border: 1px solid #ffd84a; color: #ffd84a; font: 700 var(--fs-s) var(--pix); background: rgba(40, 32, 6, 0.9); cursor: pointer; }
 .reroll:hover { background: #ffd84a; color: #221a02; }
 
 #pager { position: absolute; left: 3cqw; right: 3cqw; bottom: 2.2cqw; display: flex; align-items: center; justify-content: space-between; }

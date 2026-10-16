@@ -44,7 +44,11 @@ function cell(entry, pokemon) {
     const name = RC.el('div', 'name' + (entry.shiny ? ' shiny' : ''), (entry.shiny ? '★ ' : '') + RC.title(entry.species));
     body.append(name, RC.el('div', 'meta', 'Level ' + entry.level));
     if (entry.personal) body.appendChild(RC.el('div', 'meta', 'IV ' + entry.ivPercent + '%  EV ' + entry.evPercent + '%'));
-    body.appendChild(RC.el('div', 'price', price));
+    // The price and the reroll button share a row, so a long price can never run under the button.
+    const priceRow = RC.el('div', 'pricerow');
+    priceRow.appendChild(RC.el('div', 'price', price));
+    if (entry.personal && entry.canReroll) priceRow.appendChild(rerollButton(entry));
+    body.appendChild(priceRow);
     el.appendChild(body);
   } else {
     if (entry.count > 1) el.appendChild(RC.el('span', 'count', '×' + entry.count));
@@ -52,17 +56,18 @@ function cell(entry, pokemon) {
   }
   if (entry.limit > 0 && !entry.soldOut) el.appendChild(RC.el('span', 'tag', Math.max(0, entry.remaining) + ' left'));
 
-  if (entry.personal && entry.canReroll) {
-    const r = RC.el('button', 'reroll', 'REROLL');
-    r.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      send({ action: 'buy', page: page.pageIndex, id: 'reroll:' + entry.id.substring('personal:'.length) });
-    });
-    el.appendChild(r);
-  }
   el.addEventListener('click', () => send({ action: 'buy', page: page.pageIndex, id: entry.id }));
   tip.bind(el, () => tooltipFor(entry));
   return el;
+}
+
+function rerollButton(entry) {
+  const r = RC.el('button', 'reroll', 'REROLL');
+  r.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    send({ action: 'buy', page: page.pageIndex, id: 'reroll:' + entry.id.substring('personal:'.length) });
+  });
+  return r;
 }
 
 function tooltipFor(entry) {

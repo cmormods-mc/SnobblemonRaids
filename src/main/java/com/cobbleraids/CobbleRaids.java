@@ -115,6 +115,7 @@ public final class CobbleRaids implements ModInitializer {
             RaidFaultBarrier.safeTick("reconnect-grace", server, RaidReconnectService::tick);
             RaidFaultBarrier.safeTick("combat-timer", server, RaidCombatRuleService::tick);
             RaidFaultBarrier.safeTick("boss-glow", server, RaidBossGlowService::tick);
+            RaidFaultBarrier.safeTick("web-sounds", server, com.cobbleraids.web.WebSounds::tick);
             RaidFaultBarrier.safeTick("consistency-audit", server, RaidConsistencyAuditScheduler::tick);
         });
         // Guarded like everything else, but for a different reason than the rest: reload() throws
@@ -235,6 +236,7 @@ public final class CobbleRaids implements ModInitializer {
             RaidFaultBarrier.guard("shutdown:combat-rules", RaidCombatRuleService::onServerStopped);
             RaidFaultBarrier.guard("shutdown:reconnect-grace", RaidReconnectService::onServerStopped);
             RaidFaultBarrier.guard("shutdown:rewards", RaidRewardService::onServerStopped);
+            RaidFaultBarrier.guard("shutdown:web-sounds", com.cobbleraids.web.WebSounds::clear);
             RaidFaultBarrier.guard("shutdown:capture-sessions", RaidCaptureSessionService::onServerStopped);
             RaidFaultBarrier.guard("shutdown:spawn-history", RaidSpawnHistory::onServerStopped);
             RaidFaultBarrier.guard("shutdown:player-records", RaidPlayerRecords::onServerStopped);

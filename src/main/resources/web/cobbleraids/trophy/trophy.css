@@ -9,7 +9,7 @@
 .case .sprite { width: 80%; aspect-ratio: 3 / 2; background-repeat: no-repeat; background-size: 100% 100%; background-position: center; image-rendering: pixelated; }
 .case .noart { font: 700 6cqw var(--pix); color: var(--mu); }
 .case .lvl { position: absolute; right: 0.8cqw; top: 0.6cqw; color: var(--mu); font-size: var(--fs-s); letter-spacing: 0.1em; }
-.case .name { font: 700 max(14px, 1.9cqw) var(--pix); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.case .name { font: 700 max(14px, 1.9cqw) var(--pix); overflow: hidden; text-overflow: clip; white-space: nowrap; }
 .case .tags { display: flex; justify-content: space-between; align-items: center; font-size: var(--fs-s); letter-spacing: 0.12em; }
 .case .tier { color: var(--tc); font-weight: 600; }
 .case .shine { color: var(--mu); } .case .shine.on { color: #ffe066; }

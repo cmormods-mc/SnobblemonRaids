@@ -13,10 +13,12 @@
     linear-gradient(90deg, transparent 38%, rgba(70, 227, 255, 0.16) 44%, rgba(160, 244, 255, 0.28) 50%, rgba(70, 227, 255, 0.16) 56%, transparent 62%); }
 #chamber.done #beam { opacity: 0.35; }
 #banner { position: absolute; left: 0; right: 0; top: 1.4cqw; display: flex; justify-content: center; z-index: 2; }
-.plate { display: flex; align-items: center; gap: 0.9cqw; padding: 0.6cqw 1.8cqw; background: rgba(2, 10, 18, 0.88); border: 1px solid #5a2a2a; font: 700 max(13px, 1.8cqw) var(--pix); white-space: nowrap; }
+.plate { display: flex; align-items: center; gap: 0.9cqw; padding: 0.6cqw 1.8cqw; max-width: 96%; min-width: 0; background: rgba(2, 10, 18, 0.88); border: 1px solid #5a2a2a; font: 700 max(13px, 1.8cqw) var(--pix); white-space: nowrap; }
 .plate img { width: 2.4cqw; height: 2.4cqw; }
 .plate svg { width: 1.8cqw; height: 1.8cqw; color: #ff5555; }
 .plate .nm { color: #ffaa00; } .plate .ep { color: #ff6b6b; }
+.plate .nm, .plate .ep { min-width: 0; overflow: hidden; text-overflow: clip; }
+.plate img, .plate svg { flex: none; }
 #prompt { position: absolute; left: 0; right: 0; top: 46%; text-align: center; color: var(--mu); letter-spacing: 0.14em; font-size: var(--fs); z-index: 2; }
 #prompt .big { font: 700 max(14px, 2cqw) var(--pix); color: var(--hi); margin-bottom: 0.5cqw; }
 
@@ -40,5 +42,5 @@
 @keyframes fly { 0% { opacity: 1; transform: translate(0, 0); } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)); } }
 
 #buttons { position: absolute; left: 30cqw; right: 3cqw; bottom: 3cqw; height: 6.4cqw; display: flex; align-items: center; justify-content: center; gap: 1.6cqw; }
-#buttons .btn { height: 100%; flex: 1 1 0; min-width: 0; max-width: 30cqw; font-size: max(12px, 1.5cqw); overflow: hidden; text-overflow: ellipsis; }
+#buttons .btn { height: 100%; flex: 1 1 0; min-width: 0; max-width: 30cqw; font-size: max(10px, 1.25cqw); letter-spacing: 0.02em; white-space: normal; line-height: 1.2; overflow: hidden; }
 #status { color: var(--hi); letter-spacing: 0.2em; font: 700 max(12px, 1.4cqw) var(--pix); }

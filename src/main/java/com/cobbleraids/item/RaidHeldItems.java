@@ -2,6 +2,7 @@ package com.cobbleraids.item;
 
 import com.cobblemon.mod.common.CobblemonItemComponents;
 import com.cobblemon.mod.common.item.components.HeldItemEffectComponent;
+import java.util.List;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -40,11 +41,15 @@ public final class RaidHeldItems {
         // the duplicate id and take the whole mod down at load.
         if (raidCore != null) return;
         raidCore = register("raid_core", new RaidPolymerItem(new Item.Properties().stacksTo(1),
-                Items.HEART_OF_THE_SEA, "raid_core", "Raid Core"));
+                Items.HEART_OF_THE_SEA, "raid_core", "Raid Core",
+                List.of("Held item", "+20% Raid Points when you claim a raid reward",
+                        "while a Pokemon in your party holds it.")));
         guardianScale = register("guardian_scale", new RaidPolymerItem(new Item.Properties().stacksTo(1)
                 .component(CobblemonItemComponents.HELD_ITEM_EFFECT,
                         new HeldItemEffectComponent(GUARDIAN_SCALE_SHOWDOWN_ID, true)),
-                Items.TURTLE_SCUTE, "guardian_scale", "Guardian Scale"));
+                Items.TURTLE_SCUTE, "guardian_scale", "Guardian Scale",
+                List.of("Held item", "Once per battle, survives a hit that would faint",
+                        "its holder, leaving it at 20% HP.")));
     }
 
     private static Item register(String path, Item item) {

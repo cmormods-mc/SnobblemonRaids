@@ -40,7 +40,8 @@ public final class LegendRoomGateway {
     public static void open(ServerPlayer player, int columns) {
         if (!LegendWebPage.open(player)) {
             player.sendSystemMessage(Component.literal(
-                            "The Hall of Legends needs the WebGUI mod on your client.")
+                            "The Hall of Legends needs the WebGUI mod on your client. It holds "
+                                    + HallOfLegends.all().size() + " legends.")
                     .withStyle(ChatFormatting.RED));
         }
     }

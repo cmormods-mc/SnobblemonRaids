@@ -41,8 +41,11 @@ public final class TrophyRoomGateway {
     /** Opens the trophy room at its first page, with no search or filters applied yet. */
     public static void open(ServerPlayer player, int columns) {
         if (!TrophyWebPage.open(player)) {
+            java.util.Collection<TrophyEntry> held = TrophyLedger.forPlayer(player.getUUID()).values();
+            long shiny = held.stream().filter(TrophyEntry::shiny).count();
             player.sendSystemMessage(Component.literal(
-                            "The trophy room needs the WebGUI mod on your client.")
+                            "The trophy room needs the WebGUI mod on your client. You hold " + held.size()
+                                    + " trophies, " + shiny + " of them shiny.")
                     .withStyle(ChatFormatting.RED));
         }
     }

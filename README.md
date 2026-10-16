@@ -27,6 +27,24 @@ Every screen (shop, trophy room, Hall of Legends, reward reveal, capture minigam
 leaderboards) is a WebGUI page, so players who want them need the WebGUI client mod. A player without
 it can still claim rewards from chat with `/cobbleraids reward claim`.
 
+### Upgrading from a version that needed a client mod
+
+Earlier versions had to be installed on every player's machine. This one does not, and the old client
+jar must be removed: a client that still has an old CobbleRaids jar registers the key, fragment, Raid
+Core and Guardian Scale items itself, which conflicts with the server's versions of them.
+
+1. Remove the old `CobbleRaids-*.jar` from `mods/` on the server and on every client.
+2. On the server, add this jar plus Polymer (core, resource-pack, common, autohost) and, for the screens,
+   WebGUI. Fabric Loader must be 0.18.0 or newer.
+3. Set `"enabled": true` in `config/polymer/auto-host.json`, then restart. Players receive a small
+   resource pack with the item art on their next join.
+4. Tell players who want the shop, trophy room, Hall of Legends, reward reveal and capture minigame to
+   install the WebGUI client mod. Players without it still get chat commands: `/cobbleraids shop` lists
+   the shop and `/cobbleraids shop buy <id>` buys, `/cobbleraids reward claim` claims, and
+   `/cobbleraids top` and `/cobbleraids stats` show leaderboards and records.
+
+Saved data (raids, trophies, Raid Points, stats, defeated bosses) is read exactly as before.
+
 **Optional.** `SkiesGUIs` 1.8.1 gives reward claiming a chest GUI; without it the same
 rewards are claimed from chat with `/cobbleraids reward claim`, and a SkiesGUIs that
 fails to load degrades to that fallback rather than aborting server start.

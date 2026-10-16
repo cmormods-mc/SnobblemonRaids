@@ -12,7 +12,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import com.cobblemon.mod.common.CobblemonSounds;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
 
 /**
  * The Raid Capture Protocol as a web page: the choice prompt, three pulses, the throw and the result.
@@ -125,6 +127,10 @@ public final class CaptureWebPage {
         out.addProperty("index", payload.pulseIndex());
         out.addProperty("score", payload.score());
         WebGuiBridge.emit(player, "capture_pulse", out.toString());
+        double score = payload.score();
+        if (score >= 1) WebSounds.play(player, SoundEvents.EXPERIENCE_ORB_PICKUP, 0.8f, 1.7f);
+        else if (score >= 0.5) WebSounds.play(player, SoundEvents.NOTE_BLOCK_CHIME.value(), 0.8f, 1.0f);
+        else WebSounds.play(player, SoundEvents.NOTE_BLOCK_BASS.value(), 0.8f, 0.8f);
     }
 
     /** The final result. The page is finished with the session after this. */
@@ -137,5 +143,9 @@ public final class CaptureWebPage {
         out.addProperty("throwQ", payload.throwQualityPercent());
         out.addProperty("delivery", payload.delivery());
         WebGuiBridge.emit(player, "capture_result", out.toString());
+        // The ball shakes for about a second and a half on the page; the verdict sounds as it ends.
+        WebSounds.play(player, CobblemonSounds.POKE_BALL_HIT, 1.0f, 1.0f);
+        WebSounds.later(player, 30, payload.success() ? SoundEvents.UI_TOAST_CHALLENGE_COMPLETE : SoundEvents.VILLAGER_NO,
+                0.8f, 1.0f);
     }
 }
