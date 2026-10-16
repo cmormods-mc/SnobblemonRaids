@@ -18,9 +18,8 @@ it on every push:
 bash validation/hooks/install.sh     # once per clone
 ```
 
-That hook is currently the only gate: GitHub Actions is disabled account-wide, so the last
-remote run in this repo's history is from 2026-09-10. `git push --no-verify` or
-`SKIP_LOCAL_CI=1 git push` bypasses it for one push.
+That hook gates every push locally, and GitHub Actions runs the same sequence on the pushed commit.
+`git push --no-verify` or `SKIP_LOCAL_CI=1 git push` bypasses the hook for one push.
 
 ## The reward-economy manifest
 

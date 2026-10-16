@@ -1,6 +1,6 @@
 # CobbleRaids
 
-Cooperative wild raid bosses for **Cobblemon 1.7.3** on **Minecraft 1.21.1 / Fabric**.
+Cooperative wild raid bosses for **Cobblemon 1.8.2** on **Minecraft 1.21.1 / Fabric**.
 
 Right-click a wild boss to open a recruitment window, up to four players join, and
 one shared Showdown battle runs against a single boss HP pool with per-player
@@ -370,8 +370,8 @@ artifact `com.cobbleraids:cobbleraids:<version>`:
 gradle --no-daemon clean build
 ```
 
-Outputs the mod JAR, a sources JAR and the two optional data JARs to `build/libs`, and runs
-the 409-test unit suite over the Minecraft-free core: spawn-rate and contribution maths,
+Outputs the mod JAR and a sources JAR to `build/libs` (install only the mod JAR), and runs
+the 602-test unit suite over the Minecraft-free core: spawn-rate and contribution maths,
 config round-trip, lobby recruitment and raid progress rules, fault containment, the
 consistency audit's reporting rules, the shop and reward economy, the encounter API's request
 and policy rules, and the Showdown file patcher.
@@ -404,9 +404,9 @@ bash validation/ci_local.sh          # ~40s
 bash validation/hooks/install.sh     # once per clone: gate `git push` on it
 ```
 
-The pre-push hook is the real gate right now: GitHub Actions is disabled account-wide for
-this repo's owner, so no push has been checked remotely since 2026-09-10. Bypass a single
-push with `git push --no-verify` or `SKIP_LOCAL_CI=1 git push`.
+The pre-push hook runs the same sequence locally before every push, and GitHub Actions runs it
+again on the pushed commit. Bypass the hook for a single push with `git push --no-verify` or
+`SKIP_LOCAL_CI=1 git push`.
 
 A live server harness covers what static checks cannot:
 
