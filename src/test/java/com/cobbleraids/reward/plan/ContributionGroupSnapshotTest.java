@@ -31,7 +31,7 @@ class ContributionGroupSnapshotTest {
                     + "\"key_fragments_by_bonus_rolls\":[1,2,2,4]}").getAsJsonObject());
 
     private static RaidDefinition.Rewards policyDriven() {
-        return new RaidDefinition.Rewards("cobbleraids_reward",
+        return new RaidDefinition.Rewards(
                 Map.of("all", new RaidDefinition.RewardChoice("all", List.of(), List.of(), List.of())),
                 new RaidDefinition.ContributionBonus(false, List.of(), List.of()),
                 List.of());

@@ -121,10 +121,10 @@ def validate_reward_template() -> None:
     # Keys RaidDefinition.parseRewards actually reads. A key here that the parser dropped, or a
     # parser key the template never shows, means the template is teaching something untrue.
     assert set(k for k in rewards if not k.startswith("_")) == {
-        "gui_id", "loot_tables", "choices", "contribution_bonus"}, sorted(rewards)
+        "loot_tables", "choices", "contribution_bonus"}, sorted(rewards)
 
     definition = (ROOT / "src/main/java/com/cobbleraids/config/RaidDefinition.java").read_text(encoding="utf-8")
-    for key in ("gui_id", "loot_tables", "choices", "contribution_bonus", "chance_items", "min_percentage"):
+    for key in ("loot_tables", "choices", "contribution_bonus", "chance_items", "min_percentage"):
         assert f'"{key}"' in definition, f"template documents {key} but the parser never reads it"
 
     def check_items(items, where):

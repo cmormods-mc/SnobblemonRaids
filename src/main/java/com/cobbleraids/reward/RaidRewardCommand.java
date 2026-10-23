@@ -9,7 +9,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.server.level.ServerPlayer;
 
-/** Player-facing claim endpoint used by SkiesGUIs buttons and for reopening a closed reward GUI. */
+/** Player-facing claim endpoint used by the chat fallback and for reopening a closed reward screen. */
 public final class RaidRewardCommand {
     /**
      * Suggests only what the caller can actually claim, which is the choices on their own

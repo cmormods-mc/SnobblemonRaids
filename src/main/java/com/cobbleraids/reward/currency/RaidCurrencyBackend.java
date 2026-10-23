@@ -4,8 +4,7 @@ import java.math.BigInteger;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
- * Isolates the optional economy-mod dependency behind a small surface, the same way
- * {@link com.cobbleraids.reward.RewardGuiBackend} isolates SkiesGUIs. Every other class talks only
+ * Isolates the optional economy-mod dependency behind a small surface, so that every other class talks only
  * to this interface via {@link RaidCurrencyBackends#active()}; no direct reference to an economy
  * mod exists outside a backend implementation.
  */

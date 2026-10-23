@@ -86,13 +86,10 @@ def validate_reveal_pipe_wiring() -> None:
     assert "RaidRarityTier rarityTier" in pending
     assert "definition.rarityTier()" in service
 
-    # openCurrent tries the native screen before the SkiesGUIs/chat-backend chain, and the chat
-    # fallback text is still reachable if neither native nor SkiesGUIs can open.
+    # openCurrent offers the web reveal page and, when the client cannot show it, falls back to
+    # the chat choices. There is no third path any more.
     open_current = service.split("public static boolean openCurrent(", 1)[1].split("\n    }", 1)[0]
-    native_index = open_current.find("NativeRewardScreenGateway.tryOpen(")
-    backend_index = open_current.find("RewardGuiBackends.active().open(")
-    assert native_index != -1 and backend_index != -1 and native_index < backend_index, \
-        "native screen must be attempted before the SkiesGUIs/chat-backend fallback"
+    assert "NativeRewardScreenGateway.tryOpen(" in open_current
     assert "sendChatFallbackChoices(player, pending)" in open_current
 
     # Per-player capability gating, not a server-wide static switch.
@@ -102,7 +99,7 @@ def validate_reveal_pipe_wiring() -> None:
 def validate_no_new_gradle_dependency() -> None:
     build_gradle = read(ROOT / "build.gradle")
     mod_implementations = [line for line in build_gradle.splitlines() if line.strip().startswith("modImplementation")]
-    expected = ("fabric-loader", "fabric-api", "MdwFAVRL", "eTmjDQ2A", "polymer-core", "polymer-resource-pack", "polymer-common")
+    expected = ("fabric-loader", "fabric-api", "MdwFAVRL", "polymer-core", "polymer-resource-pack", "polymer-common")
     assert len(mod_implementations) == len(expected), mod_implementations
     for needle in expected:
         assert any(needle in line for line in mod_implementations), f"missing dependency {needle}"

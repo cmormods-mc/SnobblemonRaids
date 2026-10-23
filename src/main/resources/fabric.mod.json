@@ -26,7 +26,6 @@
     "polymer-resource-pack": ">=0.9.19"
   },
   "recommends": {
-    "skiesguis": "1.8.1",
     "webgui": ">=1.8.1"
   },
   "suggests": {

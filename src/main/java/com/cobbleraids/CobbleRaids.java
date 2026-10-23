@@ -40,7 +40,6 @@ import com.cobbleraids.raid.RaidRegistry;
 import com.cobbleraids.renown.RenownRegistry;
 import com.cobbleraids.reward.NativeRewardScreenGateway;
 import com.cobbleraids.reward.RaidRewardCommand;
-import com.cobbleraids.reward.RewardGuiBackends;
 import com.cobbleraids.reward.currency.RaidCurrencyBackends;
 import com.cobbleraids.shop.RaidShopGateway;
 import com.cobbleraids.web.WebUi;
@@ -117,6 +116,9 @@ public final class CobbleRaids implements ModInitializer {
             RaidFaultBarrier.safeTick("boss-glow", server, RaidBossGlowService::tick);
             RaidFaultBarrier.safeTick("web-sounds", server, com.cobbleraids.web.WebSounds::tick);
             RaidFaultBarrier.safeTick("consistency-audit", server, RaidConsistencyAuditScheduler::tick);
+            // Last, so a window's summary includes this very tick. It times itself too, which is the
+            // honest cost of writing the report.
+            RaidFaultBarrier.safeTick("perf-report", server, com.cobbleraids.perf.RaidPerfReporter::tick);
         });
         // Guarded like everything else, but for a different reason than the rest: reload() throws
         // deliberately on a malformed config, and CURRENT is only replaced after a successful parse,
@@ -138,8 +140,6 @@ public final class CobbleRaids implements ModInitializer {
         // And the title catalogue, for the same reason.
         ServerLifecycleEvents.START_DATA_PACK_RELOAD.register((server, resources) ->
                 RaidFaultBarrier.guard("title-catalog-reload", TitleCatalogManager::reload));
-        ServerLifecycleEvents.SERVER_STARTING.register(server ->
-                RaidFaultBarrier.guard("startup:reward-gui", RewardGuiBackends::ensureReady));
         ServerLifecycleEvents.SERVER_STARTING.register(server ->
                 RaidFaultBarrier.guard("startup:reward-currency", RaidCurrencyBackends::ensureReady));
         // First SERVER_STARTED listener on purpose: everything after it is worth checking against.
@@ -210,6 +210,9 @@ public final class CobbleRaids implements ModInitializer {
         // no boss is ever written to disk mid-fight. See RaidLifecycleCoordinator.abortAll.
         ServerLifecycleEvents.SERVER_STOPPING.register(server ->
                 RaidFaultBarrier.guard("shutdown:abort-active-raids", RaidLifecycleCoordinator::abortAll));
+        // So the last partial window of a session is on disk rather than lost with the process.
+        ServerLifecycleEvents.SERVER_STOPPING.register(server ->
+                RaidFaultBarrier.guard("shutdown:perf-report", () -> com.cobbleraids.perf.RaidPerfReporter.report(server)));
         ServerLifecycleEvents.SERVER_STOPPING.register(server ->
                 RaidFaultBarrier.guard("shutdown:spawn-scheduler", () -> RaidSpawnScheduler.onServerStopping(server)));
         ServerLifecycleEvents.SERVER_STOPPING.register(server ->
@@ -247,6 +250,8 @@ public final class CobbleRaids implements ModInitializer {
             int raids = counts[0];
             int lobbies = counts[1];
             RaidFaultBarrier.onServerStopped();
+            com.cobbleraids.perf.RaidPerf.onServerStopped();
+            com.cobbleraids.perf.RaidPerfReporter.onServerStopped();
             RaidThreadGuard.onServerStopped();
             // Only these two mean somebody lost progress, so only these two are worth a line on an
             // otherwise clean shutdown. Unclaimed rewards are not listed: those survive on disk.

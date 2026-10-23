@@ -27,7 +27,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
 
-/** Server-authoritative item grant logic. SkiesGUIs never grants raid loot directly. */
+/** Server-authoritative item grant logic. The reveal page never grants raid loot directly. */
 public final class RaidRewardGrantEngine {
     private RaidRewardGrantEngine() {}
 

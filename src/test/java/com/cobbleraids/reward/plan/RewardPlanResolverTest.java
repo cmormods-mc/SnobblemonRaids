@@ -55,7 +55,7 @@ class RewardPlanResolverTest {
 
     private static RaidDefinition.Rewards rewards(List<ResourceLocation> tables,
                                                   RaidDefinition.ContributionBonus bonus) {
-        return new RaidDefinition.Rewards("cobbleraids_reward",
+        return new RaidDefinition.Rewards(
                 java.util.Map.of("all", emptyChoice()), bonus, tables);
     }
 

@@ -14,7 +14,6 @@ import com.cobbleraids.raid.RaidRegistry;
 import com.cobbleraids.raid.RaidSession;
 import com.cobbleraids.reward.ContributionMath;
 import com.cobbleraids.reward.RaidLootRoller;
-import com.cobbleraids.reward.RewardGuiBackends;
 import com.cobbleraids.reward.currency.RaidCurrencyBackends;
 import com.cobbleraids.spawn.RaidBossEntityMarker;
 import com.cobbleraids.spawn.RaidSpawnHistory;
@@ -80,14 +79,13 @@ final class RaidAdminDebugOps {
         int lobbies = RaidLobbyManager.all().size();
         int battles = RaidRegistry.all().size();
         int natural = RaidSpawnScheduler.activeCount(source.getServer());
-        String rewardGui = RewardGuiBackends.active().name();
         String currencyBackend = RaidCurrencyBackends.active().name();
 
         source.sendSuccess(() -> CommandFormat.header("CobbleRaids status"), false);
         source.sendSuccess(() -> CommandFormat.row(definitions + " definitions · " + bosses.size()
                 + " bosses · " + natural + " tracked wild"), false);
         source.sendSuccess(() -> CommandFormat.row(lobbies + " lobbies · " + battles
-                + " battles · reward gui " + rewardGui + " · currency " + currencyBackend), false);
+                + " battles · currency " + currencyBackend), false);
         return bosses.size() + battles + lobbies;
     }
 

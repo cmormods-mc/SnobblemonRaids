@@ -32,7 +32,6 @@
     "splash"
   ],
   "rewards": {
-    "gui_id": "cobbleraids_reward",
     "choices": {
       "all": {}
     }

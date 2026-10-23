@@ -1,5 +1,6 @@
 package com.cobbleraids.lifecycle;
 
+import com.cobbleraids.perf.RaidPerf;
 import com.cobbleraids.RaidLog;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.config.RaidDefinition;
@@ -11,7 +12,6 @@ import com.cobbleraids.reward.NativeRewardScreenGateway;
 import com.cobbleraids.reward.RaidRewardGrantEngine;
 import com.cobbleraids.config.RaidRewardPolicyManager;
 import com.cobbleraids.fault.RaidFaultBarrier;
-import com.cobbleraids.reward.RewardGuiBackends;
 import com.cobbleraids.reward.plan.RewardPlanResolver;
 import com.cobbleraids.reward.RewardGrantResult;
 import java.util.*;
@@ -25,7 +25,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Server-authoritative reward queue. SkiesGUIs is presentation only: all claims are validated here,
+ * Server-authoritative reward queue. The reveal page is presentation only: all claims are validated here,
  * consumed exactly once, and then granted from the raid definition snapshot.
  */
 public final class RaidRewardService {
@@ -105,7 +105,9 @@ public final class RaidRewardService {
     private static void persistNow(MinecraftServer server) {
         if (server == null) return;
         persist(server);
+        long started = RaidPerf.start();
         RaidFaultBarrier.guard("reward-claim-flush", () -> server.overworld().getDataStorage().save());
+        RaidPerf.stop("flush:rewards", started);
     }
 
     /** Admin view of one player's queue, front of queue first. */
@@ -206,14 +208,12 @@ public final class RaidRewardService {
         player.sendSystemMessage(Component.literal(String.format(Locale.ROOT,
                 "Raid contribution: %.1f%% | Contribution bonus rolls: %d",
                 pending.contributionPercentage(), pending.contributionBonusRolls())));
-        boolean opened = NativeRewardScreenGateway.tryOpen(player, pending)
-                || RewardGuiBackends.active().open(player, pending.rewards().guiId());
-        if (!opened) sendChatFallbackChoices(player, pending);
+        if (!NativeRewardScreenGateway.tryOpen(player, pending)) sendChatFallbackChoices(player, pending);
         return true;
     }
 
     private static void sendChatFallbackChoices(ServerPlayer player, PendingRaidReward pending) {
-        player.sendSystemMessage(Component.literal("Reward GUI unavailable; choose with /cobbleraids reward claim <id>:"));
+        player.sendSystemMessage(Component.literal("The reward screen needs WebGUI on your client. Choose with /cobbleraids reward claim <id>:"));
         for (String choiceId : pending.rewards().choices().keySet()) {
             player.sendSystemMessage(Component.literal(" - " + choiceId));
         }

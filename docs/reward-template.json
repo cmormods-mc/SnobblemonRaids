@@ -16,7 +16,6 @@
   },
 
   "rewards": {
-    "gui_id": "cobbleraids_reward",
 
     "_loot_tables": "Rolled for every victor, whatever choice they pick. Any loot table the server has loaded works, including other mods' and your own datapack's. Preview one before using it: /cobbleraids debug loot <table>",
     "loot_tables": [

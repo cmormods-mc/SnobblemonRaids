@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.183-polish'
+version = '0.8.186-curios'
 group = 'com.cobbleraids'
 
 base {
@@ -37,7 +37,6 @@ dependencies {
     modImplementation 'eu.pb4:polymer-core:0.9.19+1.21.1'
     modImplementation 'eu.pb4:polymer-resource-pack:0.9.19+1.21.1'
     modImplementation 'eu.pb4:polymer-common:0.9.19+1.21.1'
-    modImplementation 'maven.modrinth:eTmjDQ2A:azTJ3S8C' // SkiesGUIs 1.8.1
     // Compile-only: the %cobbleraids:points% token is published when this is installed and
     // skipped when it is not, so it must never be pulled in as a hard dependency.
     modCompileOnly 'maven.modrinth:eXts2L7r:U5bhVym2' // Text Placeholder API 2.4.2+1.21

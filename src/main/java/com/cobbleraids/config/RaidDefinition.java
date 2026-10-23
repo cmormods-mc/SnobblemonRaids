@@ -99,7 +99,7 @@ public record RaidDefinition(
         }
     }
 
-    /** A GUI choice is authoritative server-side; SkiesGUIs only sends the choice id back to CobbleRaids. */
+    /** A reward choice is authoritative server-side; the reveal page only sends the choice id back to CobbleRaids. */
     public record RewardChoice(String id, List<RewardItem> items, List<RewardItem> chanceItems,
                                List<ResourceLocation> lootTables) {
         public RewardChoice {
@@ -133,10 +133,9 @@ public record RaidDefinition(
         }
     }
 
-    public record Rewards(String guiId, Map<String, RewardChoice> choices,
+    public record Rewards(Map<String, RewardChoice> choices,
                           ContributionBonus contributionBonus, List<ResourceLocation> lootTables) {
         public Rewards {
-            if (guiId == null || guiId.isBlank()) throw new IllegalArgumentException("rewards.gui_id cannot be blank");
             choices = Collections.unmodifiableMap(new LinkedHashMap<>(choices));
             Objects.requireNonNull(contributionBonus, "contributionBonus");
             lootTables = List.copyOf(lootTables);
@@ -232,7 +231,6 @@ public record RaidDefinition(
     }
 
     private static Rewards parseRewards(JsonObject rewards) {
-        String guiId = Json.string(rewards, "gui_id", "cobbleraids_reward");
         List<ResourceLocation> loot = readResourceLocations(rewards, "loot_tables");
         Map<String, RewardChoice> choices = new LinkedHashMap<>();
         JsonObject choiceObject = Json.object(rewards, "choices");
@@ -254,7 +252,7 @@ public record RaidDefinition(
             tiers.add(new ContributionTier(tier.get("min_percentage").getAsDouble(), tier.get("bonus_rolls").getAsInt()));
         }
         List<RewardItem> pool = readRewardItems(contribution, "pool", 1.0, -1);
-        return new Rewards(guiId, choices, new ContributionBonus(enabled, tiers, pool), loot);
+        return new Rewards(choices, new ContributionBonus(enabled, tiers, pool), loot);
     }
 
     private static List<RewardItem> readRewardItems(JsonObject object, String key, double defaultChance, int defaultWeight) {
