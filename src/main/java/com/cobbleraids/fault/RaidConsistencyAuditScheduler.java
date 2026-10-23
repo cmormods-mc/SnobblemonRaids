@@ -1,5 +1,6 @@
 package com.cobbleraids.fault;
 
+import com.cobbleraids.perf.RaidPerf;
 import net.minecraft.server.MinecraftServer;
 
 /**
@@ -21,7 +22,9 @@ public final class RaidConsistencyAuditScheduler {
     public static void tick(MinecraftServer server) {
         tickCounter++;
         if ((tickCounter % INTERVAL_TICKS) != 0L) return;
+        long started = RaidPerf.start();
         RaidConsistencyAudit.log(RaidConsistencyAudit.run(server));
+        RaidPerf.stop("consistency-audit:run", started);
     }
 
     /** Cleared with the rest of the per-server state; an integrated client reuses this JVM. */

@@ -1,5 +1,6 @@
 package com.cobbleraids.catching;
 
+import com.cobbleraids.perf.RaidPerf;
 import com.cobbleraids.RaidLog;
 import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobbleraids.config.RaidRarityTier;
@@ -85,7 +86,9 @@ public final class RaidPlayerRecords extends SavedData {
     private static void persistNow(MinecraftServer server) {
         if (server == null) return;
         persist(server);
+        long started = RaidPerf.start();
         RaidFaultBarrier.guard("player-records-flush", () -> server.overworld().getDataStorage().save());
+        RaidPerf.stop("flush:player-records", started);
     }
 
     // ---------------------------------------------------------------- lifecycle

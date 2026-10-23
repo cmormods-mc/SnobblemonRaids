@@ -1,6 +1,7 @@
 package com.cobbleraids.web;
 
 import com.cobbleraids.RaidLog;
+import com.cobbleraids.perf.RaidPerf;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -102,12 +103,17 @@ final class WebGuiBridge {
     }
 
     static void onPageEvent(String channel, BiConsumer<ServerPlayer, String> handler) {
+        // Built once per channel rather than per event, so timing a page event allocates nothing.
+        String section = "web:" + channel;
         BiConsumer<ServerPlayer, String> guarded = (player, json) -> {
+            long started = RaidPerf.start();
             try {
                 handler.accept(player, json);
             } catch (RuntimeException e) {
                 // A page can send anything; a handler bug must not reach WebGUI's event bus.
                 RaidLog.error("web page event '{}' failed: {}", channel, e.toString());
+            } finally {
+                RaidPerf.stop(section, started);
             }
         };
         invoke(() -> onPageEvent.invoke(channel, guarded));

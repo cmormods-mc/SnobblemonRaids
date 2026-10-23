@@ -70,6 +70,10 @@ public final class RaidAdminCommand {
                                                                         StringArgumentType.getString(ctx, "pokemon"),
                                                                         Vec3Argument.getVec3(ctx, "pos"),
                                                                         StringArgumentType.getString(ctx, "mode"))))))))
+                        .then(admin("perf")
+                                .executes(ctx -> com.cobbleraids.perf.RaidPerfCommand.show(ctx.getSource()))
+                                .then(Commands.literal("log")
+                                        .executes(ctx -> com.cobbleraids.perf.RaidPerfCommand.log(ctx.getSource()))))
                         .then(admin("spawninfo")
                                 .executes(ctx -> RaidSpawnCommands.sendSpawnInfo(ctx.getSource())))
                         // Unrestricted on purpose: this is the player-facing "where does X appear?"

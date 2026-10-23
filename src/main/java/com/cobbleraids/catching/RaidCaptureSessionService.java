@@ -1,5 +1,6 @@
 package com.cobbleraids.catching;
 
+import com.cobbleraids.perf.RaidPerf;
 import com.cobbleraids.RaidLog;
 import com.cobbleraids.config.CobbleRaidsConfig;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
@@ -135,6 +136,7 @@ public final class RaidCaptureSessionService {
         if (server == null) return;
         RaidCaptureSessionStore store = RaidCaptureSessionStore.get(server);
         store.update(SESSIONS);
+        long started = RaidPerf.start();
         RaidFaultBarrier.guard("capture-session-flush", () -> {
             try {
                 store.flush(server);
@@ -142,6 +144,7 @@ public final class RaidCaptureSessionService {
                 throw new java.io.UncheckedIOException(ex);
             }
         });
+        RaidPerf.stop("flush:capture-sessions", started);
     }
 
     private static Object lockFor(UUID playerId) {

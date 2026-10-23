@@ -1,6 +1,7 @@
 package com.cobbleraids.web;
 
 import com.cobbleraids.RaidLog;
+import com.cobbleraids.perf.RaidPerf;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -61,6 +62,7 @@ public final class WebIcons {
     }
 
     private static Optional<String> load(String key) {
+        long started = RaidPerf.start();
         try {
             byte[] png = key.startsWith("i:") ? readItem(key) : readSpecies(key);
             if (png == null) return Optional.empty();
@@ -68,6 +70,10 @@ public final class WebIcons {
         } catch (IOException | RuntimeException e) {
             RaidLog.warn("Could not load web icon {}: {}", key, e.toString());
             return Optional.empty();
+        } finally {
+            // Each key is read from a mod jar once and then cached, so this section shows the one-off
+            // cost of a page's first open, which runs on the server thread.
+            RaidPerf.stop("web:icon-first-load", started);
         }
     }
 
@@ -137,6 +143,7 @@ public final class WebIcons {
     }
 
     private static Map<String, String> loadLang(String namespace) {
+        long started = RaidPerf.start();
         Map<String, String> map = new HashMap<>();
         try {
             JsonObject lang = readJson(assetPath(namespace, "assets/" + namespace + "/lang/en_us.json"));
@@ -147,6 +154,8 @@ public final class WebIcons {
             }
         } catch (IOException | RuntimeException e) {
             RaidLog.warn("Could not read the {} language file: {}", namespace, e.toString());
+        } finally {
+            RaidPerf.stop("web:lang-first-load", started);
         }
         return map;
     }

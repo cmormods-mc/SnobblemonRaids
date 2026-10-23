@@ -45,24 +45,28 @@ public final class Leaderboards {
      */
     public static Board board(StatsBook book, LeaderboardStat stat, StatScope scope, long window, int limit,
                               UUID viewer, Function<UUID, String> nameOf) {
-        List<Row> everyone = new ArrayList<>();
+        List<Sortable> everyone = new ArrayList<>();
         for (Map.Entry<UUID, PlayerStats> entry : book.players().entrySet()) {
             long value = stat.valueOf(entry.getValue().block(scope, window));
             if (value <= 0L) continue;
             String stored = entry.getValue().name();
             String name = stored.isEmpty() ? nameOf.apply(entry.getKey()) : stored;
-            everyone.add(new Row(0, entry.getKey(), name == null || name.isEmpty() ? shortId(entry.getKey()) : name, value));
+            Row row = new Row(0, entry.getKey(), name == null || name.isEmpty() ? shortId(entry.getKey()) : name, value);
+            everyone.add(new Sortable(row, row.name().toLowerCase(Locale.ROOT)));
         }
-        Comparator<Row> byValue = Comparator.comparingLong(Row::value);
+        // The lower-cased name is worked out once per player above. Comparing with a key extractor
+        // that lower-cased inside the comparator allocated a string on every comparison, which on a
+        // server that has seen thousands of players is tens of thousands of throwaway strings per board.
+        Comparator<Sortable> byValue = Comparator.comparingLong(sortable -> sortable.row().value());
         if (!stat.ascending()) byValue = byValue.reversed();
         everyone.sort(byValue
-                .thenComparing(row -> row.name().toLowerCase(Locale.ROOT))
-                .thenComparing(Row::player));
+                .thenComparing(Sortable::sortName)
+                .thenComparing(sortable -> sortable.row().player()));
 
         List<Row> ranked = new ArrayList<>(everyone.size());
         Row own = null;
         for (int index = 0; index < everyone.size(); index++) {
-            Row row = everyone.get(index);
+            Row row = everyone.get(index).row();
             Row numbered = new Row(index + 1, row.player(), row.name(), row.value());
             ranked.add(numbered);
             if (numbered.player().equals(viewer)) own = numbered;
@@ -70,6 +74,9 @@ public final class Leaderboards {
         List<Row> top = ranked.subList(0, Math.max(0, Math.min(limit, ranked.size())));
         return new Board(stat, scope, window, List.copyOf(top), ranked.size(), own);
     }
+
+    /** A row with the lower-cased name it sorts by, computed once. */
+    private record Sortable(Row row, String sortName) {}
 
     private static String shortId(UUID id) {
         return id.toString().substring(0, 8);

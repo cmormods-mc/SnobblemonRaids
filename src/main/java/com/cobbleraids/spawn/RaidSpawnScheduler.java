@@ -1,5 +1,6 @@
 package com.cobbleraids.spawn;
 
+import com.cobbleraids.perf.RaidPerf;
 import com.cobbleraids.RaidLog;
 import com.cobbleraids.config.CobbleRaidsConfig;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
@@ -58,7 +59,9 @@ public final class RaidSpawnScheduler {
 
         int attempts = Math.min(config.attemptsPerCheck(), candidates.size());
         for (int i = 0; i < attempts && TRACKER.size() < config.maxActiveRaids(); i++) {
+            long started = RaidPerf.start();
             attemptForPlayer(candidates.get(i), config);
+            RaidPerf.stop("spawn:attempt", started);
         }
     }
 

@@ -2,7 +2,6 @@ package com.cobbleraids.web;
 
 import com.cobbleraids.RaidLog;
 import com.cobbleraids.fault.RaidFaultBarrier;
-import com.google.gson.JsonObject;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
@@ -28,8 +27,6 @@ public final class WebUi {
     /** Folder under WebGUI's page root that this mod owns outright; sync deletes anything else in it. */
     private static final String PAGE_FOLDER = "cobbleraids";
 
-    public static final String HELLO_CHANNEL = "cobbleraids.hello";
-
     /** True once WebGUI is installed and every call this mod makes into it has been resolved. */
     public static boolean available() {
         return WebGuiBridge.bound();
@@ -48,7 +45,6 @@ public final class WebUi {
         if (!WebGuiBridge.bind()) return;
         ServerLifecycleEvents.SERVER_STARTING.register(server ->
                 RaidFaultBarrier.guard("startup:web-bundle", WebUi::installBundle));
-        WebGuiBridge.onPageEvent(HELLO_CHANNEL, WebUi::onHello);
         ShopWebPage.register();
         TrophyWebPage.register();
         LegendWebPage.register();
@@ -102,13 +98,5 @@ public final class WebUi {
         if (!canShow(player)) return false;
         WebGuiBridge.openGui(player, pageUrl(page));
         return true;
-    }
-
-    private static void onHello(ServerPlayer player, String json) {
-        JsonObject reply = new JsonObject();
-        reply.addProperty("player", player.getGameProfile().getName());
-        reply.addProperty("received", json == null ? "" : json);
-        RaidLog.info("web hello from {}: {}", player.getGameProfile().getName(), json);
-        WebGuiBridge.emit(player, "hello_reply", reply.toString());
     }
 }

@@ -1,6 +1,7 @@
 package com.cobbleraids.fault;
 
 import com.cobbleraids.RaidLog;
+import com.cobbleraids.perf.RaidPerf;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.minecraft.server.MinecraftServer;
 
@@ -84,10 +85,13 @@ public final class RaidFaultBarrier {
      * 20 times a second to guard a case that has never occurred. The subsystem is the unit here.
      */
     public static void safeTick(String subsystem, MinecraftServer server, ServerTickTask task) {
+        long started = RaidPerf.start();
         try {
             task.tick(server);
         } catch (Exception ex) {
             report(subsystem, ex);
+        } finally {
+            RaidPerf.stop(subsystem, started);
         }
     }
 

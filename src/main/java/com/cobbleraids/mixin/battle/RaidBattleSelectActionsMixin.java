@@ -1,5 +1,6 @@
 package com.cobbleraids.mixin.battle;
 
+import com.cobbleraids.perf.RaidPerf;
 import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobbleraids.api.encounter.EncounterRules;
 import com.cobbleraids.battle.RaidBannedMoves;
@@ -66,6 +67,7 @@ public abstract class RaidBattleSelectActionsMixin {
     )
     private void cobbleRaids$prepareRaidActions(BattleSelectActionsPacket packet, MinecraftServer server,
                                                  ServerPlayer player, CallbackInfo ci) {
+        long started = RaidPerf.start();
         try {
             cobbleRaids$prepareRaidActionsOrThrow(packet, server, player, ci);
         } catch (Exception ex) {
@@ -74,6 +76,8 @@ public abstract class RaidBattleSelectActionsMixin {
             // still have to cope with anyway. Throwing instead would unwind into the network thread's
             // packet dispatch, which handles every battle on the server, not just this raid.
             RaidFaultBarrier.report("mixin:selectActions", ex);
+        } finally {
+            RaidPerf.stop("mixin:selectActions", started);
         }
     }
 
