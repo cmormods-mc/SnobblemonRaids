@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.186-curios'
+version = '0.8.187-reward-flush'
 group = 'com.cobbleraids'
 
 base {

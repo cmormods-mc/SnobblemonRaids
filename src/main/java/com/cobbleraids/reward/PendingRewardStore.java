@@ -1,5 +1,6 @@
 package com.cobbleraids.reward;
 
+import com.cobbleraids.config.SavedDataFlush;
 import com.cobbleraids.RaidLog;
 import com.cobbleraids.config.RaidDefinition;
 import com.cobbleraids.config.RaidDefinitionRegistry;
@@ -53,6 +54,11 @@ public final class PendingRewardStore extends SavedData {
     public static PendingRewardStore get(MinecraftServer server) {
         ServerLevel overworld = server.overworld();
         return overworld.getDataStorage().computeIfAbsent(factory(), FILE_ID);
+    }
+
+    /** Writes this store's file now and nothing else; see {@link SavedDataFlush}. */
+    public void flush(MinecraftServer server) throws java.io.IOException {
+        SavedDataFlush.flush(server, this, FILE_ID);
     }
 
     public Map<UUID, ArrayDeque<PendingRaidReward>> take() {

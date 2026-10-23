@@ -31,13 +31,16 @@ Healthy: every `tick` subsystem well under 1 ms mean; `ms/tick` under ~5; no sec
 
 ## What to look at first (hypotheses, not findings)
 
-1. **`flush:*` max and total.** `rewards`, `player-records` and `boss-snapshots` call the global
-   `DataStorage.save()`, which writes every dirty SavedData of every mod, synchronously. Cost scales with
-   players-ever-seen, not concurrent players, so it should be small on day one. If `flush:rewards` max
-   climbs past ~20 ms, switch these three to the targeted `store.flush()` the capture store already uses
-   (`RaidCaptureSessionStore.flush`). Not changed pre-release because it alters durability for
-   reward/dupe-sensitive data, and the raid history recorded just before a grant currently rides along in
-   that same write (`RaidRewardService.grant`).
+1. **`flush:*` max and total.** Measured on a 24-client rig, a reward claim used to call the global
+   `DataStorage.save()` and cost **51 ms on average, 1.24 s worst**, enough to be most of the burst's
+   wall time (10.9 s for 96 grants + 96 claims). Claims now write only their own file: **5.3 ms average,
+   7 ms worst**, and the same burst takes 2.1 s. `flush:rewards` is the per-claim write;
+   `flush:rewards-grant` is the once-per-won-raid broad save, kept broad on purpose so the raid history and
+   trophies recorded just before it stay durable. Expect `flush:rewards-grant` around 10 ms on average, with
+   a one-off first call of roughly 300 ms on an established world (about 1.1 s on a brand-new world, where
+   every store file is created for the first time). A boot-time warm-up was tried and made that first
+   call worse, so it was dropped. The writes of `flush:player-records` and `flush:boss-snapshots` (shop
+   purchases) are targeted the same way.
 2. **`web:icon-first-load` / `web:lang-first-load`.** The first player to open each shop page pays for
    reading icons and Cobblemon's language file from the jar on the server thread. Expect a handful of
    spikes in the first minutes, then silence. If they are over ~30 ms, pre-warm at `SERVER_STARTED`.

@@ -1,5 +1,6 @@
 package com.cobbleraids.catching;
 
+import com.cobbleraids.config.SavedDataFlush;
 import com.cobbleraids.perf.RaidPerf;
 import com.cobbleraids.RaidLog;
 import com.cobbleraids.fault.RaidFaultBarrier;
@@ -87,7 +88,13 @@ public final class RaidPlayerRecords extends SavedData {
         if (server == null) return;
         persist(server);
         long started = RaidPerf.start();
-        RaidFaultBarrier.guard("player-records-flush", () -> server.overworld().getDataStorage().save());
+        RaidFaultBarrier.guard("player-records-flush", () -> {
+            try {
+                SavedDataFlush.flush(server, get(server), FILE_ID);
+            } catch (java.io.IOException ex) {
+                throw new java.io.UncheckedIOException(ex);
+            }
+        });
         RaidPerf.stop("flush:player-records", started);
     }
 

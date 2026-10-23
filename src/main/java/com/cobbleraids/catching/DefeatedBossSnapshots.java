@@ -1,5 +1,6 @@
 package com.cobbleraids.catching;
 
+import com.cobbleraids.config.SavedDataFlush;
 import com.cobbleraids.perf.RaidPerf;
 import com.cobbleraids.RaidLog;
 import com.cobbleraids.config.RaidRarityTier;
@@ -84,7 +85,13 @@ public final class DefeatedBossSnapshots extends SavedData {
         persist(server);
         if (server != null) {
             long started = RaidPerf.start();
-            RaidFaultBarrier.guard("boss-snapshots-flush", () -> server.overworld().getDataStorage().save());
+            RaidFaultBarrier.guard("boss-snapshots-flush", () -> {
+                try {
+                    SavedDataFlush.flush(server, get(server), FILE_ID);
+                } catch (java.io.IOException ex) {
+                    throw new java.io.UncheckedIOException(ex);
+                }
+            });
             RaidPerf.stop("flush:boss-snapshots", started);
         }
     }

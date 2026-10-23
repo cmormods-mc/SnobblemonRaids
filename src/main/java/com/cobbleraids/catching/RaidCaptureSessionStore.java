@@ -57,9 +57,7 @@ public final class RaidCaptureSessionStore extends SavedData {
      * dirty flag, so the ordinary autosave does not write the same file again.
      */
     public void flush(MinecraftServer server) throws java.io.IOException {
-        java.nio.file.Path dataDir = server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).resolve("data");
-        java.nio.file.Files.createDirectories(dataDir);
-        save(dataDir.resolve(FILE_ID + ".dat").toFile(), server.registryAccess());
+        com.cobbleraids.config.SavedDataFlush.flush(server, this, FILE_ID);
     }
 
     public Map<UUID, ArrayDeque<RaidCaptureSession>> take() {

@@ -106,8 +106,28 @@ public final class RaidRewardService {
         if (server == null) return;
         persist(server);
         long started = RaidPerf.start();
-        RaidFaultBarrier.guard("reward-claim-flush", () -> server.overworld().getDataStorage().save());
+        RaidFaultBarrier.guard("reward-claim-flush", () -> {
+            try {
+                PendingRewardStore.get(server).flush(server);
+            } catch (java.io.IOException ex) {
+                throw new java.io.UncheckedIOException(ex);
+            }
+        });
         RaidPerf.stop("flush:rewards", started);
+    }
+
+    /**
+     * The same, plus every other dirty store, for the one place that wants them all: a raid being
+     * won. That runs once per raid, and the raid history and trophies recorded just before it ride
+     * along in the same write. Claims run once per PLAYER, twice each, so they take the targeted
+     * path above instead -- see {@link com.cobbleraids.config.SavedDataFlush} for the measurement.
+     */
+    private static void persistEverythingNow(MinecraftServer server) {
+        if (server == null) return;
+        persist(server);
+        long started = RaidPerf.start();
+        RaidFaultBarrier.guard("reward-grant-flush", () -> server.overworld().getDataStorage().save());
+        RaidPerf.stop("flush:rewards-grant", started);
     }
 
     /** Admin view of one player's queue, front of queue first. */
@@ -164,7 +184,7 @@ public final class RaidRewardService {
         // Written now, not at the next autosave: the reward screen is about to open, and a crash
         // before that save used to lose a reward the player had already been shown. Once per won
         // raid, and the same write also carries the raid history recorded just before this.
-        persistNow(server);
+        persistEverythingNow(server);
     }
 
     /** Called from END_SERVER_TICK so the battle-end screen packet is processed before the reward chest opens. */
