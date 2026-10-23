@@ -45,9 +45,8 @@ Core and Guardian Scale items itself, which conflicts with the server's versions
 
 Saved data (raids, trophies, Raid Points, stats, defeated bosses) is read exactly as before.
 
-**Optional.** `SkiesGUIs` 1.8.1 gives reward claiming a chest GUI; without it the same
-rewards are claimed from chat with `/cobbleraids reward claim`, and a SkiesGUIs that
-fails to load degrades to that fallback rather than aborting server start.
+Rewards are claimed on the web reveal page. A player whose client lacks WebGUI claims from chat with
+`/cobbleraids reward claim`.
 The reward loot tables are built in. Items from these Cobblemon add-ons are rewarded only when the
 add-on is installed, and each is skipped silently when it is not: `mega_showdown`, `simpletms`,
 `cobblemoncharms`, `cobblemon-cards`, `cobblecapsule`, `companion_bonds`, `daycareplus`,
@@ -179,14 +178,16 @@ is checked by CI against the parser, so it cannot drift out of date.
 A definition that names **no** rewards of its own is *policy-driven*: what it grants comes from
 `config/cobbleraids/reward_policy.json` and the tables built into the core JAR. All 130 bundled definitions work this way. Each claim is one **specialty** selection plus two
 **general** ones: three items, flat, whatever the player's contribution (contribution still scales
-Raid Points and CobbleDollars). Key fragments are not a separate grant; they are a category of the
-general table, so a fragment takes one of the three slots. The rates are set so a key takes about
-6 / 9 / 12 / 15 raids (starter / powerhouse / legendary / mythical).
+Raid Points and CobbleDollars). Raid keys and key fragments are registered but not currently in any
+loot table, so nothing drops them. A claim is about 76 / 72 / 67 / 62% base supplies (starter /
+powerhouse / legendary / mythical). Of a general roll, card packs are 12 / 14 / 16 / 18% and "curios"
+(evolution items, fossils, and nature mints from powerhouse up) are 14 / 16 / 18 / 20%; the exact
+figures are in `validation/economy/probability_report.md`.
 
 ```text
 cobbleraids:specialty/<tier>            one premium roll: mega stones, charms, TMs, capsules…
 cobbleraids:specialty/boss/<species>    the same, for the 21 bosses that have a Mega Stone
-cobbleraids:general/<tier>              the ordinary roll: base consumables, cards, materials
+cobbleraids:general/<tier>              the ordinary roll: base consumables, cards, curios
 cobbleraids:base/<tier>                 what both fall back to, and never itself a premium item
 ```
 

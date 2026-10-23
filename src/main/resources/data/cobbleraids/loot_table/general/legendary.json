@@ -7,17 +7,17 @@
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:base/legendary",
-          "weight": 50
+          "weight": 66
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:general/leaf/cards",
-          "weight": 25
+          "weight": 16
         },
         {
           "type": "minecraft:loot_table",
-          "value": "cobbleraids:keys/legendary",
-          "weight": 25
+          "value": "cobbleraids:general/leaf/curios/legendary",
+          "weight": 18
         }
       ]
     }

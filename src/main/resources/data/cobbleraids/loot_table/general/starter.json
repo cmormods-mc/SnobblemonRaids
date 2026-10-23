@@ -7,17 +7,17 @@
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:base/starter",
-          "weight": 29
+          "weight": 74
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:general/leaf/cards",
-          "weight": 21
+          "weight": 12
         },
         {
           "type": "minecraft:loot_table",
-          "value": "cobbleraids:keys/starter",
-          "weight": 50
+          "value": "cobbleraids:general/leaf/curios/starter",
+          "weight": 14
         }
       ]
     }

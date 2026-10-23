@@ -12,67 +12,67 @@
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:specialty/opt/daycareplus/copper_incubator",
-          "weight": 100
+          "weight": 240
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:specialty/opt/daycareplus/iron_incubator",
-          "weight": 100
+          "weight": 240
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:specialty/opt/daycareplus/gold_incubator",
-          "weight": 40
+          "weight": 96
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:specialty/leaf/tm_tr",
-          "weight": 300
+          "weight": 720
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:specialty/leaf/capsule_basic",
-          "weight": 100
+          "weight": 240
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:specialty/leaf/capsule_rare",
-          "weight": 60
+          "weight": 144
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:specialty/leaf/bonds_pair",
-          "weight": 40
+          "weight": 96
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:specialty/opt/ridetraining/training_reader",
-          "weight": 20
+          "weight": 48
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:specialty/opt/ridetraining/riding_upgrade",
-          "weight": 10
+          "weight": 24
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:specialty/leaf/type_charms",
-          "weight": 50
+          "weight": 120
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:specialty/leaf/catch_exp_charms",
-          "weight": 20
+          "weight": 48
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:specialty/opt/cobblesafari/auspicious_pokeball",
-          "weight": 30
+          "weight": 72
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:specialty/opt/cobblesafari/union_room_pokeball",
-          "weight": 10
+          "weight": 24
         },
         {
           "type": "minecraft:item",
@@ -92,7 +92,7 @@
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:base/powerhouse",
-          "weight": 7908
+          "weight": 6676
         }
       ]
     }

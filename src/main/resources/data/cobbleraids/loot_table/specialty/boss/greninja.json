@@ -22,47 +22,47 @@
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:specialty/opt/daycareplus/copper_incubator",
-          "weight": 150
+          "weight": 195
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:specialty/opt/daycareplus/iron_incubator",
-          "weight": 60
+          "weight": 78
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:specialty/opt/daycareplus/gold_incubator",
-          "weight": 20
+          "weight": 26
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:specialty/leaf/tm_tr",
-          "weight": 200
+          "weight": 260
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:specialty/leaf/capsule_basic",
-          "weight": 50
+          "weight": 65
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:specialty/leaf/bonds_pair",
-          "weight": 20
+          "weight": 26
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:specialty/opt/ridetraining/training_reader",
-          "weight": 10
+          "weight": 13
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:specialty/opt/ridetraining/riding_upgrade",
-          "weight": 5
+          "weight": 6
         },
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:specialty/opt/cobblesafari/auspicious_pokeball",
-          "weight": 20
+          "weight": 26
         },
         {
           "type": "minecraft:item",
@@ -72,7 +72,7 @@
         {
           "type": "minecraft:loot_table",
           "value": "cobbleraids:base/starter",
-          "weight": 7155
+          "weight": 6995
         }
       ]
     }

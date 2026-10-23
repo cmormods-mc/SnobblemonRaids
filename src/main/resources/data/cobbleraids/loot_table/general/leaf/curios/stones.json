@@ -1,0 +1,50 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "cobblemon:fire_stone"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemon:water_stone"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemon:thunder_stone"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemon:leaf_stone"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemon:moon_stone"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemon:sun_stone"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemon:shiny_stone"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemon:dusk_stone"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemon:dawn_stone"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemon:ice_stone"
+        }
+      ]
+    }
+  ]
+}

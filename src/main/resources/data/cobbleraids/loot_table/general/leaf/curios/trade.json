@@ -1,0 +1,78 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "cobblemon:metal_coat"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemon:kings_rock"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemon:dragon_scale"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemon:upgrade"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemon:dubious_disc"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemon:protector"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemon:electirizer"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemon:magmarizer"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemon:razor_claw"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemon:razor_fang"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemon:reaper_cloth"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemon:deep_sea_tooth"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemon:deep_sea_scale"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemon:prism_scale"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemon:whipped_dream"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemon:sachet"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "cobblemon:link_cable"
+        }
+      ]
+    }
+  ]
+}

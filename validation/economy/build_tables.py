@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generates the reward-economy loot tables, and the exact probability report for them.
 
-Every table under `src/main/resources/data/cobbleraids/loot_table/{base,general,keys,specialty}` is emitted from
+Every table under `src/main/resources/data/cobbleraids/loot_table/{base,general,specialty}` is emitted from
 the matrix below. They are generated rather than hand-written for the reason the manifest is:
 sixty-seven files whose weights have to add up cannot be maintained by hand, and a drifting
 weight is invisible in a diff. Edit the matrix, re-run, commit what changes.
@@ -111,10 +111,75 @@ def base_catalog():
 # key is six fragments, so w = 6 / (2 * raids_per_key). Targets are 6 / 9 / 12 / 15 raids per key:
 # 50% / 33% / 25% / 20% (powerhouse is 9.09 raids, the nearest whole percent). Card packs halved
 # from 42-53% to 21-27%, still rising with tier; base takes the rest.
+#
+# 2026-10-22: keys are out of the loot for now. Their category (50 / 33 / 25 / 20%) went entirely to
+# base, so card packs keep exactly the share above and base is simply what is left. The key and
+# fragment items are still registered, so re-enabling them is a generator edit, not a migration.
 GENERAL_CATEGORIES = [
-    ("cobbleraids:base/{tier}", [29, 44, 50, 53]),
-    ("cobbleraids:general/leaf/cards", [21, 23, 25, 27]),
-    ("cobbleraids:keys/{tier}", [50, 33, 25, 20]),
+    ("cobbleraids:base/{tier}", [74, 70, 66, 62]),
+    ("cobbleraids:general/leaf/cards", [12, 14, 16, 18]),
+    ("cobbleraids:general/leaf/curios/{tier}", [14, 16, 18, 20]),
+]
+
+# 2026-10-22: fewer supplies, more specialty, with the curve smoothed. Before this, a claim was
+# 80 / 81 / 77 / 74% base supplies from starter to mythical -- powerhouse the MOST plain tier,
+# because it has the fewest specialty rows and so the biggest fallback. Cards rose 5 points a tier
+# in general rolls, and the common specialty rows below were multiplied per tier to bring a claim's
+# base share to about 76 / 72 / 67 / 62%. Powerhouse needs the largest lift for that same reason.
+#
+# Only the COMMON rows are scaled. Anything rare enough to move the economy -- shiny charm, gold
+# bottle cap, rare candy, the tera shards, the Mega Stone, the incubator tops, raid core and scale --
+# keeps exactly the rate it was balanced at. Edit COMMON_BOOST to retune; each entry multiplies one tier.
+COMMON_ROWS = {
+    "tm / tr", "basic capsule", "rare capsule", "bracelet / journal", "training reader",
+    "riding upgrade", "type charm", "catch / exp charm", "auspicious ball", "union room ball",
+    "copper incubator", "iron incubator", "gold incubator", "diamond incubator",
+    "netherite incubator",
+}
+COMMON_BOOST = [1.3, 2.4, 2.2, 2.0]
+
+# 2026-10-22: "curios" is the third general category, added to make card packs rarer without
+# putting supplies back. Cards were 26 / 30 / 34 / 38% of a general selection and are now
+# 12 / 14 / 16 / 18%; curios take 14 / 16 / 18 / 20%, so base is exactly where it was.
+#
+# Everything here is a Cobblemon item, so none of it needs the optional-mod indirection. Held items,
+# EV items, gems and berries stay out on purpose (see the 2026-09-30 note on the base catalog);
+# these are things a player goes looking for: stones to evolve with, fossils to revive, mints to
+# change a nature. Ability Patch/Capsule and PP Max are deliberately NOT here -- they are strong
+# enough that a general roll would hand them out too freely.
+CURIO_STONES = ["fire_stone", "water_stone", "thunder_stone", "leaf_stone", "moon_stone", "sun_stone",
+                "shiny_stone", "dusk_stone", "dawn_stone", "ice_stone"]
+CURIO_TRADE = ["metal_coat", "kings_rock", "dragon_scale", "upgrade", "dubious_disc", "protector",
+               "electirizer", "magmarizer", "razor_claw", "razor_fang", "reaper_cloth",
+               "deep_sea_tooth", "deep_sea_scale", "prism_scale", "whipped_dream", "sachet",
+               "link_cable"]
+CURIO_REGIONAL = ["galarica_cuff", "galarica_wreath", "auspicious_armor", "malicious_armor",
+                  "black_augurite", "peat_block", "cracked_pot", "chipped_pot",
+                  "masterpiece_teacup", "unremarkable_teacup", "sweet_apple", "tart_apple",
+                  "syrupy_apple", "scroll_of_darkness", "scroll_of_waters", "strawberry_sweet",
+                  "love_sweet", "berry_sweet", "clover_sweet", "flower_sweet", "star_sweet",
+                  "ribbon_sweet", "oval_stone", "metal_alloy"]
+CURIO_FOSSILS = ["armor_fossil", "claw_fossil", "cover_fossil", "dome_fossil", "helix_fossil",
+                 "jaw_fossil", "old_amber_fossil", "plume_fossil", "root_fossil", "sail_fossil",
+                 "skull_fossil"]
+CURIO_MINTS = ["adamant_mint", "bold_mint", "brave_mint", "calm_mint", "careful_mint", "gentle_mint",
+               "hasty_mint", "impish_mint", "jolly_mint", "lax_mint", "lonely_mint", "mild_mint",
+               "modest_mint", "naive_mint", "naughty_mint", "quiet_mint", "rash_mint",
+               "relaxed_mint", "sassy_mint", "serious_mint", "timid_mint"]
+
+# Which family a curios selection lands in, by tier. Mints start at powerhouse: a nature change is
+# something a competitive player wants, and starter raids are not where that should come from.
+CURIO_FAMILIES = [
+    ("evolution", [70, 55, 50, 45]),
+    ("fossils",   [30, 30, 20, 15]),
+    ("mints",     [0,  15, 30, 40]),
+]
+
+# Inside the evolution family: plain stones early, the harder-to-find regional items late.
+CURIO_EVOLUTION_GROUPS = [
+    ("stones",   [60, 45, 25, 15]),
+    ("trade",    [30, 40, 40, 35]),
+    ("regional", [10, 15, 35, 50]),
 ]
 
 CARD_PACKS = ["booster_pack"] + [
@@ -182,6 +247,12 @@ SPECIALTY_ROWS = [
     ("guardian scale", {"table": "cobbleraids:specialty/leaf/guardian_scale"}, [0, 4, 6, 8]),
 ]
 
+SPECIALTY_ROWS = [
+    (name, target, [round(weight * COMMON_BOOST[index]) if name in COMMON_ROWS else weight
+                    for index, weight in enumerate(weights)])
+    for name, target, weights in SPECIALTY_ROWS
+]
+
 # 10.00%, and only on a boss that has a stone. Solved from three dials that multiply: a 20-minute
 # spawn gives 3 raids an hour, a 3x spawn bias toward the 12 starters that carry a stone makes 1.80
 # of those mega-capable, and 10% of those is one stone every four hours. Low because the pity
@@ -191,8 +262,8 @@ MEGA_WEIGHT = 1000
 
 # Namespaces guaranteed present. Everything else is an optional mod, and an item from one can
 # never be named directly in a pool -- see optional_item_table(). "cobbleraids" is here because the
-# key fragments are registered by this mod: if they are missing the mod is missing, and the loot
-# tables are not being read at all.
+# raid core and guardian scale are registered by this mod: if they are missing the mod is missing,
+# and the loot tables are not being read at all.
 ALWAYS_PRESENT = ("minecraft", "cobblemon", "cobbleraids")
 
 
@@ -273,11 +344,21 @@ def build_tables(manifest):
     for index, tier in enumerate(TIERS):
         tables["base/%s.json" % tier] = single_pool(build_base_pool(index, tier))
 
-    # keys/<tier> -- one outcome: a selection that lands here is one fragment. Reached as a
-    # category of general/<tier> below, not as a guaranteed grant.
-    for tier in TIERS:
-        tables["keys/%s.json" % tier] = single_pool(
-            [item_entry("cobbleraids:%s_raid_key_fragment" % tier)])
+    # curios -- family/group selection per tier over equal-weight leaves of Cobblemon items
+    for name, items in (("stones", CURIO_STONES), ("trade", CURIO_TRADE), ("regional", CURIO_REGIONAL),
+                        ("fossils", CURIO_FOSSILS), ("mints", CURIO_MINTS)):
+        tables["general/leaf/curios/%s.json" % name] = single_pool(
+            [item_entry("cobblemon:" + item) for item in items])
+    for index, tier in enumerate(TIERS):
+        tables["general/leaf/curios/evolution_%s.json" % tier] = single_pool(
+            [table_entry("cobbleraids:general/leaf/curios/" + group, weights[index])
+             for group, weights in CURIO_EVOLUTION_GROUPS if weights[index] > 0])
+        family_target = {"evolution": "cobbleraids:general/leaf/curios/evolution_" + tier,
+                         "fossils": "cobbleraids:general/leaf/curios/fossils",
+                         "mints": "cobbleraids:general/leaf/curios/mints"}
+        tables["general/leaf/curios/%s.json" % tier] = single_pool(
+            [table_entry(family_target[family], weights[index])
+             for family, weights in CURIO_FAMILIES if weights[index] > 0])
 
     # general leaves -- one result each
     tables["general/leaf/cards.json"] = single_pool(
@@ -417,8 +498,8 @@ def write_report(manifest):
                  " computed from the table weights, not sampled.")
     lines.append("")
     lines.append("Each claim is **2 general selections + 1 specialty selection**: three items,"
-                 " flat, whatever the player's contribution. Key fragments are a general category,"
-                 " so a fragment takes one of the three slots.")
+                 " flat, whatever the player's contribution."
+                 )
     lines.append("")
 
     lines.append("## Specialty pool, by tier")
@@ -472,17 +553,25 @@ def write_report(manifest):
     lines.append("A category at weight *w* appears at least once in a bundle with probability"
                  " `1 - (1 - w/100)^2`. For the 21% starter card category that is 37.59%.")
     lines.append("")
-    lines.append("### Key fragment pacing")
+    lines.append("Raid keys and key fragments are not in the loot at the moment.")
     lines.append("")
-    lines.append("A claim makes two general selections, so it yields 2w/100 fragments on average, and"
-                 " six fragments make a key.")
+    lines.append("### Curios")
     lines.append("")
-    lines.append("| Tier | fragment weight | fragments per claim | raids per key |")
-    lines.append("|---|---:|---:|---:|")
-    key_weights = dict(GENERAL_CATEGORIES)["cobbleraids:keys/{tier}"]
-    for index, tier in enumerate(TIERS):
-        per_claim = 2 * key_weights[index] / 100.0
-        lines.append("| %s | %d%% | %.2f | %.2f |" % (tier, key_weights[index], per_claim, 6 / per_claim))
+    lines.append("A curios selection picks a family, then (for evolution items) a group, then one item at"
+                 " random. Everything is a Cobblemon item. Shares of a curios selection:")
+    lines.append("")
+    lines.append("| Family / group | " + " | ".join(TIERS) + " |")
+    lines.append("|---|---:|---:|---:|---:|")
+    for family, weights in CURIO_FAMILIES:
+        lines.append("| " + family + " | " + " | ".join("%d%%" % w for w in weights) + " |")
+        if family == "evolution":
+            for group, group_weights in CURIO_EVOLUTION_GROUPS:
+                shares = [weights[i] * group_weights[i] / 100.0 for i in range(4)]
+                lines.append("| &nbsp;&nbsp;" + group + " | " + " | ".join("%.1f%%" % x for x in shares) + " |")
+    lines.append("")
+    lines.append("Items per leaf: stones %d, trade %d, regional %d, fossils %d, mints %d."
+                 % (len(CURIO_STONES), len(CURIO_TRADE), len(CURIO_REGIONAL), len(CURIO_FOSSILS),
+                    len(CURIO_MINTS)))
     lines.append("")
 
     lines.append("## Base catalog")

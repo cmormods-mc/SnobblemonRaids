@@ -34,6 +34,20 @@ MEGA_RATE = 1000
 TERA_RATE = 1190
 TOLERANCE = Fraction(1, 1000000)
 
+
+def _curio_item_ids():
+    """The bare ids in the five shipped curio leaf tables. Read from the files, not the generator,
+    so this check stays independent of the code that wrote them; what it pins is the SHARES."""
+    ids = set()
+    for leaf in ("stones", "trade", "regional", "fossils", "mints"):
+        table = load_table("cobbleraids:general/leaf/curios/" + leaf)
+        for pool in (table or {}).get("pools", []):
+            for entry in pool.get("entries", []):
+                ids.add(entry["name"].rsplit(":", 1)[1])
+    return ids
+
+
+
 failures = []
 
 
@@ -119,6 +133,29 @@ def main():
               "the general roll for " + tier + " can reach premium items, so contribution would"
               " raise their odds: " + ", ".join(leaked))
 
+    # --- curios: the category that made card packs rarer ---------------------------------------------
+    # Exact shares of ONE general selection: cards 12/14/16/18%, curios 14/16/18/20%, base the
+    # rest. Mints are absent at starter, and every curio is a Cobblemon item (the namespace the mod
+    # can rely on being present), so a missing add-on cannot empty a curios selection.
+    curio_item_ids = _curio_item_ids()
+    expected_cards = [12, 14, 16, 18]
+    expected_curios = [14, 16, 18, 20]
+    for index, tier in enumerate(TIERS):
+        general = distribution("cobbleraids:general/%s" % tier, tags)
+        cards = sum((p for item, p in general.items() if item.startswith("cobblemon-cards:")), Fraction(0))
+        curios = sum((p for item, p in general.items()
+                      if item.startswith("cobblemon:") and item.rsplit(":", 1)[1] in curio_item_ids),
+                     Fraction(0))
+        check(cards == Fraction(expected_cards[index], 100),
+              tier + " card packs are " + str(float(cards) * 100) + "% of a general roll, not "
+              + str(expected_cards[index]) + "%")
+        check(curios == Fraction(expected_curios[index], 100),
+              tier + " curios are " + str(float(curios) * 100) + "% of a general roll, not "
+              + str(expected_curios[index]) + "%")
+        mints = sum((p for item, p in general.items() if item.endswith("_mint")), Fraction(0))
+        check((mints == 0) == (tier == "starter"),
+              tier + " mint share is " + str(float(mints) * 100) + "%; mints must start at powerhouse")
+
     # --- mega stones ------------------------------------------------------------------------------
     for boss, entry in sorted(manifest.get("mega", {}).items()):
         table_id = "cobbleraids:specialty/boss/" + boss
@@ -161,8 +198,9 @@ def main():
     # The trap: referencing an expand:true tag entry straight from the parent weights it by tag
     # size. Both tags hold 630 items, so that mistake would produce a 50/50 split that looks
     # entirely correct while being correct by accident.
-    for tier, expected in zip(TIERS, [Fraction(200, 10000), Fraction(300, 10000),
-                                      Fraction(400, 10000), Fraction(500, 10000)]):
+    # Totals are 2 / 3 / 4 / 5% x COMMON_BOOST (1.3 / 2.4 / 2.2 / 2.0) since the 2026-10-22 retune.
+    for tier, expected in zip(TIERS, [Fraction(260, 10000), Fraction(720, 10000),
+                                      Fraction(880, 10000), Fraction(1000, 10000)]):
         outcomes = distribution("cobbleraids:specialty/%s" % tier, tags)
         tr = outcomes.get("tag:simpletms:tr_items", Fraction(0))
         tm = outcomes.get("tag:simpletms:tm_items", Fraction(0))

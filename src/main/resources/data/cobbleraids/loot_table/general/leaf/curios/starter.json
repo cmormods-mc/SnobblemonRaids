@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:general/leaf/curios/evolution_starter",
+          "weight": 70
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:general/leaf/curios/fossils",
+          "weight": 30
+        }
+      ]
+    }
+  ]
+}

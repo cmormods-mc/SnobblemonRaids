@@ -76,7 +76,6 @@ Source: `README.md`, `CONTEXT.md`.
 
 Optional mods, each detected at runtime and skipped when absent:
 
-- SkiesGUIs 1.8.1: a chest GUI for claiming rewards (chat claiming is the fallback).
 - Text Placeholder API 2.4.2+: publishes `%cobbleraids:points%`.
 - CobbleDollars: an alternative currency backend and extra payout.
 - Reward-item mods, rewarded only when installed: `mega_showdown`, `simpletms`, `cobblemoncharms`,
@@ -251,16 +250,17 @@ result.
 
 **What a claim grants (policy-driven definitions, which is all 130 bundled bosses).** Three items, flat,
 whatever the contribution: one **specialty** roll plus two **general** rolls. Contribution still scales
-Raid Points and CobbleDollars. Key fragments are a category of the general table, so a fragment takes one
-of the three slots. Rates are tuned so a key takes about 6, 9, 12 and 15 raids (starter, powerhouse,
-legendary, mythical).
+Raid Points and CobbleDollars. Raid keys and key fragments are not currently in any loot table. A claim
+is about 76, 72, 67 and 62% base supplies (starter, powerhouse, legendary, mythical). A general roll is
+card packs 12 / 14 / 16 / 18%, curios 14 / 16 / 18 / 20% (evolution stones and trade items, fossils, and
+nature mints from powerhouse up), and base for the rest. Exact figures: `validation/economy/probability_report.md`.
 
 Tables (all under `data/cobbleraids/loot_table/`):
 
 ```text
 cobbleraids:specialty/<tier>          one premium roll: mega stones, charms, TMs, capsules...
 cobbleraids:specialty/boss/<species>  the same, for the 21 bosses that have a Mega Stone
-cobbleraids:general/<tier>            the ordinary roll: consumables, cards, materials
+cobbleraids:general/<tier>            the ordinary roll: consumables, cards, curios
 cobbleraids:base/<tier>               what both fall back to; never a premium item
 ```
 
@@ -393,7 +393,9 @@ Source: `README.md`; `shop/` package; `config/cobbleraids/shop.json`.
 ## 12. Keys, key fragments and held items
 
 Ten custom items, all server-side (Polymer), all named in the wiki with the art from
-`assets/cobbleraids/textures/item/`:
+`assets/cobbleraids/textures/item/`. **No loot table drops the keys or fragments at the moment.** The items
+stay registered so they can return without a migration; Raid Core and Guardian Scale are still specialty
+drops.
 
 | Item | Looks like | Notes |
 |---|---|---|
@@ -614,7 +616,7 @@ operator set is left alone.
   "scaling": { "health_per_extra_player": 0.65 },
   "time_limit_seconds": 900, "allow_flee": false,
   "moves": ["earthquake", "dragonclaw", "swordsdance", "firefang"],
-  "rewards": { "gui_id": "cobbleraids_reward", "choices": { "all": {} } },
+  "rewards": { "choices": { "all": {} } },
   "rarity_tier": "powerhouse"
 }
 ```
@@ -654,7 +656,6 @@ Water/Steel forms of the Beldum line (aspect `tideforge`) and the ability Silent
 | `mega_showdown` | Replaces Cobblemon's unbundled Showdown `index.js` wholesale. CobbleRaids patches it **after** every mod has written and **before** Showdown reads it (ADR 0002 and `ShowdownContextBootMixin`). Raid bosses that take no damage while turns progress normally mean the raid patch is not in the running Showdown context. Mega Evolution works. |
 | Polymer | Hard requirement now, for the item art. Cobblemon items are unaffected. |
 | WebGUI | Soft requirement; needed by players for every screen. |
-| SkiesGUIs | Optional chest-GUI claim backend. |
 | CobbleDollars | Optional currency backend and extra payout. |
 | `cobblemon-cards` | Item rewards and the sprites the web pages use. |
 | Text Placeholder API | `%cobbleraids:points%` (compile-only, never required). |
@@ -730,7 +731,7 @@ bash validation/hooks/install.sh   # once per clone: gate git push on it
 ```
 
 Version lives on one line of `build.gradle`. JDK 21. Loom 1.13.6. Polymer comes from
-`maven.nucleoid.xyz`, Cobblemon and SkiesGUIs from the Modrinth maven.
+`maven.nucleoid.xyz`, Cobblemon from the Modrinth maven.
 
 **Tests.** 602 unit tests over the Minecraft-free core (spawn maths, contribution, config round trip, lobby
 rules, fault containment, audit rules, the shop and reward economy, the encounter API, the Showdown file

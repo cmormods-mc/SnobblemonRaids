@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:general/leaf/curios/stones",
+          "weight": 25
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:general/leaf/curios/trade",
+          "weight": 40
+        },
+        {
+          "type": "minecraft:loot_table",
+          "value": "cobbleraids:general/leaf/curios/regional",
+          "weight": 35
+        }
+      ]
+    }
+  ]
+}
