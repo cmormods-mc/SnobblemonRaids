@@ -29,7 +29,7 @@ Usage
 -----
     python validation/smoke/smoke_test.py --server-dir <dir> [--jar build/libs/CobbleRaids-x.y.z.jar]
 
-The server directory needs Fabric, Cobblemon, SkiesGUIs, a world, and RCON enabled; see the
+The server directory needs Fabric, Cobblemon, the Polymer jars, a world, and RCON enabled; see the
 project's live-test-server notes. --jar copies that build into mods/ first, removing any other
 CobbleRaids jar, so you are always testing what you just built.
 """

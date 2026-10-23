@@ -32,8 +32,9 @@ Needs a Fabric server for the Minecraft version in `build.gradle`, plus in `mods
 
 - `fabric-api` matching `build.gradle`
 - `Cobblemon-fabric-<version>.jar`
-- `SkiesGUIs` — optional (`fabric.mod.json` lists it under `recommends`, and reward claims fall back
-  to chat without it), but keep it in the rig so the SkiesGUIs path is the one being exercised
+- the Polymer jars (`polymer-core`, `polymer-common`, `polymer-resource-pack`, and `polymer-autohost` if
+  you want the item pack hosted) -- the custom items are Polymer items, so the mod will not load without them
+- `webgui` is optional: without it the web pages are disabled and rewards are claimed from chat
 
 Pointing it at a directory that also has the live modpack's other mods (mega_showdown, accessories,
 architectury, owo-lib) is better than a clean room: that is the combination players actually run, and
