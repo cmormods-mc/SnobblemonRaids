@@ -1,11 +1,12 @@
 package com.cobbleraids.command;
 
+import com.mojang.brigadier.CommandDispatcher;
 import com.cobbleraids.catching.RaidPlayerRecord;
 import com.cobbleraids.catching.RaidPlayerRecords;
 import com.cobbleraids.presentation.CommandFormat;
 import com.cobbleraids.reward.points.RaidPointsStore;
 import com.cobbleraids.shop.ShopCatalog;
-import com.cobbleraids.shop.RaidShopGateway;
+import com.cobbleraids.web.ShopWebPage;
 import com.cobbleraids.shop.ShopCatalogManager;
 import com.cobbleraids.shop.ShopEntry;
 import com.cobbleraids.shop.ShopPageView;
@@ -49,21 +50,21 @@ public final class RaidShopCommand {
     };
 
     public static void register() {
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> build(dispatcher));
+    }
+
+    /** The command tree, separate from the Fabric event so a test can build it without a server. */
+    public static void build(CommandDispatcher<CommandSourceStack> dispatcher) {
+        dispatcher.register(
                 Commands.literal("cobbleraids")
                         .then(Commands.literal("shop")
-                                .executes(context -> list(context.getSource()))
+                                .executes(context -> open(context.getSource()))
                                 .then(Commands.literal("buy")
                                         .then(Commands.argument("entry", StringArgumentType.word())
                                                 .suggests(ENTRY_IDS)
                                                 .executes(context -> buy(context.getSource(),
-                                                        StringArgumentType.getString(context, "entry")))))
-                                .then(Commands.literal("open")
-                                        .executes(context -> open(context.getSource())))
-                                .then(Commands.literal("reload")
-                                        .requires(source -> source.hasPermission(2))
-                                        .executes(context -> reload(context.getSource()))))
-        ));
+                                                        StringArgumentType.getString(context, "entry"))))))
+        );
     }
 
     private static int list(CommandSourceStack source) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
@@ -142,16 +143,10 @@ public final class RaidShopCommand {
         return 0;
     }
 
+    /** {@code /cr shop}: the web shop, or the text list for a client without WebGUI. */
     private static int open(CommandSourceStack source) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
-        RaidShopGateway.open(source.getPlayerOrException());
-        return 1;
-    }
-
-    private static int reload(CommandSourceStack source) {
-        ShopCatalog catalog = ShopCatalogManager.reload();
-        source.sendSuccess(() -> Component.literal("Reloaded the shop: " + catalog.totalEntries()
-                + " entries across " + catalog.sections().size() + " sections.")
-                .withStyle(ChatFormatting.GREEN), true);
-        return catalog.totalEntries();
+        ServerPlayer player = source.getPlayerOrException();
+        if (ShopWebPage.open(player)) return 1;
+        return list(source);
     }
 }

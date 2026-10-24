@@ -21,7 +21,7 @@ import net.minecraft.resources.ResourceLocation;
 final class RaidSuggestions {
     private RaidSuggestions() {}
 
-    /** Species names, for the commands that take a bare Cobblemon species (spawn, testwild, info). */
+    /** Species names, for the commands that take a bare Cobblemon species (spawn, info). */
     static final SuggestionProvider<CommandSourceStack> SPECIES = (context, builder) ->
             SharedSuggestionProvider.suggest(RaidDefinitionRegistry.speciesNames(), builder);
 

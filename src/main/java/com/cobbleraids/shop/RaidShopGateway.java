@@ -52,8 +52,8 @@ public final class RaidShopGateway {
         // The web page asks for page 0 itself once it is listening.
         if (ShopWebPage.open(player)) return;
             player.sendSystemMessage(Component.literal(
-                            "The shop needs the WebGUI mod on your client. Without it, /cobbleraids shop lists the items"
-                                    + " and /cobbleraids shop buy <id> buys one.")
+                            "The shop needs the WebGUI mod on your client. Without it, /cr shop lists the items"
+                                    + " and /cr shop buy <id> buys one.")
                     .withStyle(ChatFormatting.RED));
     }
 

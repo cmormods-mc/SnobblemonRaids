@@ -207,22 +207,25 @@ accident rather than on purpose.
 ### The raid shop
 
 Items are priced in Raid Points, with per-player limits that reset daily, weekly (Monday, UTC) or
-never; everything lives in `config/cobbleraids/shop.json`. Exp candies are priced so a level costs
-about 15 RP on average, and the strongest items (Lucky Egg, Ability Patch, held items) carry low
-daily or weekly limits.
+never; everything lives in `config/cobbleraids/shop.json`. The Consumables page sells capture balls,
+Rare and Exp Candies (priced so a level costs about 15 RP on average), the six stat vitamins, Ability
+Capsule and Patch, PP Up and Max, Lucky Egg and Exp Share; the strongest of these carry low daily or
+weekly limits. A second page sells Cobblemon Cards booster packs when that mod is installed.
 
-**Wandering Pokemon.** A page of ten Pokemon that changes every four hours (00:00, 04:00... UTC) and
-is the same for every player. Nothing is stored: the ten are a pure function of the four-hour window,
-so a restart reproduces them. Every Cobblemon species is eligible except those labelled legendary,
-mythical, ultra beast, paradox or restricted. Each listing has a level from 5 to 50 and a fixed
-nature, ability, gender and IV spread, so every buyer of that listing gets the identical Pokemon; it
-is never shiny. Each can be bought once per player per rotation.
+**Wandering Pokemon.** A page of ten Pokemon that changes every four hours (00:00, 04:00... UTC), with a
+countdown to the next restock in the shop header. Every player gets their own ten, so two players
+never see the same page, and each player's page is stable until the next restock. Nothing is stored:
+the ten are a pure function of the four-hour window and the player, so a restart reproduces them.
+Each listing has a level from 25 to 50 and a fixed nature, ability, gender and IV spread, so the
+Pokemon you see is exactly the one you get. Each can be bought once per player per rotation.
 
-Price is the ceiling scaled by rarity and level: `max_price x rarity x level / max_level`, where
-rarity is half catch rate (45 or lower counts as hardest) and half base stat total (600 counts as
-full), with a floor of 10%. The default ceiling is 1,250 RP, which only the hardest, strongest species
-at level 50 reaches. `/cobbleraids debug rotation` prints the current ten; the `rotation` block in
-`shop.json` sets the listing count, level range, price band and excluded labels.
+Legendary-class species (legendary, mythical, ultra beast, paradox, restricted) are rare but possible:
+each listing has a 2% chance to be one, at 4x the normal price, and any listing has a 2% chance to be
+shiny, at 3x. Both can happen at once. That works out to roughly one of each per player per day.
+Ordinary listings cost 100 to 500 RP: the ceiling scaled by rarity and level, `max_price x rarity x
+level / max_level`, where rarity is half catch rate (45 or lower counts as hardest) and half base stat
+total (600 counts as full), with a floor of 10%. The `rotation` block in `shop.json` sets the listing
+count, level range, price band, excluded labels and, under `rarity`, the chances and price multipliers.
 
 **Ascension rarity.** A Pokemon entry in `shop.json` may carry `"rarity"` (`common`, `uncommon`, `rare`,
 `epic`, `legendary` or `mythical`), written beside `species` and `level`. When the optional AscensionLib mod is
@@ -234,24 +237,41 @@ ignored. If the profile cannot be granted the purchase still stands and the log 
 
 ## Commands
 
-`/cobbleraids reward claim` is player-facing; `info` is unrestricted. Everything else
-requires permission level 2.
+`/cr` is a short alias for `/cobbleraids`; both run the same commands under the same permissions.
+(Not `/raid`, which vanilla Minecraft already owns for village raids.)
+
+**Every player:**
 
 ```text
-/cobbleraids list | info <species> | spawninfo
-/cobbleraids spawn <species> [x y z] | testwild <species>
-/cobbleraids despawn [all] | reload
-/cobbleraids cooldown list | cooldown reset <definition>
-/cobbleraids reward claim | reward grant <player> <definition> | reward list [player] | reward clear <player>
-/cobbleraids debug status | raids | history | config | audit
-/cobbleraids debug definition <species> | loot <loot_table> | record <player> | join <player>
+/cr                           open the raid hub (shop, trophies, Hall of Legends, leaderboards)
+/cr shop                      open the shop; lists it in chat if the client has no WebGUI
+/cr shop buy <id>             buy from the chat list
+/cr reward                    reopen a pending reward;  /cr reward claim <choice> claims it
+/cr points                    your Raid Points
+/cr top [board [weekly|alltime] [rows]]    leaderboards
+/cr stats [player|server]     raid records
+/cr title [list|set <id>|clear]            cosmetic titles
+/cr info <species>            where a raid boss appears
+/cr leave                     withdraw from your current raid
+/cr notify [legends]          mute or unmute spawn / Hall of Legends announcements
 ```
 
-Open to every player: `/cobbleraids top [<board> [weekly|alltime] [rows]]` and
-`/cobbleraids stats [<player>|server]` (see Statistics and leaderboards below).
+**Operators only** (permission level 2; each subcommand checks this itself, and a test proves it):
 
-`testwild` bypasses the spawn roll and species cooldown while keeping placement,
-biome checks, tracking, announcements and active caps.
+```text
+/cr list [tier] | spawninfo
+/cr spawn <species> [x y z] [renown <roll|force|none>]
+/cr despawn [all] | reload
+/cr cooldown list | cooldown reset <definition>
+/cr points <player> | give|take|set <player> <amount>
+/cr reward grant <player> <definition> | list [player] | clear <player>
+/cr capture status [player] | grant <player> <definition> | clear <player>
+/cr perf [log]
+/cr debug status | raids | battle | history | config | audit
+/cr debug loot <loot_table> | record <player> | join <player>
+```
+
+`/cr reload` reloads the config, reward policy and shop together.
 
 ## Statistics and leaderboards
 
@@ -281,7 +301,7 @@ if you are not on it. `/cobbleraids stats` is your own record and `stats server`
 - Everything is saved in `cobbleraids_stats` in the world data. Counting is a few in-memory updates
   per raid event, and a board is sorted only when someone asks for one.
 
-The leaderboards are also a WebGUI page, opened from the hub (`/cobbleraids menu`). Anything building
+The leaderboards are also a WebGUI page, opened from the hub (`/cr`). Anything building
 its own view should call `com.cobbleraids.stats.Leaderboards.board(...)`, which returns the rows, how
 many players are ranked and the viewer's own row, rather than parsing the command output.
 

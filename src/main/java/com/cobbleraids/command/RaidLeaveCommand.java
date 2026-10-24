@@ -1,5 +1,7 @@
 package com.cobbleraids.command;
 
+import com.mojang.brigadier.CommandDispatcher;
+import net.minecraft.commands.CommandSourceStack;
 import com.cobbleraids.lifecycle.RaidLifecycleCoordinator;
 import com.cobbleraids.raid.RaidRegistry;
 import com.cobbleraids.raid.RaidSession;
@@ -25,7 +27,12 @@ public final class RaidLeaveCommand {
     private RaidLeaveCommand() {}
 
     public static void register() {
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> build(dispatcher));
+    }
+
+    /** The command tree, separate from the Fabric event so a test can build it without a server. */
+    public static void build(CommandDispatcher<CommandSourceStack> dispatcher) {
+        dispatcher.register(
                 Commands.literal("cobbleraids")
                         .then(Commands.literal("leave")
                                 .executes(ctx -> {
@@ -41,6 +48,6 @@ public final class RaidLeaveCommand {
                                     }
                                     return RaidLifecycleCoordinator.withdrawPlayer(raid, player) ? 1 : 0;
                                 }))
-        ));
+        );
     }
 }

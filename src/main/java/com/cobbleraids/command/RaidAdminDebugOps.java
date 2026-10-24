@@ -278,56 +278,6 @@ final class RaidAdminDebugOps {
         return rows;
     }
 
-    /**
-     * Keys are printed exactly as they appear in server.json, not as the Java accessor names.
-     * The point of this command is to find the value you then go and edit, and the old output
-     * showed "checkIntervalTicks" for a field the file calls "check_interval_ticks" -- which an
-     * operator cannot search the file for.
-     */
-    /**
-     * Prints the rotating Pokemon page as it stands now: the window, when it turns over, and every
-     * listing with its price and pinned traits. Read-only; the page is a pure function of the clock,
-     * so from a player this is also exactly what they see in the shop.
-     */
-    static int rotation(CommandSourceStack source) {
-        java.time.Instant now = java.time.Instant.now();
-        // The admin's own page when run by a player (exactly what they see in the shop), the
-        // unsalted reference roll from the console.
-        net.minecraft.server.level.ServerPlayer self = source.getPlayer();
-        java.util.List<com.cobbleraids.shop.ShopRotation.Listing> listings =
-                com.cobbleraids.shop.ShopRotationService.current(now, self == null ? null : self.getUUID());
-        source.sendSuccess(() -> CommandFormat.header("Wandering Pokemon"), false);
-        if (listings.isEmpty()) {
-            source.sendSuccess(() -> CommandFormat.row("The rotation is off, or no species are eligible."), false);
-            return 0;
-        }
-        long window = com.cobbleraids.shop.ShopRotationService.windowNow(now);
-        long secondsLeft = com.cobbleraids.shop.ShopRotationService.nextRotation(now).getEpochSecond()
-                - now.getEpochSecond();
-        source.sendSuccess(() -> CommandFormat.hint(" window " + window + ", rotates in "
-                + CommandFormat.duration(secondsLeft)), false);
-        int total = 0;
-        int highest = 0;
-        for (com.cobbleraids.shop.ShopRotation.Listing listing : listings) {
-            com.cobbleraids.shop.ShopPokemonGift gift = listing.gift();
-            total += listing.cost();
-            highest = Math.max(highest, listing.cost());
-            int ivTotal = gift.ivs().values().stream().mapToInt(Integer::intValue).sum();
-            String line = " " + listing.slot() + ". " + listing.speciesPath() + " Lv" + gift.level()
-                    + "  " + listing.cost() + " RP  (" + gift.nature() + ", "
-                    + (gift.ability() == null ? "no ability" : gift.ability()) + ", " + gift.gender()
-                    + ", IV " + ivTotal + "/186)";
-            source.sendSuccess(() -> CommandFormat.row(line), false);
-        }
-        com.cobbleraids.shop.ShopRotationConfig rotation = com.cobbleraids.shop.ShopCatalogManager.get().rotation();
-        int poolSize = com.cobbleraids.shop.ShopRotationPool.get(
-                rotation.excludedLabels(), rotation.rarity().rareLabels()).size();
-        String summary = " " + listings.size() + " listings from " + poolSize + " eligible species, dearest "
-                + highest + " RP, average " + (total / listings.size()) + " RP";
-        source.sendSuccess(() -> CommandFormat.hint(summary), false);
-        return listings.size();
-    }
-
     /** Same player, dimension and outcome -- the detail (a candidate position) is expected to differ. */
     static boolean sameRun(RaidSpawnHistory.Entry a, RaidSpawnHistory.Entry b) {
         return a.outcome() == b.outcome()

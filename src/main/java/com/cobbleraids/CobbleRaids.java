@@ -8,17 +8,8 @@ import com.cobbleraids.catching.RaidCaptureSessionService;
 import com.cobbleraids.catching.RaidPlayerRecords;
 import com.cobbleraids.catching.TrophyLedger;
 import com.cobbleraids.catching.TrophyRoomGateway;
-import com.cobbleraids.command.RaidAdminCommand;
-import com.cobbleraids.command.RaidLeaveCommand;
-import com.cobbleraids.command.RaidLegendsCommand;
-import com.cobbleraids.command.RaidNotifyCommand;
-import com.cobbleraids.command.RaidPointsCommand;
-import com.cobbleraids.command.RaidShopCommand;
-import com.cobbleraids.command.RaidWebCommand;
-import com.cobbleraids.command.RaidStatsCommand;
 import com.cobbleraids.stats.RaidStatsStore;
-import com.cobbleraids.command.RaidTitleCommand;
-import com.cobbleraids.command.RaidTrophyCommand;
+import com.cobbleraids.command.RaidCommands;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.config.RaidRewardPolicyManager;
 import com.cobbleraids.config.RaidDefinitionRegistry;
@@ -39,7 +30,6 @@ import com.cobbleraids.presentation.RaidBossGlowService;
 import com.cobbleraids.raid.RaidRegistry;
 import com.cobbleraids.renown.RenownRegistry;
 import com.cobbleraids.reward.NativeRewardScreenGateway;
-import com.cobbleraids.reward.RaidRewardCommand;
 import com.cobbleraids.reward.currency.RaidCurrencyBackends;
 import com.cobbleraids.shop.RaidShopGateway;
 import com.cobbleraids.web.WebUi;
@@ -81,26 +71,9 @@ public final class CobbleRaids implements ModInitializer {
 
         RaidInstructionRegistrar.register();
         RaidBattleEventCoordinator.register();
-        // ORDER MATTERS: RaidRewardCommand must register the shared "cobbleraids" root before
-        // RaidAdminCommand does. Brigadier's CommandNode.addChild merges a same-named node by keeping
-        // the FIRST-registered node's own requirement, so whichever of these two runs first decides
-        // whether every command under "cobbleraids" -- reward/points/shop/leave included -- needs
-        // operator permission just to route through the root. RaidRewardCommand registers the root
-        // with no requirement on purpose; see the comment on RaidAdminCommand.admin() for the other
-        // half of this. Reordering these two calls would silently make every player-facing subcommand
-        // require permission level 2.
-        RaidRewardCommand.register();
-        RaidPointsCommand.register();
-        RaidShopCommand.register();
-        RaidWebCommand.register();
+        // One class owns the registration order, which is load-bearing; see RaidCommands.
+        RaidCommands.register();
         WebUi.register();
-        RaidStatsCommand.register();
-        RaidTrophyCommand.register();
-        RaidLegendsCommand.register();
-        RaidTitleCommand.register();
-        RaidAdminCommand.register();
-        RaidLeaveCommand.register();
-        RaidNotifyCommand.register();
         RaidBossInteractionListener.register();
         RaidPlaceholders.registerIfPresent();
         // Each subsystem gets its own barrier rather than one around the whole block: a lobby that

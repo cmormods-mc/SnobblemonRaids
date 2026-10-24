@@ -1,5 +1,6 @@
 package com.cobbleraids.command;
 
+import com.mojang.brigadier.CommandDispatcher;
 import com.cobbleraids.presentation.CommandFormat;
 import com.cobbleraids.stats.LeaderboardStat;
 import com.cobbleraids.stats.Leaderboards;
@@ -46,7 +47,12 @@ public final class RaidStatsCommand {
     private RaidStatsCommand() {}
 
     public static void register() {
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> build(dispatcher));
+    }
+
+    /** The command tree, separate from the Fabric event so a test can build it without a server. */
+    public static void build(CommandDispatcher<CommandSourceStack> dispatcher) {
+        dispatcher.register(
                 Commands.literal("cobbleraids")
                         .then(Commands.literal("top")
                                 .executes(context -> listBoards(context.getSource()))
@@ -70,7 +76,7 @@ public final class RaidStatsCommand {
                                         .executes(context -> serverStats(context.getSource())))
                                 .then(Commands.argument("target", EntityArgument.player())
                                         .executes(context -> playerStats(context.getSource(),
-                                                EntityArgument.getPlayer(context, "target")))))));
+                                                EntityArgument.getPlayer(context, "target"))))));
     }
 
     // ---------------------------------------------------------------- top

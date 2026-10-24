@@ -1,5 +1,6 @@
 package com.cobbleraids.command;
 
+import com.mojang.brigadier.CommandDispatcher;
 import com.cobbleraids.config.CobbleRaidsConfig;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
 import com.cobbleraids.config.RaidRarityTier;
@@ -28,7 +29,12 @@ public final class RaidPointsCommand {
     private RaidPointsCommand() {}
 
     public static void register() {
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> build(dispatcher));
+    }
+
+    /** The command tree, separate from the Fabric event so a test can build it without a server. */
+    public static void build(CommandDispatcher<CommandSourceStack> dispatcher) {
+        dispatcher.register(
                 Commands.literal("cobbleraids")
                         .then(Commands.literal("points")
                                 .executes(context -> ownBalance(context.getSource()))
@@ -57,7 +63,7 @@ public final class RaidPointsCommand {
                                         .requires(source -> source.hasPermission(2))
                                         .executes(context -> otherBalance(context.getSource(),
                                                 EntityArgument.getPlayer(context, "target")))))
-        ));
+        );
     }
 
     private static int ownBalance(CommandSourceStack source) throws com.mojang.brigadier.exceptions.CommandSyntaxException {

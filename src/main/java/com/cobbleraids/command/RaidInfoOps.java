@@ -55,68 +55,6 @@ final class RaidInfoOps {
         return 1;
     }
 
-    /** Operator view: the tuning numbers deliberately kept out of the player-facing command. */
-    static int definition(CommandSourceStack source, String rawName) {
-        RaidDefinition definition = resolve(source, rawName);
-        if (definition == null) return 0;
-
-        RaidDefinition.Spawn spawn = definition.spawn();
-        source.sendSuccess(() -> CommandFormat.header(CommandFormat.shortId(definition.id()))
-                .append(Component.literal("  " + definition.rarityTier().serializedName())
-                        .withStyle(RaidTierPresentation.color(definition.rarityTier()))), false);
-
-        source.sendSuccess(() -> CommandFormat.row(CommandFormat.pad("combat", 10)
-                + definition.baseHealth() + " hp · +"
-                + Math.round(definition.scaling().healthPerExtraPlayer() * 100) + "% per extra player · "
-                + definition.timeLimitSeconds() + "s limit · flee "
-                + (definition.allowFlee() ? "on" : "off")), false);
-        // Only shown when the definition actually pins something, so the 130 shipped definitions
-        // read exactly as they did before traits existed.
-        if (!definition.traits().isEmpty()) {
-            source.sendSuccess(() -> CommandFormat.row(CommandFormat.pad("traits", 10)
-                    + describeTraits(definition.traits())), false);
-        }
-        source.sendSuccess(() -> CommandFormat.row(CommandFormat.pad("recruit", 10)
-                + definition.recruitment().durationSeconds() + "s · radius "
-                + definition.recruitment().radius() + " · max "
-                + definition.recruitment().maxPlayers() + " players"), false);
-        source.sendSuccess(() -> CommandFormat.row(CommandFormat.pad("spawn", 10)
-                + (spawn.enabled() ? "enabled" : "DISABLED") + " · weight " + spawn.weight()
-                + " · cooldown " + spawn.cooldownSeconds() + "s · max " + spawn.maxConcurrent()), false);
-        source.sendSuccess(() -> CommandFormat.row(CommandFormat.pad("timers", 10)
-                + "despawn " + spawn.despawnSeconds() + "s unattended · lifetime "
-                + spawn.maxLifetimeSeconds() + "s total"), false);
-        source.sendSuccess(() -> CommandFormat.row(CommandFormat.pad("where", 10) + habitats(definition.spawn())), false);
-        source.sendSuccess(() -> CommandFormat.row(CommandFormat.pad("when", 10) + times(definition.spawn())
-                + " · " + dimensions(definition.spawn())), false);
-
-        RaidDefinition.Rewards rewards = definition.rewards();
-        for (RaidDefinition.RewardChoice choice : rewards.choices().values()) {
-            source.sendSuccess(() -> CommandFormat.row(CommandFormat.pad("reward", 10)
-                    + choice.id() + " · " + choice.items().size() + " guaranteed · "
-                    + choice.chanceItems().size() + " chance"), false);
-        }
-        RaidDefinition.ContributionBonus bonus = rewards.contributionBonus();
-        source.sendSuccess(() -> CommandFormat.row(CommandFormat.pad("bonus", 10)
-                + (bonus.enabled() ? "enabled" : "disabled") + " · " + bonus.tiers().size()
-                + " tiers · pool " + bonus.pool().size()), false);
-        return 1;
-    }
-
-    static String describeTraits(com.cobbleraids.config.RaidBossTraits traits) {
-        List<String> parts = new ArrayList<>();
-        if (traits.nature() != null) parts.add(traits.nature());
-        if (traits.ability() != null) parts.add(traits.ability());
-        if (traits.gender() != null) parts.add(traits.gender());
-        if (traits.form() != null) parts.add("form " + traits.form());
-        if (traits.teraType() != null) parts.add("tera " + traits.teraType());
-        if (traits.heldItem() != null) parts.add(CommandFormat.shortId(
-                ResourceLocation.parse(traits.heldItem())));
-        if (!traits.ivs().isEmpty()) parts.add("ivs " + traits.ivs());
-        if (!traits.evs().isEmpty()) parts.add("evs " + traits.evs());
-        return String.join(" · ", parts);
-    }
-
     private static RaidDefinition resolve(CommandSourceStack source, String rawName) {
         String name = rawName.trim().toLowerCase(Locale.ROOT);
         RaidDefinition definition = RaidDefinitionRegistry.findSpecies(name);

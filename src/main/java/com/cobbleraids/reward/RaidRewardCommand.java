@@ -1,5 +1,6 @@
 package com.cobbleraids.reward;
 
+import com.mojang.brigadier.CommandDispatcher;
 import com.cobbleraids.lifecycle.RaidRewardService;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
@@ -26,7 +27,12 @@ public final class RaidRewardCommand {
     private RaidRewardCommand() {}
 
     public static void register() {
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> build(dispatcher));
+    }
+
+    /** The command tree, separate from the Fabric event so a test can build it without a server. */
+    public static void build(CommandDispatcher<CommandSourceStack> dispatcher) {
+        dispatcher.register(
                 // Deliberately no .requires() here: this is the first registration of the shared
                 // "cobbleraids" root, and Brigadier's addChild merge keeps whichever registration got
                 // there first -- see CobbleRaids.java's call-site comment and RaidAdminCommand.admin().
@@ -45,6 +51,6 @@ public final class RaidRewardCommand {
                                                     ServerPlayer player = ctx.getSource().getPlayerOrException();
                                                     return RaidRewardService.claim(player, StringArgumentType.getString(ctx, "choice")) ? 1 : 0;
                                                 }))))
-        ));
+        );
     }
 }

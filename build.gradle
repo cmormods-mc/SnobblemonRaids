@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.188-personal-shop'
+version = '0.8.189-simple-commands'
 group = 'com.cobbleraids'
 
 base {

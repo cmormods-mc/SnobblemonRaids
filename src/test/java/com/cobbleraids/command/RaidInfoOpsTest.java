@@ -2,17 +2,14 @@ package com.cobbleraids.command;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.cobbleraids.config.RaidBossTraits;
 import com.cobbleraids.config.RaidDefinition;
 import java.util.List;
-import java.util.Map;
 import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.Test;
 
 /**
- * The plain-English formatters {@code /cobbleraids info} and {@code /cobbleraids debug definition}
- * share. Each one is a pure function of a {@code RaidDefinition.Spawn} or {@code RaidBossTraits}, so
- * this builds those directly rather than a whole {@code RaidDefinition}, which carries several
+ * The plain-English formatters {@code /cobbleraids info} uses. Each one is a pure function of a
+ * {@code RaidDefinition.Spawn}, so this builds those directly rather than a whole {@code RaidDefinition}, which carries several
  * unrelated sub-records these formatters never read.
  */
 class RaidInfoOpsTest {
@@ -76,20 +73,5 @@ class RaidInfoOpsTest {
                 List.of(), List.of(), List.of());
 
         assertEquals("the_nether, othermod:custom_dimension", RaidInfoOps.dimensions(spawn));
-    }
-
-    @Test
-    void describeTraitsIsEmptyForNone() {
-        assertEquals("", RaidInfoOps.describeTraits(RaidBossTraits.NONE));
-    }
-
-    @Test
-    void describeTraitsJoinsEveryPresentFieldInDeclarationOrder() {
-        RaidBossTraits traits = new RaidBossTraits("adamant", "intimidate", Map.of("attack", 31),
-                Map.of("hp", 252), "cobblemon:life_orb", "male", "fire", "alolan");
-
-        assertEquals("adamant · intimidate · male · form alolan · tera fire · cobblemon:life_orb"
-                        + " · ivs {attack=31} · evs {hp=252}",
-                RaidInfoOps.describeTraits(traits));
     }
 }

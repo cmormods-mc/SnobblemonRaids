@@ -25,7 +25,7 @@ import net.minecraft.world.scores.Scoreboard;
  * Gives a raid boss the vanilla "Glowing" outline (visible through terrain) whenever a player is
  * within boss_glow.radius_blocks, tinted per rarity tier via the same ChatFormatting
  * RaidTierPresentation already uses for that tier's name and particle. Covers every boss --
- * natural, admin-spawned, or testwild -- since all of them are created through the single
+ * natural or admin-spawned -- since all of them are created through the single
  * RaidBossSpawner.spawnAt() choke point that registers here.
  *
  * <p>A thin static façade over {@link TrackedBossService}, which owns the register/recover/prune/

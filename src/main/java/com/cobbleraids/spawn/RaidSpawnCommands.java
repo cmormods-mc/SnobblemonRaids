@@ -26,11 +26,11 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * The operator-facing half of wild spawning: /cobbleraids spawninfo and /cobbleraids testwild.
+ * The operator-facing half of wild spawning: /cobbleraids spawninfo.
  *
- * <p>Kept apart from RaidSpawnScheduler because neither runs on the tick path -- both are answers to
- * a human typing a command, and both are mostly presentation. Leaving them in the scheduler made a
- * class that is supposed to say when to attempt a spawn into the largest formatter in the mod.
+ * <p>Kept apart from RaidSpawnScheduler because it does not run on the tick path -- it is an answer to
+ * a human typing a command, and mostly presentation. Leaving it in the scheduler made a class that
+ * is supposed to say when to attempt a spawn into the largest formatter in the mod.
  */
 public final class RaidSpawnCommands {
 
@@ -106,86 +106,5 @@ public final class RaidSpawnCommands {
         source.sendSuccess(() -> CommandFormat.row("eligible " + eligible.size() + "/" + environmental.size()
                 + " here" + (blocked == 0 ? "" : " · " + blocked + " on cooldown or at cap")), false);
         return eligible.size();
-    }
-
-    public static int testWild(CommandSourceStack source, String rawPokemonName) {
-        ServerPlayer player;
-        try {
-            player = source.getPlayerOrException();
-        } catch (Exception ex) {
-            source.sendFailure(Component.literal("/cobbleraids testwild must be run by a player."));
-            return 0;
-        }
-
-        RaidDefinition definition = resolveSpecies(source, rawPokemonName);
-        if (definition == null) return 0;
-
-        CobbleRaidsConfig.NaturalSpawning config = CobbleRaidsConfigManager.get().naturalSpawning();
-        if (!config.enabled()) {
-            source.sendFailure(Component.literal("Natural raid spawning is disabled in the CobbleRaids config."));
-            return 0;
-        }
-
-        RaidSpawnScheduler.purgeRemoved(source.getServer());
-        ServerLevel level = source.getLevel();
-        ResourceLocation dimensionId = level.dimension().location();
-        if (RaidSpawnScheduler.trackedCount() >= config.maxActiveRaids()
-                || RaidSpawnScheduler.trackedInDimension(dimensionId) >= config.maxActiveRaidsPerDimension()
-                || !RaidSpawnScheduler.belowDefinitionCap(definition)) {
-            source.sendFailure(Component.literal("A natural raid cap is full. Despawn an active boss and retry."));
-            return 0;
-        }
-
-        for (int search = 0; search < 16; search++) {
-            Optional<BlockPos> candidate = RaidSpawnPositionFinder.findLand(level, player, config);
-            if (candidate.isEmpty()) continue;
-            BlockPos pos = candidate.get();
-            if (RaidSpawnScheduler.tooCloseToAnotherRaid(level, pos, config.minDistanceBetweenRaids())) continue;
-
-            Holder<Biome> biomeHolder = level.getBiome(pos);
-            ResourceLocation biomeId = biomeHolder.unwrapKey().map(key -> key.location()).orElse(null);
-            RaidSpawnContext context = new RaidSpawnContext(
-                    dimensionId, biomeId, biomeHolder, level.getDayTime());
-            if (!context.matches(definition)) continue;
-
-            try {
-                PokemonEntity boss = RaidSpawnScheduler.spawnTracked(level, pos, biomeId, dimensionId, definition);
-                source.sendSuccess(() -> Component.literal("Spawned tracked wild "
-                        + definition.species().getPath() + " ("
-                        + definition.rarityTier().serializedName() + ") at "
-                        + CommandFormat.coords(boss.getX(), boss.getY(), boss.getZ()))
-                        .withStyle(ChatFormatting.GREEN), true);
-                source.sendSuccess(() -> CommandFormat.hint(
-                        " chance and cooldown bypassed · wild tracking active"), false);
-                return 1;
-            } catch (RuntimeException ex) {
-                source.sendFailure(Component.literal("Failed to spawn " + definition.species().getPath()
-                        + ": " + ex.getMessage()));
-                return 0;
-            }
-        }
-
-        source.sendFailure(Component.literal("No valid nearby natural position for "
-                + definition.species().getPath()
-                + ". Stand in one of its allowed biomes/times and use /cobbleraids spawninfo, then retry."));
-        return 0;
-    }
-
-    private static RaidDefinition resolveSpecies(CommandSourceStack source, String rawPokemonName) {
-        String pokemonName = rawPokemonName.trim().toLowerCase(Locale.ROOT);
-        if (pokemonName.isEmpty() || pokemonName.contains(":")) {
-            source.sendFailure(Component.literal(
-                    "Use a species name only, for example: /cobbleraids testwild garchomp"));
-            return null;
-        }
-
-        List<RaidDefinition> matches = RaidDefinitionRegistry.findBySpeciesName(pokemonName);
-        if (matches.size() != 1) {
-            source.sendFailure(Component.literal(matches.isEmpty()
-                    ? "No raid definition uses species '" + pokemonName + "'."
-                    : "Multiple raid definitions use species '" + pokemonName + "'."));
-            return null;
-        }
-        return matches.getFirst();
     }
 }

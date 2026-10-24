@@ -1,5 +1,7 @@
 package com.cobbleraids.command;
 
+import com.mojang.brigadier.CommandDispatcher;
+import net.minecraft.commands.CommandSourceStack;
 import com.cobbleraids.catching.HallOfLegendsAnnouncementService;
 import com.cobbleraids.spawn.RaidSpawnAnnouncementService;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -21,7 +23,12 @@ public final class RaidNotifyCommand {
     private RaidNotifyCommand() {}
 
     public static void register() {
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> build(dispatcher));
+    }
+
+    /** The command tree, separate from the Fabric event so a test can build it without a server. */
+    public static void build(CommandDispatcher<CommandSourceStack> dispatcher) {
+        dispatcher.register(
                 Commands.literal("cobbleraids")
                         .then(Commands.literal("notify")
                                 .executes(ctx -> {
@@ -47,6 +54,6 @@ public final class RaidNotifyCommand {
                                                             .withStyle(ChatFormatting.GREEN));
                                             return 1;
                                         })))
-        ));
+        );
     }
 }

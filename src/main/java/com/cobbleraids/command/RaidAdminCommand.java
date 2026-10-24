@@ -1,5 +1,6 @@
 package com.cobbleraids.command;
 
+import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.cobbleraids.spawn.RaidSpawnCommands;
@@ -32,7 +33,12 @@ public final class RaidAdminCommand {
     }
 
     public static void register() {
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> build(dispatcher));
+    }
+
+    /** The operator tree, separate from the Fabric event so a test can build it without a server. */
+    public static void build(CommandDispatcher<CommandSourceStack> dispatcher) {
+        dispatcher.register(
                 Commands.literal("cobbleraids")
                         // Discarded at merge time by RaidRewardCommand's earlier, requirement-less
                         // registration of the same root -- see the class doc above and CobbleRaids.java's
@@ -77,16 +83,11 @@ public final class RaidAdminCommand {
                         .then(admin("spawninfo")
                                 .executes(ctx -> RaidSpawnCommands.sendSpawnInfo(ctx.getSource())))
                         // Unrestricted on purpose: this is the player-facing "where does X appear?"
-                        // lookup. The tuning numbers live in debug definition, which is operator-only.
+                        // lookup. The tuning numbers live in the definition JSON, which operators edit directly.
                         .then(Commands.literal("info")
                                 .then(Commands.argument("pokemon", StringArgumentType.word())
                                         .suggests(RaidSuggestions.SPECIES)
                                         .executes(ctx -> RaidInfoOps.info(
-                                                ctx.getSource(), StringArgumentType.getString(ctx, "pokemon")))))
-                        .then(admin("testwild")
-                                .then(Commands.argument("pokemon", StringArgumentType.word())
-                                        .suggests(RaidSuggestions.SPECIES)
-                                        .executes(ctx -> RaidSpawnCommands.testWild(
                                                 ctx.getSource(), StringArgumentType.getString(ctx, "pokemon")))))
                         .then(admin("despawn")
                                 .executes(ctx -> RaidAdminBossOps.despawnNearest(ctx.getSource()))
@@ -152,8 +153,6 @@ public final class RaidAdminCommand {
                                         .then(Commands.argument("target", EntityArgument.player())
                                                 .executes(ctx -> RaidAdminBossOps.joinNearest(
                                                         ctx.getSource(), EntityArgument.getPlayer(ctx, "target")))))
-                                .then(Commands.literal("rotation")
-                                        .executes(ctx -> RaidAdminDebugOps.rotation(ctx.getSource())))
                                 .then(Commands.literal("raids")
                                         .executes(ctx -> RaidAdminDebugOps.raids(ctx.getSource())))
                                 .then(Commands.literal("battle")
@@ -170,12 +169,7 @@ public final class RaidAdminCommand {
                                         .then(Commands.argument("loot_table", ResourceLocationArgument.id())
                                                 .suggests(RaidSuggestions.LOOT_TABLES)
                                                 .executes(ctx -> RaidAdminDebugOps.lootPreview(
-                                                        ctx.getSource(), ResourceLocationArgument.getId(ctx, "loot_table")))))
-                                .then(Commands.literal("definition")
-                                        .then(Commands.argument("pokemon", StringArgumentType.word())
-                                                .suggests(RaidSuggestions.SPECIES)
-                                                .executes(ctx -> RaidInfoOps.definition(
-                                                        ctx.getSource(), StringArgumentType.getString(ctx, "pokemon"))))))
-        ));
+                                                        ctx.getSource(), ResourceLocationArgument.getId(ctx, "loot_table"))))))
+        );
     }
 }

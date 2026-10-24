@@ -1,5 +1,6 @@
 package com.cobbleraids.command;
 
+import com.mojang.brigadier.CommandDispatcher;
 import com.cobbleraids.catching.RaidPlayerRecord;
 import com.cobbleraids.catching.RaidPlayerRecords;
 import com.cobbleraids.presentation.CommandFormat;
@@ -35,7 +36,12 @@ public final class RaidTitleCommand {
     };
 
     public static void register() {
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> build(dispatcher));
+    }
+
+    /** The command tree, separate from the Fabric event so a test can build it without a server. */
+    public static void build(CommandDispatcher<CommandSourceStack> dispatcher) {
+        dispatcher.register(
                 Commands.literal("cobbleraids")
                         .then(Commands.literal("title")
                                 .executes(context -> list(context.getSource()))
@@ -48,7 +54,7 @@ public final class RaidTitleCommand {
                                                         StringArgumentType.getString(context, "id")))))
                                 .then(Commands.literal("clear")
                                         .executes(context -> clear(context.getSource()))))
-        ));
+        );
     }
 
     private static int list(CommandSourceStack source) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
