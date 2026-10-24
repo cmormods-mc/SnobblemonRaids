@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.187-reward-flush'
+version = '0.8.188-personal-shop'
 group = 'com.cobbleraids'
 
 base {

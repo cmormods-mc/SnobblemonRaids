@@ -27,12 +27,49 @@ import java.util.Locale;
  * @param starterMiddlePrice what a second-stage starter (Charmeleon) costs, at any level
  * @param starterFinalPrice what a fully evolved starter (Charizard) costs, at any level; each is also
  *                          held to {@code maxPrice}, so lowering that still caps the whole page
+ * @param rarity how often a listing is a legendary-class species or a shiny, and what that costs
  */
 public record ShopRotationConfig(boolean enabled, int listings, int minLevel, int maxLevel,
                                  int minPrice, int maxPrice, List<String> excludedLabels,
-                                 int starterBasePrice, int starterMiddlePrice, int starterFinalPrice) {
+                                 int starterBasePrice, int starterMiddlePrice, int starterFinalPrice,
+                                 Rarity rarity) {
+
+    /**
+     * The rare end of the page. Each listing is independently a rare species with probability
+     * {@code rareChance} and a shiny with probability {@code shinyChance}, so the two can coincide.
+     * Both are premiums on top of the ordinary price, which is why they can exceed {@code maxPrice}
+     * -- that ceiling describes the ordinary stock, and a legendary is not ordinary stock.
+     *
+     * @param rareLabels species labels that make a species rare; they are kept out of the ordinary
+     *                   draw and offered only through {@code rareChance}
+     */
+    public record Rarity(List<String> rareLabels, double rareChance, double shinyChance,
+                         double rarePriceMultiplier, double shinyPriceMultiplier) {
+
+        /** About one legendary and one shiny a day: ten listings, six restocks, 2% each. */
+        public static final Rarity DEFAULTS = new Rarity(
+                List.of("legendary", "mythical", "ultra_beast", "paradox", "restricted"), 0.02, 0.02, 4.0, 3.0);
+
+        /** No rare species and no shinies; what a hand-built test config wants. */
+        public static final Rarity NONE = new Rarity(List.of(), 0.0, 0.0, 1.0, 1.0);
+
+        public Rarity {
+            if (rareChance < 0.0 || rareChance > 1.0 || shinyChance < 0.0 || shinyChance > 1.0) {
+                throw new IllegalArgumentException("rotation rarity chances must be within 0..1");
+            }
+            if (rarePriceMultiplier < 1.0 || shinyPriceMultiplier < 1.0
+                    || rarePriceMultiplier > 100.0 || shinyPriceMultiplier > 100.0) {
+                throw new IllegalArgumentException("rotation rarity price multipliers must be within 1..100");
+            }
+            rareLabels = List.copyOf(rareLabels == null ? List.of() : rareLabels);
+        }
+    }
 
     public static final int MAX_LISTINGS = 36;
+
+    /** The exclusion list that shipped before rare species were offered. Untouched, it is retired. */
+    static final List<String> PREVIOUS_EXCLUDED =
+            List.of("legendary", "mythical", "ultra_beast", "paradox", "restricted");
 
     /** What shipped before the 25-50 / 500 retune. An untouched value moves; an operator's own stays. */
     static final int PREVIOUS_MIN_LEVEL = 5;
@@ -45,9 +82,18 @@ public record ShopRotationConfig(boolean enabled, int listings, int minLevel, in
      * line costs 250 / 375 / 500 by stage, flat, so the fully evolved ones sit at the ceiling.
      */
     public static final ShopRotationConfig DEFAULTS = new ShopRotationConfig(true, 10, 25, 50, 100, 500,
-            List.of("legendary", "mythical", "ultra_beast", "paradox", "restricted"), 250, 375, 500);
+            List.of(), 250, 375, 500, Rarity.DEFAULTS);
+
+    /** A config with the default rarity, for callers that only care about the ordinary stock. */
+    public ShopRotationConfig(boolean enabled, int listings, int minLevel, int maxLevel, int minPrice,
+                              int maxPrice, List<String> excludedLabels, int starterBasePrice,
+                              int starterMiddlePrice, int starterFinalPrice) {
+        this(enabled, listings, minLevel, maxLevel, minPrice, maxPrice, excludedLabels, starterBasePrice,
+                starterMiddlePrice, starterFinalPrice, Rarity.DEFAULTS);
+    }
 
     public ShopRotationConfig {
+        if (rarity == null) rarity = Rarity.DEFAULTS;
         if (listings < 1 || listings > MAX_LISTINGS) {
             throw new IllegalArgumentException("rotation.listings must be 1.." + MAX_LISTINGS);
         }
@@ -92,6 +138,9 @@ public record ShopRotationConfig(boolean enabled, int listings, int minLevel, in
             } else {
                 labels = DEFAULTS.excludedLabels();
             }
+            // The five labels that used to be banned outright are the rare labels now. A file that
+            // still carries exactly that list never chose it; one an operator changed keeps theirs.
+            if (labels.equals(PREVIOUS_EXCLUDED)) labels = DEFAULTS.excludedLabels();
             int minLevel = block.has("min_level") ? block.get("min_level").getAsInt() : DEFAULTS.minLevel();
             int maxLevel = block.has("max_level") ? block.get("max_level").getAsInt() : DEFAULTS.maxLevel();
             int minPrice = block.has("min_price") ? block.get("min_price").getAsInt() : DEFAULTS.minPrice();
@@ -110,12 +159,33 @@ public record ShopRotationConfig(boolean enabled, int listings, int minLevel, in
                     minLevel, maxLevel, minPrice, maxPrice, labels,
                     starters.has("base") ? starters.get("base").getAsInt() : DEFAULTS.starterBasePrice(),
                     starters.has("middle") ? starters.get("middle").getAsInt() : DEFAULTS.starterMiddlePrice(),
-                    starters.has("final") ? starters.get("final").getAsInt() : DEFAULTS.starterFinalPrice());
+                    starters.has("final") ? starters.get("final").getAsInt() : DEFAULTS.starterFinalPrice(),
+                    rarityFrom(block));
         } catch (RuntimeException ex) {
             RaidLog.error("shop catalogue: the rotation block is unusable (" + ex.getMessage()
                     + "); using the defaults");
             return DEFAULTS;
         }
+    }
+
+    private static Rarity rarityFrom(JsonObject block) {
+        if (!block.has("rarity") || !block.get("rarity").isJsonObject()) return Rarity.DEFAULTS;
+        JsonObject rarity = block.getAsJsonObject("rarity");
+        List<String> labels = new ArrayList<>();
+        if (rarity.has("rare_labels") && rarity.get("rare_labels").isJsonArray()) {
+            for (JsonElement element : rarity.getAsJsonArray("rare_labels")) {
+                labels.add(element.getAsString().trim().toLowerCase(Locale.ROOT));
+            }
+        } else {
+            labels = new ArrayList<>(Rarity.DEFAULTS.rareLabels());
+        }
+        return new Rarity(labels,
+                rarity.has("rare_chance") ? rarity.get("rare_chance").getAsDouble() : Rarity.DEFAULTS.rareChance(),
+                rarity.has("shiny_chance") ? rarity.get("shiny_chance").getAsDouble() : Rarity.DEFAULTS.shinyChance(),
+                rarity.has("rare_price_multiplier") ? rarity.get("rare_price_multiplier").getAsDouble()
+                        : Rarity.DEFAULTS.rarePriceMultiplier(),
+                rarity.has("shiny_price_multiplier") ? rarity.get("shiny_price_multiplier").getAsDouble()
+                        : Rarity.DEFAULTS.shinyPriceMultiplier());
     }
 
     public JsonObject toJson() {
@@ -134,6 +204,15 @@ public record ShopRotationConfig(boolean enabled, int listings, int minLevel, in
         starters.addProperty("middle", starterMiddlePrice);
         starters.addProperty("final", starterFinalPrice);
         block.add("starter_prices", starters);
+        JsonObject rare = new JsonObject();
+        JsonArray rareLabels = new JsonArray();
+        rarity.rareLabels().forEach(rareLabels::add);
+        rare.add("rare_labels", rareLabels);
+        rare.addProperty("rare_chance", rarity.rareChance());
+        rare.addProperty("shiny_chance", rarity.shinyChance());
+        rare.addProperty("rare_price_multiplier", rarity.rarePriceMultiplier());
+        rare.addProperty("shiny_price_multiplier", rarity.shinyPriceMultiplier());
+        block.add("rarity", rare);
         return block;
     }
 }

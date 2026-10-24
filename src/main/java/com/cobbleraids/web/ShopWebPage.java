@@ -66,6 +66,7 @@ public final class ShopWebPage {
         page.addProperty("pageIndex", payload.pageIndex());
         page.addProperty("pageCount", payload.pageCount());
         page.addProperty("balance", payload.balance());
+        page.addProperty("rotatesInMillis", payload.rotatesInMillis());
         JsonArray entries = new JsonArray();
         Set<String> wanted = new LinkedHashSet<>();
         for (ShopEntryPayload entry : payload.entries()) {

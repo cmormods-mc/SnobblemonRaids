@@ -108,12 +108,12 @@ public final class RaidShopGateway {
         List<ShopPageView> catalogPages = listablePages(ShopCatalogManager.pages());
         Map<ResourceLocation, BossSnapshot> personal = DefeatedBossSnapshots.forPlayer(player.getUUID());
         boolean hasPersonalPage = !personal.isEmpty();
-        List<ShopRotation.Listing> rotating = ShopRotationService.current(Instant.now());
+        List<ShopRotation.Listing> rotating = ShopRotationService.current(Instant.now(), player.getUUID());
         boolean hasRotatingPage = !rotating.isEmpty();
         int pageCount = catalogPages.size() + (hasRotatingPage ? 1 : 0) + (hasPersonalPage ? 1 : 0);
         if (pageCount == 0) {
             ShopWebPage.deliver(player,
-                    new ShopPagePayload("Raid Shop", 0, 1, RaidPointsStore.balance(player.getUUID()), List.of()));
+                    new ShopPagePayload("Raid Shop", 0, 1, RaidPointsStore.balance(player.getUUID()), List.of(), 0L));
             return;
         }
         // Clamped rather than rejected: the catalogue (or the personal page's presence) can shrink
@@ -122,6 +122,7 @@ public final class RaidShopGateway {
         int index = Math.max(0, Math.min(requestedPage, pageCount - 1));
         String heading;
         List<ShopEntryPayload> entries;
+        long rotatesInMillis = 0L;
         if (index < catalogPages.size()) {
             heading = catalogPages.get(index).heading();
             entries = buildCatalogEntries(catalogPages.get(index), player);
@@ -130,6 +131,8 @@ public final class RaidShopGateway {
             // bookmark on the catalogue stay exactly what they were.
             heading = "Wandering Pokemon";
             entries = buildRotatingEntries(rotating, player);
+            Instant now = Instant.now();
+            rotatesInMillis = Math.max(1L, ShopRotationService.nextRotation(now).toEpochMilli() - now.toEpochMilli());
         } else {
             // Always the last page, so page 0 -- and every existing bookmark or expectation about
             // it -- stays exactly what it already was.
@@ -137,7 +140,7 @@ public final class RaidShopGateway {
             entries = buildPersonalEntries(personal);
         }
         ShopWebPage.deliver(player, new ShopPagePayload(heading, index, pageCount,
-                RaidPointsStore.balance(player.getUUID()), entries));
+                RaidPointsStore.balance(player.getUUID()), entries, rotatesInMillis));
     }
 
     /**
@@ -201,7 +204,7 @@ public final class RaidShopGateway {
         List<ShopEntryPayload> entries = new ArrayList<>(listings.size());
         for (ShopRotation.Listing listing : listings) {
             entries.add(ShopEntryPayload.pokemon(ShopRotation.wireId(window, listing.slot()), listing.cost(),
-                    listing.speciesPath(), listing.gift().level(), false,
+                    listing.speciesPath(), listing.gift().level(), listing.gift().shiny(),
                     ShopRotationService.remaining(player, listing, now), 1));
         }
         return entries;

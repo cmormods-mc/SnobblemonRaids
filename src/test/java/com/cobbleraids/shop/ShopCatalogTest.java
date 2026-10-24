@@ -495,12 +495,11 @@ class ShopCatalogTest {
         assertEquals(ShopResetPeriod.WEEKLY, byId.get("exp_share").reset());
         assertEquals(600, byId.get("ability_patch").cost());
         assertEquals(300, byId.get("ability_capsule").cost());
-        for (String id : List.of("ability_patch", "ability_capsule", "leftovers", "choice_band", "choice_specs",
-                "choice_scarf", "life_orb", "focus_sash", "assault_vest", "rocky_helmet")) {
+        for (String id : List.of("ability_patch", "ability_capsule")) {
             assertEquals(1, byId.get(id).limit(), id + " is one a day");
             assertEquals(ShopResetPeriod.DAILY, byId.get(id).reset());
         }
-        for (String id : List.of("protein", "calcium")) {
+        for (String id : List.of("hp_up", "protein", "iron", "calcium", "zinc", "carbos")) {
             assertEquals(60, byId.get(id).cost(), id + " is 30 RP a vitamin");
             assertEquals(2, byId.get(id).item().count());
             assertEquals(5, byId.get(id).limit(), id + " is ten vitamins a day");
@@ -508,7 +507,7 @@ class ShopCatalogTest {
     }
 
     @Test
-    @DisplayName("PP items are cheap and unlimited; breeding and evolution items are one a day")
+    @DisplayName("PP items are cheap and unlimited")
     void utilityItemPricing() {
         Map<String, ShopEntry> byId = ShopCatalog.defaults().byId();
 
@@ -516,13 +515,65 @@ class ShopCatalogTest {
         assertEquals(15, byId.get("pp_max").cost());
         assertFalse(byId.get("pp_up").isLimited());
         assertFalse(byId.get("pp_max").isLimited());
-        assertEquals(50, byId.get("destiny_knot").cost());
-        assertEquals(35, byId.get("mirror_herb").cost());
-        assertEquals(75, byId.get("link_cable").cost());
-        assertEquals(35, byId.get("everstone").cost());
-        for (String id : List.of("destiny_knot", "mirror_herb", "link_cable", "everstone")) {
-            assertEquals(1, byId.get(id).limit(), id + " is one a day");
+    }
+
+    @Test
+    @DisplayName("the shipped shop is Consumables and Card Packs; healing, held items and breeding tools are gone")
+    void retiredPagesAreNotShipped() {
+        ShopCatalog defaults = ShopCatalog.defaults();
+
+        assertEquals(List.of("consumables", ShopCatalog.CARDS_SECTION),
+                defaults.sections().stream().map(ShopSection::id).toList());
+        for (String id : List.of("revive", "max_revive", "max_potion", "full_restore", "heal_ball", "leftovers",
+                "choice_band", "life_orb", "destiny_knot", "everstone", "link_cable", "mirror_herb")) {
+            assertFalse(defaults.byId().containsKey(id), id + " should no longer be sold");
         }
+    }
+
+    private static final String V3_UNEDITED = """
+            {"version": 3, "sections": [
+              {"id": "consumables", "title": "Consumables", "entries": [
+                {"id": "max_potion", "cost": 30, "limit": 5, "reset": "daily", "item": "cobblemon:max_potion", "count": 4}]},
+              {"id": "held_items", "title": "Held Items", "entries": [
+                {"id": "leftovers", "cost": 150, "limit": 1, "reset": "daily", "item": "cobblemon:leftovers", "count": 1}]},
+              {"id": "training", "title": "Training", "entries": [
+                {"id": "everstone", "cost": 35, "limit": 1, "reset": "daily", "item": "cobblemon:everstone", "count": 1}]}]}
+            """;
+
+    @Test
+    @DisplayName("an untouched version-3 shop loses Held Items and Training and gets the new Consumables")
+    void uneditedOldShopMigrates() {
+        ShopCatalog migrated = ShopCatalog.fromJson(parse(V3_UNEDITED));
+
+        assertEquals(List.of("consumables"), migrated.sections().stream().map(ShopSection::id).toList());
+        assertEquals(ShopCatalog.defaults().sections().get(0), migrated.sections().get(0));
+        assertFalse(migrated.byId().containsKey("max_potion"));
+        assertFalse(migrated.byId().containsKey("leftovers"));
+    }
+
+    @Test
+    @DisplayName("a section an operator edited survives the migration whole")
+    void editedOldSectionsSurvive() {
+        String edited = V3_UNEDITED.replace("\"cost\": 150", "\"cost\": 99")      // held_items repriced
+                .replace("\"cost\": 30,", "\"cost\": 31,");                         // consumables repriced
+        ShopCatalog migrated = ShopCatalog.fromJson(parse(edited));
+        Map<String, ShopEntry> byId = migrated.byId();
+
+        assertEquals(99, byId.get("leftovers").cost(), "an edited Held Items page is kept");
+        assertEquals(31, byId.get("max_potion").cost(), "an edited Consumables page is kept");
+        assertFalse(byId.containsKey("everstone"), "the untouched Training page still goes");
+    }
+
+    @Test
+    @DisplayName("an entry of a retired page that an operator kept is not rewritten to a listing that no longer exists")
+    void supersededEntryOfRetiredPageDoesNotThrow() {
+        // No limit fields: that is exactly the pre-repricing Leftovers listing, which used to be moved
+        // to the current default. There is no current Leftovers any more, so it must simply stay.
+        String old = """
+                {"version": 3, "sections": [{"id": "mine", "title": "Mine", "entries": [
+                  {"id": "leftovers", "cost": 150, "item": "cobblemon:leftovers", "count": 1}]}]}
+                """;
+        assertEquals(150, ShopCatalog.fromJson(parse(old)).byId().get("leftovers").cost());
     }
 
     @Test

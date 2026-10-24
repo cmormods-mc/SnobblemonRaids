@@ -18,8 +18,11 @@ import net.minecraft.resources.ResourceLocation;
  */
 public final class ShopRotationPool {
 
+    /** What the pool was built for: a change to either list (a shop.json reload) rebuilds it. */
+    private record Labels(List<String> excluded, List<String> rare) {}
+
     private static volatile List<ShopRotation.Candidate> cached;
-    private static volatile List<String> cachedFor;
+    private static volatile Labels cachedFor;
 
     private ShopRotationPool() {}
 
@@ -28,22 +31,23 @@ public final class ShopRotationPool {
         cachedFor = null;
     }
 
-    /** The pool for these excluded labels. A change of labels (a shop.json reload) rebuilds it. */
-    public static List<ShopRotation.Candidate> get(List<String> excludedLabels) {
+    public static List<ShopRotation.Candidate> get(List<String> excludedLabels, List<String> rareLabels) {
+        Labels wanted = new Labels(List.copyOf(excludedLabels), List.copyOf(rareLabels));
         List<ShopRotation.Candidate> pool = cached;
-        if (pool != null && excludedLabels.equals(cachedFor)) return pool;
+        if (pool != null && wanted.equals(cachedFor)) return pool;
         synchronized (ShopRotationPool.class) {
-            if (cached != null && excludedLabels.equals(cachedFor)) return cached;
-            cached = build(Set.copyOf(excludedLabels));
-            cachedFor = List.copyOf(excludedLabels);
+            if (cached != null && wanted.equals(cachedFor)) return cached;
+            cached = build(Set.copyOf(excludedLabels), Set.copyOf(rareLabels));
+            cachedFor = wanted;
             return cached;
         }
     }
 
-    private static List<ShopRotation.Candidate> build(Set<String> excluded) {
+    private static List<ShopRotation.Candidate> build(Set<String> excluded, Set<String> rareLabels) {
         List<ShopRotation.Candidate> pool = new ArrayList<>();
         for (Species species : PokemonSpecies.getImplemented()) {
             if (species.getLabels().stream().anyMatch(excluded::contains)) continue;
+            boolean rare = species.getLabels().stream().anyMatch(rareLabels::contains);
             ResourceLocation id = species.getResourceIdentifier();
             // Cobblemon's own species are named bare, which is what every shop entry already does;
             // an add-on's keep their namespace so two mods' "eevee" cannot be confused.
@@ -54,7 +58,7 @@ public final class ShopRotationPool {
                 if (potential instanceof CommonAbility) abilities.add(potential.getTemplate().getName());
             }
             pool.add(new ShopRotation.Candidate(speciesId, species.getCatchRate(), total,
-                    List.copyOf(abilities), species.getMaleRatio()));
+                    List.copyOf(abilities), species.getMaleRatio(), rare));
         }
         return List.copyOf(pool);
     }

@@ -7,6 +7,8 @@ const grid = $('grid');
 const tip = RC.tooltip();
 const icons = new Map();   // icon key -> data URL, delivered by webgui:shop_icons
 let page = null;
+let deadline = 0;          // performance.now() at which the rotating page restocks; 0 = this page does not
+let lastRefresh = 0;       // when we last asked for a fresh page because the clock ran out
 
 const send = (m) => RC.send(CHANNEL, m);
 const art = (key) => { const u = icons.get(key); return u ? 'url(' + u + ')' : 'none'; };
@@ -29,6 +31,30 @@ function render() {
   }
   for (const entry of page.entries) grid.appendChild(cell(entry, pokemon));
 }
+
+// Counts down locally from the server's "time left", so a wrong client clock cannot skew it and the
+// server is not polled. At zero it asks for the page again, at most every few seconds: the server
+// rolls the new stock at the boundary, but a request that lands a moment early would just get the
+// old stock back and must not turn into a tight loop.
+function tick() {
+  const chip = $('timer');
+  if (!deadline) { chip.hidden = true; return; }
+  const left = Math.max(0, deadline - performance.now());
+  chip.hidden = false;
+  if (left > 0) {
+    const s = Math.ceil(left / 1000);
+    const hms = [Math.floor(s / 3600), Math.floor(s / 60) % 60, s % 60]
+      .map((n, i) => (i === 0 ? String(n) : String(n).padStart(2, '0'))).join(':');
+    chip.textContent = 'NEW STOCK IN ' + hms;
+  } else {
+    chip.textContent = 'RESTOCKING…';
+    if (page && performance.now() - lastRefresh > 3000) {
+      lastRefresh = performance.now();
+      send({ action: 'turn', page: page.pageIndex });
+    }
+  }
+}
+setInterval(tick, 1000);
 
 function cell(entry, pokemon) {
   const affordable = page.balance >= entry.cost && !entry.soldOut;
@@ -85,7 +111,7 @@ function tooltipFor(entry) {
   }
   if (entry.soldOut) {
     out.push([entry.limit === 1 ? 'Already purchased' : 'All ' + entry.limit + ' bought', 'ok']);
-    out.push(['Resets daily', 'mu']);
+    out.push([page.rotatesInMillis > 0 ? 'Back with the next restock' : 'Resets daily', 'mu']);
   } else {
     const short = entry.cost - page.balance;
     out.push([RC.num(entry.cost) + ' RP', short > 0 ? 'bad' : 'hi']);
@@ -110,7 +136,13 @@ addEventListener('webgui:shop_icons', (e) => {
     if (url) el.querySelector('.art').style.backgroundImage = 'url(' + url + ')';
   });
 });
-addEventListener('webgui:shop_page', (e) => { page = e.detail; tip.hide(); render(); });
+addEventListener('webgui:shop_page', (e) => {
+  page = e.detail;
+  deadline = page.rotatesInMillis > 0 ? performance.now() + page.rotatesInMillis : 0;
+  tip.hide();
+  render();
+  tick();
+});
 
 // The server answers with the first page; asking after load means it cannot arrive before we listen.
 send({ action: 'ready' });

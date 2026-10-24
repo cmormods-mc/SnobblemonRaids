@@ -93,7 +93,7 @@ class ShopRotationTest {
                 species("somemod:charmander", 45, 309));
 
         for (long window = 1; window <= 60; window++) {
-            for (ShopRotation.Listing listing : ShopRotation.roll(window, starters, CONFIG)) {
+            for (ShopRotation.Listing listing : ShopRotation.roll(window, starters, withRarity(ShopRotationConfig.Rarity.NONE))) {
                 String id = listing.gift().species();
                 switch (id) {
                     case "charmander", "torchic", "rowlet" -> assertEquals(250, listing.cost(), id);
@@ -158,6 +158,37 @@ class ShopRotationTest {
     }
 
     @Test
+    @DisplayName("each player gets their own page for the same window, and the same one every time")
+    void pagesArePerPlayer() {
+        java.util.UUID alice = java.util.UUID.fromString("11111111-2222-3333-4444-555555555555");
+        java.util.UUID bob = java.util.UUID.fromString("66666666-7777-8888-9999-000000000000");
+        long window = 123_456L;
+
+        List<ShopRotation.Listing> a = ShopRotation.roll(window, ShopRotation.saltOf(alice), pool(), CONFIG);
+        List<ShopRotation.Listing> b = ShopRotation.roll(window, ShopRotation.saltOf(bob), pool(), CONFIG);
+
+        assertEquals(a, ShopRotation.roll(window, ShopRotation.saltOf(alice), pool(), CONFIG), "stable per player");
+        assertNotEquals(a, b, "two players must not see the same page");
+        assertNotEquals(a, ShopRotation.roll(window + 1, ShopRotation.saltOf(alice), pool(), CONFIG),
+                "and a player's page changes with the window");
+        // Not merely reordered: across many windows two players should overlap only by chance.
+        int identicalPages = 0;
+        for (long w = 1; w <= 500; w++) {
+            if (ShopRotation.roll(w, ShopRotation.saltOf(alice), pool(), CONFIG)
+                    .equals(ShopRotation.roll(w, ShopRotation.saltOf(bob), pool(), CONFIG))) identicalPages++;
+        }
+        assertEquals(0, identicalPages);
+    }
+
+    @Test
+    @DisplayName("no player is the unsalted reference roll, so the pure function is unchanged")
+    void noPlayerIsTheReferenceRoll() {
+        assertEquals(0L, ShopRotation.saltOf(null));
+        assertEquals(ShopRotation.roll(123_456L, pool(), CONFIG),
+                ShopRotation.roll(123_456L, ShopRotation.saltOf(null), pool(), CONFIG));
+    }
+
+    @Test
     @DisplayName("the answer does not depend on the order the registry enumerated the species in")
     void independentOfPoolOrder() {
         List<ShopRotation.Candidate> reversed = new ArrayList<>(pool());
@@ -175,8 +206,10 @@ class ShopRotationTest {
     @Test
     @DisplayName("ten distinct species, levels and prices inside the configured bounds")
     void listingsAreWellFormed() {
+        // Rarity is off here: a shiny or a legendary is allowed past the ceiling, and is covered below.
+        ShopRotationConfig plain = withRarity(ShopRotationConfig.Rarity.NONE);
         for (long window = 100_000L; window < 100_200L; window++) {
-            List<ShopRotation.Listing> listings = ShopRotation.roll(window, pool(), CONFIG);
+            List<ShopRotation.Listing> listings = ShopRotation.roll(window, pool(), plain);
 
             assertEquals(10, listings.size());
             Set<String> seen = new HashSet<>();
@@ -184,11 +217,99 @@ class ShopRotationTest {
                 assertTrue(seen.add(listing.gift().species()), "duplicate species in window " + window);
                 assertTrue(listing.gift().level() >= 25 && listing.gift().level() <= 50);
                 assertTrue(listing.cost() <= 500 && listing.cost() >= 100);
-                assertEquals(false, listing.gift().shiny(), "a shop Pokemon is never shiny");
+                assertEquals(false, listing.gift().shiny(), "no shinies when the shiny chance is zero");
                 assertEquals(6, listing.gift().ivs().size());
                 listing.gift().ivs().values().forEach(iv -> assertTrue(iv >= 0 && iv <= 31));
             }
         }
+    }
+
+    private static ShopRotationConfig withRarity(ShopRotationConfig.Rarity rarity) {
+        ShopRotationConfig d = ShopRotationConfig.DEFAULTS;
+        return new ShopRotationConfig(d.enabled(), d.listings(), d.minLevel(), d.maxLevel(), d.minPrice(),
+                d.maxPrice(), d.excludedLabels(), d.starterBasePrice(), d.starterMiddlePrice(),
+                d.starterFinalPrice(), rarity);
+    }
+
+    private static List<ShopRotation.Candidate> poolWithLegendaries() {
+        List<ShopRotation.Candidate> pool = new ArrayList<>(pool());
+        for (int index = 0; index < 10; index++) {
+            pool.add(new ShopRotation.Candidate("legend_" + index, 3, 680, List.of("a"), -1f, true));
+        }
+        return pool;
+    }
+
+    @Test
+    @DisplayName("legendaries and shinies are rare but do turn up, at roughly the configured rate")
+    void rareAndShinyAreRareButPossible() {
+        int windows = 5_000, legendaries = 0, shinies = 0, slots = 0;
+        for (long window = 200_000L; window < 200_000L + windows; window++) {
+            for (ShopRotation.Listing listing : ShopRotation.roll(window, poolWithLegendaries(), CONFIG)) {
+                slots++;
+                if (listing.gift().species().startsWith("legend_")) legendaries++;
+                if (listing.gift().shiny()) shinies++;
+            }
+        }
+        // 2% of 50,000 slots is 1,000; a generous band, but wide enough to fail if either were 0 or ~20%.
+        assertTrue(legendaries > 700 && legendaries < 1300, "legendaries: " + legendaries + " of " + slots);
+        assertTrue(shinies > 700 && shinies < 1300, "shinies: " + shinies + " of " + slots);
+    }
+
+    @Test
+    @DisplayName("a legendary never comes from the ordinary draw: with a zero rare chance there are none")
+    void noRareChanceMeansNoLegendaries() {
+        ShopRotationConfig none = withRarity(new ShopRotationConfig.Rarity(List.of("legendary"), 0.0, 0.0, 4.0, 3.0));
+        for (long window = 1L; window <= 500L; window++) {
+            for (ShopRotation.Listing listing : ShopRotation.roll(window, poolWithLegendaries(), none)) {
+                assertTrue(!listing.gift().species().startsWith("legend_"), "window " + window);
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("rare and shiny listings cost their premium; ordinary ones stay under the ceiling")
+    void premiumsApplyOnlyToTheRare() {
+        ShopRotationConfig.Rarity rarity = ShopRotationConfig.Rarity.DEFAULTS;
+
+        assertEquals(500, ShopRotation.premium(500, false, false, rarity));
+        assertEquals(2000, ShopRotation.premium(500, true, false, rarity));
+        assertEquals(1500, ShopRotation.premium(500, false, true, rarity));
+        assertEquals(6000, ShopRotation.premium(500, true, true, rarity));
+        for (long window = 1L; window <= 2_000L; window++) {
+            for (ShopRotation.Listing listing : ShopRotation.roll(window, poolWithLegendaries(), CONFIG)) {
+                boolean legendary = listing.gift().species().startsWith("legend_");
+                if (!legendary && !listing.gift().shiny()) {
+                    assertTrue(listing.cost() <= 500, "an ordinary listing broke the ceiling: " + listing);
+                }
+                if (legendary) assertTrue(listing.cost() >= 4 * 100, "a legendary priced like ordinary stock: " + listing);
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("an installed server with no legendaries still fills the page")
+    void rareSlotsFallBackToOrdinaryStock() {
+        ShopRotationConfig always = withRarity(new ShopRotationConfig.Rarity(List.of("legendary"), 1.0, 0.0, 4.0, 3.0));
+
+        assertEquals(10, ShopRotation.roll(7L, pool(), always).size());
+        // And the reverse: only rare species available still yields a full page.
+        List<ShopRotation.Candidate> onlyRare = poolWithLegendaries().stream().filter(ShopRotation.Candidate::rare).toList();
+        assertEquals(10, ShopRotation.roll(7L, onlyRare, withRarity(ShopRotationConfig.Rarity.NONE)).size());
+    }
+
+    @Test
+    @DisplayName("a file that still lists the old banned labels gets the rare tier; an edited list is kept")
+    void oldExclusionListMigrates() {
+        com.google.gson.JsonObject old = com.google.gson.JsonParser.parseString("""
+                {"rotation": {"excluded_labels": ["legendary","mythical","ultra_beast","paradox","restricted"]}}
+                """).getAsJsonObject();
+        assertEquals(List.of(), ShopRotationConfig.fromJson(old).excludedLabels());
+        assertTrue(ShopRotationConfig.fromJson(old).rarity().rareChance() > 0.0);
+
+        com.google.gson.JsonObject mine = com.google.gson.JsonParser.parseString("""
+                {"rotation": {"excluded_labels": ["legendary"]}}
+                """).getAsJsonObject();
+        assertEquals(List.of("legendary"), ShopRotationConfig.fromJson(mine).excludedLabels());
     }
 
     @Test

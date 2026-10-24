@@ -31,7 +31,7 @@ public record ShopCatalog(int version, int perPage, ShopLimits limits, List<Shop
                           ShopRotationConfig rotation) {
 
     /** Bumped when the schema changes in a way an older file cannot be read as. */
-    public static final int CURRENT_VERSION = 3;
+    public static final int CURRENT_VERSION = 4;
 
     /** The section the Cobblemon Cards packs sit in, and what a pack costs and how often it can be bought. */
     public static final String CARDS_SECTION = "cards";
@@ -75,48 +75,46 @@ public record ShopCatalog(int version, int perPage, ShopLimits limits, List<Shop
         sections = List.copyOf(sections == null ? List.of() : sections);
     }
 
+    /** The section ids that shipped before version 4 and were retired; see {@link #fromJson}. */
+    static final String CONSUMABLES_SECTION = "consumables";
+    private static final Set<String> RETIRED_SECTIONS = Set.of("held_items", "training");
+
+    /**
+     * What a raid player actually spends Raid Points on: capture balls, levels, stat vitamins, the
+     * ability and PP tools, and the two experience boosters. The healing items (potions, revives,
+     * Full Restore) are gone -- nobody picked them -- and so are the held items and breeding tools
+     * that used to sit on their own pages.
+     */
+    static ShopSection consumablesSection() {
+        return new ShopSection(CONSUMABLES_SECTION, "Consumables", List.of(
+                ShopEntry.ofItem("poke_ball", 5, "cobblemon:poke_ball", 8),
+                ShopEntry.ofItem("great_ball", 12, "cobblemon:great_ball", 8),
+                ShopEntry.ofItem("ultra_ball", 25, "cobblemon:ultra_ball", 8),
+                // Priced so a level costs about 15 RP on average: a Rare Candy is exactly one
+                // level, and Large (10,000 exp) and XL (30,000) are about one and three
+                // average levels each. One candy per purchase, with the daily limit as the
+                // real throttle, so the price is per candy and cannot be bought in bundles.
+                ShopEntry.ofItem("rare_candy", 15, "cobblemon:rare_candy", 1),
+                ShopEntry.ofItem("exp_candy_l", 30, "cobblemon:exp_candy_l", 1),
+                ShopEntry.ofItem("exp_candy_xl", 75, "cobblemon:exp_candy_xl", 1, 3,
+                        ShopLimits.DEFAULTS.reset()),
+                // Two vitamins per purchase at 30 RP each, ten a day.
+                ShopEntry.ofItem("hp_up", 60, "cobblemon:hp_up", 2),
+                ShopEntry.ofItem("protein", 60, "cobblemon:protein", 2),
+                ShopEntry.ofItem("iron", 60, "cobblemon:iron", 2),
+                ShopEntry.ofItem("calcium", 60, "cobblemon:calcium", 2),
+                ShopEntry.ofItem("zinc", 60, "cobblemon:zinc", 2),
+                ShopEntry.ofItem("carbos", 60, "cobblemon:carbos", 2),
+                ShopEntry.ofItem("ability_capsule", 300, "cobblemon:ability_capsule", 1, 1, ShopResetPeriod.DAILY),
+                ShopEntry.ofItem("ability_patch", 600, "cobblemon:ability_patch", 1, 1, ShopResetPeriod.DAILY),
+                ShopEntry.ofItem("pp_up", 5, "cobblemon:pp_up", 1, ShopEntry.UNLIMITED, ShopResetPeriod.DAILY),
+                ShopEntry.ofItem("pp_max", 15, "cobblemon:pp_max", 1, ShopEntry.UNLIMITED, ShopResetPeriod.DAILY),
+                ShopEntry.ofItem("lucky_egg", 600, "cobblemon:lucky_egg", 1, 3, ShopResetPeriod.WEEKLY),
+                ShopEntry.ofItem("exp_share", 400, "cobblemon:exp_share", 1, 3, ShopResetPeriod.WEEKLY)));
+    }
+
     public static ShopCatalog defaults() {
-        List<ShopSection> sections = List.of(
-                new ShopSection("consumables", "Consumables", List.of(
-                        ShopEntry.ofItem("poke_ball", 5, "cobblemon:poke_ball", 8),
-                        ShopEntry.ofItem("great_ball", 12, "cobblemon:great_ball", 8),
-                        ShopEntry.ofItem("ultra_ball", 25, "cobblemon:ultra_ball", 8),
-                        ShopEntry.ofItem("heal_ball", 10, "cobblemon:heal_ball", 8),
-                        ShopEntry.ofItem("revive", 20, "cobblemon:revive", 4),
-                        ShopEntry.ofItem("max_revive", 60, "cobblemon:max_revive", 2),
-                        ShopEntry.ofItem("max_potion", 30, "cobblemon:max_potion", 4),
-                        ShopEntry.ofItem("full_restore", 45, "cobblemon:full_restore", 2),
-                        // Priced so a level costs about 15 RP on average: a Rare Candy is exactly one
-                        // level, and Large (10,000 exp) and XL (30,000) are about one and three
-                        // average levels each. One candy per purchase, with the daily limit as the
-                        // real throttle, so the price is per candy and cannot be bought in bundles.
-                        ShopEntry.ofItem("rare_candy", 15, "cobblemon:rare_candy", 1),
-                        ShopEntry.ofItem("exp_candy_l", 30, "cobblemon:exp_candy_l", 1),
-                        ShopEntry.ofItem("exp_candy_xl", 75, "cobblemon:exp_candy_xl", 1, 3,
-                                ShopLimits.DEFAULTS.reset()))),
-                new ShopSection("held_items", "Held Items", List.of(
-                        heldItem("leftovers", 150, "cobblemon:leftovers"),
-                        heldItem("choice_band", 175, "cobblemon:choice_band"),
-                        heldItem("choice_specs", 175, "cobblemon:choice_specs"),
-                        heldItem("choice_scarf", 175, "cobblemon:choice_scarf"),
-                        heldItem("life_orb", 200, "cobblemon:life_orb"),
-                        heldItem("focus_sash", 200, "cobblemon:focus_sash"),
-                        heldItem("assault_vest", 175, "cobblemon:assault_vest"),
-                        heldItem("rocky_helmet", 150, "cobblemon:rocky_helmet"),
-                        ShopEntry.ofItem("lucky_egg", 600, "cobblemon:lucky_egg", 1, 3, ShopResetPeriod.WEEKLY),
-                        ShopEntry.ofItem("exp_share", 400, "cobblemon:exp_share", 1, 3, ShopResetPeriod.WEEKLY))),
-                new ShopSection("training", "Training", List.of(
-                        ShopEntry.ofItem("ability_capsule", 300, "cobblemon:ability_capsule", 1, 1, ShopResetPeriod.DAILY),
-                        ShopEntry.ofItem("ability_patch", 600, "cobblemon:ability_patch", 1, 1, ShopResetPeriod.DAILY),
-                        ShopEntry.ofItem("pp_up", 5, "cobblemon:pp_up", 1, ShopEntry.UNLIMITED, ShopResetPeriod.DAILY),
-                        ShopEntry.ofItem("pp_max", 15, "cobblemon:pp_max", 1, ShopEntry.UNLIMITED, ShopResetPeriod.DAILY),
-                        ShopEntry.ofItem("protein", 60, "cobblemon:protein", 2),
-                        ShopEntry.ofItem("calcium", 60, "cobblemon:calcium", 2),
-                        heldItem("destiny_knot", 50, "cobblemon:destiny_knot"),
-                        heldItem("everstone", 35, "cobblemon:everstone"),
-                        heldItem("link_cable", 75, "cobblemon:link_cable"),
-                        heldItem("mirror_herb", 35, "cobblemon:mirror_herb"))),
-                cardsSection());
+        List<ShopSection> sections = List.of(consumablesSection(), cardsSection());
         return new ShopCatalog(CURRENT_VERSION, MAX_PER_PAGE, ShopLimits.DEFAULTS, sections,
                 ShopRotationConfig.DEFAULTS);
     }
@@ -153,6 +151,15 @@ public record ShopCatalog(int version, int perPage, ShopLimits limits, List<Shop
             if (!seenSections.add(section.id())) {
                 RaidLog.error("shop catalogue: dropping a second section called " + section.id());
                 continue;
+            }
+            // Version 4 retired the Held Items and Training pages and rebuilt Consumables. A section
+            // is only touched while every entry in it is exactly a shipped listing: one repriced or
+            // added entry means an operator has made it theirs, and it stays as written.
+            if (version < 4 && isShippedUnedited(section)) {
+                if (RETIRED_SECTIONS.contains(section.id())) continue;
+                if (section.id().equals(CONSUMABLES_SECTION) && !section.entries().isEmpty()) {
+                    section = consumablesSection();
+                }
             }
             // Entry ids have to be unique across the whole catalogue, not just within a section:
             // a purchase names one, and two entries answering to it means the player gets whichever
@@ -198,6 +205,61 @@ public record ShopCatalog(int version, int perPage, ShopLimits limits, List<Shop
         return ShopEntry.ofItem(id, cost, itemId, 1, 1, ShopResetPeriod.DAILY);
     }
 
+    /**
+     * Every listing the three retired-or-rebuilt pages shipped with at version 3, kept only so the
+     * migration can tell an untouched section from an edited one. Not a source of truth for anything
+     * that is sold today.
+     */
+    private static final Map<String, ShopEntry> VERSION_3 = versionThreeListings();
+
+    private static Map<String, ShopEntry> versionThreeListings() {
+        List<ShopEntry> all = List.of(
+                ShopEntry.ofItem("poke_ball", 5, "cobblemon:poke_ball", 8),
+                ShopEntry.ofItem("great_ball", 12, "cobblemon:great_ball", 8),
+                ShopEntry.ofItem("ultra_ball", 25, "cobblemon:ultra_ball", 8),
+                ShopEntry.ofItem("heal_ball", 10, "cobblemon:heal_ball", 8),
+                ShopEntry.ofItem("revive", 20, "cobblemon:revive", 4),
+                ShopEntry.ofItem("max_revive", 60, "cobblemon:max_revive", 2),
+                ShopEntry.ofItem("max_potion", 30, "cobblemon:max_potion", 4),
+                ShopEntry.ofItem("full_restore", 45, "cobblemon:full_restore", 2),
+                ShopEntry.ofItem("rare_candy", 15, "cobblemon:rare_candy", 1),
+                ShopEntry.ofItem("exp_candy_l", 30, "cobblemon:exp_candy_l", 1),
+                ShopEntry.ofItem("exp_candy_xl", 75, "cobblemon:exp_candy_xl", 1, 3, ShopLimits.DEFAULTS.reset()),
+                heldItem("leftovers", 150, "cobblemon:leftovers"),
+                heldItem("choice_band", 175, "cobblemon:choice_band"),
+                heldItem("choice_specs", 175, "cobblemon:choice_specs"),
+                heldItem("choice_scarf", 175, "cobblemon:choice_scarf"),
+                heldItem("life_orb", 200, "cobblemon:life_orb"),
+                heldItem("focus_sash", 200, "cobblemon:focus_sash"),
+                heldItem("assault_vest", 175, "cobblemon:assault_vest"),
+                heldItem("rocky_helmet", 150, "cobblemon:rocky_helmet"),
+                ShopEntry.ofItem("lucky_egg", 600, "cobblemon:lucky_egg", 1, 3, ShopResetPeriod.WEEKLY),
+                ShopEntry.ofItem("exp_share", 400, "cobblemon:exp_share", 1, 3, ShopResetPeriod.WEEKLY),
+                ShopEntry.ofItem("ability_capsule", 300, "cobblemon:ability_capsule", 1, 1, ShopResetPeriod.DAILY),
+                ShopEntry.ofItem("ability_patch", 600, "cobblemon:ability_patch", 1, 1, ShopResetPeriod.DAILY),
+                ShopEntry.ofItem("pp_up", 5, "cobblemon:pp_up", 1, ShopEntry.UNLIMITED, ShopResetPeriod.DAILY),
+                ShopEntry.ofItem("pp_max", 15, "cobblemon:pp_max", 1, ShopEntry.UNLIMITED, ShopResetPeriod.DAILY),
+                ShopEntry.ofItem("protein", 60, "cobblemon:protein", 2),
+                ShopEntry.ofItem("calcium", 60, "cobblemon:calcium", 2),
+                heldItem("destiny_knot", 50, "cobblemon:destiny_knot"),
+                heldItem("everstone", 35, "cobblemon:everstone"),
+                heldItem("link_cable", 75, "cobblemon:link_cable"),
+                heldItem("mirror_herb", 35, "cobblemon:mirror_herb"));
+        Map<String, ShopEntry> byId = new LinkedHashMap<>();
+        all.forEach(entry -> byId.put(entry.id(), entry));
+        return Map.copyOf(byId);
+    }
+
+    /** True when every entry is a listing that shipped, current or before the repricing. */
+    private static boolean isShippedUnedited(ShopSection section) {
+        for (ShopEntry entry : section.entries()) {
+            if (!entry.equals(VERSION_3.get(entry.id())) && !entry.equals(SUPERSEDED.get(entry.id()))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private static ShopEntry was(String id, int cost, int count) {
         return ShopEntry.ofItem(id, cost, "cobblemon:" + id, count);
     }
@@ -239,12 +301,14 @@ public record ShopCatalog(int version, int perPage, ShopLimits limits, List<Shop
 
     private static ShopEntry migrated(ShopEntry entry) {
         if (!entry.equals(SUPERSEDED.get(entry.id()))) return entry;
-        return defaultsEntry(entry.id());
+        // An entry whose shelf was retired in version 4 has no current listing to move to, and
+        // stays as the operator has it.
+        return defaultsEntry(entry.id()).orElse(entry);
     }
 
-    private static ShopEntry defaultsEntry(String id) {
+    private static java.util.Optional<ShopEntry> defaultsEntry(String id) {
         return defaults().sections().stream().flatMap(section -> section.entries().stream())
-                .filter(candidate -> candidate.id().equals(id)).findFirst().orElseThrow();
+                .filter(candidate -> candidate.id().equals(id)).findFirst();
     }
 
     public JsonObject toJson() {

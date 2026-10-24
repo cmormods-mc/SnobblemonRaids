@@ -40,7 +40,9 @@ public final class RaidShopCommand {
         java.util.List<String> ids = new java.util.ArrayList<>(ShopCatalogManager.index().keySet());
         // The rotating page's ids carry their window, so only the current ones are ever offered.
         long window = ShopRotationService.windowNow(java.time.Instant.now());
-        for (ShopRotation.Listing listing : ShopRotationService.current(java.time.Instant.now())) {
+        ServerPlayer viewer = context.getSource().getPlayer();
+        for (ShopRotation.Listing listing : ShopRotationService.current(java.time.Instant.now(),
+                viewer == null ? null : viewer.getUUID())) {
             ids.add(ShopRotation.wireId(window, listing.slot()));
         }
         return SharedSuggestionProvider.suggest(ids, builder);
@@ -73,7 +75,7 @@ public final class RaidShopCommand {
 
         source.sendSuccess(() -> CommandFormat.header("Raid Shop")
                 .append(Component.literal("  " + balance + " RP").withStyle(ChatFormatting.AQUA)), false);
-        if (catalog.totalEntries() == 0 && ShopRotationService.current(now).isEmpty()) {
+        if (catalog.totalEntries() == 0 && ShopRotationService.current(now, player.getUUID()).isEmpty()) {
             source.sendSuccess(() -> CommandFormat.row("Nothing is for sale yet."), false);
             return 0;
         }
@@ -96,7 +98,7 @@ public final class RaidShopCommand {
                         + CommandFormat.pad(entry.cost() + " RP", 10) + label).withStyle(colour), false);
             }
         }
-        java.util.List<ShopRotation.Listing> rotating = ShopRotationService.current(now);
+        java.util.List<ShopRotation.Listing> rotating = ShopRotationService.current(now, player.getUUID());
         if (!rotating.isEmpty()) {
             long window = ShopRotationService.windowNow(now);
             long secondsLeft = ShopRotationService.nextRotation(now).getEpochSecond() - now.getEpochSecond();

@@ -287,12 +287,15 @@ final class RaidAdminDebugOps {
     /**
      * Prints the rotating Pokemon page as it stands now: the window, when it turns over, and every
      * listing with its price and pinned traits. Read-only; the page is a pure function of the clock,
-     * so this is also exactly what a player opening the shop sees.
+     * so from a player this is also exactly what they see in the shop.
      */
     static int rotation(CommandSourceStack source) {
         java.time.Instant now = java.time.Instant.now();
+        // The admin's own page when run by a player (exactly what they see in the shop), the
+        // unsalted reference roll from the console.
+        net.minecraft.server.level.ServerPlayer self = source.getPlayer();
         java.util.List<com.cobbleraids.shop.ShopRotation.Listing> listings =
-                com.cobbleraids.shop.ShopRotationService.current(now);
+                com.cobbleraids.shop.ShopRotationService.current(now, self == null ? null : self.getUUID());
         source.sendSuccess(() -> CommandFormat.header("Wandering Pokemon"), false);
         if (listings.isEmpty()) {
             source.sendSuccess(() -> CommandFormat.row("The rotation is off, or no species are eligible."), false);
@@ -316,8 +319,9 @@ final class RaidAdminDebugOps {
                     + ", IV " + ivTotal + "/186)";
             source.sendSuccess(() -> CommandFormat.row(line), false);
         }
+        com.cobbleraids.shop.ShopRotationConfig rotation = com.cobbleraids.shop.ShopCatalogManager.get().rotation();
         int poolSize = com.cobbleraids.shop.ShopRotationPool.get(
-                com.cobbleraids.shop.ShopCatalogManager.get().rotation().excludedLabels()).size();
+                rotation.excludedLabels(), rotation.rarity().rareLabels()).size();
         String summary = " " + listings.size() + " listings from " + poolSize + " eligible species, dearest "
                 + highest + " RP, average " + (total / listings.size()) + " RP";
         source.sendSuccess(() -> CommandFormat.hint(summary), false);

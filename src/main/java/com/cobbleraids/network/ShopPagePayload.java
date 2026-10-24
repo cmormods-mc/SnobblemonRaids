@@ -15,11 +15,16 @@ import java.util.List;
  * different currency from {@link RewardResultPayload#currencyGranted}'s {@code long} -- that one is
  * an optional economy-mod grant amount, not a Raid Points balance -- so the two are not actually the
  * same value under two types.
+ *
+ * <p>{@code rotatesInMillis} is how long until this page's stock changes, or 0 for a page that does
+ * not rotate. A duration rather than a wall-clock instant, so a client whose clock is wrong still
+ * counts down the right amount of time.
  */
 public record ShopPagePayload(
         String heading,
         int pageIndex,
         int pageCount,
         int balance,
-        List<ShopEntryPayload> entries
+        List<ShopEntryPayload> entries,
+        long rotatesInMillis
 ) {}
