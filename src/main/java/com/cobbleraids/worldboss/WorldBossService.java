@@ -28,10 +28,14 @@ import java.util.OptionalLong;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
@@ -69,6 +73,9 @@ public final class WorldBossService {
     private static final int BAR_UPDATE_TICKS = 10;
     private static final int SECOND = 20;
     private static final int FLUSH_TICKS = 100;
+    /** How often the zone wall is redrawn; each pass sends a few particle packets only to players near the edge. */
+    private static final int BORDER_TICKS = 8;
+    private static final double BORDER_SPACING = 4.0;
 
     private static final CopyOnWriteArrayList<WorldBossListener> LISTENERS = new CopyOnWriteArrayList<>();
 
@@ -81,6 +88,8 @@ public final class WorldBossService {
     private static final Map<UUID, Long> CHAIN = new ConcurrentHashMap<>();
     /** Wall-clock millis each player last started a duel; sizes the pool. */
     private static final Map<UUID, Long> LAST_DUEL_START = new ConcurrentHashMap<>();
+    /** Players last seen inside the zone, so crossing the wall can be announced once. Only touched on the server thread. */
+    private static final Map<UUID, Boolean> LAST_INSIDE = new HashMap<>();
 
     private static volatile MinecraftServer server;
     private static volatile WorldBossState state;
@@ -149,6 +158,7 @@ public final class WorldBossService {
         DUEL_PLAYER.clear();
         CHAIN.clear();
         LAST_DUEL_START.clear();
+        LAST_INSIDE.clear();
         server = null;
         state = null;
         bar = null;
@@ -164,6 +174,12 @@ public final class WorldBossService {
         tickCounter++;
         if (tickCounter % FLUSH_TICKS == 0 && stateDirty) flush(current);
         if (tickCounter % BAR_UPDATE_TICKS == 0 && barDirty) refreshBar(current);
+        if (tickCounter % BORDER_TICKS == 0) {
+            WorldBossState live = state;
+            WorldBossConfig visual = WorldBossConfigManager.get();
+            if (visual.borderParticles() && live.active() && live.pool() != null && !live.pool().isDefeated()) drawBorder(current, live, visual);
+            else LAST_INSIDE.clear();
+        }
         if (tickCounter % SECOND != 0) return;
 
         WorldBossConfig config = WorldBossConfigManager.get();
@@ -631,6 +647,49 @@ public final class WorldBossService {
     private static void say(ServerPlayer player, String text, ChatFormatting color) {
         player.sendSystemMessage(Component.literal("[World Boss] ").withStyle(ChatFormatting.GOLD)
                 .append(Component.literal(text).withStyle(color)));
+    }
+
+    // ---- the zone wall ----
+
+    /**
+     * Draws the edge of the zone as a wall of soul particles for each player near it, and says once when a player crosses it. The wall is the
+     * circle {@link WorldBossConfig#radius} blocks round the boss, the same test a duel needs, so walking through it is walking into range.
+     * Particles go only to the player who is near the wall (one packet per column), alternating two kinds so a pass stays cheap.
+     */
+    private static void drawBorder(MinecraftServer current, WorldBossState s, WorldBossConfig config) {
+        ResourceLocation dimensionId = ResourceLocation.tryParse(s.dimension());
+        if (dimensionId == null) return;
+        boolean flame = (tickCounter / BORDER_TICKS) % 2 == 0;
+        Set<UUID> online = new HashSet<>();
+        for (ServerPlayer player : current.getPlayerList().getPlayers()) {
+            online.add(player.getUUID());
+            if (!player.level().dimension().location().equals(dimensionId)) {
+                LAST_INSIDE.remove(player.getUUID());
+                continue;
+            }
+            double px = player.getX();
+            double pz = player.getZ();
+            var columns = WorldBossBorder.columns(s.x(), s.z(), config.radius(), px, pz, config.borderViewDistance(), BORDER_SPACING);
+            boolean inside = WorldBossBorder.inside(s.x(), s.z(), config.radius(), px, pz);
+            Boolean was = LAST_INSIDE.put(player.getUUID(), inside);
+            if (was != null && was != inside) {
+                player.displayClientMessage(Component.literal(inside
+                        ? "You entered the World Boss zone. Right-click the boss, or /cr worldboss join."
+                        : "You left the World Boss zone.")
+                        .withStyle(inside ? ChatFormatting.LIGHT_PURPLE : ChatFormatting.GRAY), true);
+            }
+            if (columns.isEmpty()) continue;
+            ServerLevel level = player.serverLevel();
+            double y = player.getY() + 4.0;
+            for (double[] column : columns) {
+                if (flame) {
+                    level.sendParticles(player, ParticleTypes.SOUL_FIRE_FLAME, true, column[0], y, column[1], 3, 0.2, 7.0, 0.2, 0.01);
+                } else {
+                    level.sendParticles(player, ParticleTypes.SOUL, true, column[0], y, column[1], 2, 0.2, 7.0, 0.2, 0.02);
+                }
+            }
+        }
+        LAST_INSIDE.keySet().retainAll(online);
     }
 
     // ---- the boss bar ----

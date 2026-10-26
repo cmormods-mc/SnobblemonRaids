@@ -287,4 +287,17 @@ class WorldBossConfigAndRulesTest {
         assertEquals("a", WorldBossRules.pickDefinition(java.util.List.of("a"), "a", new java.util.Random(1)));
         assertEquals(null, WorldBossRules.pickDefinition(java.util.List.of(), "a", new java.util.Random(1)));
     }
+
+    @Test
+    void theZoneWallIsOnByDefaultAndItsReachIsBounded() {
+        WorldBossConfig defaults = WorldBossConfig.defaults();
+        assertTrue(defaults.borderParticles());
+        assertEquals(40, defaults.borderViewDistance());
+        WorldBossConfig off = WorldBossConfig.fromJson(json("{\"visual\":{\"border_particles\":false,\"view_distance\":64}}"));
+        assertFalse(off.borderParticles());
+        assertEquals(64, off.borderViewDistance());
+        assertEquals(off, WorldBossConfig.fromJson(off.toJson()));
+        assertThrows(IllegalArgumentException.class, () -> WorldBossConfig.fromJson(json("{\"visual\":{\"view_distance\":8}}")));
+        assertThrows(IllegalArgumentException.class, () -> WorldBossConfig.fromJson(json("{\"visual\":{\"view_distance\":200}}")));
+    }
 }

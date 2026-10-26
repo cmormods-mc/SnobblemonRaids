@@ -41,6 +41,8 @@ import java.util.Optional;
  * @param spawnLifetimeMinutes     how long one World Boss stays before it leaves undefeated
  * @param minPercentOfAverage      least damage, as a percent of the average per player who dealt any, that earns the defeat reward
  * @param rewardRaidPoints         Raid Points paid to each qualifying player
+ * @param borderParticles          draw the zone as a wall of soul particles for players near its edge
+ * @param borderViewDistance       how far along the wall, in blocks, a player is shown it
  */
 public record WorldBossConfig(
         boolean enabled,
@@ -66,7 +68,9 @@ public record WorldBossConfig(
         int spawnIntervalMinutes,
         int spawnLifetimeMinutes,
         float minPercentOfAverage,
-        int rewardRaidPoints) {
+        int rewardRaidPoints,
+        boolean borderParticles,
+        int borderViewDistance) {
 
     public static final String FILE_NAME = "world_boss.json";
 
@@ -97,6 +101,7 @@ public record WorldBossConfig(
         require(spawnLifetimeMinutes >= 1, "spawn.lifetime_minutes", "must be at least 1");
         require(minPercentOfAverage >= 0f && minPercentOfAverage <= 100f, "reward.min_percent_of_average", "must be 0 to 100");
         require(rewardRaidPoints >= 0, "reward.raid_points", "must not be negative");
+        require(borderViewDistance >= 16 && borderViewDistance <= 96, "visual.view_distance", "must be 16 to 96");
         if (windowStart.isPresent() && windowEnd.isPresent()) {
             require(windowEnd.get().isAfter(windowStart.get()), "window.end", "must be after window.start");
         }
@@ -109,7 +114,7 @@ public record WorldBossConfig(
                 20_000f, 6_000f, 1f, 20f, 900,
                 70, 3_000L, 240, 30, 45, true, 128.0,
                 "minecraft:overworld", 300, 1500, 30, 30, 40,
-                5f, 200);
+                5f, 200, true, 40);
     }
 
     /** The least a player may deal, as a fraction of the average per player who dealt any, to earn the defeat reward. */
@@ -122,6 +127,7 @@ public record WorldBossConfig(
         JsonObject duel = obj(root, "duel");
         JsonObject spawn = obj(root, "spawn");
         JsonObject reward = obj(root, "reward");
+        JsonObject visual = obj(root, "visual");
         return new WorldBossConfig(
                 bool(root, "enabled", d.enabled),
                 definitions(root, d.raidDefinitions),
@@ -146,7 +152,9 @@ public record WorldBossConfig(
                 (int) num(spawn, "spawn.interval_minutes", d.spawnIntervalMinutes),
                 (int) num(spawn, "spawn.lifetime_minutes", d.spawnLifetimeMinutes),
                 num(reward, "reward.min_percent_of_average", d.minPercentOfAverage),
-                (int) num(reward, "reward.raid_points", d.rewardRaidPoints));
+                (int) num(reward, "reward.raid_points", d.rewardRaidPoints),
+                bool(visual, "visual.border_particles", d.borderParticles),
+                (int) num(visual, "visual.view_distance", d.borderViewDistance));
     }
 
     /** The defaults written back as JSON, with the keys in the same grouping the parser reads. */
@@ -188,6 +196,10 @@ public record WorldBossConfig(
         reward.addProperty("min_percent_of_average", minPercentOfAverage);
         reward.addProperty("raid_points", rewardRaidPoints);
         root.add("reward", reward);
+        JsonObject visual = new JsonObject();
+        visual.addProperty("border_particles", borderParticles);
+        visual.addProperty("view_distance", borderViewDistance);
+        root.add("visual", visual);
         return root;
     }
 
