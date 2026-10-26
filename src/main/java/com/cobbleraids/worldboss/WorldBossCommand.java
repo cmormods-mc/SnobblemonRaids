@@ -88,18 +88,21 @@ public final class WorldBossCommand {
     }
 
     private static int stop(CommandContext<CommandSourceStack> ctx) {
-        boolean stopped = WorldBossService.stop(ctx.getSource().getServer());
-        if (!stopped) {
-            ctx.getSource().sendFailure(Component.literal("No World Boss is active."));
+        var result = WorldBossService.stop(ctx.getSource().getServer());
+        if (!result.wasActive() && result.swept() == 0) {
+            ctx.getSource().sendFailure(Component.literal("No World Boss is active, and no leftover bosses stand at its last spot."));
             return 0;
         }
-        ctx.getSource().sendSuccess(() -> Component.literal("World Boss stopped."), true);
+        String swept = result.swept() == 0 ? "" : " Removed " + result.swept() + " leftover boss(es) at its spot.";
+        String message = (result.wasActive() ? "World Boss stopped." : "No World Boss was active.") + swept;
+        ctx.getSource().sendSuccess(() -> Component.literal(message), true);
         return 1;
     }
 
     private static int reload(CommandContext<CommandSourceStack> ctx) {
         try {
             WorldBossConfig config = WorldBossConfigManager.reload();
+            WorldBossService.refreshVisuals(ctx.getSource().getServer());
             ctx.getSource().sendSuccess(() -> Component.literal("World Boss config reloaded (enabled="
                     + config.enabled() + ")."), true);
             return 1;

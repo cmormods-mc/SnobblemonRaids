@@ -299,7 +299,7 @@ public final class RaidSpawnScheduler {
             RaidLog.info("Removed untracked natural raid boss " + pokemon.getUUID()
                     + " on load in " + level.dimension().location());
         }
-        pokemon.discard();
+        RaidDeferredDiscard.discardSoon(pokemon, level);
     }
 
     /**

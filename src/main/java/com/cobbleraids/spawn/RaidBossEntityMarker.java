@@ -51,6 +51,11 @@ public final class RaidBossEntityMarker {
         entity.addTag(OWNER_PREFIX + owner);
     }
 
+    /** True when the boss belongs to an encounter started by {@code owner} (see {@link #markOwned}). */
+    public static boolean isOwnedBy(PokemonEntity entity, ResourceLocation owner) {
+        return entity != null && entity.getTags().contains(OWNER_PREFIX + owner);
+    }
+
     public static boolean isOwned(PokemonEntity entity) {
         if (entity == null) return false;
         for (String tag : entity.getTags()) {

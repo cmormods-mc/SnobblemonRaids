@@ -289,6 +289,30 @@ class WorldBossConfigAndRulesTest {
     }
 
     @Test
+    void theBossIsHugeAndTheWallIsAmethystAtHalfOpacityByDefault() {
+        WorldBossConfig defaults = WorldBossConfig.defaults();
+        assertEquals(8f, defaults.bossScale());
+        assertEquals(3f, defaults.duelBossScale());
+        assertEquals("#9A5CC6", defaults.wallColor());
+        assertEquals(50, defaults.wallOpacityPercent());
+        assertEquals(0x809A5CC6, defaults.wallColorArgb(), "50% opacity is alpha 0x80");
+    }
+
+    @Test
+    void visualSettingsAreReadValidatedAndRoundTrip() {
+        WorldBossConfig config = WorldBossConfig.fromJson(json(
+                "{\"visual\":{\"boss_scale\":12.5,\"duel_boss_scale\":1,\"wall_color\":\"#00ff7f\",\"wall_opacity_percent\":100}}"));
+        assertEquals(12.5f, config.bossScale());
+        assertEquals(0xFF00FF7F, config.wallColorArgb());
+        assertEquals(config, WorldBossConfig.fromJson(config.toJson()));
+        assertEquals(0x009A5CC6, WorldBossConfig.fromJson(json("{\"visual\":{\"wall_opacity_percent\":0}}")).wallColorArgb());
+        for (String bad : new String[] {"{\"visual\":{\"boss_scale\":0}}", "{\"visual\":{\"boss_scale\":31}}", "{\"visual\":{\"duel_boss_scale\":-1}}",
+                "{\"visual\":{\"wall_color\":\"purple\"}}", "{\"visual\":{\"wall_color\":\"#12345\"}}", "{\"visual\":{\"wall_opacity_percent\":101}}"}) {
+            assertThrows(IllegalArgumentException.class, () -> WorldBossConfig.fromJson(json(bad)), bad);
+        }
+    }
+
+    @Test
     void theZoneWallIsOnByDefaultAndItsReachIsBounded() {
         WorldBossConfig defaults = WorldBossConfig.defaults();
         assertTrue(defaults.borderParticles());

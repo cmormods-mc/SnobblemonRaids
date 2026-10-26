@@ -254,6 +254,9 @@ public final class CobbleRaids implements ModInitializer {
         // SERVER_STARTED sweep has already run.
         ServerEntityEvents.ENTITY_LOAD.register(RaidFaultBarrier.entityLoad("entity-load:owned-encounter",
                 com.cobbleraids.encounter.EncounterService::onEntityLoaded));
+        // A World Boss left in an unloaded chunk when its event ended reappears when the chunk loads; remove it unless it is the live one.
+        ServerEntityEvents.ENTITY_LOAD.register(RaidFaultBarrier.entityLoad("entity-load:world-boss",
+                com.cobbleraids.worldboss.WorldBossService::onEntityLoaded));
         // The same gap again, for the glow service's own tracking: a boss whose raid survived a
         // restart never went through RaidBossSpawner.spawnAt(), so it has no TRACKED entry until it
         // reloads here -- otherwise its (still legitimate) scoreboard membership looks orphaned to the

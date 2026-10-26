@@ -119,6 +119,12 @@ public final class RaidBossGlowService {
             // the tracked map growing by one UUID per boss for the life of the server.
             if (!config.enabled()) return;
 
+            // Inside a running World Boss zone the outline would draw the duel copy and the showpiece through terrain: no glow there.
+            if (com.cobbleraids.worldboss.WorldBossService.suppressesGlowAt(boss.level().dimension().location(), boss.getX(), boss.getZ())) {
+                if (boss.hasEffect(MobEffects.GLOWING)) boss.removeEffect(MobEffects.GLOWING);
+                return;
+            }
+
             RaidRarityTier tier = RaidBossEntityMarker.definitionId(boss)
                     .map(RaidDefinitionRegistry::get)
                     .map(RaidDefinition::rarityTier)

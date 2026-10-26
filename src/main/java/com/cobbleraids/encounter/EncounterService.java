@@ -122,6 +122,12 @@ public final class EncounterService {
         return true;
     }
 
+    /** The boss entity of an active owned encounter, or null. For the owner's presentation only (a size, a nameplate); never a handle to the battle. */
+    public static PokemonEntity bossOf(UUID encounterId) {
+        RaidSession session = encounterId == null ? null : ACTIVE.get(encounterId);
+        return session == null ? null : session.getBossEntity();
+    }
+
     public static boolean isActive(UUID encounterId) {
         return encounterId != null && ACTIVE.containsKey(encounterId);
     }
@@ -179,7 +185,7 @@ public final class EncounterService {
         if (pokemon.isBattling() || ownsBoss(pokemon.getUUID())) return;
         RaidLog.info("Removed the boss of an owned encounter that no longer exists ({} in {})",
                 pokemon.getUUID(), level.dimension().location());
-        pokemon.discard();
+        com.cobbleraids.spawn.RaidDeferredDiscard.discardSoon(pokemon, level);
     }
 
     private static boolean ownsBoss(UUID bossId) {

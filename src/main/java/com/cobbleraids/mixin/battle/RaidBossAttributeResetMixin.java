@@ -22,7 +22,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * slowness within about six ticks of spawning and walked off its announced coordinates, so players
  * recruited next to it fell outside the recruitment radius and the raid was cancelled at lock.
  *
- * <p>The glow is not handled here: RaidBossGlowService re-applies it on its own timer.
+ * <p>The glow is not handled here: RaidBossGlowService re-applies it on its own timer. A World Boss duel copy's invisibility is restored
+ * here, for the same reason as the slowness: removeAllEffects() takes it too.
  */
 @Mixin(PokemonServerDelegate.class)
 public abstract class RaidBossAttributeResetMixin {
@@ -33,7 +34,10 @@ public abstract class RaidBossAttributeResetMixin {
         // behaviour this exists to prevent but not worth breaking the tick over.
         try {
             PokemonEntity boss = ((PokemonServerDelegate) (Object) this).getEntity();
-            if (boss != null && RaidBossEntityMarker.isRaidBoss(boss)) RaidBossSpawner.applyMovementLock(boss);
+            if (boss != null && RaidBossEntityMarker.isRaidBoss(boss)) {
+                RaidBossSpawner.applyMovementLock(boss);
+                com.cobbleraids.worldboss.WorldBossService.restoreDuelLook(boss);   // a World Boss duel copy is hidden again too
+            }
         } catch (Exception ex) {
             RaidFaultBarrier.report("mixin:updateAttributes", ex);
         }

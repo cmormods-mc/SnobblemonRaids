@@ -35,6 +35,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
+import net.minecraft.core.particles.ColorParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -70,6 +71,9 @@ public final class WorldBossService {
 
     public static final ResourceLocation OWNER = ResourceLocation.fromNamespaceAndPath("cobbleraids", "world_boss");
 
+    /** Marks the standing boss, so a copy left in the world by an earlier session or event can be recognised and removed when it loads. */
+    public static final String SHOWPIECE_TAG = "cobbleraids_world_boss_showpiece";
+
     private static final int BAR_UPDATE_TICKS = 10;
     private static final int SECOND = 20;
     private static final int FLUSH_TICKS = 100;
@@ -96,6 +100,8 @@ public final class WorldBossService {
     private static volatile ServerBossEvent bar;
     private static volatile UUID showpieceId;
     private static volatile boolean barDirty;
+    /** True while this class is creating its own showpiece, so the load hook does not mistake it for a leftover. */
+    private static volatile boolean spawningShowpiece;
     private static volatile boolean stateDirty;
     private static long tickCounter;
 
@@ -121,6 +127,18 @@ public final class WorldBossService {
         return current != null && current.active() ? current.bossId() : null;
     }
 
+    /**
+     * True when a point is inside the zone of a World Boss that is running and the config asks for no glow there. The raid glow service asks this
+     * for every raid boss it tracks, so it must stay cheap: a few field reads and one distance test.
+     */
+    public static boolean suppressesGlowAt(ResourceLocation dimension, double x, double z) {
+        WorldBossState current = state;
+        if (current == null || !current.active() || current.pool() == null || current.pool().isDefeated()) return false;
+        WorldBossConfig config = WorldBossConfigManager.get();
+        if (!config.look().noGlowInZone() || !current.dimension().equals(dimension.toString())) return false;
+        return WorldBossBorder.inside(current.x(), current.z(), config.radius(), x, z);
+    }
+
     public static boolean isShowpiece(Entity entity) {
         UUID id = showpieceId;
         return id != null && entity != null && id.equals(entity.getUUID());
@@ -143,6 +161,8 @@ public final class WorldBossService {
         }
         RaidLog.info("Resuming World Boss {} ({}): pool {}/{}", current.bossId(), current.definitionId(),
                 Math.round(pool.current()), Math.round(pool.max()));
+        // No showpiece is tracked yet, so any boss at the spot is a stale copy of the one about to be recreated (a restart used to duplicate it).
+        sweepLeftovers(started);
         spawnShowpiece(started);
         ensureBar(started);
     }
@@ -159,6 +179,8 @@ public final class WorldBossService {
         CHAIN.clear();
         LAST_DUEL_START.clear();
         LAST_INSIDE.clear();
+        WorldBossMusic.clear();
+        WorldBossDome.reset();
         server = null;
         state = null;
         bar = null;
@@ -177,7 +199,10 @@ public final class WorldBossService {
         if (tickCounter % BORDER_TICKS == 0) {
             WorldBossState live = state;
             WorldBossConfig visual = WorldBossConfigManager.get();
-            if (visual.borderParticles() && live.active() && live.pool() != null && !live.pool().isDefeated()) drawBorder(current, live, visual);
+            boolean running = live.active() && live.pool() != null && !live.pool().isDefeated();
+            if (running) WorldBossDome.tick(current, live, visual);
+            else WorldBossDome.clear(current);
+            if (running && (visual.borderParticles() || visual.dome().enabled())) drawBorder(current, live, visual);
             else LAST_INSIDE.clear();
         }
         if (tickCounter % SECOND != 0) return;
@@ -187,21 +212,49 @@ public final class WorldBossService {
         WorldBossState s = state;
 
         if (!s.active()) {
+            WorldBossMusic.stopAll(current);
             WorldBossRules.Window window = WorldBossRules.window(config, Instant.ofEpochMilli(now));
-            if (WorldBossRules.shouldAutoStart(config, window, false, s.lastEndedAtMillis(), now)) {
+            if (WorldBossRules.shouldAutoStart(config, window, false, s.lastEndedAtMillis(), now) && isNightForSpawn(current, config)
+                    && hasPlayerToPlaceAround(current, config)) {
                 String problem = start(current, null);
                 if (problem != null) RaidLog.warn("World Boss could not start by itself: {}", problem);
             }
             return;
         }
-        if (s.pool() != null && s.pool().isDefeated()) return;
+        if (s.pool() != null && s.pool().isDefeated()) {
+            WorldBossMusic.stopAll(current);
+            return;
+        }
         if (s.endsAtMillis() > 0L && now >= s.endsAtMillis()) {
             end(current, "The World Boss has left.");
             return;
         }
+        WorldBossMusic.tick(current, s, config, DUELS.keySet(), CHAIN.keySet());
         tickDuels(current, config);
         tickChains(current, config);
         refreshBar(current);
+    }
+
+    /**
+     * Whether the automatic start may happen now: always when night-only is off or the spawn dimension has no day and night, otherwise only
+     * while that dimension's clock is in the configured night. The command start does not ask this.
+     */
+    private static boolean isNightForSpawn(MinecraftServer current, WorldBossConfig config) {
+        if (!config.night().only()) return true;
+        ResourceLocation dimensionId = ResourceLocation.tryParse(config.spawnDimension());
+        ServerLevel level = dimensionId == null ? null : current.getLevel(ResourceKey.create(Registries.DIMENSION, dimensionId));
+        if (level == null || level.dimensionType().hasFixedTime()) return true;   // start() reports a missing dimension itself
+        return WorldBossRules.isNight(level.getDayTime(), config.night().fromTick(), config.night().toTick());
+    }
+
+    /**
+     * Whether someone is in the spawn dimension to place the boss around. Without this the automatic start fails every second, all night, with a
+     * warning each time; it now waits quietly for the first player instead.
+     */
+    private static boolean hasPlayerToPlaceAround(MinecraftServer current, WorldBossConfig config) {
+        ResourceLocation dimensionId = ResourceLocation.tryParse(config.spawnDimension());
+        ServerLevel level = dimensionId == null ? null : current.getLevel(ResourceKey.create(Registries.DIMENSION, dimensionId));
+        return level == null || randomPlayerIn(level) != null;   // a missing dimension is start()'s to report
     }
 
     // ---- starting and ending ----
@@ -262,14 +315,22 @@ public final class WorldBossService {
         return null;
     }
 
-    /** Ends the active World Boss without a defeat. Returns false when none is active. */
-    public static boolean stop(MinecraftServer current) {
-        if (state == null || !state.active()) return false;
-        end(current, "The World Boss has been called off.");
-        return true;
+    /** What {@link #stop} did: whether an event was running, and how many leftover bosses it removed at the boss's last spot. */
+    public record StopResult(boolean wasActive, int swept) {}
+
+    /**
+     * Ends the active World Boss without a defeat, and removes every boss standing at its last spot: not only the showpiece this server is
+     * tracking but copies an earlier run left behind (an old build, a crash, a restart that respawned the showpiece). Run it with nothing
+     * active to clear leftovers from an event that already ended.
+     */
+    public static StopResult stop(MinecraftServer current) {
+        if (state == null) return new StopResult(false, 0);
+        if (state.active()) return new StopResult(true, end(current, "The World Boss has been called off."));
+        return new StopResult(false, sweepLeftovers(current));
     }
 
-    private static void end(MinecraftServer current, String message) {
+    /** Ends the event; returns how many leftover bosses it swept up at the boss's spot besides the showpiece. */
+    private static int end(MinecraftServer current, String message) {
         WorldBossState s = state;
         WorldBossPool pool = s.pool();
         UUID bossId = s.bossId();
@@ -280,6 +341,7 @@ public final class WorldBossService {
         s.finish(System.currentTimeMillis());
         flush(current);
         removeShowpiece(current);
+        int swept = sweepLeftovers(current);
         clearBar();
         broadcast(current, Component.literal("[World Boss] ").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD)
                 .append(Component.literal(message).withStyle(ChatFormatting.YELLOW)));
@@ -288,8 +350,9 @@ public final class WorldBossService {
                     () -> listener.onEnded(bossId, definitionId, damage, total));
         }
         CHAIN.clear();
-        RaidLog.info("World Boss {} ended undefeated: {} damage of {}", bossId,
-                Math.round(pool == null ? 0f : pool.totalDamage()), Math.round(total));
+        RaidLog.info("World Boss {} ended undefeated: {} damage of {}; {} leftover boss(es) swept", bossId,
+                Math.round(pool == null ? 0f : pool.totalDamage()), Math.round(total), swept);
+        return swept;
     }
 
     // ---- joining and duelling ----
@@ -337,6 +400,7 @@ public final class WorldBossService {
 
         UUID encounterId = UUID.randomUUID();
         Vec3 position = duelPosition(player);
+        if (position == null) return "The duel cannot start from where you are standing.";
         EncounterPolicy policy = EncounterPolicy.none().withCarryover(true, true);
         EncounterRequest request = new EncounterRequest(OWNER, encounterId, List.of(player), definitionId,
                 player.serverLevel(), position, config.duelBossLevel(), OptionalLong.of(config.duelBossHealth()),
@@ -351,22 +415,43 @@ public final class WorldBossService {
         if (result instanceof StartResult.Refused refused) return refused.reason();
         long gameTick = player.serverLevel().getGameTime();
         DUELS.put(player.getUUID(), new Duel(encounterId, gameTick));
+        PokemonEntity duelBoss = EncounterService.bossOf(encounterId);
+        if (duelBoss != null) duelBoss.getPokemon().setScaleModifier(config.duelBossScale());
+        if (duelBoss != null && config.look().duelBossInvisible()) hideDuelBoss(duelBoss);
+        // Written for the one case that matters: a duel that is followed by a frozen server leaves this line as the last thing it said.
+        RaidLog.info("World Boss duel {}: player {} at ({}, {}, {}), boss asked for ({}, {}, {}) and now at {}, size x{}, party of {}",
+                encounterId, player.getGameProfile().getName(), Math.round(player.getX()), Math.round(player.getY()), Math.round(player.getZ()),
+                Math.round(position.x), Math.round(position.y), Math.round(position.z),
+                duelBoss == null ? "?" : Math.round(duelBoss.getX()) + ", " + Math.round(duelBoss.getY()) + ", " + Math.round(duelBoss.getZ()),
+                config.duelBossScale(), partySize(player));
         DUEL_PLAYER.put(encounterId, player.getUUID());
         say(player, "A duel against the World Boss begins!", ChatFormatting.LIGHT_PURPLE);
         return null;
     }
 
+    /**
+     * Where the duel's private boss stands: the first of {@link WorldBossDuelSpot#candidates} (6 blocks and more round the player, in front first)
+     * that has loaded ground within a few blocks of the player's height and nothing solid or watery at its feet. Never the player's own spot: a boss
+     * on top of the player makes Cobblemon divide by a zero distance, and the NaN that follows freezes the server thread in a block raycast
+     * (found in two thread dumps). With no good ground at all (the player is flying, or in a cave) the nearest candidate at the player's own
+     * height is used, which is still at least 6 blocks away.
+     */
     private static Vec3 duelPosition(ServerPlayer player) {
-        Vec3 look = player.getLookAngle();
-        Vec3 flat = new Vec3(look.x, 0.0, look.z);
-        Vec3 direction = flat.lengthSqr() < 1.0e-4 ? new Vec3(1.0, 0.0, 0.0) : flat.normalize();
-        Vec3 candidate = player.position().add(direction.scale(5.0));
-        BlockPos feet = BlockPos.containing(candidate);
         ServerLevel level = player.serverLevel();
-        boolean free = level.getBlockState(feet).getCollisionShape(level, feet).isEmpty()
-                && level.getBlockState(feet.above()).getCollisionShape(level, feet.above()).isEmpty()
-                && !level.getBlockState(feet.below()).getCollisionShape(level, feet.below()).isEmpty();
-        return free ? candidate : player.position();
+        Vec3 look = player.getLookAngle();
+        var spots = WorldBossDuelSpot.candidates(player.getX(), player.getZ(), look.x, look.z);
+        for (double[] spot : spots) {
+            BlockPos column = BlockPos.containing(spot[0], player.getY(), spot[1]);
+            if (!level.hasChunkAt(column)) continue;
+            int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, column.getX(), column.getZ());
+            if (Math.abs(y - player.getY()) > 6.0) continue;   // a cliff or a roof, not somewhere to stand
+            BlockPos feet = new BlockPos(column.getX(), y, column.getZ());
+            if (!level.getBlockState(feet).getCollisionShape(level, feet).isEmpty()) continue;
+            if (!level.getFluidState(feet).isEmpty() || !level.getFluidState(feet.below()).isEmpty()) continue;
+            return new Vec3(spot[0], y, spot[1]);
+        }
+        double[] fallback = spots.isEmpty() ? null : spots.get(0);
+        return fallback == null ? null : new Vec3(fallback[0], player.getY(), fallback[1]);
     }
 
     private static final EncounterListener DUEL_LISTENER = new EncounterListener() {
@@ -518,6 +603,7 @@ public final class WorldBossService {
         s.finish(System.currentTimeMillis());
         flush(current);
         removeShowpiece(current);
+        sweepLeftovers(current);
         clearBar();
         CHAIN.clear();
     }
@@ -564,9 +650,38 @@ public final class WorldBossService {
         // The chunk may not be loaded after a restart; spawning there needs it.
         level.getChunk(SectionPos.blockToSectionCoord((int) s.x()), SectionPos.blockToSectionCoord((int) s.z()),
                 ChunkStatus.FULL, true);
-        PokemonEntity boss = RaidBossSpawner.spawnAt(level, new Vec3(s.x(), s.y(), s.z()), definition,
-                RenownRequest.NONE);
+        PokemonEntity boss;
+        spawningShowpiece = true;
+        try {
+            boss = RaidBossSpawner.spawnAt(level, new Vec3(s.x(), s.y(), s.z()), definition, RenownRequest.NONE);
+        } finally {
+            spawningShowpiece = false;
+        }
+        boss.addTag(SHOWPIECE_TAG);
+        boss.getPokemon().setScaleModifier(WorldBossConfigManager.get().bossScale());
         showpieceId = boss.getUUID();
+    }
+
+    /**
+     * Removes a standing boss this server no longer owns when its chunk loads. The startup sweep in RaidSpawnScheduler only sees entities in chunks
+     * that are loaded at that moment, and a boss is saved with its chunk, so one whose event ended (or whose server stopped) while nobody was near it
+     * would otherwise reappear later beside the new boss. The live boss keeps its own id and is left alone.
+     */
+    public static void onEntityLoaded(Entity entity, ServerLevel level) {
+        if (spawningShowpiece || !(entity instanceof PokemonEntity pokemon) || !pokemon.getTags().contains(SHOWPIECE_TAG)) return;
+        if (isShowpiece(pokemon)) return;
+        RaidLog.info("Removed a World Boss left over from an earlier event ({} in {})", pokemon.getUUID(), level.dimension().location());
+        com.cobbleraids.spawn.RaidDeferredDiscard.discardSoon(pokemon, level);
+    }
+
+    /** Applies the current visual settings (the boss's size) to the standing boss; the wall reads them on every pass anyway. */
+    public static void refreshVisuals(MinecraftServer current) {
+        UUID id = showpieceId;
+        if (id == null) return;
+        float scale = WorldBossConfigManager.get().bossScale();
+        for (ServerLevel level : current.getAllLevels()) {
+            if (level.getEntity(id) instanceof PokemonEntity boss && !boss.isRemoved()) boss.getPokemon().setScaleModifier(scale);
+        }
     }
 
     private static void removeShowpiece(MinecraftServer current) {
@@ -577,6 +692,60 @@ public final class WorldBossService {
             Entity entity = level.getEntity(id);
             if (entity != null && !entity.isRemoved()) entity.discard();
         }
+    }
+
+    /** How far from the boss's spot (blocks, each way) a raid boss counts as a leftover of it. */
+    private static final double LEFTOVER_RADIUS = 6.0;
+
+    /**
+     * Removes every raid boss standing within {@link #LEFTOVER_RADIUS} of where the last World Boss stood, loading the chunks there if need be.
+     * {@link #removeShowpiece} only knows the one it is tracking; a copy from an earlier build (before the showpiece had a tag), a showpiece a
+     * restart duplicated, or one whose chunk was unloaded when the event ended is invisible to it, and would stay through every restart.
+     * Bosses elsewhere are not touched, so ordinary raids are safe.
+     *
+     * @return how many were removed
+     */
+    private static int sweepLeftovers(MinecraftServer current) {
+        WorldBossState s = state;
+        if (s == null || s.definitionId().isEmpty()) return 0;   // no World Boss ever started here
+        ResourceLocation dimensionId = ResourceLocation.tryParse(s.dimension());
+        ServerLevel level = dimensionId == null ? null
+                : current.getLevel(ResourceKey.create(Registries.DIMENSION, dimensionId));
+        if (level == null) return 0;
+        int chunkX = SectionPos.blockToSectionCoord((int) s.x());
+        int chunkZ = SectionPos.blockToSectionCoord((int) s.z());
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) level.getChunk(chunkX + dx, chunkZ + dz, ChunkStatus.FULL, true);
+        }
+        var area = new net.minecraft.world.phys.AABB(s.x() - LEFTOVER_RADIUS, level.getMinBuildHeight(), s.z() - LEFTOVER_RADIUS,
+                s.x() + LEFTOVER_RADIUS, level.getMaxBuildHeight(), s.z() + LEFTOVER_RADIUS);
+        int removed = 0;
+        for (PokemonEntity boss : level.getEntitiesOfClass(PokemonEntity.class, area, com.cobbleraids.spawn.RaidBossEntityMarker::isRaidBoss)) {
+            boss.discard();
+            removed++;
+        }
+        if (removed > 0) RaidLog.info("Swept {} leftover boss(es) at the World Boss spot ({}, {}, {})", removed,
+                Math.round(s.x()), Math.round(s.y()), Math.round(s.z()));
+        return removed;
+    }
+
+    /**
+     * Hides a duel's private copy so only the showpiece is drawn. It has to be a real Invisibility effect: a living entity with no such effect
+     * resets its own invisible flag every tick (LivingEntity.updateInvisibilityStatus), so {@code setInvisible(true)} lasts a single tick. The
+     * effect is infinite, with no particles and no icon, and ends with the copy.
+     */
+    /**
+     * Puts the hidden look back on a duel copy after Cobblemon wipes its effects. Called from RaidBossAttributeResetMixin, which runs on the
+     * entity's first tick and whenever its level changes, and removeAllEffects() there takes the Invisibility with it.
+     */
+    public static void restoreDuelLook(PokemonEntity boss) {
+        if (!com.cobbleraids.spawn.RaidBossEntityMarker.isOwnedBy(boss, OWNER)) return;
+        if (WorldBossConfigManager.get().look().duelBossInvisible()) hideDuelBoss(boss);
+    }
+
+    private static void hideDuelBoss(PokemonEntity boss) {
+        boss.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.INVISIBILITY,
+                net.minecraft.world.effect.MobEffectInstance.INFINITE_DURATION, 0, false, false, false));
     }
 
     private static void abortDuels() {
@@ -673,20 +842,19 @@ public final class WorldBossService {
             boolean inside = WorldBossBorder.inside(s.x(), s.z(), config.radius(), px, pz);
             Boolean was = LAST_INSIDE.put(player.getUUID(), inside);
             if (was != null && was != inside) {
+                if (config.dome().enabled()) WorldBossDome.ripple(player, inside);
                 player.displayClientMessage(Component.literal(inside
                         ? "You entered the World Boss zone. Right-click the boss, or /cr worldboss join."
                         : "You left the World Boss zone.")
                         .withStyle(inside ? ChatFormatting.LIGHT_PURPLE : ChatFormatting.GRAY), true);
             }
-            if (columns.isEmpty()) continue;
+            if (columns.isEmpty() || !config.borderParticles() || config.dome().enabled()) continue;   // the dome replaces the particle wall
             ServerLevel level = player.serverLevel();
             double y = player.getY() + 4.0;
+            // The potion swirl takes an ARGB colour whose alpha is honoured, which is what makes a translucent tint possible (dust has no alpha).
+            var tint = ColorParticleOption.create(ParticleTypes.ENTITY_EFFECT, config.wallColorArgb());
             for (double[] column : columns) {
-                if (flame) {
-                    level.sendParticles(player, ParticleTypes.SOUL_FIRE_FLAME, true, column[0], y, column[1], 3, 0.2, 7.0, 0.2, 0.01);
-                } else {
-                    level.sendParticles(player, ParticleTypes.SOUL, true, column[0], y, column[1], 2, 0.2, 7.0, 0.2, 0.02);
-                }
+                level.sendParticles(player, tint, true, column[0], y, column[1], flame ? 4 : 3, 0.25, 7.0, 0.25, 0.0);
             }
         }
         LAST_INSIDE.keySet().retainAll(online);
@@ -696,8 +864,10 @@ public final class WorldBossService {
 
     private static void ensureBar(MinecraftServer current) {
         if (bar == null) {
-            bar = new ServerBossEvent(Component.literal("World Boss"), BossEvent.BossBarColor.PURPLE,
-                    BossEvent.BossBarOverlay.PROGRESS);
+            // PINK with the 20-notch overlay is the slot AscensionLib's resource pack reskins (tools/bossbar_art.py): nothing else uses PINK, so
+            // no other bar changes. A client without the pack just sees a vanilla pink bar with a tick every 5 percent.
+            bar = new ServerBossEvent(Component.literal("World Boss"), BossEvent.BossBarColor.PINK,
+                    BossEvent.BossBarOverlay.NOTCHED_20);
         }
         refreshBar(current);
     }
@@ -716,9 +886,11 @@ public final class WorldBossService {
         WorldBossPool pool = s.pool();
         WorldBossConfig config = WorldBossConfigManager.get();
         event.setProgress(pool.max() <= 0f ? 0f : Math.max(0f, Math.min(1f, pool.current() / pool.max())));
-        event.setName(Component.literal(speciesName(ResourceLocation.parse(s.definitionId())) + " - "
-                + Math.round(pool.current()) + " / " + Math.round(pool.max())
-                + "  (" + percentLeft(pool) + "%)"));
+        Set<UUID> fighting = new HashSet<>(DUELS.keySet());
+        fighting.addAll(CHAIN.keySet());
+        long minutesLeft = s.endsAtMillis() > 0L ? Math.max(0L, (s.endsAtMillis() - System.currentTimeMillis() + 59_999L) / 60_000L) : -1L;
+        event.setName(WorldBossBarText.build(speciesName(ResourceLocation.parse(s.definitionId())), pool.current(), pool.max(),
+                percentLeft(pool), fighting.size(), minutesLeft));
         for (ServerPlayer player : current.getPlayerList().getPlayers()) {
             boolean show = !pool.isDefeated() && (DUELS.containsKey(player.getUUID())
                     || CHAIN.containsKey(player.getUUID()) || inRange(player, s, config));
@@ -740,6 +912,12 @@ public final class WorldBossService {
         double dx = player.getX() - s.x();
         double dz = player.getZ() - s.z();
         return dx * dx + dz * dz <= config.radius() * config.radius();
+    }
+
+    private static int partySize(ServerPlayer player) {
+        int size = 0;
+        for (Pokemon ignored : Cobblemon.INSTANCE.getStorage().getParty(player)) size++;
+        return size;
     }
 
     private static boolean hasFightingPokemon(ServerPlayer player) {

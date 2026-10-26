@@ -121,6 +121,16 @@ public final class WorldBossRules {
     }
 
     /**
+     * Whether a day time (game ticks, any size) falls in the night that runs from {@code from} to {@code to} in a 24000-tick day. The range may
+     * wrap past midnight (22000 to 2000 is a night too); equal ends are rejected by the config, so they cannot mean "always" or "never" here.
+     * Vanilla's own night is 13000 to 23000.
+     */
+    public static boolean isNight(long dayTime, int from, int to) {
+        int time = (int) Math.floorMod(dayTime, 24000L);
+        return from < to ? time >= from && time < to : time >= from || time < to;
+    }
+
+    /**
      * When a World Boss that started now should leave if undefeated: its lifetime, but never past
      * the end of the event window, and never sooner than a minute.
      */
