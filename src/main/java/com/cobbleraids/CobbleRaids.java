@@ -62,6 +62,8 @@ public final class CobbleRaids implements ModInitializer {
         RaidRewardPolicyManager.load();
         ShopCatalogManager.load();
         TitleCatalogManager.load();
+        // Off by default: the World Boss event system does nothing until an operator enables it.
+        RaidFaultBarrier.guard("startup:world-boss-config", com.cobbleraids.worldboss.WorldBossConfigManager::load);
 
         // Before anything that could look an item up by id, and before the reward policy is used:
         // a loot table naming an unregistered id costs the whole table, not just the entry.
@@ -83,6 +85,7 @@ public final class CobbleRaids implements ModInitializer {
             RaidFaultBarrier.safeTick("lobby", server, RaidLobbyManager::tick);
             RaidFaultBarrier.safeTick("spawning", server, RaidSpawnScheduler::tick);
             RaidFaultBarrier.safeTick("rewards", server, RaidRewardService::tick);
+            RaidFaultBarrier.safeTick("world-boss", server, com.cobbleraids.worldboss.WorldBossService::tick);
             RaidFaultBarrier.safeTick("capture-sessions", server, RaidCaptureSessionService::tick);
             RaidFaultBarrier.safeTick("reconnect-grace", server, RaidReconnectService::tick);
             RaidFaultBarrier.safeTick("combat-timer", server, RaidCombatRuleService::tick);
@@ -106,6 +109,8 @@ public final class CobbleRaids implements ModInitializer {
                 RaidFaultBarrier.guard("reward-policy-reload", RaidRewardPolicyManager::reload));
         // And the shop catalogue, so an operator can reprice without restarting the server.
         ServerLifecycleEvents.START_DATA_PACK_RELOAD.register((server, resources) ->
+                RaidFaultBarrier.guard("world-boss-config-reload", com.cobbleraids.worldboss.WorldBossConfigManager::reload));
+        ServerLifecycleEvents.START_DATA_PACK_RELOAD.register((server, resources) ->
                 RaidFaultBarrier.guard("shop-catalog-reload", ShopCatalogManager::reload));
         // Species and their labels can change on a reload, and the rotating page is built from them.
         ServerLifecycleEvents.START_DATA_PACK_RELOAD.register((server, resources) ->
@@ -120,6 +125,10 @@ public final class CobbleRaids implements ModInitializer {
                 RaidFaultBarrier.guard("startup:thread-guard", () -> RaidThreadGuard.onServerStarted(server)));
         ServerLifecycleEvents.SERVER_STARTED.register(server ->
                 RaidFaultBarrier.guard("startup:spawn-scheduler", () -> RaidSpawnScheduler.onServerStarted(server)));
+        // After the spawn scheduler's sweep above, which discards every stale raid boss: an event that
+        // survived a restart re-creates its showpiece here.
+        ServerLifecycleEvents.SERVER_STARTED.register(server ->
+                RaidFaultBarrier.guard("startup:world-boss", () -> com.cobbleraids.worldboss.WorldBossService.onServerStarted(server)));
         // After SERVER_STARTED specifically: restoring a saved claim resolves its rewards from the
         // datapack registry, which is only populated once the initial resource load has finished.
         ServerLifecycleEvents.SERVER_STARTED.register(server ->
@@ -187,6 +196,8 @@ public final class CobbleRaids implements ModInitializer {
         ServerLifecycleEvents.SERVER_STOPPING.register(server ->
                 RaidFaultBarrier.guard("shutdown:perf-report", () -> com.cobbleraids.perf.RaidPerfReporter.report(server)));
         ServerLifecycleEvents.SERVER_STOPPING.register(server ->
+                RaidFaultBarrier.guard("shutdown:world-boss", () -> com.cobbleraids.worldboss.WorldBossService.onServerStopping(server)));
+        ServerLifecycleEvents.SERVER_STOPPING.register(server ->
                 RaidFaultBarrier.guard("shutdown:spawn-scheduler", () -> RaidSpawnScheduler.onServerStopping(server)));
         ServerLifecycleEvents.SERVER_STOPPING.register(server ->
                 RaidFaultBarrier.guard("shutdown:boss-glow", () -> RaidBossGlowService.onServerStopping(server)));
@@ -208,6 +219,7 @@ public final class CobbleRaids implements ModInitializer {
             RaidFaultBarrier.guard("shutdown:raids", () -> counts[0] = RaidRegistry.onServerStopped());
             RaidFaultBarrier.guard("shutdown:lobbies", () -> counts[1] = RaidLobbyManager.onServerStopped());
             RaidFaultBarrier.guard("shutdown:lifecycle", RaidLifecycleCoordinator::onServerStopped);
+            RaidFaultBarrier.guard("shutdown:world-boss-state", com.cobbleraids.worldboss.WorldBossService::onServerStopped);
             RaidFaultBarrier.guard("shutdown:encounters", com.cobbleraids.encounter.EncounterService::onServerStopped);
             RaidFaultBarrier.guard("shutdown:combat-rules", RaidCombatRuleService::onServerStopped);
             RaidFaultBarrier.guard("shutdown:reconnect-grace", RaidReconnectService::onServerStopped);

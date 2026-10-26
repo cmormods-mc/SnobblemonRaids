@@ -54,7 +54,7 @@ add-on is installed, and each is skipped silently when it is not: `mega_showdown
 
 ## Content
 
-130 boss definitions: 27 starter, 10 powerhouse, 71 legendary, 22 mythical. Each is
+132 boss definitions: 27 starter, 12 powerhouse, 71 legendary, 22 mythical. Each is
 tagged with one or two element-type biome tags, and each carries a fixed competitive
 moveset.
 
@@ -176,7 +176,7 @@ is checked by CI against the parser, so it cannot drift out of date.
 ### The reward policy
 
 A definition that names **no** rewards of its own is *policy-driven*: what it grants comes from
-`config/cobbleraids/reward_policy.json` and the tables built into the core JAR. All 130 bundled definitions work this way. Each claim is one **specialty** selection plus two
+`config/cobbleraids/reward_policy.json` and the tables built into the core JAR. All 132 bundled definitions work this way. Each claim is one **specialty** selection plus two
 **general** ones: three items, flat, whatever the player's contribution (contribution still scales
 Raid Points and CobbleDollars). Raid keys and key fragments are registered but not currently in any
 loot table, so nothing drops them. A claim is about 76 / 72 / 67 / 62% base supplies (starter /
@@ -409,7 +409,7 @@ python3 validation/economy/validate_economy_manifest.py
 python3 validation/economy/build_tables.py --check
 ```
 
-Structural checks over the 130 definitions, tier membership, biome tag composition,
+Structural checks over the 132 definitions, tier membership, biome tag composition,
 optional-mod manifests, the mixin registry, the shared-HP packet path, and the tier loot
 table each definition rolls — plus four property checks that re-derive their subject from
 the tree each run: every Fabric callback and every mixin injection is wrapped in a fault

@@ -9,7 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CORE_RESOURCES = ROOT / "src/main/resources"
 TIERS = {"starter", "powerhouse", "legendary", "mythical"}
-EXPECTED_COUNTS = Counter({"starter": 27, "powerhouse": 10, "legendary": 71, "mythical": 22})
+EXPECTED_COUNTS = Counter({"starter": 27, "powerhouse": 12, "legendary": 71, "mythical": 22})
 
 
 def load(path: Path):
@@ -18,7 +18,7 @@ def load(path: Path):
 
 def validate_tree() -> None:
     raids = sorted((CORE_RESOURCES / "data/cobbleraids/raids").glob("*.json"))
-    assert len(raids) == 130, len(raids)
+    assert len(raids) == 132, len(raids)
 
     tiers = Counter()
     species = set()
@@ -100,7 +100,7 @@ def validate_jar(path: Path) -> None:
         assert "com/cobbleraids/config/RaidRarityTier.class" in names
         assert "com/cobbleraids/config/RaidTierWeights.class" in names
         assert "com/cobbleraids/spawn/RaidTierSelector.class" in names
-        assert len([name for name in names if name.startswith("data/cobbleraids/raids/") and name.endswith(".json")]) == 130
+        assert len([name for name in names if name.startswith("data/cobbleraids/raids/") and name.endswith(".json")]) == 132
 
 
 def validate_reward_template() -> None:

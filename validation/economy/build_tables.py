@@ -528,7 +528,7 @@ def write_report(manifest):
     lines.append("## Mega Stones")
     lines.append("")
     lines.append("The 5.00%% row splits evenly between a boss's stones, so a single-stone boss is"
-                 " 5.00%% and an X/Y boss is 2.50%% each. %d of 130 bosses have one."
+                 " 5.00%% and an X/Y boss is 2.50%% each. %d of 132 bosses have one."
                  % len(manifest["mega"]))
     lines.append("")
     lines.append("| Boss | Tier | Stones | Each |")

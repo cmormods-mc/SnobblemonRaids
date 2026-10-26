@@ -52,7 +52,13 @@ class RaidCommandGatingTest {
             "info <pokemon>",
             "leave",
             "notify",
-            "notify legends");
+            "notify legends",
+            // World Boss: players join, leave and look. start, stop and reload are operator-only and
+            // so must never appear in this list.
+            "worldboss join",
+            "worldboss leave",
+            "worldboss status",
+            "worldboss me");
 
     private static CommandSourceStack source(int permissionLevel) {
         return new CommandSourceStack(CommandSource.NULL, Vec3.ZERO, Vec2.ZERO, null, permissionLevel,

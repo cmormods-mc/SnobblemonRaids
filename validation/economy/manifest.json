@@ -39,10 +39,10 @@
     "by_tier": {
       "legendary": 71,
       "mythical": 22,
-      "powerhouse": 10,
+      "powerhouse": 12,
       "starter": 27
     },
-    "total": 130
+    "total": 132
   },
   "item_tags": {
     "cobblecapsule:cobblemon/battle_items": 1,

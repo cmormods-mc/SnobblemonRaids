@@ -2,6 +2,7 @@ package com.cobbleraids.showdown;
 
 import com.cobbleraids.RaidLog;
 import com.cobbleraids.config.CobbleRaidsConfigManager;
+import com.cobbleraids.encounter.EncounterService;
 import com.cobbleraids.raid.RaidSession;
 import com.cobblemon.mod.common.api.battles.interpreter.BattleMessage;
 import com.cobblemon.mod.common.api.battles.model.PokemonBattle;
@@ -22,6 +23,7 @@ public final class RaidDamageInstruction extends RaidPoolInstruction {
     protected void applyToPool(RaidSession raid, PokemonBattle battle, float amount) {
         UUID contributor = resolveContributor(battle);
         float applied = raid.damage(contributor, amount);
+        EncounterService.notifyDamage(raid, contributor, applied);
 
         if (CobbleRaidsConfigManager.get().debugLogging()) {
             RaidLog.info("Applied raid damage: battle={}, requested={}, applied={}, hp={}/{}, contributor={}",

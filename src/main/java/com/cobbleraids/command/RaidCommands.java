@@ -42,6 +42,7 @@ public final class RaidCommands {
         RaidTitleCommand.build(dispatcher);
         RaidAdminCommand.build(dispatcher);
         RaidLeaveCommand.build(dispatcher);
+        com.cobbleraids.worldboss.WorldBossCommand.build(dispatcher);
         RaidNotifyCommand.build(dispatcher);
         alias(dispatcher);                     // last: points at the finished tree
     }

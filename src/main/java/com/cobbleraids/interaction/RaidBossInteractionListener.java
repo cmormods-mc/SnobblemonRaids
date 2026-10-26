@@ -48,6 +48,18 @@ public final class RaidBossInteractionListener {
             if (!isRaidBoss) return InteractionResult.PASS;
             if (serverPlayer.isSpectator()) return InteractionResult.FAIL;
 
+            // The World Boss showpiece is a raid boss only in name: it has no lobby, and a right-click
+            // starts a solo duel against the shared pool instead. Same non-PASS rule as below.
+            if (com.cobbleraids.worldboss.WorldBossService.isShowpiece(pokemonEntity)) {
+                if (hitResult != null) {
+                    String problem = com.cobbleraids.worldboss.WorldBossService.join(serverPlayer);
+                    if (problem != null) {
+                        serverPlayer.sendSystemMessage(Component.literal(problem).withStyle(ChatFormatting.RED));
+                    }
+                }
+                return InteractionResult.SUCCESS;
+            }
+
             // One right-click on an entity makes a vanilla client send two packets, INTERACT_AT
             // and then INTERACT, and Fabric fires this event from a separate injection point for
             // each (see its ServerPlayNetworkHandlerMixin). Both arrive in the same tick with

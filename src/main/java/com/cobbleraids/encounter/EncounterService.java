@@ -126,6 +126,17 @@ public final class EncounterService {
         return encounterId != null && ACTIVE.containsKey(encounterId);
     }
 
+    /**
+     * Tells an owned encounter's owner that the boss lost {@code applied} health to {@code playerId}.
+     * A no-op for an ordinary raid, for damage nobody dealt, and for a hit that took nothing.
+     */
+    public static void notifyDamage(RaidSession raid, UUID playerId, float applied) {
+        RaidSession.Ownership ownership = raid == null ? null : raid.getOwnership();
+        if (ownership == null || playerId == null || !(applied > 0f)) return;
+        RaidFaultBarrier.guard("encounter:listener-damage", () ->
+                ownership.listener().onDamage(ownership.encounterId(), playerId, applied));
+    }
+
     /** Called by the lifecycle coordinator when a participant leaves an owned encounter. */
     public static void notifyLeft(RaidSession raid, UUID playerId, LeaveReason reason) {
         RaidSession.Ownership ownership = raid == null ? null : raid.getOwnership();

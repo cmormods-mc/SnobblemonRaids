@@ -49,7 +49,7 @@ Weights are hundredths of a percent; each pool totals 10000. The *matched* colum
 
 ## Mega Stones
 
-The 5.00% row splits evenly between a boss's stones, so a single-stone boss is 5.00% and an X/Y boss is 2.50% each. 21 of 130 bosses have one.
+The 5.00% row splits evenly between a boss's stones, so a single-stone boss is 5.00% and an X/Y boss is 2.50% each. 21 of 132 bosses have one.
 
 | Boss | Tier | Stones | Each |
 |---|---|---|---:|
