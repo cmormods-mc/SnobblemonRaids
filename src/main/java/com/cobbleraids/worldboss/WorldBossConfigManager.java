@@ -18,7 +18,7 @@ public final class WorldBossConfigManager {
     public static Path path() { return PATH; }
 
     public static synchronized WorldBossConfig load() {
-        WorldBossConfig config = JsonFileStore.load(PATH, "world boss config", WorldBossConfig::defaults,
+        WorldBossConfig config = JsonFileStore.load(PATH, "world boss config", WorldBossConfig::halloween2026,
                 WorldBossConfig::fromJson, WorldBossConfig::toJson);
         CURRENT = config;
         return config;

@@ -217,6 +217,20 @@ public record WorldBossConfig(
                 5f, 200, true, 40, 8f, 3f, "#9A5CC6", 50, Music.defaults(), Dome.defaults(), Look.defaults(), Night.defaults());
     }
 
+    /**
+     * What a fresh install of this build gets: {@link #defaults()} switched on, with the Halloween 2026 window (Eastern time: 31 Oct 00:00 EDT to the end
+     * of 2 Nov EST, written in UTC because the clocks change on 1 Nov). A config file that already exists is never touched by this.
+     */
+    public static WorldBossConfig halloween2026() {
+        JsonObject root = defaults().toJson();
+        root.addProperty("enabled", true);
+        JsonObject window = new JsonObject();
+        window.addProperty("start", "2026-10-31T04:00:00Z");
+        window.addProperty("end", "2026-11-03T05:00:00Z");
+        root.add("window", window);
+        return fromJson(root);
+    }
+
     /** The wall's tint as an ARGB int: {@link #wallColor} with the alpha of {@link #wallOpacityPercent}. */
     public int wallColorArgb() {
         int rgb = Integer.parseInt(wallColor.substring(1), 16);
