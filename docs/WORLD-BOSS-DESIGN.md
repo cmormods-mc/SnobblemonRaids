@@ -141,6 +141,17 @@ Answers: chain mode on with a 30 second breather, 45 seconds when every Pokemon 
 3. AscensionLib side: `spooky_essence`, the Haunting rolls, and a listener that pays essence from `onDefeated`.
 4. Measuring "damage per player-minute" with bots and setting `pool.damage_per_player_minute`; the shipped 6000 is a guess.
 
+## 12b. Starting a boss from another mod (0.8.191)
+
+`CobbleRaidsWorldBoss.start(MinecraftServer, ServerPlayer near)` (server thread) starts a World Boss exactly like `/cr worldboss start`: the window and
+night-only are not asked, the system must be `enabled`, and only one boss runs at a time. It returns `null` on success or a short reason.
+`CobbleRaidsWorldBoss.isEnabled()` says whether the system is on. Both are compatible additions to API version 1.
+
+`spawn.auto_start` (default `true`, unchanged behaviour) turns the schedule off when `false`: the boss then appears only by command or from another
+mod. The Spooky Surge uses this: its top tier summons the boss around its top contributor, and a server that wants the boss only through the
+surge sets `"auto_start": false`. Verified live with the Spooky Surge: tier 4 started a boss; with the system disabled the call was refused with
+the reason; the boss bar shows only to players within `radius` of the boss (or in a duel), as before.
+
 ## 13. Decisions still needed
 
 1. Which Ghost bosses to add as raid definitions (Gengar, Mimikyu, Gholdengo, others)?

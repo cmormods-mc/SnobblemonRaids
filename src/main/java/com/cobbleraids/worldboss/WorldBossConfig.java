@@ -38,6 +38,8 @@ import java.util.Optional;
  * @param spawnMaxDistance         farthest
  * @param spawnAttempts            tries to find a surface position before giving up
  * @param spawnIntervalMinutes     gap between one World Boss ending and the next starting by itself in the window
+ * @param autoStart                whether a boss may start by itself in the window; false means it only starts by command or from another mod
+ *                                 through {@code CobbleRaidsWorldBoss.start} (the Spooky Surge's top tier does this)
  * @param spawnLifetimeMinutes     how long one World Boss stays before it leaves undefeated
  * @param minPercentOfAverage      least damage, as a percent of the average per player who dealt any, that earns the defeat reward
  * @param rewardRaidPoints         Raid Points paid to each qualifying player
@@ -74,6 +76,7 @@ public record WorldBossConfig(
         int spawnMaxDistance,
         int spawnAttempts,
         int spawnIntervalMinutes,
+        boolean autoStart,
         int spawnLifetimeMinutes,
         float minPercentOfAverage,
         int rewardRaidPoints,
@@ -213,7 +216,7 @@ public record WorldBossConfig(
                 "cobbleraids:chandelure", "cobbleraids:giratina", "cobbleraids:darkrai"), Optional.empty(), Optional.empty(),
                 20_000f, 6_000f, 1f, 20f, 900,
                 70, 3_000L, 240, 30, 45, true, 128.0,
-                "minecraft:overworld", 300, 1500, 30, 30, 40,
+                "minecraft:overworld", 300, 1500, 30, 30, true, 40,
                 5f, 200, true, 40, 8f, 3f, "#9A5CC6", 50, Music.defaults(), Dome.defaults(), Look.defaults(), Night.defaults());
     }
 
@@ -277,6 +280,7 @@ public record WorldBossConfig(
                 (int) num(spawn, "spawn.max_distance", d.spawnMaxDistance),
                 (int) num(spawn, "spawn.attempts", d.spawnAttempts),
                 (int) num(spawn, "spawn.interval_minutes", d.spawnIntervalMinutes),
+                bool(spawn, "spawn.auto_start", d.autoStart),
                 (int) num(spawn, "spawn.lifetime_minutes", d.spawnLifetimeMinutes),
                 num(reward, "reward.min_percent_of_average", d.minPercentOfAverage),
                 (int) num(reward, "reward.raid_points", d.rewardRaidPoints),
@@ -336,6 +340,7 @@ public record WorldBossConfig(
         spawn.addProperty("max_distance", spawnMaxDistance);
         spawn.addProperty("attempts", spawnAttempts);
         spawn.addProperty("interval_minutes", spawnIntervalMinutes);
+        spawn.addProperty("auto_start", autoStart);
         spawn.addProperty("lifetime_minutes", spawnLifetimeMinutes);
         spawn.addProperty("night_only", night.only());
         spawn.addProperty("night_from_tick", night.fromTick());

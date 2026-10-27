@@ -111,12 +111,13 @@ public final class WorldBossRules {
 
     /**
      * Whether the next World Boss should start by itself: the system is on, the window is open
-     * (a window-less config only ever starts by command), nothing is active, and the gap since the
+     * (a window-less config only ever starts by command), {@code spawn.auto_start} is on (off means only a command or another mod's
+     * {@code CobbleRaidsWorldBoss.start} call starts one), nothing is active, and the gap since the
      * last one has passed.
      */
     public static boolean shouldAutoStart(WorldBossConfig config, Window window, boolean bossActive,
                                           long lastEndedMillis, long nowMillis) {
-        if (!config.enabled() || bossActive || window != Window.OPEN) return false;
+        if (!config.enabled() || !config.autoStart() || bossActive || window != Window.OPEN) return false;
         return nowMillis - lastEndedMillis >= config.spawnIntervalMinutes() * 60_000L;
     }
 

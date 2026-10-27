@@ -238,6 +238,18 @@ class WorldBossConfigAndRulesTest {
     }
 
     @Test
+    void autoStartOffMeansTheBossOnlyStartsByCommandOrFromAnotherMod() {
+        WorldBossConfig off = WorldBossConfig.fromJson(json("{\"enabled\":true,\"spawn\":{\"auto_start\":false}}"));
+        assertFalse(off.autoStart());
+        long gap = off.spawnIntervalMinutes() * 60_000L;
+        assertFalse(WorldBossRules.shouldAutoStart(off, WorldBossRules.Window.OPEN, false, 0L, gap * 2), "never by itself, even in an open window");
+        WorldBossConfig on = WorldBossConfig.fromJson(json("{\"enabled\":true}"));
+        assertTrue(on.autoStart(), "unchanged default: it starts by itself in the window");
+        assertTrue(WorldBossConfig.fromJson(off.toJson()).equals(off), "the setting round-trips through the written file");
+        assertFalse(WorldBossConfig.fromJson(off.toJson()).autoStart());
+    }
+
+    @Test
     void aBossLeavesAfterItsLifetimeButNeverPastTheWindow() {
         WorldBossConfig config = WorldBossConfig.fromJson(json(
                 "{\"window\":{\"end\":\"2026-11-03T00:00:00Z\"},\"spawn\":{\"lifetime_minutes\":40}}"));
