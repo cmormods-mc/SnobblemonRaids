@@ -59,7 +59,7 @@ final class WorldBossMusic {
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             online.add(player.getUUID());
             boolean inZone = dimension != null && player.level().dimension().location().equals(dimension)
-                    && WorldBossBorder.inside(state.x(), state.z(), config.radius(), player.getX(), player.getZ());
+                    && WorldBossBorder.inside(state.x(), state.z(), WorldBossRules.zoneRadius(state, config), player.getX(), player.getZ());
             Track wanted = wanted(duelling.contains(player.getUUID()) || chained.contains(player.getUUID()), inZone);
             Playing now = PLAYING.get(player.getUUID());
             Track current = now == null ? Track.NONE : now.track();

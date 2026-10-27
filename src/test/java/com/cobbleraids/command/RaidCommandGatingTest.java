@@ -53,12 +53,14 @@ class RaidCommandGatingTest {
             "leave",
             "notify",
             "notify legends",
-            // World Boss: players join, leave and look. start, stop and reload are operator-only and
-            // so must never appear in this list.
+            // World Boss: players join, leave, look, and warp into the arena and back. start, stop, reload and the
+            // arena marker commands are operator-only and so must never appear in this list.
             "worldboss join",
             "worldboss leave",
             "worldboss status",
-            "worldboss me");
+            "worldboss me",
+            "worldboss warp",
+            "worldboss return");
 
     private static CommandSourceStack source(int permissionLevel) {
         return new CommandSourceStack(CommandSource.NULL, Vec3.ZERO, Vec2.ZERO, null, permissionLevel,

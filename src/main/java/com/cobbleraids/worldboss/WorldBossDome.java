@@ -159,14 +159,14 @@ final class WorldBossDome {
 
     private static void ensureBuilt(ServerLevel level, WorldBossState state, WorldBossConfig config) {
         WorldBossConfig.Dome dome = config.dome();
-        String key = state.dimension() + "|" + state.x() + "|" + state.y() + "|" + state.z() + "|" + config.radius() + "|" + dome.height() + "|" + dome.detail() + "|" + dome.full();
+        String key = state.dimension() + "|" + state.x() + "|" + state.y() + "|" + state.z() + "|" + WorldBossRules.zoneRadius(state, config) + "|" + dome.height() + "|" + dome.detail() + "|" + dome.full();
         if (key.equals(builtKey) && level == builtLevel) return;
         SHOWN.clear();
         FLASHES.clear();
         builtKey = key;
         builtLevel = level;
         centre = new Vec3(state.x(), dome.full() ? state.y() : state.y() - SINK, state.z());
-        panels = DomeGeometry.panels(config.radius(), dome.height(), dome.detail(), dome.full());
+        panels = DomeGeometry.panels(WorldBossRules.zoneRadius(state, config), dome.height(), dome.detail(), dome.full());
         entities = new Entity[panels.size()];
         for (int i = 0; i < panels.size(); i++) {
             Panel panel = panels.get(i);

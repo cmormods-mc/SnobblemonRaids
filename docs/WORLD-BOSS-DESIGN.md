@@ -152,6 +152,26 @@ mod. The Spooky Surge uses this: its top tier summons the boss around its top co
 surge sets `"auto_start": false`. Verified live with the Spooky Surge: tier 4 started a boss; with the system disabled the call was refused with
 the reason; the boss bar shows only to players within `radius` of the boss (or in a duel), as before.
 
+## 12c. The arena: spawn markers, warp and return (0.8.191)
+
+A built arena (for example a pasted schematic in its own world) can host the boss instead of a random surface spot.
+
+- **Markers.** Two blocks, `cobbleraids:world_boss_spawn` (where the boss stands) and `cobbleraids:world_boss_entrance` (where warping players arrive). They exist only on
+  the server: clients see a structure void (invisible, no collision), so no resource pack is needed. They cannot be broken in survival. Give one with
+  `/give @s cobbleraids:world_boss_spawn` and place it; breaking it (creative) unregisters it. Positions are saved in `cobbleraids_world_boss_arena.dat`.
+  Markers that arrive without being placed (a pasted schematic that contains them) are found with `/cobbleraids worldboss arena scan [radius]` (loaded chunks only,
+  default 64, at most 128). `arena list` shows them, `arena clear` forgets them (the blocks stay).
+- **Starting.** With `arena.enabled` (default true) and at least one spawn marker, every start (schedule, command, or `CobbleRaidsWorldBoss.start`) puts the boss at a
+  random spawn marker, in that marker's dimension, whether or not anyone is nearby. With no spawn marker, behaviour is unchanged.
+- **Zone.** A boss at a marker uses `arena.radius` (default 96, enough for the corners of a 128 x 128 arena) for the wall, dome, bar, music and duel range, instead of `radius`.
+  The flag is saved, so a restart keeps it.
+- **Warp.** The spawn announcement carries a `[Click to warp]` link, and `/cobbleraids worldboss warp` does the same: the player's position is remembered and they arrive at a random
+  entrance marker (or, with none placed, the first standable spot on a ring 10 to 22 blocks from the boss) facing the boss. Refused while in a battle or duel, when already in the
+  arena, or when the boss has fallen. `/cobbleraids worldboss return` goes back (to the world spawn if the origin is unknown, for example after a restart). Operators only: `arena ...`.
+- Verified live with a Fabric 1.21.1 client and the Spooky Surge: markers registered by `setblock`, the boss started at the marker in the Nether, warp arrived at the entrance
+  facing the boss with the boss bar showing, breaking the entrance unregistered it and warp then used the ring, return went back to the overworld. Not verified: a real pasted
+  schematic, `arena scan` on one, or a dedicated custom dimension.
+
 ## 13. Decisions still needed
 
 1. Which Ghost bosses to add as raid definitions (Gengar, Mimikyu, Gholdengo, others)?

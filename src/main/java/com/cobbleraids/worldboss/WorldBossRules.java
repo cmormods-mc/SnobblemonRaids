@@ -131,6 +131,11 @@ public final class WorldBossRules {
         return from < to ? time >= from && time < to : time >= from || time < to;
     }
 
+    /** The zone radius in force: the arena's own when the boss stands at an arena marker, otherwise the open-world radius. */
+    public static double zoneRadius(WorldBossState state, WorldBossConfig config) {
+        return state != null && state.arena() ? config.arena().radius() : config.radius();
+    }
+
     /**
      * When a World Boss that started now should leave if undefeated: its lifetime, but never past
      * the end of the event window, and never sooner than a minute.

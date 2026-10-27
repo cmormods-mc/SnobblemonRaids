@@ -67,6 +67,7 @@ public final class CobbleRaids implements ModInitializer {
 
         // Before anything that could look an item up by id, and before the reward policy is used:
         // a loot table naming an unregistered id costs the whole table, not just the entry.
+        com.cobbleraids.worldboss.arena.ArenaBlocks.register();
         RaidItemPack.register();
         RaidKeyItems.register();
         RaidHeldItems.register();

@@ -53,6 +53,7 @@ import java.util.Optional;
  * @param dome                     the glass dome drawn at the zone's edge
  * @param look                     what players see of the bosses inside the zone
  * @param night                    whether the boss may only start by itself at night
+ * @param arena                    the arena: when spawn marker blocks are placed, the boss starts at one of them and players can warp in
  */
 public record WorldBossConfig(
         boolean enabled,
@@ -89,7 +90,8 @@ public record WorldBossConfig(
         Music music,
         Dome dome,
         Look look,
-        Night night) {
+        Night night,
+        Arena arena) {
 
     /**
      * When the boss may start by itself: only at night when {@code only} is set. A command start ignores this. A dimension with a fixed time
@@ -108,6 +110,23 @@ public record WorldBossConfig(
 
         public static Night defaults() {
             return new Night(true, 13000, 23000);
+        }
+    }
+
+    /**
+     * The arena (a built area, such as a pasted schematic, with World Boss spawn marker blocks placed in it).
+     *
+     * @param enabled whether placed spawn markers are used: with one or more placed, a boss starts at a random marker instead of a random
+     *                surface spot, and {@code /cobbleraids worldboss warp} takes players to the arena
+     * @param radius  the zone radius used for a boss that stands at a marker, in place of {@code radius}: set it to cover the arena, no more
+     */
+    public record Arena(boolean enabled, double radius) {
+        public Arena {
+            require(radius >= 16.0 && radius <= 512.0, "arena.radius", "must be 16 to 512");
+        }
+
+        public static Arena defaults() {
+            return new Arena(true, 96.0);
         }
     }
 
@@ -217,7 +236,7 @@ public record WorldBossConfig(
                 20_000f, 6_000f, 1f, 20f, 900,
                 70, 3_000L, 240, 30, 45, true, 128.0,
                 "minecraft:overworld", 300, 1500, 30, 30, true, 40,
-                5f, 200, true, 40, 8f, 3f, "#9A5CC6", 50, Music.defaults(), Dome.defaults(), Look.defaults(), Night.defaults());
+                5f, 200, true, 40, 8f, 3f, "#9A5CC6", 50, Music.defaults(), Dome.defaults(), Look.defaults(), Night.defaults(), Arena.defaults());
     }
 
     /**
@@ -250,6 +269,7 @@ public record WorldBossConfig(
         JsonObject pool = obj(root, "pool");
         JsonObject duel = obj(root, "duel");
         JsonObject spawn = obj(root, "spawn");
+        JsonObject arenaJson = obj(root, "arena");
         JsonObject reward = obj(root, "reward");
         JsonObject visual = obj(root, "visual");
         JsonObject music = obj(root, "music");
@@ -304,7 +324,8 @@ public record WorldBossConfig(
                         bool(visual, "visual.no_glow_in_zone", dl.noGlowInZone)),
                 new Night(bool(spawn, "spawn.night_only", dn.only),
                         (int) num(spawn, "spawn.night_from_tick", dn.fromTick),
-                        (int) num(spawn, "spawn.night_to_tick", dn.toTick)));
+                        (int) num(spawn, "spawn.night_to_tick", dn.toTick)),
+                new Arena(bool(arenaJson, "arena.enabled", d.arena.enabled()), num(arenaJson, "arena.radius", (float) d.arena.radius())));
     }
 
     /** The defaults written back as JSON, with the keys in the same grouping the parser reads. */
@@ -374,6 +395,10 @@ public record WorldBossConfig(
         domeJson.addProperty("detail", dome.detail());
         domeJson.addProperty("full", dome.full());
         root.add("dome", domeJson);
+        JsonObject arenaOut = new JsonObject();
+        arenaOut.addProperty("enabled", arena.enabled());
+        arenaOut.addProperty("radius", arena.radius());
+        root.add("arena", arenaOut);
         return root;
     }
 
