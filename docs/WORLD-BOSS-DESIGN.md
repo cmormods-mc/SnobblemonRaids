@@ -198,3 +198,19 @@ Rig: `L:\claude-cobbleraids-work\testserver-integration` with the new CobbleRaid
 The zone a duel needs (`radius`, default 128 blocks round the boss) is drawn as a **wall of soul particles** so players can see where it starts and walk in. Only a player within `visual.view_distance` blocks (default 40, 16 to 96) of the wall is sent it, and only the stretch within that distance: soul fire flames and rising souls on alternating passes every 8 ticks, one packet per column, columns 4 blocks apart on a fixed angle grid (so the wall does not shimmer as someone walks along it), at most 48 columns per player per pass. The height follows the player (about 5 blocks below to 13 above), so it is visible on hills and in caves. Crossing the wall shows an action-bar line once, "You entered the World Boss zone" or "You left the World Boss zone". `visual.border_particles: false` turns it off. The wall is exactly the duel range test, so it is walking in that makes a duel possible.
 
 Pure geometry in `WorldBossBorder` (11 tests); the drawing is `WorldBossService.drawBorder`. **Not yet seen in a client**: the particle choice, density and height are a first guess to be judged by eye. A live check can count the `world_particles` packets a bot receives at the wall (many) against one at the centre (none).
+
+## Load test at 40 players (2026-10-28)
+
+`validation/smoke/worldboss_duel_load.js N` drives N mineflayer bots (`worldboss_duelbot.js`) through real duels against one World Boss on a throwaway server and samples `/tick query`. See the header of the script for setup. A battle itself is capped at 4 players (`VALIDATED_MAX_HUMAN_PLAYERS`, `EncounterRequest.MAX_PLAYERS`, ADR 0003), so 40 players means 40 simultaneous solo duels on the shared pool, which needs no change.
+
+Rig: Fabric 1.21.1, Cobblemon 1.8.2, CobbleRaids 0.8.191, 4 cores shared with the bots (their load is in the numbers; 40 idle bots alone cost about 9 ms per tick). Test pool: `damage_per_player_minute` 1500, `max_minutes` 4. Each bot has one level 100 Garchomp, healed in each breather.
+
+| Bots | Duels at once | Tick avg / p95 | Worst tick avg | Result |
+|---|---|---|---|---|
+| 12 | 12 | 5.0 / 7.0 ms | 6.1 ms | 70 duels started; run capped at 420 s with the pool nearly empty |
+| 20 | 20 | 6.0 / 8.3 ms | 7.4 ms | defeated once, 20 paid |
+| 40 | 40 | 10.3 / 14.0 ms | 13.2 ms | defeated once, 40 paid |
+
+No CobbleRaids errors in any run; the only server errors were Cobblemon's `BattleSelectActionsHandler` NPE for a bot answering after its duel ended. Server RSS about 2.9 GB.
+
+Not covered: real clients, real damage per player-minute (bots deal about 800 per minute, so `pool.damage_per_player_minute` is still a guess), multi-Pokemon parties (a forced switch stalls a bot until the duel time limit), a real arena sized for 40 duel boss copies, and a restart at 40 players.
