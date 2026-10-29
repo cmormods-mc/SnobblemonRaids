@@ -2,7 +2,7 @@
 
 Everything needed to write the public wiki, in one file. It is organised as the wiki's pages, in the
 order I would publish them. Each section says what it is for, gives the facts, and names the source in
-the repo so a claim can be re-checked. Written against build **0.8.183** (Cobblemon 1.8.2, Minecraft
+the repo so a claim can be re-checked. Written against build **0.8.187** (Cobblemon 1.8.2, Minecraft
 1.21.1, Fabric).
 
 Facts marked **(unverified)** were not exercised on a real client or a real host. Do not state them as
@@ -204,8 +204,7 @@ Biome coverage: each of the 18 type tags carries a vanilla mapping plus Fabric c
 mods such as Terralith extend the pool automatically with no dependency.
 
 Operators: `/cobbleraids spawninfo` shows the effective odds at your location, including the chance of no
-spawn. `/cobbleraids testwild <species>` bypasses the roll and cooldown but keeps placement, biome checks,
-tracking, announcements and caps.
+spawn. `/cr spawn <species>` forces a spawn near you for testing.
 
 Source: `README.md` Spawning; `RaidSpawnScheduler`; `config/CobbleRaidsConfig.NaturalSpawning`.
 
@@ -359,20 +358,29 @@ Source: `README.md` Renowned bosses; `data/cobbleraids/renown/`; `renown/` packa
 
 ## 11. The Raid Shop
 
-Spends Raid Points. Opened from the hub or `/cobbleraids shop open`. Everything is in
+Spends Raid Points. Opened from the hub (`/cr`) or `/cr shop`. Everything is in
 `config/cobbleraids/shop.json`.
 
-**Catalogue sections.** Consumables, and further sections of items, each entry with `id`, `cost`, `item`,
-`count`, a per-player `limit` and a `reset` (`daily`, `weekly` (Monday, UTC) or `never`). Exp candies are
-priced about 15 RP per level on average. The strongest items (Lucky Egg, Ability Patch, held items) have low
-daily or weekly limits. Default `per_page` is 64.
+**Catalogue sections.** Consumables, plus card packs. Consumables sells capture balls, Rare and Exp Candies,
+the six stat vitamins, Ability Capsule and Patch, PP Up and Max, Lucky Egg and Exp Share. Healing items, held
+items and breeding tools are no longer sold (the Held Items and Training pages were retired in catalogue
+version 4; an older `shop.json` loses them on load only if every entry in the section is still a shipped
+listing, so an operator's edited page survives). Each entry has `id`, `cost`, `item`, `count`, a per-player
+`limit` and a `reset` (`daily`, `weekly` (Monday, UTC) or `never`). Exp candies are priced about 15 RP per
+level on average. The strongest items (Lucky Egg, Ability Patch) have low daily or weekly limits. Default
+`per_page` is 64.
 
-**Wandering Pokémon.** A page of ten Pokémon that rotates every four hours (00:00, 04:00... UTC) and is the
-same for every player. Nothing is stored: the ten are a pure function of the four-hour window. Every species
-is eligible except those labelled legendary, mythical, ultra beast, paradox or restricted. Each listing has
-a level from 25 to 50 and a fixed nature, ability, gender and IV spread, so every buyer gets the identical
-Pokémon. Never shiny. Once per player per rotation. Price is the ceiling scaled by rarity and level, between
-100 and 500 RP by default. `/cobbleraids debug rotation` prints the current ten.
+**Wandering Pokémon.** A page of ten Pokémon that rotates every four hours (00:00, 04:00... UTC), with a
+countdown to the next restock in the shop header. Every player has their own ten, rolled from the window and
+their UUID: stable for that player until the restock, different from everyone else's. Nothing is stored. A
+purchase resolves its slot against the buyer's own page. Each listing has a level from 25 to 50 and a fixed
+nature, ability, gender and IV spread. Once per player per rotation. Ordinary listings cost 100 to 500 RP:
+the ceiling scaled by rarity and level.
+
+Rare tier (`rotation.rarity` in `shop.json`): each listing has a 2% chance to be a legendary-class species
+(legendary, mythical, ultra beast, paradox, restricted) at 4x price, and a 2% chance to be shiny at 3x. The
+two are independent. Roughly one of each per player per day. A server that edited the old
+`excluded_labels` list keeps its edit.
 
 **Starter lines.** Starter Pokémon lines are priced 250 / 375 / 500 RP (base / middle / final).
 
@@ -384,7 +392,7 @@ Pokémon. Never shiny. Once per player per rotation. Price is the ceiling scaled
 **Ascension rarity.** With AscensionLib installed, a catalogue entry's optional `"rarity"` gives the bought
 Pokémon an ascension profile; modifier slots are rolled per purchase.
 
-Chat access: `/cobbleraids shop` lists, `/cobbleraids shop buy <id>` buys.
+Chat access: `/cr shop` lists when the client has no WebGUI, `/cr shop buy <id>` buys.
 
 Source: `README.md`; `shop/` package; `config/cobbleraids/shop.json`.
 
@@ -428,11 +436,11 @@ bosses caught).
 
 **Trophy room.** A per-player collection of every distinct boss species beaten. Each trophy remembers the
 level, shiny state, IV and EV percentages, the first defeat date and the number of times beaten. Searchable
-and filterable by tier, shiny and sort order. `/cobbleraids trophies` or the hub.
+and filterable by tier, shiny and sort order. Opened from the hub or the T key.
 
 **Hall of Legends.** A server-wide record of renowned boss victories: the title, species, tier, boon, date
 and the players who won. Seven entries per page, filterable to "mine" and by tier. A server-wide message
-announces a new legend; `/cobbleraids notify legends` mutes it. `/cobbleraids legends` or the hub.
+announces a new legend; `/cr notify legends` mutes it. Opened from the hub.
 
 Source: `title/` package, `catching/TrophyLedger`, `catching/HallOfLegends`.
 
@@ -454,7 +462,7 @@ Sunday, UTC), plus server totals.
 | `fastest_win` | shortest winning raid in combat seconds (lower is better) |
 
 Commands: `/cobbleraids top [<board> [weekly|alltime] [rows]]`, `/cobbleraids stats [<player>|server]`. The
-leaderboards page is opened from the hub with `/cobbleraids menu`.
+leaderboards page is opened from the hub with `/cr`.
 
 Counting rules: a withdrawn or disconnected player's damage is counted but they get no win; a raid
 everyone left is not a defeat; only ordinary raids count (a mod-owned encounter counts only if its owner
@@ -476,10 +484,10 @@ web server and no open port for them. The pages are installed from the jar into
 
 | Page | Opened by | What it does |
 |---|---|---|
-| Hub | `/cobbleraids menu`, F6 main-menu link | Four tiles: shop, trophies, legends, leaderboards |
-| Raid Shop | hub, `shop open` | Browse and buy; pokemon pages are 4 across, item pages 8 across; hover for details |
-| Trophy Room | hub, `trophies` | Three trophies per page, search, tier, shiny and sort filters |
-| Hall of Legends | hub, `legends` | Seven rows per page, "mine" and tier filters |
+| Hub | `/cr`, F6 main-menu link | Four tiles: shop, trophies, legends, leaderboards |
+| Raid Shop | hub, `/cr shop` | Browse and buy; pokemon pages are 4 across, item pages 8 across; hover for details |
+| Trophy Room | hub | Three trophies per page, search, tier, shiny and sort filters |
+| Hall of Legends | hub | Seven rows per page, "mine" and tier filters |
 | Leaderboards | hub | Fifteen boards, weekly or all time, your row highlighted |
 | Reward reveal | opens automatically after a win | Raid summary, choose, reveal what was granted |
 | Capture | opens after a claim | Offer, three pulses, throw, result |
@@ -513,14 +521,17 @@ Source: `web/` package, `src/main/resources/web/cobbleraids/`.
 
 Everything under `/cobbleraids`. Operator commands need permission level 2.
 
+`/cr` is an alias for `/cobbleraids` (not `/raid`, which vanilla owns). Both share one tree and the same
+per-command permission checks; `RaidCommandGatingTest` builds the real tree and pins exactly which commands a
+level-0 player can reach.
+
 **Players**
 
 | Command | Does |
 |---|---|
 | `reward claim [choice]` | Claim a pending reward (the fallback if the page cannot open) |
-| `menu` | Open the hub |
-| `shop` | List the shop in chat. `shop open` opens the page. `shop buy <id>` buys. |
-| `trophies`, `legends` | Open those pages |
+| (none) | Open the hub |
+| `shop` | Open the shop (lists it in chat without WebGUI). `shop buy <id>` buys. |
 | `points` | Your Raid Point balance and what each tier pays |
 | `top [board [weekly\|alltime] [rows]]` | Leaderboard in chat |
 | `stats [player\|server]` | Records |
@@ -533,16 +544,15 @@ Everything under `/cobbleraids`. Operator commands need permission level 2.
 
 ```text
 list [tier]                         spawn <species> [x y z] [renown <roll|force|none>]
-spawninfo                           testwild <species>
+spawninfo
 despawn [all]                       reload
 cooldown list | cooldown reset <definition>
 reward grant <player> <definition> | reward list [player] | reward clear <player>
 capture status [player] | capture grant <player> <definition> | capture clear <player>
 points give|take|set <player> <amount>
-shop reload
-debug status | raids | battle | history | config | audit | rotation
-debug definition <species> | loot <loot_table> | record <player> | join <player>
-web hello                           (a test page)
+debug status | raids | battle | history | config | audit
+debug loot <loot_table> | record <player> | join <player>
+perf | perf log                     (operator: live gauges and costliest sections; write the CSV now)
 ```
 
 Permissions are checked on each operator subcommand, not on the root. This matters: Brigadier keeps the first
@@ -776,6 +786,15 @@ survived a restart is re-tracked on load. `/cobbleraids leave` and the reconnect
 **Performance.** Spawn checks run once a minute. Reward and stats work is a few in-memory updates per raid
 event; a leaderboard is sorted only when asked for. Web pages are static files served by WebGUI. Sounds are
 single packets. The shop rotation is a pure function of the clock and stores nothing.
+
+**Performance telemetry (0.8.184 onward).** Always on, about two `nanoTime()` calls per measurement. While
+anyone is online, `logs/cobbleraids-perf.csv` gets a row per timed section plus gauges (players, mspt,
+heap, active raids, open lobbies) every 5 minutes, and once at shutdown. Any single run over the slow
+threshold is logged at once, rate-limited to one per section per minute. `/cobbleraids perf` shows live
+gauges and the 12 costliest sections; `/cobbleraids perf log` writes the window to the CSV on demand.
+`python validation/perf_summary.py logs/cobbleraids-perf.csv` summarises it. Measured on a 24-client rig, a
+reward claim now writes only its own file (5 ms average, 7 ms worst, down from 51 ms and 1.24 s), so a burst
+of 96 claims takes about 2 s instead of 11 s. Source: `docs/RELEASE_DAY_PERF.md`.
 
 ---
 

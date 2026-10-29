@@ -413,7 +413,7 @@ public final class RaidLifecycleCoordinator {
                 // RaidRegistry.remove. Each step is separate: if end() throws, the registry entry
                 // and the boss are still released, since a battle that failed to end is not one
                 // this raid can resume.
-                () -> { if (!battle.getEnded()) battle.end(); },
+                () -> RaidBattleTermination.end(battle),
                 () -> RaidRegistry.remove(battle),
                 () -> { if (countsAsFailedAttempt) releaseBossAfterFailure(raid); else cleanupBossEntity(raid); },
                 () -> VICTORY_REQUESTED.remove(raid.getId()),

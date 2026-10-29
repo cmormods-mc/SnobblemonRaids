@@ -180,12 +180,16 @@ public final class EncounterService {
      * -- a chunk unloaded and reloaded mid-fight -- is battling and indexed, and is left alone.
      */
     public static void onEntityLoaded(Entity entity, ServerLevel level) {
-        if (!(entity instanceof PokemonEntity pokemon)) return;
-        if (!RaidBossEntityMarker.isRaidBoss(pokemon) || !RaidBossEntityMarker.isOwned(pokemon)) return;
-        if (pokemon.isBattling() || ownsBoss(pokemon.getUUID())) return;
+        if (!isOrphanedBoss(entity)) return;
+        PokemonEntity pokemon = (PokemonEntity) entity;
         RaidLog.info("Removed the boss of an owned encounter that no longer exists ({} in {})",
                 pokemon.getUUID(), level.dimension().location());
-        com.cobbleraids.spawn.RaidDeferredDiscard.discardSoon(pokemon, level);
+        com.cobbleraids.spawn.RaidDeferredDiscard.discardSoon(pokemon, level, EncounterService::isOrphanedBoss);
+    }
+
+    private static boolean isOrphanedBoss(Entity entity) {
+        return entity instanceof PokemonEntity pokemon && RaidBossEntityMarker.isRaidBoss(pokemon)
+                && RaidBossEntityMarker.isOwned(pokemon) && !pokemon.isBattling() && !ownsBoss(pokemon.getUUID());
     }
 
     private static boolean ownsBoss(UUID bossId) {
