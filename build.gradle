@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.191-cleanup-safety'
+version = '0.8.190-world-boss'
 group = 'com.cobbleraids'
 
 base {
