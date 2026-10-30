@@ -73,6 +73,9 @@ jobs:
 
       # After the build on purpose: this reads compiled bytecode, so there is nothing to inspect
       # until the classes exist. `clean` above also wipes anything a previous run left behind.
+      - name: Validate optional radar artifact boundaries
+        run: python3 validation/radar/validate_hologram.py
+
       - name: Validate mixin fault barriers
         run: python3 validation/validate_mixin_guards.py
 
@@ -108,5 +111,7 @@ jobs:
           name: cobbleraids-build
           path: |
             build/libs/*.jar
+            radar-client/build/libs/*.jar
             build/reports/**
+            radar-client/build/reports/**
           if-no-files-found: warn

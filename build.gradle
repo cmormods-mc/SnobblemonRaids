@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.191-world-boss'
+version = '0.8.194-raid-charges'
 group = 'com.cobbleraids'
 
 base {
@@ -90,3 +90,7 @@ publishing {
         }
     }
 }
+
+// The protocol contains only Minecraft-common value/codec types; rendering ships separately.
+sourceSets.main.java.srcDir('radar-shared/src/main/java')
+tasks.named('build') { dependsOn(':radar-client:build') }

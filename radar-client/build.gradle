@@ -1,0 +1,26 @@
+plugins { id 'fabric-loom' }
+version = '0.4.2+1.21.1'
+group = 'com.cobbleraids'
+base { archivesName = 'CobbleRaids-Radar-Client' }
+repositories { maven { url = 'https://maven.fabricmc.net/' }; mavenCentral() }
+dependencies {
+    minecraft 'com.mojang:minecraft:1.21.1'
+    mappings loom.officialMojangMappings()
+    modImplementation 'net.fabricmc:fabric-loader:0.17.2'
+    modImplementation 'net.fabricmc.fabric-api:fabric-api:0.116.6+1.21.1'
+    testImplementation platform('org.junit:junit-bom:5.11.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+sourceSets.main.java.srcDir('../radar-shared/src/main/java')
+java { toolchain { languageVersion = JavaLanguageVersion.of(21) }; withSourcesJar() }
+tasks.named('test', Test) { useJUnitPlatform() }
+processResources {
+    def modVersion = project.version
+    inputs.property 'version', modVersion
+    filesMatching('fabric.mod.json') { expand version: modVersion }
+}
+jar { from(rootProject.file('LICENSE')) { rename { 'LICENSE_CobbleRaids_Radar' } } }
+
+// Opt-in isolated graphical harness; never packaged in the player mod.
+if (project.hasProperty('radarSmoke')) { apply from: rootProject.file('validation/radar/graphical.gradle') }

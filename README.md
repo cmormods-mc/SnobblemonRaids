@@ -64,6 +64,32 @@ any biome mod populating those conventions — Terralith, Oh The Biomes We've Go
 extends the spawn pool automatically, with no hard dependency on either: a convention
 tag nobody defines is simply an empty tag, not an error.
 
+## Raid Radar (prototype)
+
+Craft a radar with four Netherite Ingots (corners), two Shulker Shells (top/bottom),
+two Cobblemon Upgrades (left/right) and a Compass (centre). Right-click opens a native
+status menu with your raid charges, refill timers and an Open/Close Radar button;
+sneak + use cycles available raids while the radar is open. Its north-up circular compass combines cyan
+surface contours, your facing arrow, an orange raid marker and a dotted direct bearing.
+It samples loaded chunks only and adds no client mod or custom shader. The stacked
+terrain appearance is illustrated depth on a flat map. See
+[controls, limits and validation](docs/RAID-RADAR-PROTOTYPE.md).
+
+An optional [3D client companion](docs/RAID-RADAR-HOLOGRAM.md) renders a physical compass
+with raised terrain in first person. Players without it keep the flat map; H toggles
+the companion display. Server-side crafting and raid rules remain authoritative.
+
+## Raid charges
+
+Each player UUID has a pool of **3 raid charges**, restoring **1 per hour** until full.
+Offline time counts. The first spent charge starts the hourly timer; further entries
+keep that deadline, and time at full cannot be banked. One charge is committed when
+an ordinary raid battle starts, win or lose. Joining/cancelling a lobby costs nothing;
+a failed battle start refunds its reservation. Zero charges prevents joining ordinary
+raid lobbies. Charges survive relogs, compass replacement and server restarts in
+`<world>/data/cobbleraids_raid_charges.dat`. Externally owned encounters keep their own
+entry rules. Spawn rates are unchanged.
+
 ## Spawning
 
 A rarity tier is chosen first, then a species within it.

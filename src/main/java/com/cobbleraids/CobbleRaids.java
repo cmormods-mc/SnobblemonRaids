@@ -71,6 +71,8 @@ public final class CobbleRaids implements ModInitializer {
         RaidItemPack.register();
         RaidKeyItems.register();
         RaidHeldItems.register();
+        com.cobbleraids.item.RaidRadarItem.register();
+        com.cobbleraids.radar.RadarHologramNetworking.register();
 
         RaidInstructionRegistrar.register();
         RaidBattleEventCoordinator.register();
@@ -85,6 +87,7 @@ public final class CobbleRaids implements ModInitializer {
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             RaidFaultBarrier.safeTick("lobby", server, RaidLobbyManager::tick);
             RaidFaultBarrier.safeTick("spawning", server, RaidSpawnScheduler::tick);
+            RaidFaultBarrier.safeTick("radar", server, com.cobbleraids.radar.RaidRadarService::tick);
             RaidFaultBarrier.safeTick("rewards", server, RaidRewardService::tick);
             RaidFaultBarrier.safeTick("world-boss", server, com.cobbleraids.worldboss.WorldBossService::tick);
             RaidFaultBarrier.safeTick("capture-sessions", server, RaidCaptureSessionService::tick);
@@ -171,6 +174,7 @@ public final class CobbleRaids implements ModInitializer {
         // leaving so they cannot accumulate over a long uptime.
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
                 RaidFaultBarrier.guard("player-disconnect:request-throttles", () -> {
+                    com.cobbleraids.radar.RaidRadarService.forget(handler.getPlayer().getUUID());
                     TrophyRoomGateway.forget(handler.getPlayer().getUUID());
                     LegendRoomGateway.forget(handler.getPlayer().getUUID());
                     RaidCaptureSessionService.forgetLogThrottle(handler.getPlayer().getUUID());
@@ -217,6 +221,7 @@ public final class CobbleRaids implements ModInitializer {
             // and two of them hold a PokemonEntity -- which reaches its ServerLevel, so a single
             // missed clear pins a whole closed world. One failing clear must not cost the others.
             int[] counts = new int[2];
+            RaidFaultBarrier.guard("shutdown:radar", com.cobbleraids.radar.RaidRadarService::clear);
             RaidFaultBarrier.guard("shutdown:raids", () -> counts[0] = RaidRegistry.onServerStopped());
             RaidFaultBarrier.guard("shutdown:lobbies", () -> counts[1] = RaidLobbyManager.onServerStopped());
             RaidFaultBarrier.guard("shutdown:lifecycle", RaidLifecycleCoordinator::onServerStopped);

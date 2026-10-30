@@ -209,6 +209,24 @@ public final class RaidSpawnScheduler {
         return snapshot;
     }
 
+    /** Immutable radar contacts. Unloaded bosses use their recorded spawn position, never a chunk load. */
+    public record RadarContact(UUID bossId, ResourceLocation definitionId, Vec3 position,
+                               long secondsLeft, boolean lastKnown) {}
+
+    public static List<RadarContact> radarContacts(ServerLevel level) {
+        List<RadarContact> contacts = new ArrayList<>();
+        for (var entry : TRACKER.snapshot()) {
+            TrackedRaidSpawn spawn = entry.getValue();
+            if (!spawn.dimension().equals(level.dimension().location()) || spawn.secondsLeft(schedulerTick) <= 0) continue;
+            Entity entity = level.getEntity(entry.getKey());
+            if (entity instanceof PokemonEntity boss && (boss.isRemoved() || boss.isBattling())) continue;
+            contacts.add(new RadarContact(entry.getKey(), spawn.definitionId(),
+                    entity == null ? Vec3.atCenterOf(spawn.position()) : entity.position(),
+                    Math.max(0, spawn.secondsLeft(schedulerTick)), entity == null));
+        }
+        return contacts;
+    }
+
     static boolean tooCloseToAnotherRaid(ServerLevel level, BlockPos pos, double minimumDistance) {
         return TRACKER.anyWithin(level.dimension().location(), pos, minimumDistance);
     }

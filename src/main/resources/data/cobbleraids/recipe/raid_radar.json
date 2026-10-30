@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": ["NSN", "UCU", "NSN"],
+  "key": {
+    "N": {"item": "minecraft:netherite_ingot"},
+    "S": {"item": "minecraft:shulker_shell"},
+    "U": {"item": "cobblemon:upgrade"},
+    "C": {"item": "minecraft:compass"}
+  },
+  "result": {"id": "cobbleraids:raid_radar", "count": 1}
+}

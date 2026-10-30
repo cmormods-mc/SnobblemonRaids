@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "cobbleraids_radar",
+  "version": "${version}",
+  "name": "CobbleRaids Radar Hologram",
+  "description": "Optional first-person 3D radar display. Install only on clients; compatible servers supply terrain and raid positions.",
+  "authors": ["CMor"],
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {"client": ["com.cobbleraids.radarclient.RadarHologramClient"]},
+  "mixins": ["cobbleraids-radar.mixins.json"],
+  "depends": {"fabricloader": ">=0.17.2", "fabric-api": ">=0.116.6+1.21.1", "minecraft": "1.21.1", "java": ">=21"}
+}

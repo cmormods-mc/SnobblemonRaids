@@ -32,7 +32,7 @@ def read(path: Path) -> str:
 
 
 def validate_physical_side_boundary() -> None:
-    # The mod is server-only: no client code, no client entrypoint, and no packets a client must know.
+    # The mod is server-only: no client code, no client entrypoint, and no required client companion. The radar display channel is capability-gated.
     assert not (JAVA / "client").exists(), "a client package has come back"
     assert not (JAVA / "mixin/client").exists(), "client mixins have come back"
     manifest = json.loads(read(RESOURCES / "fabric.mod.json"))
@@ -42,7 +42,11 @@ def validate_physical_side_boundary() -> None:
     for path in JAVA.rglob("*.java"):
         text = strip_comments(read(path))
         assert "ClientPlayNetworking" not in text, f"{path} references ClientPlayNetworking"
-        assert "PayloadTypeRegistry" not in text, f"{path} registers a packet a client would need"
+        if "PayloadTypeRegistry" in text:
+            assert path == JAVA / "radar/RadarHologramNetworking.java", f"{path} registers an unexpected packet"
+            assert "ServerPlayNetworking.canSend(player, RadarHologramPayload.TYPE)" in text
+            assert "if (canShow(player)) ServerPlayNetworking.send(player, payload);" in text
+        assert "net.minecraft.client." not in text, f"{path} references client rendering code"
 
 
 def validate_server_authority_preserved() -> None:

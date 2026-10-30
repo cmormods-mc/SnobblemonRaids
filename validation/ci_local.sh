@@ -85,6 +85,9 @@ step "Compile, test and remap"
 
 # After the build on purpose: these read compiled bytecode, so there is nothing to inspect until
 # the classes exist. `clean` above also wipes anything a previous run left behind.
+step "Validate optional radar artifact boundaries"
+"$py" validation/radar/validate_hologram.py
+
 step "Validate mixin fault barriers (bytecode)"
 "$py" validation/validate_mixin_guards.py
 

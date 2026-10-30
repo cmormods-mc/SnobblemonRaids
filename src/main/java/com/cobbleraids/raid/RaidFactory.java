@@ -59,54 +59,58 @@ public final class RaidFactory {
             playerActors.add(new PlayerBattleActor(player.getUUID(), team));
         }
 
-        BattlePokemon bossPokemon = new BattlePokemon(
-                bossEntity.getPokemon(), bossEntity.getPokemon(), Collections.emptyList(), Collections.emptyList());
-        RaidBossBattleActor bossActor = new RaidBossBattleActor(
-                bossEntity.getPokemon().getUuid(), bossPokemon, new RaidBossBattleAI());
+        try (var charges = ownership == null ? com.cobbleraids.charges.RaidChargeStore.get(ordered.getFirst().server)
+                .reserve(ordered.getFirst().server, ordered.stream().map(ServerPlayer::getUUID).toList()) : null) {
+            BattlePokemon bossPokemon = new BattlePokemon(
+                    bossEntity.getPokemon(), bossEntity.getPokemon(), Collections.emptyList(), Collections.emptyList());
+            RaidBossBattleActor bossActor = new RaidBossBattleActor(
+                    bossEntity.getPokemon().getUuid(), bossPokemon, new RaidBossBattleAI());
 
-        BattleFormat format = new BattleFormat("cobblemon", RaidBattleType.INSTANCE, Collections.emptySet(), 9, 0);
-        // The payload mixin runs inside startBattle and cannot look up a session that does not exist
-        // yet, so the rules are handed across here. Cleared in the finally: a battle that throws on
-        // the way up must not leave its rules waiting for the next one.
-        BattleStartResult result;
-        RaidPendingRules.set(ownership == null ? EncounterRules.none() : ownership.rules());
-        // An ordinary raid lets AscensionLib's battle effects act; an owned one (CobbleTowers) arms its own battle.
-        List<java.util.UUID> playerIds = ordered.stream().map(ServerPlayer::getUUID).toList();
-        boolean armed = ownership == null && AscensionLibArming.declareAndArm(playerIds, bossEntity.getPokemon().getUuid(),
-                bossEntity.getPokemon().getSpecies().getResourceIdentifier().toString(), bossEntity.getPokemon().getLevel());
-        try {
-            result = BattleRegistry.startBattle(
-                    format,
-                    new BattleSide(playerActors.toArray(BattleActor[]::new)),
-                    new BattleSide(bossActor),
-                    false
+            BattleFormat format = new BattleFormat("cobblemon", RaidBattleType.INSTANCE, Collections.emptySet(), 9, 0);
+            // The payload mixin runs inside startBattle and cannot look up a session that does not exist
+            // yet, so the rules are handed across here. Cleared in the finally: a battle that throws on
+            // the way up must not leave its rules waiting for the next one.
+            BattleStartResult result;
+            RaidPendingRules.set(ownership == null ? EncounterRules.none() : ownership.rules());
+            // An ordinary raid lets AscensionLib's battle effects act; an owned one (CobbleTowers) arms its own battle.
+            List<java.util.UUID> playerIds = ordered.stream().map(ServerPlayer::getUUID).toList();
+            boolean armed = ownership == null && AscensionLibArming.declareAndArm(playerIds, bossEntity.getPokemon().getUuid(),
+                    bossEntity.getPokemon().getSpecies().getResourceIdentifier().toString(), bossEntity.getPokemon().getLevel());
+            try {
+                result = BattleRegistry.startBattle(
+                        format,
+                        new BattleSide(playerActors.toArray(BattleActor[]::new)),
+                        new BattleSide(bossActor),
+                        false
+                );
+            } finally {
+                RaidPendingRules.clear();
+                if (armed) AscensionLibArming.disarm(playerIds);
+            }
+            if (!(result instanceof SuccessfulBattleStart successful)) {
+                if (armed) AscensionLibArming.end(bossEntity.getPokemon().getUuid());
+                throw new IllegalStateException("Unable to start raid: " + result);
+            }
+
+            PokemonBattle battle = successful.getBattle();
+            Optional<RaidRenown> renown = RaidRenownMarker.read(bossEntity);
+            RaidSession session = new RaidSession(
+                    battle,
+                    ordered,
+                    Math.max(1f, (float) raidMaxHealth),
+                    bossEntity,
+                    bossActor.getUuid(),
+                    definition.id(),
+                    definition.timeLimitSeconds(),
+                    definition.allowFlee(),
+                    renown.map(RaidRenown::title).orElse(""),
+                    renown.map(r -> r.boon().encode()).orElse(""),
+                    ownership
             );
-        } finally {
-            RaidPendingRules.clear();
-            if (armed) AscensionLibArming.disarm(playerIds);
+            RaidRegistry.bind(session);
+            session.activate();
+            if (charges != null) charges.commit();
+            return session;
         }
-        if (!(result instanceof SuccessfulBattleStart successful)) {
-            if (armed) AscensionLibArming.end(bossEntity.getPokemon().getUuid());
-            throw new IllegalStateException("Unable to start raid: " + result);
-        }
-
-        PokemonBattle battle = successful.getBattle();
-        Optional<RaidRenown> renown = RaidRenownMarker.read(bossEntity);
-        RaidSession session = new RaidSession(
-                battle,
-                ordered,
-                Math.max(1f, (float) raidMaxHealth),
-                bossEntity,
-                bossActor.getUuid(),
-                definition.id(),
-                definition.timeLimitSeconds(),
-                definition.allowFlee(),
-                renown.map(RaidRenown::title).orElse(""),
-                renown.map(r -> r.boon().encode()).orElse(""),
-                ownership
-        );
-        RaidRegistry.bind(session);
-        session.activate();
-        return session;
     }
 }

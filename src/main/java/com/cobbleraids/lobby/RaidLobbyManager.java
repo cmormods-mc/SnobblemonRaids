@@ -38,7 +38,12 @@ public final class RaidLobbyManager {
     private static final int LOBBY_EXPIRY_MARGIN_SECONDS = 30;
     private RaidLobbyManager() {}
 
-    public enum JoinResult { STARTED_RECRUITMENT, JOINED, ALREADY_JOINED, FULL, TOO_FAR, UNAVAILABLE, NOT_A_RAID_BOSS, OWNED_ENCOUNTER }
+    public enum JoinResult { STARTED_RECRUITMENT, JOINED, ALREADY_JOINED, FULL, TOO_FAR, UNAVAILABLE, NOT_A_RAID_BOSS, OWNED_ENCOUNTER, NO_CHARGES }
+
+    /** Shared by recruitment and the radar so a fading boss is not advertised as joinable. */
+    public static boolean hasTimeToRecruit(long secondsLeft, RaidDefinition definition) {
+        return secondsLeft < 0 || secondsLeft >= definition.recruitment().durationSeconds() + LOBBY_EXPIRY_MARGIN_SECONDS;
+    }
 
     public static JoinResult interact(ServerPlayer player, PokemonEntity boss) {
         if (!RaidBossEntityMarker.isRaidBoss(boss)) return JoinResult.NOT_A_RAID_BOSS;
@@ -60,6 +65,8 @@ public final class RaidLobbyManager {
             return JoinResult.TOO_FAR;
         }
 
+        if (!hasCharge(player)) return JoinResult.NO_CHARGES;
+
         long now = boss.level().getGameTime();
         RaidLobby lobby = BY_BOSS.get(boss.getUUID());
         boolean created = false;
@@ -69,7 +76,7 @@ public final class RaidLobbyManager {
             // this, players would join, wait out the countdown, and watch the boss vanish at lock.
             // -1 means the scheduler does not track it (admin-spawned), which has no cap.
             long secondsLeft = RaidSpawnScheduler.secondsUntilExpiry(boss.getUUID());
-            if (secondsLeft >= 0L && secondsLeft < definition.recruitment().durationSeconds() + LOBBY_EXPIRY_MARGIN_SECONDS) {
+            if (!hasTimeToRecruit(secondsLeft, definition)) {
                 player.sendSystemMessage(Component.literal("This raid boss is about to leave; it cannot start a new raid.")
                         .withStyle(ChatFormatting.RED));
                 return JoinResult.UNAVAILABLE;
@@ -138,7 +145,7 @@ public final class RaidLobbyManager {
         List<ServerPlayer> eligible = new ArrayList<>();
         for (UUID playerId : lobby.optedIn()) {
             ServerPlayer player = server.getPlayerList().getPlayer(playerId);
-            if (player == null || !isEligibleAtLock(player, boss, definition)) continue;
+            if (player == null || !isEligibleAtLock(player, boss, definition) || !hasCharge(player)) continue;
             eligible.add(player);
         }
 
@@ -246,6 +253,15 @@ public final class RaidLobbyManager {
                     renown.boon().kind() == RenownBoon.Kind.HP_POOL, config.healthBonus());
         }));
         return result[0];
+    }
+
+    private static boolean hasCharge(ServerPlayer player) {
+        var account=com.cobbleraids.charges.RaidChargeStore.status(player);
+        if(account.available()>0) return true;
+        player.sendSystemMessage(Component.literal("No raid charges remaining. Next charge in "
+                +com.cobbleraids.presentation.CommandFormat.duration(account.secondsToNext(System.currentTimeMillis()))
+                +". Right-click your Raid Radar to view your charges.").withStyle(ChatFormatting.RED));
+        return false;
     }
 
     private static boolean isEligibleAtLock(ServerPlayer player, PokemonEntity boss, RaidDefinition definition) {

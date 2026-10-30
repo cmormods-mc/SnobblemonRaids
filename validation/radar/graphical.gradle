@@ -1,0 +1,20 @@
+sourceSets {
+    smoke {
+        java.srcDir(rootProject.file('validation/radar/client-probe/java'))
+        resources.srcDir(rootProject.file('validation/radar/client-probe/resources'))
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath
+    }
+}
+def probeJar = tasks.register('smokeJar', Jar) {
+    from sourceSets.smoke.output
+    archiveFileName = 'CobbleRaids-Radar-Probe-dev.jar'
+    destinationDirectory = layout.buildDirectory.dir('devlibs')
+}
+tasks.register('remapSmokeJar', tasks.named('remapJar').get().class.superclass) {
+    dependsOn probeJar
+    inputFile.set(probeJar.flatMap { it.archiveFile })
+    archiveFileName = 'CobbleRaids-Radar-Probe.jar'
+    destinationDirectory = layout.buildDirectory.dir('smoke-libs')
+    addNestedDependencies = false
+}
