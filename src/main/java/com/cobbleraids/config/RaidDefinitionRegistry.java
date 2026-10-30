@@ -44,12 +44,15 @@ public final class RaidDefinitionRegistry extends SimplePreparableReloadListener
     /** Every definition id, sorted. Precomputed for tab completion; already immutable. */
     public static List<ResourceLocation> sortedIds() { return SORTED_IDS; }
 
-    /** First definition using this species path, or null. Case-insensitive. */
+    /** First definition using this species path (a wild-spawning one before a manual-only one), or null. Case-insensitive. */
     public static RaidDefinition findSpecies(String pokemonName) {
+        RaidDefinition manual = null;
         for (RaidDefinition definition : DEFINITIONS.values()) {
-            if (definition.species().getPath().equalsIgnoreCase(pokemonName)) return definition;
+            if (!definition.species().getPath().equalsIgnoreCase(pokemonName)) continue;
+            if (definition.spawn().enabled()) return definition;
+            if (manual == null) manual = definition;
         }
-        return null;
+        return manual;
     }
 
     /** Every loaded cobblemon:* definition whose species path matches, case-insensitive, sorted by id. */
