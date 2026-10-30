@@ -2,8 +2,6 @@ package com.cobbleraids.mixin.battle;
 
 import com.cobbleraids.fault.RaidFaultBarrier;
 import com.cobbleraids.raid.RaidTeleportLock;
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import org.spongepowered.asm.mixin.Mixin;
@@ -59,10 +57,6 @@ public abstract class RaidPlayerTeleportLockMixin {
     }
 
     private boolean cobbleRaids$refuse() {
-        ServerPlayer self = (ServerPlayer) (Object) this;
-        if (!RaidTeleportLock.isLocked(self)) return false;
-        self.sendSystemMessage(Component.literal("You cannot teleport during a raid. Use /cobbleraids leave to withdraw first.")
-                .withStyle(ChatFormatting.RED), true);
-        return true;
+        return RaidTeleportLock.refuse((ServerPlayer) (Object) this);
     }
 }

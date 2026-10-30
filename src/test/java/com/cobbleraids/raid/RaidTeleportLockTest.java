@@ -25,4 +25,17 @@ class RaidTeleportLockTest {
     void ownedEncountersMoveTheirOwnPlayers() {
         assertFalse(RaidTeleportLock.locks(RaidSession.Status.ACTIVE, true, true));
     }
+
+    @Test
+    void aCorrectionToTheCurrentPositionIsNotAWarp() {
+        assertTrue(RaidTeleportLock.isInPlace(10, 64, -3, 10, 64, -3, false, false, false));
+        assertTrue(RaidTeleportLock.isInPlace(10, 64, -3, 0, 0, 0, true, true, true));
+    }
+
+    @Test
+    void anyOtherDestinationIsAWarp() {
+        assertFalse(RaidTeleportLock.isInPlace(10, 64, -3, 400, 64, 400, false, false, false));
+        assertFalse(RaidTeleportLock.isInPlace(10, 64, -3, 0, 5, 0, true, true, true));
+        assertFalse(RaidTeleportLock.isInPlace(10, 64, -3, 10, 64, -2, false, false, false));
+    }
 }

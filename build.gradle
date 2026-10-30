@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.8.195-raid-teleport-lock'
+version = '0.8.196-raid-teleport-lock-packet'
 group = 'com.cobbleraids'
 
 base {
