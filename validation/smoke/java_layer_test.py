@@ -620,7 +620,14 @@ def scenario_teleport_lock(rig: Rig) -> list[Result]:
     solo = rig.bot("Tele")
     rig.settle([solo])
     rig.give(solo, *SOLO_PARTY)
-    rig.start_raid([solo])
+    # The default boss site is at y=132 over a flat world whose ground is y=-60: the bot falls, and
+    # either dies (the lobby cancels) or lands far from the boss, which says nothing about teleports.
+    global BOSS_AT
+    saved, BOSS_AT = BOSS_AT, (0, -59, 0)
+    try:
+        rig.start_raid([solo])
+    finally:
+        BOSS_AT = saved
     if not solo.wait_for("BATTLE_INIT", 120):
         check("the player is in a started battle", False, "the lobby never became a battle")
         return results
