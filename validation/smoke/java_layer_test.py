@@ -600,7 +600,53 @@ def scenario_capture_session_flush(rig: Rig) -> list[Result]:
     return results
 
 
+def scenario_teleport_lock(rig: Rig) -> list[Result]:
+    """A player in a raid cannot be teleported out of it, and /cobbleraids leave lifts the lock.
+
+    The bot is never told to FIGHT, so the raid stays active for the whole scenario. Teleports are
+    done from the console (`tp`), which reaches ServerPlayer.teleportTo like any warp or /back mod.
+    """
+    results: list[Result] = []
+
+    def check(name: str, ok: bool, detail: str = "") -> None:
+        results.append(Result(name, ok, detail))
+
+    def where(bot: BotProcess) -> str:
+        return rig.command(f"data get entity {bot.name} Pos").strip()
+
+    def dimension(bot: BotProcess) -> str:
+        return rig.command(f"data get entity {bot.name} Dimension").strip()
+
+    solo = rig.bot("Tele")
+    rig.settle([solo])
+    rig.give(solo, *SOLO_PARTY)
+    rig.start_raid([solo])
+    if not solo.wait_for("BATTLE_INIT", 120):
+        check("the player is in a started battle", False, "the lobby never became a battle")
+        return results
+    before = where(solo)
+    rig.command(f"tp {solo.name} 400 -60 400")
+    time.sleep(1)
+    check("a same-dimension tp is refused during a raid", where(solo) == before,
+          f"moved: {before} -> {where(solo)}")
+    rig.command(f"execute in minecraft:the_nether run tp {solo.name} 0 100 0")
+    time.sleep(1)
+    check("a cross-dimension tp is refused during a raid", "overworld" in dimension(solo),
+          dimension(solo))
+    check("the player is told why", solo.wait_for("cannot teleport", 5),
+          "no message reached the player")
+
+    rig.command(f"execute as {solo.name} run cobbleraids leave")
+    time.sleep(2)
+    rig.command(f"tp {solo.name} 400 -60 400")
+    time.sleep(1)
+    check("after leaving the raid the player can teleport again", where(solo) != before,
+          f"still at {where(solo)}")
+    return results
+
+
 SCENARIOS = {
+    "teleport-lock": scenario_teleport_lock,
     "capture-session-flush": scenario_capture_session_flush,
     "damage-after-animation": scenario_damage_after_animation,
     "hold-before-choice": scenario_hold_before_choice,

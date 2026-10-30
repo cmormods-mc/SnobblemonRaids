@@ -19,7 +19,8 @@
     "battle.RaidPokemonBattleMixin",
     "battle.RaidPlayerBattleActorMixin",
     "battle.RaidActiveBattlePokemonMixin",
-    "battle.RaidBattleMessagePnxMixin"
+    "battle.RaidBattleMessagePnxMixin",
+    "battle.RaidPlayerTeleportLockMixin"
   ],
   "injectors": {
     "defaultRequire": 1
