@@ -2,6 +2,7 @@ package com.cobbleraids.api.encounter;
 
 import com.cobbleraids.encounter.EncounterService;
 import java.util.UUID;
+import net.minecraft.server.level.ServerPlayer;
 
 /**
  * Starts CobbleRaids boss battles that another mod owns.
@@ -44,6 +45,27 @@ public final class CobbleRaidsEncounters {
      */
     public static boolean abort(UUID encounterId) {
         return EncounterService.abort(encounterId);
+    }
+
+    /**
+     * Withdraws only this participant, keeping teammates' shared fight running. Idempotent for
+     * an already inactive participant whose actor is still retained by this encounter.
+     * The actor remains registered until the shared battle ends, preventing concurrent battles
+     * from racing the original Pokemon's eventual health/PP carryover. Call on the server thread.
+     * Returns false for an absent encounter, a foreign player or a different current battle.
+     */
+    public static boolean withdraw(UUID encounterId, ServerPlayer player) {
+        return EncounterService.withdraw(encounterId, player);
+    }
+
+    /**
+     * Whether this player's current battle is this owned encounter, with their actor inactive.
+     * The actor fights on clones and receives no further shared battle updates. Owners may
+     * restore collection placement while retaining the battle lock; a second battle remains
+     * prohibited until this encounter ends. Call on the server thread.
+     */
+    public static boolean hasWithdrawnParticipant(UUID encounterId, ServerPlayer player) {
+        return EncounterService.hasWithdrawnParticipant(encounterId, player);
     }
 
     /** True from a successful {@link #start} until the listener has been told the encounter ended. */

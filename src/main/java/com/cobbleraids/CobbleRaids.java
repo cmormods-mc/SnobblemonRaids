@@ -84,6 +84,7 @@ public final class CobbleRaids implements ModInitializer {
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             RaidFaultBarrier.safeTick("lobby", server, RaidLobbyManager::tick);
             RaidFaultBarrier.safeTick("spawning", server, RaidSpawnScheduler::tick);
+            RaidFaultBarrier.safeTick("deferred-discard", server, com.cobbleraids.spawn.RaidDeferredDiscard::tick);
             RaidFaultBarrier.safeTick("rewards", server, RaidRewardService::tick);
             RaidFaultBarrier.safeTick("world-boss", server, com.cobbleraids.worldboss.WorldBossService::tick);
             RaidFaultBarrier.safeTick("capture-sessions", server, RaidCaptureSessionService::tick);
@@ -192,6 +193,8 @@ public final class CobbleRaids implements ModInitializer {
         // no boss is ever written to disk mid-fight. See RaidLifecycleCoordinator.abortAll.
         ServerLifecycleEvents.SERVER_STOPPING.register(server ->
                 RaidFaultBarrier.guard("shutdown:abort-active-raids", RaidLifecycleCoordinator::abortAll));
+        ServerLifecycleEvents.SERVER_STOPPING.register(server ->
+                RaidFaultBarrier.guard("shutdown:deferred-discards", com.cobbleraids.spawn.RaidDeferredDiscard::onServerStopped));
         // So the last partial window of a session is on disk rather than lost with the process.
         ServerLifecycleEvents.SERVER_STOPPING.register(server ->
                 RaidFaultBarrier.guard("shutdown:perf-report", () -> com.cobbleraids.perf.RaidPerfReporter.report(server)));
@@ -221,6 +224,7 @@ public final class CobbleRaids implements ModInitializer {
             RaidFaultBarrier.guard("shutdown:lifecycle", RaidLifecycleCoordinator::onServerStopped);
             RaidFaultBarrier.guard("shutdown:world-boss-state", com.cobbleraids.worldboss.WorldBossService::onServerStopped);
             RaidFaultBarrier.guard("shutdown:encounters", com.cobbleraids.encounter.EncounterService::onServerStopped);
+            RaidFaultBarrier.guard("shutdown:deferred-discards", com.cobbleraids.spawn.RaidDeferredDiscard::onServerStopped);
             RaidFaultBarrier.guard("shutdown:combat-rules", RaidCombatRuleService::onServerStopped);
             RaidFaultBarrier.guard("shutdown:reconnect-grace", RaidReconnectService::onServerStopped);
             RaidFaultBarrier.guard("shutdown:rewards", RaidRewardService::onServerStopped);

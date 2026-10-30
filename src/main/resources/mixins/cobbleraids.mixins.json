@@ -17,6 +17,7 @@
     "battle.SwitchBroadcastOfflinePlayerMixin",
     "battle.RaidMoveActionResponseMixin",
     "battle.RaidPokemonBattleMixin",
+    "battle.RaidPlayerDeathMixin",
     "battle.RaidPlayerBattleActorMixin",
     "battle.RaidActiveBattlePokemonMixin",
     "battle.RaidBattleMessagePnxMixin"

@@ -34,7 +34,7 @@ public final class WebUi {
 
     /** The address of one of this mod's pages. */
     public static String pageUrl(String page) {
-        return "webgui:/" + PAGE_FOLDER + "/" + page;
+        return "webgui://" + PAGE_FOLDER + "/" + page;
     }
 
     public static void register() {

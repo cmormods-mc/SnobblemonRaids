@@ -671,7 +671,9 @@ public final class WorldBossService {
         if (spawningShowpiece || !(entity instanceof PokemonEntity pokemon) || !pokemon.getTags().contains(SHOWPIECE_TAG)) return;
         if (isShowpiece(pokemon)) return;
         RaidLog.info("Removed a World Boss left over from an earlier event ({} in {})", pokemon.getUUID(), level.dimension().location());
-        com.cobbleraids.spawn.RaidDeferredDiscard.discardSoon(pokemon, level);
+        com.cobbleraids.spawn.RaidDeferredDiscard.discardSoon(pokemon, level,
+                candidate -> candidate instanceof PokemonEntity boss && boss.getTags().contains(SHOWPIECE_TAG)
+                        && !isShowpiece(boss) && !boss.isBattling());
     }
 
     /** Applies the current visual settings (the boss's size) to the standing boss; the wall reads them on every pass anyway. */

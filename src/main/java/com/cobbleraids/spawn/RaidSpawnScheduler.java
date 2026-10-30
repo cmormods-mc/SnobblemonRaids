@@ -290,16 +290,20 @@ public final class RaidSpawnScheduler {
      */
     public static void onNaturalBossLoaded(Entity entity, ServerLevel level) {
         if (spawningTrackedBoss) return;
-        if (!(entity instanceof PokemonEntity pokemon)) return;
-        if (!RaidBossEntityMarker.isNatural(pokemon) || !RaidBossEntityMarker.isRaidBoss(pokemon)) return;
-        if (TRACKER.isTracked(pokemon.getUUID())) return;
-        if (pokemon.isBattling() || RaidLobbyManager.hasActiveLobby(pokemon)) return;
+        if (!isOrphanedNaturalBoss(entity)) return;
+        PokemonEntity pokemon = (PokemonEntity) entity;
 
         if (CobbleRaidsConfigManager.get().debugLogging()) {
             RaidLog.info("Removed untracked natural raid boss " + pokemon.getUUID()
                     + " on load in " + level.dimension().location());
         }
-        RaidDeferredDiscard.discardSoon(pokemon, level);
+        RaidDeferredDiscard.discardSoon(pokemon, level, RaidSpawnScheduler::isOrphanedNaturalBoss);
+    }
+
+    private static boolean isOrphanedNaturalBoss(Entity entity) {
+        return entity instanceof PokemonEntity pokemon && RaidBossEntityMarker.isNatural(pokemon)
+                && RaidBossEntityMarker.isRaidBoss(pokemon) && !TRACKER.isTracked(pokemon.getUUID())
+                && !pokemon.isBattling() && !RaidLobbyManager.hasActiveLobby(pokemon);
     }
 
     /**
@@ -396,11 +400,9 @@ public final class RaidSpawnScheduler {
         schedulerTick = 0L;
         int purged = 0;
         for (ServerLevel level : server.getAllLevels()) {
-            for (var entity : level.getAllEntities()) {
-                if (!(entity instanceof PokemonEntity pokemon) || !RaidBossEntityMarker.isRaidBoss(pokemon)) continue;
-                pokemon.discard();
-                purged++;
-            }
+            purged += SnapshotEntityCleanup.removeMatching(level.getAllEntities(),
+                    entity -> entity instanceof PokemonEntity pokemon && RaidBossEntityMarker.isRaidBoss(pokemon),
+                    entity -> { if (!entity.isRemoved()) entity.discard(); });
         }
         if (purged > 0) {
             RaidLog.info("Removed " + purged

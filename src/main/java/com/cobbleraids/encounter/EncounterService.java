@@ -26,6 +26,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 
 /**
@@ -122,6 +123,32 @@ public final class EncounterService {
         return true;
     }
 
+    public static boolean withdraw(UUID encounterId, ServerPlayer player) {
+        RaidSession session = participantEncounter(encounterId, player);
+        if (session == null) return false;
+        if (session.isActiveParticipant(player.getUUID())) {
+            RaidLifecycleCoordinator.withdrawPlayer(session, player);
+        }
+        return true;
+    }
+
+    public static boolean hasWithdrawnParticipant(UUID encounterId, ServerPlayer player) {
+        RaidSession session = participantEncounter(encounterId, player);
+        return session != null && !session.isActiveParticipant(player.getUUID());
+    }
+
+    private static RaidSession participantEncounter(UUID encounterId, ServerPlayer player) {
+        RaidSession session = encounterId == null ? null : ACTIVE.get(encounterId);
+        if (session == null || player == null) return null;
+        requireServerThread(player.getServer());
+        if (!session.getParticipants().contains(player.getUUID())
+                || session.getStatus() != RaidSession.Status.ACTIVE
+                || session.getBattle().getEnded()
+                || com.cobblemon.mod.common.battles.BattleRegistry.getBattleByParticipatingPlayer(player)
+                        != session.getBattle()) return null;
+        return session;
+    }
+
     /** The boss entity of an active owned encounter, or null. For the owner's presentation only (a size, a nameplate); never a handle to the battle. */
     public static PokemonEntity bossOf(UUID encounterId) {
         RaidSession session = encounterId == null ? null : ACTIVE.get(encounterId);
@@ -180,12 +207,16 @@ public final class EncounterService {
      * -- a chunk unloaded and reloaded mid-fight -- is battling and indexed, and is left alone.
      */
     public static void onEntityLoaded(Entity entity, ServerLevel level) {
-        if (!(entity instanceof PokemonEntity pokemon)) return;
-        if (!RaidBossEntityMarker.isRaidBoss(pokemon) || !RaidBossEntityMarker.isOwned(pokemon)) return;
-        if (pokemon.isBattling() || ownsBoss(pokemon.getUUID())) return;
+        if (!isOrphanedBoss(entity)) return;
+        PokemonEntity pokemon = (PokemonEntity) entity;
         RaidLog.info("Removed the boss of an owned encounter that no longer exists ({} in {})",
                 pokemon.getUUID(), level.dimension().location());
-        com.cobbleraids.spawn.RaidDeferredDiscard.discardSoon(pokemon, level);
+        com.cobbleraids.spawn.RaidDeferredDiscard.discardSoon(pokemon, level, EncounterService::isOrphanedBoss);
+    }
+
+    private static boolean isOrphanedBoss(Entity entity) {
+        return entity instanceof PokemonEntity pokemon && RaidBossEntityMarker.isRaidBoss(pokemon)
+                && RaidBossEntityMarker.isOwned(pokemon) && !pokemon.isBattling() && !ownsBoss(pokemon.getUUID());
     }
 
     private static boolean ownsBoss(UUID bossId) {
