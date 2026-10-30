@@ -168,7 +168,6 @@ public final class RaidBossSpawner {
         if (traits.nature() != null) { properties.setNature(traits.nature()); any = true; }
         if (traits.ability() != null) { properties.setAbility(traits.ability()); any = true; }
         if (traits.form() != null) { properties.setForm(traits.form()); any = true; }
-        if (!traits.aspects().isEmpty()) { properties.setAspects(new java.util.LinkedHashSet<>(traits.aspects())); any = true; }
         if (traits.teraType() != null) { properties.setTeraType(traits.teraType()); any = true; }
         if (traits.heldItem() != null) { properties.setHeldItem(traits.heldItem()); any = true; }
         if (traits.gender() != null) {
@@ -198,6 +197,26 @@ public final class RaidBossSpawner {
         }
 
         if (any) properties.apply(pokemon);
+        applyAspects(pokemon, traits.aspects(), definition);
+    }
+
+    /**
+     * Sets the definition's aspects the way Cobblemon's own command does: each one as a bare token in a property string, which a
+     * species feature flag of that name turns into the aspect. {@code PokemonProperties.setAspects} is only used for matching.
+     * An aspect no feature knows is logged and skipped, so a missing cosmetics mod leaves a plain boss.
+     */
+    private static void applyAspects(Pokemon pokemon, java.util.List<String> aspects, RaidDefinition definition) {
+        for (String aspect : aspects) {
+            try {
+                PokemonProperties.Companion.parse(aspect, " ", "=").apply(pokemon);
+            } catch (RuntimeException ex) {
+                RaidLog.error("" + definition.id() + " aspect '" + aspect + "' was not applied: " + ex);
+            }
+        }
+        if (!aspects.isEmpty() && !pokemon.getAspects().containsAll(aspects)) {
+            RaidLog.error("" + definition.id() + " did not end up with aspects " + aspects + " (has " + pokemon.getAspects()
+                    + "): is the cosmetics mod that defines them installed?");
+        }
     }
 
     /**
