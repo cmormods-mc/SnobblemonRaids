@@ -132,6 +132,11 @@ final class RaidAdminSpawnOps {
         }
 
         List<RaidDefinition> matches = RaidDefinitionRegistry.findBySpeciesName(pokemonName);
+        if (matches.size() > 1) {
+            // Manual-only variants (the Halloween skins) share a species with the wild boss: the wild one wins.
+            List<RaidDefinition> wild = matches.stream().filter(definition -> definition.spawn().enabled()).toList();
+            if (wild.size() == 1) matches = wild;
+        }
         if (matches.isEmpty()) {
             source.sendFailure(Component.literal("No loaded CobbleRaids definition uses Cobblemon species '"
                     + pokemonName + "'. Use /cobbleraids list."));
