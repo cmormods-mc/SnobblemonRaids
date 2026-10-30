@@ -72,9 +72,9 @@ public final class RaidFactory {
             // the way up must not leave its rules waiting for the next one.
             BattleStartResult result;
             RaidPendingRules.set(ownership == null ? EncounterRules.none() : ownership.rules());
-            // An ordinary raid lets AscensionLib's battle effects act; an owned one (CobbleTowers) arms its own battle.
+            // An ordinary raid lets AscensionLib's battle effects act; an owned one does only if its policy asks (CobbleTowers arms its own).
             List<java.util.UUID> playerIds = ordered.stream().map(ServerPlayer::getUUID).toList();
-            boolean armed = ownership == null && AscensionLibArming.declareAndArm(playerIds, bossEntity.getPokemon().getUuid(),
+            boolean armed = AscensionLibArming.wanted(ownership) && AscensionLibArming.declareAndArm(playerIds, bossEntity.getPokemon().getUuid(),
                     bossEntity.getPokemon().getSpecies().getResourceIdentifier().toString(), bossEntity.getPokemon().getLevel());
             try {
                 result = BattleRegistry.startBattle(

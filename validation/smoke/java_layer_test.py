@@ -652,7 +652,51 @@ def scenario_teleport_lock(rig: Rig) -> list[Result]:
     return results
 
 
+def scenario_worldboss_duel(rig: Rig) -> list[Result]:
+    """A World Boss duel starts, is fought, and reports AscensionLib's part in it.
+
+    The duel is an owned encounter. With AscensionLib installed, its policy decides whether the
+    library's battle effects act: the AscensionLib lines the server logged are printed so a run on
+    two builds can be compared, and the checks assert only what must hold on both.
+    """
+    results: list[Result] = []
+
+    def check(name: str, ok: bool, detail: str = "") -> None:
+        results.append(Result(name, ok, detail))
+
+    solo = rig.bot("Wbd")
+    rig.settle([solo])
+    rig.give(solo, *SOLO_PARTY)
+    rig.command("cobbleraids despawn all")
+    rig.command(f"tp {solo.name} 0 -59 0")
+    solo.send("MOVE blizzard")
+    solo.send("FIGHT")
+    started = rig.command("cobbleraids worldboss start").strip()
+    check("the World Boss starts", "started" in started.lower(), started)
+    time.sleep(2)
+    where = re.search(r"started: \S+ at (-?\d+) (-?\d+) (-?\d+) in", rig.server.read_log())
+    if where:
+        x, y, z = (int(v) for v in where.groups())
+        rig.command(f"tp {solo.name} {x + 4} {y} {z + 4}")
+        time.sleep(2)
+    before = len(rig.server.read_log().splitlines())
+    joined = rig.command(f"execute as {solo.name} run cobbleraids worldboss join").strip()
+    check("the player is in a started duel", solo.wait_for("BATTLE_INIT", 60), joined or "the duel never started")
+    time.sleep(3)
+    lines = [l for l in rig.server.read_log().splitlines()[before:] if "scension" in l]
+    print("  AscensionLib lines during the duel (" + str(len(lines)) + "):")
+    for line in lines[:12]:
+        print("    " + line[:200])
+    if any(rig.dir.joinpath("mods").glob("AscensionLib*.jar")):
+        check("AscensionLib's battle effects act in the duel",
+              any("Applied ascension effects" in line for line in lines),
+              "AscensionLib is installed but never armed the duel's battle")
+    rig.command("cobbleraids worldboss stop")
+    return results
+
+
 SCENARIOS = {
+    "worldboss-duel": scenario_worldboss_duel,
     "teleport-lock": scenario_teleport_lock,
     "capture-session-flush": scenario_capture_session_flush,
     "damage-after-animation": scenario_damage_after_animation,

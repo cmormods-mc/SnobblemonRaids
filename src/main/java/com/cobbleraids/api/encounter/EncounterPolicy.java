@@ -12,6 +12,9 @@ package com.cobbleraids.api.encounter;
  * @param carryHealth copy battle damage and faints back onto the participants' real Pokemon at the
  *                    end, win or lose
  * @param carryPp     copy spent PP back onto the participants' real Pokemon at the end, win or lose
+ * @param ascensionEffects let AscensionLib's battle effects act in this encounter (the boss is declared as its
+ *                    enemy and the players' battle armed for it). Does nothing when AscensionLib is absent. Leave
+ *                    this off if the owner arms its own battle, as arming twice would replace the first
  */
 public record EncounterPolicy(
         boolean catchable,
@@ -19,7 +22,14 @@ public record EncounterPolicy(
         boolean raidHistory,
         boolean progression,
         boolean carryHealth,
-        boolean carryPp) {
+        boolean carryPp,
+        boolean ascensionEffects) {
+
+    /** The policy as it was before {@code ascensionEffects} existed: callers built against that keep working. */
+    public EncounterPolicy(boolean catchable, boolean raidRewards, boolean raidHistory, boolean progression,
+                           boolean carryHealth, boolean carryPp) {
+        this(catchable, raidRewards, raidHistory, progression, carryHealth, carryPp, false);
+    }
 
     private static final EncounterPolicy NONE = new EncounterPolicy(false, false, false, false, false, false);
 
@@ -29,22 +39,26 @@ public record EncounterPolicy(
     }
 
     public EncounterPolicy withProgression(boolean enabled) {
-        return new EncounterPolicy(catchable, raidRewards, raidHistory, enabled, carryHealth, carryPp);
+        return new EncounterPolicy(catchable, raidRewards, raidHistory, enabled, carryHealth, carryPp, ascensionEffects);
     }
 
     public EncounterPolicy withCarryover(boolean health, boolean pp) {
-        return new EncounterPolicy(catchable, raidRewards, raidHistory, progression, health, pp);
+        return new EncounterPolicy(catchable, raidRewards, raidHistory, progression, health, pp, ascensionEffects);
     }
 
     public EncounterPolicy withRaidRewards(boolean enabled) {
-        return new EncounterPolicy(catchable, enabled, raidHistory, progression, carryHealth, carryPp);
+        return new EncounterPolicy(catchable, enabled, raidHistory, progression, carryHealth, carryPp, ascensionEffects);
     }
 
     public EncounterPolicy withRaidHistory(boolean enabled) {
-        return new EncounterPolicy(catchable, raidRewards, enabled, progression, carryHealth, carryPp);
+        return new EncounterPolicy(catchable, raidRewards, enabled, progression, carryHealth, carryPp, ascensionEffects);
     }
 
     public EncounterPolicy withCatchable(boolean enabled) {
-        return new EncounterPolicy(enabled, raidRewards, raidHistory, progression, carryHealth, carryPp);
+        return new EncounterPolicy(enabled, raidRewards, raidHistory, progression, carryHealth, carryPp, ascensionEffects);
+    }
+
+    public EncounterPolicy withAscensionEffects(boolean enabled) {
+        return new EncounterPolicy(catchable, raidRewards, raidHistory, progression, carryHealth, carryPp, enabled);
     }
 }

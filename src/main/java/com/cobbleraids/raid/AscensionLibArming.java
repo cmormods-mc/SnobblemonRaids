@@ -34,6 +34,11 @@ public final class AscensionLibArming {
 
     private AscensionLibArming() {}
 
+    /** An ordinary raid is always armed; an owned encounter only when its policy asks. */
+    static boolean wanted(RaidSession.Ownership ownership) {
+        return ownership == null || ownership.policy().ascensionEffects();
+    }
+
     /** One encounter per boss spawn: the boss Pokemon's UUID is unique and never reused. */
     static String encounterId(UUID bossPokemonId) {
         return "raid:" + bossPokemonId;

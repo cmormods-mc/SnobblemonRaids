@@ -419,7 +419,7 @@ public final class WorldBossService {
         UUID encounterId = UUID.randomUUID();
         Vec3 position = duelPosition(player);
         if (position == null) return "The duel cannot start from where you are standing.";
-        EncounterPolicy policy = EncounterPolicy.none().withCarryover(true, true);
+        EncounterPolicy policy = EncounterPolicy.none().withCarryover(true, true).withAscensionEffects(true);
         EncounterRequest request = new EncounterRequest(OWNER, encounterId, List.of(player), definitionId,
                 player.serverLevel(), position, config.duelBossLevel(), OptionalLong.of(config.duelBossHealth()),
                 policy, EncounterRules.none());

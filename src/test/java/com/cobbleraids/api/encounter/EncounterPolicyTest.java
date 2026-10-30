@@ -16,7 +16,7 @@ class EncounterPolicyTest {
 
     private static List<Boolean> flags(EncounterPolicy policy) {
         return List.of(policy.catchable(), policy.raidRewards(), policy.raidHistory(),
-                policy.progression(), policy.carryHealth(), policy.carryPp());
+                policy.progression(), policy.carryHealth(), policy.carryPp(), policy.ascensionEffects());
     }
 
     @Test
@@ -24,7 +24,7 @@ class EncounterPolicyTest {
     void noneIsNone() {
         EncounterPolicy none = EncounterPolicy.none();
         assertFalse(none.catchable(), "a boss must never be catchable unless the owner says so");
-        assertEquals(List.of(false, false, false, false, false, false), flags(none));
+        assertEquals(List.of(false, false, false, false, false, false, false), flags(none));
     }
 
     @Test
@@ -36,12 +36,22 @@ class EncounterPolicyTest {
                 policy -> policy.withRaidHistory(true),
                 policy -> policy.withProgression(true),
                 policy -> policy.withCarryover(true, false),
-                policy -> policy.withCarryover(false, true));
+                policy -> policy.withCarryover(false, true),
+                policy -> policy.withAscensionEffects(true));
         for (int i = 0; i < withers.size(); i++) {
             List<Boolean> after = flags(withers.get(i).apply(EncounterPolicy.none()));
             for (int flag = 0; flag < after.size(); flag++) {
                 assertEquals(flag == i, after.get(flag), "wither " + i + " changed flag " + flag);
             }
         }
+    }
+
+    @Test
+    @DisplayName("the six-argument constructor keeps ascension effects off, and no wither drops them once on")
+    void ascensionEffectsDefaultOffAndSurviveOtherWithers() {
+        assertFalse(new EncounterPolicy(true, true, true, true, true, true).ascensionEffects());
+        EncounterPolicy on = EncounterPolicy.none().withAscensionEffects(true);
+        assertEquals(true, on.withCatchable(true).withRaidRewards(true).withRaidHistory(true)
+                .withProgression(true).withCarryover(true, true).ascensionEffects());
     }
 }

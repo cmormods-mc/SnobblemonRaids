@@ -31,8 +31,8 @@ public final class RaidRegistry {
         if (battle == null) return;
         RaidSession removed = BY_BATTLE.remove(battle.getBattleId());
         // The raid is over, however it ended: AscensionLib forgets its boss and any Scouter reveals (an owned raid's encounter is
-        // its owner's to end).
-        if (removed != null && !removed.isOwned()) AscensionLibArming.end(removed.getBossActorId());
+        // its owner's to end, unless it asked CobbleRaids to arm it).
+        if (removed != null && AscensionLibArming.wanted(removed.getOwnership())) AscensionLibArming.end(removed.getBossActorId());
     }
 
     public static boolean contains(PokemonBattle battle) { return get(battle) != null; }
