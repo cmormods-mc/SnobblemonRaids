@@ -1,0 +1,48 @@
+{
+  "species": "cobblemon:mew",
+  "level": 100,
+  "base_health": 3500,
+  "spawn": {
+    "enabled": false,
+    "weight": 1,
+    "dimensions": [
+      "minecraft:overworld"
+    ],
+    "biome_tags": [
+      "cobbleraids:raid_types/ghost"
+    ],
+    "times": [
+      "all_day"
+    ],
+    "cooldown_seconds": 1800,
+    "despawn_seconds": 600,
+    "max_concurrent": 1
+  },
+  "recruitment": {
+    "duration_seconds": 20,
+    "radius": 10.0,
+    "max_players": 4
+  },
+  "scaling": {
+    "health_per_extra_player": 0.65
+  },
+  "time_limit_seconds": 900,
+  "allow_flee": false,
+  "moves": [
+    "psychic",
+    "shadowball",
+    "nastyplot",
+    "softboiled"
+  ],
+  "traits": {
+    "aspects": [
+      "snobble_pumpkin_mew"
+    ]
+  },
+  "rewards": {
+    "choices": {
+      "all": {}
+    }
+  },
+  "rarity_tier": "mythical"
+}

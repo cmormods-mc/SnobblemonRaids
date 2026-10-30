@@ -87,6 +87,16 @@ class RaidBossTraitsTest {
         }
 
         @Test
+        @DisplayName("reads aspects, skipping blanks and non-strings")
+        void readsAspects() {
+            RaidBossTraits traits = parse("""
+                    {"traits": {"aspects": ["Snobble_Pumpkin_Mew", " ", 7, {"a": 1}]}}""");
+
+            assertFalse(traits.isEmpty());
+            assertEquals(List.of("snobble_pumpkin_mew"), traits.aspects());
+        }
+
+        @Test
         @DisplayName("accepts American stat spellings")
         void acceptsStatAliases() {
             RaidBossTraits traits = parse(

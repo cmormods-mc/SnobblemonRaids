@@ -4,7 +4,9 @@ import com.cobbleraids.RaidLog;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.util.Collection;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -39,9 +41,10 @@ public record RaidBossTraits(
         String heldItem,
         String gender,
         String teraType,
-        String form
+        String form,
+        List<String> aspects
 ) {
-    public static final RaidBossTraits NONE = new RaidBossTraits(null, null, Map.of(), Map.of(), null, null, null, null);
+    public static final RaidBossTraits NONE = new RaidBossTraits(null, null, Map.of(), Map.of(), null, null, null, null, List.of());
 
     /** Cobblemon's six permanent stats, as they are written in a definition. */
     private static final Set<String> STATS =
@@ -104,12 +107,13 @@ public record RaidBossTraits(
     public RaidBossTraits {
         ivs = Map.copyOf(ivs);
         evs = Map.copyOf(evs);
+        aspects = List.copyOf(aspects);
     }
 
     /** True when the boss should be built exactly as it was before traits existed. */
     public boolean isEmpty() {
         return nature == null && ability == null && ivs.isEmpty() && evs.isEmpty()
-                && heldItem == null && gender == null && teraType == null && form == null;
+                && heldItem == null && gender == null && teraType == null && form == null && aspects.isEmpty();
     }
 
     /** Null when the item may be held, otherwise the reason to report. */
@@ -197,7 +201,20 @@ public record RaidBossTraits(
                 heldItem,
                 string(traits, "gender"),
                 string(traits, "tera_type"),
-                string(traits, "form"));
+                string(traits, "form"),
+                readAspects(traits));
+    }
+
+    /** Cosmetic aspect ids (e.g. a resource-pack skin); a non-string entry is skipped. */
+    private static List<String> readAspects(JsonObject traits) {
+        if (!traits.has("aspects") || !traits.get("aspects").isJsonArray()) return List.of();
+        List<String> values = new ArrayList<>();
+        for (JsonElement element : traits.getAsJsonArray("aspects")) {
+            if (!element.isJsonPrimitive() || !element.getAsJsonPrimitive().isString()) continue;
+            String value = element.getAsString().trim().toLowerCase(Locale.ROOT);
+            if (!value.isEmpty()) values.add(value);
+        }
+        return values;
     }
 
     /**
